@@ -98,6 +98,11 @@
         #saveButton {
             margin-top: 20px; /* Add some space between the content and the button */
         }
+
+        /* Hide the hidden links container by default */
+        .hidden-links-container {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -107,19 +112,27 @@
         <ul class="links">
             <li><a href="https://canvas.ou.edu" target="_blank" style="color: #007bff; text-decoration: none;">Canvas</a></li>
             <li><a href="https://read.wiley.com/books" target="_blank" style="color: #007bff; text-decoration: none;">Network Infa</a></li>
-            <!--<li><a href="https://example.com/link3" style="color: #007bff; text-decoration: none;">Link 3</a></li>
-            <li><a href="https://example.com/link4" style="color: #007bff; text-decoration: none;">Link 4</a></li>
-            <li><a href="https://example.com/link5" style="color: #007bff; text-decoration: none;">Link 5</a></li>
-            <li><a href="https://example.com/link6" style="color: #007bff; text-decoration: none;">Link 6</a></li>
-            <li><a href="https://example.com/link7" style="color: #007bff; text-decoration: none;">Link 7</a></li>
-            <li><a href="https://example.com/link8" style="color: #007bff; text-decoration: none;">Link 8</a></li>
-            <li><a href="https://example.com/link9" style="color: #007bff; text-decoration: none;">Link 9</a></li>
-            <li><a href="https://example.com/link10" style="color: #007bff; text-decoration: none;">Link 10</a></li>
-            <li><a href="https://example.com/link11" style="color: #007bff; text-decoration: none;">Link 11</a></li>
-            <li><a href="https://example.com/link12" style="color: #007bff; text-decoration: none;">Link 12</a></li>
-            <li><a href="https://example.com/link13" style="color: #007bff; text-decoration: none;">Link 13</a></li>
-            <li><a href="https://example.com/link14" style="color: #007bff; text-decoration: none;">Link 14</a></li>
-            <li><a href="https://example.com/link15" style="color: #007bff; text-decoration: none;">Link 15</a></li>-->
+            <!-- Original links -->
+        </ul>
+    </div>
+
+    <!-- Hidden links container -->
+    <div class="container hidden-links-container" id="hiddenLinksContainer">
+        <h2 id="hiddenLinksTitle">Hidden Links</h2>
+        <ul class="links">
+            <li><a href="https://example.com/link3" target="_blank" style="color: #007bff; text-decoration: none;">Link 3</a></li>
+            <li><a href="https://example.com/link4" target="_blank" style="color: #007bff; text-decoration: none;">Link 4</a></li>
+            <li><a href="https://example.com/link5" target="_blank" style="color: #007bff; text-decoration: none;">Link 5</a></li>
+            <li><a href="https://example.com/link6" target="_blank" style="color: #007bff; text-decoration: none;">Link 6</a></li>
+            <li><a href="https://example.com/link7" target="_blank" style="color: #007bff; text-decoration: none;">Link 7</a></li>
+            <li><a href="https://example.com/link8" target="_blank" style="color: #007bff; text-decoration: none;">Link 8</a></li>
+            <li><a href="https://example.com/link9" target="_blank" style="color: #007bff; text-decoration: none;">Link 9</a></li>
+            <li><a href="https://example.com/link10" target="_blank" style="color: #007bff; text-decoration: none;">Link 10</a></li>
+            <li><a href="https://example.com/link11" target="_blank" style="color: #007bff; text-decoration: none;">Link 11</a></li>
+            <li><a href="https://example.com/link12" target="_blank" style="color: #007bff; text-decoration: none;">Link 12</a></li>
+            <li><a href="https://example.com/link13" target="_blank" style="color: #007bff; text-decoration: none;">Link 13</a></li>
+            <li><a href="https://example.com/link14" target="_blank" style="color: #007bff; text-decoration: none;">Link 14</a></li>
+            <li><a href="https://example.com/link15" target="_blank" style="color: #007bff; text-decoration: none;">Link 15</a></li>
         </ul>
     </div>
 
@@ -157,10 +170,10 @@
                 var savedContent = localStorage.getItem("savedContent");
                 document.getElementById("editor").innerHTML = savedContent;
                 document.getElementById("textboxContainer").style.display = "none";
-                // document.getElementById("linksContainer").style.display = "block"; Remove this line
+                document.getElementById("hiddenLinksContainer").style.display = "block";
             } else {
                 document.getElementById("textboxContainer").style.display = "block";
-                // document.getElementById("linksContainer").style.display = "none"; Remove this line
+                document.getElementById("hiddenLinksContainer").style.display = "none";
             }
         }
 
