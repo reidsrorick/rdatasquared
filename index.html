@@ -33,7 +33,7 @@
 
         .textbox-container,
         .links-container {
-            width: 100%;
+            width: 100%; /* Make it take the full width */
             padding: 20px;
         }
 
@@ -82,6 +82,8 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
             min-height: 200px;
+            max-width: 800px;
+            margin-left: 395px;
         }
 
             .document p {
@@ -103,9 +105,9 @@
     <div class="container links-container" id="linksContainer">
         <h2 id="linksTitle">Links</h2>
         <ul class="links">
-            <li><a href="https://example.com/link1" style="color: #007bff; text-decoration: none;">Link 1</a></li>
-            <li><a href="https://example.com/link2" style="color: #007bff; text-decoration: none;">Link 2</a></li>
-            <li><a href="https://example.com/link3" style="color: #007bff; text-decoration: none;">Link 3</a></li>
+            <li><a href="https://canvas.ou.edu" target="_blank" style="color: #007bff; text-decoration: none;">Canvas</a></li>
+            <li><a href="https://read.wiley.com/books" target="_blank" style="color: #007bff; text-decoration: none;">Network Infa</a></li>
+            <!--<li><a href="https://example.com/link3" style="color: #007bff; text-decoration: none;">Link 3</a></li>
             <li><a href="https://example.com/link4" style="color: #007bff; text-decoration: none;">Link 4</a></li>
             <li><a href="https://example.com/link5" style="color: #007bff; text-decoration: none;">Link 5</a></li>
             <li><a href="https://example.com/link6" style="color: #007bff; text-decoration: none;">Link 6</a></li>
@@ -117,7 +119,7 @@
             <li><a href="https://example.com/link12" style="color: #007bff; text-decoration: none;">Link 12</a></li>
             <li><a href="https://example.com/link13" style="color: #007bff; text-decoration: none;">Link 13</a></li>
             <li><a href="https://example.com/link14" style="color: #007bff; text-decoration: none;">Link 14</a></li>
-            <li><a href="https://example.com/link15" style="color: #007bff; text-decoration: none;">Link 15</a></li>
+            <li><a href="https://example.com/link15" style="color: #007bff; text-decoration: none;">Link 15</a></li>-->
         </ul>
     </div>
 
@@ -155,10 +157,10 @@
                 var savedContent = localStorage.getItem("savedContent");
                 document.getElementById("editor").innerHTML = savedContent;
                 document.getElementById("textboxContainer").style.display = "none";
-                document.getElementById("linksContainer").style.display = "block";
+                // document.getElementById("linksContainer").style.display = "block"; Remove this line
             } else {
                 document.getElementById("textboxContainer").style.display = "block";
-                document.getElementById("linksContainer").style.display = "none";
+                // document.getElementById("linksContainer").style.display = "none"; Remove this line
             }
         }
 
