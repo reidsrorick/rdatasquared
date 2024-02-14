@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sticky Note</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            width: 100%;
+            max-width: 800px; /* Limit the maximum width */
+        }
+
+        h2 {
+            margin-top: 0;
+            cursor: pointer; /* Add cursor pointer to indicate clickable */
+            user-select: none; /* Prevent text selection */
+        }
+
+        .textbox-container,
+        .links-container {
+            width: 100%; /* Make it take the full width */
+            padding: 20px;
+        }
+
+        .textbox {
+            margin-bottom: 20px;
+        }
+
+            .textbox input[type="text"] {
+                width: calc(100% - 90px); /* Adjust input width to fit the button */
+                padding: 8px;
+                border-radius: 4px;
+                border: 1px solid #ccc;
+                margin-right: 6px; /* Add some space between input and button */
+            }
+
+            .textbox button {
+                padding: 8px 16px;
+                background-color: #4CAF50;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+        .links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 5 columns */
+            grid-gap: 10px; /* Gap between items */
+        }
+
+            .links li {
+                margin-bottom: 10px;
+            }
+
+        .editor-container {
+            width: 98%;
+            padding: 20px;
+        }
+
+        .document {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            min-height: 200px;
+            max-width: 800px;
+            margin-left: 395px;
+        }
+
+            .document p {
+                margin: 0;
+                padding: 0;
+            }
+
+            .document h1, .document h2, .document h3 {
+                margin-top: 0;
+            }
+
+        #saveButton {
+            margin-top: 20px; /* Add some space between the content and the button */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container links-container" id="linksContainer">
+        <h2 id="linksTitle">Links</h2>
+        <ul class="links">
+            <li><a href="https://canvas.ou.edu" target="_blank" style="color: #007bff; text-decoration: none;">Canvas</a></li>
+            <li><a href="https://read.wiley.com/books" target="_blank" style="color: #007bff; text-decoration: none;">Network Infa</a></li>
+            <!--<li><a href="https://example.com/link3" style="color: #007bff; text-decoration: none;">Link 3</a></li>
+            <li><a href="https://example.com/link4" style="color: #007bff; text-decoration: none;">Link 4</a></li>
+            <li><a href="https://example.com/link5" style="color: #007bff; text-decoration: none;">Link 5</a></li>
+            <li><a href="https://example.com/link6" style="color: #007bff; text-decoration: none;">Link 6</a></li>
+            <li><a href="https://example.com/link7" style="color: #007bff; text-decoration: none;">Link 7</a></li>
+            <li><a href="https://example.com/link8" style="color: #007bff; text-decoration: none;">Link 8</a></li>
+            <li><a href="https://example.com/link9" style="color: #007bff; text-decoration: none;">Link 9</a></li>
+            <li><a href="https://example.com/link10" style="color: #007bff; text-decoration: none;">Link 10</a></li>
+            <li><a href="https://example.com/link11" style="color: #007bff; text-decoration: none;">Link 11</a></li>
+            <li><a href="https://example.com/link12" style="color: #007bff; text-decoration: none;">Link 12</a></li>
+            <li><a href="https://example.com/link13" style="color: #007bff; text-decoration: none;">Link 13</a></li>
+            <li><a href="https://example.com/link14" style="color: #007bff; text-decoration: none;">Link 14</a></li>
+            <li><a href="https://example.com/link15" style="color: #007bff; text-decoration: none;">Link 15</a></li>-->
+        </ul>
+    </div>
+
+    <div class="editor-container">
+        <div class="editor">
+            <div class="document" contenteditable="true" id="editor">
+                <!-- Your document content goes here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container textbox-container" id="textboxContainer">
+        <h2>Type in the document above like a sticky note! It will be wiped when refreshed!</h2>
+        <div class="textbox">
+            <input type="text" id="searchBox" placeholder="Create a sticky note above">
+            <button id="blargButton" class="blarg-button" style="display:none">Blarg</button>
+        </div>
+    </div>
+
+    <script>
+        // Clear the input box on page load
+        window.onload = function () {
+            document.getElementById("searchBox").value = "";
+            checkForSavedContent(); // Check for saved content on page load
+        };
+
+        document.getElementById("blargButton").addEventListener("click", function () {
+            checkForSavedContent();
+        });
+
+        // Function to check if saved content should be displayed
+        function checkForSavedContent() {
+            var searchText = document.getElementById("searchBox").value.trim();
+            if (searchText === "rori0001") {
+                var savedContent = localStorage.getItem("savedContent");
+                document.getElementById("editor").innerHTML = savedContent;
+                document.getElementById("textboxContainer").style.display = "none";
+                // document.getElementById("linksContainer").style.display = "block"; Remove this line
+            } else {
+                document.getElementById("textboxContainer").style.display = "block";
+                // document.getElementById("linksContainer").style.display = "none"; Remove this line
+            }
+        }
+
+        document.getElementById("searchBox").addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                checkForSavedContent();
+            }
+        });
+
+        // When Links title is clicked, save the document
+        document.getElementById("linksTitle").addEventListener("click", function () {
+            var content = document.getElementById("editor").innerHTML;
+            localStorage.setItem("savedContent", content);
+            alert("Content saved successfully!");
+        });
+    </script>
+
+</body>
+</html>
