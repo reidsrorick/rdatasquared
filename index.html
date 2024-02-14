@@ -72,8 +72,11 @@
             }
 
         .editor-container {
-            width: 98%;
+            width: 100%;
+            max-width: 800px; /* Limit the maximum width */
             padding: 20px;
+            display: flex;
+            justify-content: center; /* Center the document container horizontally */
         }
 
         .document {
@@ -82,9 +85,12 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
             min-height: 200px;
-            max-width: 800px;
-            margin-left: 24%;
+            width: calc(100% - 40px); /* Adjust the width to match the links container */
+            max-width: 760px; /* Maximum width */
+            word-wrap: break-word; /* Ensure text wraps to the next line */
+            background: #ffff0078;
         }
+
 
             .document p {
                 margin: 0;
@@ -189,6 +195,25 @@
             localStorage.setItem("savedContent", content);
             alert("Content saved successfully!");
         });
+
+        // Dynamically adjust the width of the document container to match the links container
+        window.addEventListener("resize", function () {
+            var linksContainerWidth = document.getElementById("linksContainer").offsetWidth;
+            document.querySelector(".document").style.width = linksContainerWidth - 40 + "px";
+        });
+
+        // Initialize the width of the document container on page load
+        window.onload = function () {
+            var linksContainerWidth = document.getElementById("linksContainer").offsetWidth;
+            document.querySelector(".document").style.width = linksContainerWidth - 40 + "px";
+            document.getElementById("searchBox").value = "";
+            checkForSavedContent(); // Check for saved content on page load
+        };
+
+        /*window.onload = function () {
+            document.getElementById("searchBox").value = "";
+            checkForSavedContent(); // Check for saved content on page load
+        };*/
     </script>
 
 </body>
