@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Links Hub</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff; /* White */
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #660000; /* OU Crimson */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 20px;
+        }
+        h1 {
+            text-align: center;
+            grid-column: 1 / -1;
+            color: #fff; /* White */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        a {
+            text-decoration: none;
+            color: #fff; /* White */
+            transition: all 0.3s ease;
+            padding: 10px 15px;
+            display: block;
+            border-radius: 5px;
+            background-color: #871C24; /* OU Crimson */
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        a:hover {
+            color: #fff; /* White */
+            background-color: #BF5700; /* OU Orange */
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>University of Oklahoma Links Hub</h1>
+        <ul>
+            <!-- First Column -->
+            <li><a target="_blank" href="https://canvas.ou.edu">Canvas</a></li>
+            <li><a target="_blank" href="https://outlook.office365.com">Outlook</a></li>
+            <!-- Add more links as needed -->
+        </ul>
+        <ul>
+            <!-- Second Column -->
+            <li><a target="_blank" href="https://chat.openai.com">ChatGPT</a></li>
+            <li><a target="_blank" href="https://quizlet.com">Quizlet</a></li>
+            <!-- Add more links as needed -->
+        </ul>
+        <ul>
+            <!-- Third Column -->
+            <li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing">Planner</a></li>
+            <li><a target="_blank" href="https://github.com">GitHub</a></li>
+		
+            <!-- Add more links as needed -->
+        </ul>
+    </div>
+</body>
+</html>
