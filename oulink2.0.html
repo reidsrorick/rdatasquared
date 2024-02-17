@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Links Hub</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff; /* White */
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #660000; /* OU Crimson */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Updated to 2 columns */
+            grid-gap: 20px;
+        }
+        h1 {
+            text-align: center;
+            grid-column: 1 / -1;
+            color: #fff; /* White */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+            position: relative; /* Make dropdowns relative to the ul */
+        }
+        li {
+            margin-bottom: 10px;
+            position: relative; /* Make dropdowns relative to the li */
+        }
+        a {
+            text-decoration: none;
+            color: #fff; /* White */
+            transition: all 0.3s ease;
+            padding: 10px 15px;
+            display: block;
+            border-radius: 5px;
+            background-color: #871C24; /* OU Crimson */
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        .dropdown {
+            display: none; /* Hide dropdown by default */
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: #BF5700; /* OU Orange */
+            border-radius: 0 0 5px 5px;
+            z-index: 999; /* Ensure dropdown covers everything else */
+        }
+        li:hover > a {
+            background-color: #147F14; /* Green */
+        }
+        li:hover > a:hover {
+            background-color: #147F14; /* Green */
+        }
+        li:hover .dropdown {
+            display: block; /* Show dropdown on hover */
+        }
+        .dropdown a {
+            display: block;
+            padding: 10px 15px;
+            color: #fff; /* White */
+            text-decoration: none;
+            border-radius: 0;
+            background-color: #BF5700; /* OU Orange */
+        }
+        .dropdown a:hover {
+            background-color: #871C24; /* OU Crimson */
+        }
+        li:not(:hover) .dropdown:hover + a {
+            background-color: #BF5700; /* OU Orange */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>University of Oklahoma Links Hub</h1>
+        <ul>
+            <!-- First Column -->
+            <li>
+                <a target="_blank" href="https://canvas.ou.edu">Canvas</a>
+                <ul class="dropdown">
+                    <li><a href="#">Link 1</a></li>
+                    <li><a href="#">Link 2</a></li>
+                    <!-- Add more links as needed -->
+                </ul>
+            </li>
+            <li>
+                <a target="_blank" href="https://outlook.office365.com">Outlook</a>
+                <ul class="dropdown">
+                    <li><a href="#">Link 1</a></li>
+                    <li><a href="#">Link 2</a></li>
+                    <!-- Add more links as needed -->
+                </ul>
+            </li>
+            <!-- Add more items as needed -->
+        </ul>
+        <!-- Second Column -->
+        <ul>
+            <!-- Add your links here -->
+            <li>
+                <a target="_blank" href="#">Link 1</a>
+                <ul class="dropdown">
+                    <li><a href="#">Sublink 1</a></li>
+                    <li><a href="#">Sublink 2</a></li>
+                    <!-- Add more sublinks as needed -->
+                </ul>
+            </li>
+            <li>
+                <a target="_blank" href="#">Link 2</a>
+                <ul class="dropdown">
+                    <li><a href="#">Sublink 1</a></li>
+                    <li><a href="#">Sublink 2</a></li>
+                    <!-- Add more sublinks as needed -->
+                </ul>
+            </li>
+            <!-- Add more items as needed -->
+        </ul>
+    </div>
+</body>
+</html>
