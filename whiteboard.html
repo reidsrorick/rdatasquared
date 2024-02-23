@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whiteboard</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+    #toolbar {
+        width: 100%;
+        height: 50px;
+        background-color: #333;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #toolbar a {
+        margin: 0 20px;
+        text-decoration: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+    }
+    #whiteboard {
+        border: 1px solid #000;
+        width: 100%;
+        height: calc(100% - 50px); /* Adjust height for toolbar */
+    }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+    <a onclick="setColor('black')">Black</a>
+    <a onclick="setColor('blue')">Blue</a>
+    <a onclick="setColor('red')">Red</a>
+</div>
+
+<canvas id="whiteboard"></canvas>
+
+<script>
+    // Get the canvas element
+    var canvas = document.getElementById('whiteboard');
+    var ctx = canvas.getContext('2d');
+
+    // Set initial drawing settings
+    ctx.lineWidth = 20; // Thicker and bolder brush size
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#000';
+
+    var isDrawing = false;
+    var lastX = 0;
+    var lastY = 0;
+
+    function draw(e) {
+        if (!isDrawing) return; // Stop the function if not mouse down
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
+
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mouseout', () => isDrawing = false);
+
+    // Resize canvas when window is resized
+    window.addEventListener('resize', resizeCanvas);
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 50; // Subtract toolbar height
+    }
+
+    // Call resizeCanvas() to initially resize the canvas
+    resizeCanvas();
+
+    function setColor(newColor) {
+        ctx.strokeStyle = newColor;
+    }
+
+</script>
+
+</body>
+</html>
