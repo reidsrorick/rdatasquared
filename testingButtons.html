@@ -1,0 +1,272 @@
+Certainly! Below is the modified HTML and CSS code with the changes applied to make the "Home" button stand out:
+
+HTML:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sticky Note</title>
+    <link rel="icon" type="image/jpeg" href="https://t4.ftcdn.net/jpg/00/57/19/97/360_F_57199799_mFswieKhp3lxajaxzFJkTzhOhtw2yCYb.jpg">
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #0c0e17;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            width: 100%;
+            max-width: 800px; /* Limit the maximum width */
+        }
+
+        .top-bar {
+            background-color: #660000;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.63);
+        }
+
+        .top-link-button {
+            padding: 10px 20px;
+            background-color: #871C24;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+
+            .top-link-button:hover {
+                color: #fff;
+                background-color: forestgreen;
+                transform: scale(1.1);
+            }
+
+        .home-button {
+            background-color: #ff5733; /* Change the background color */
+            border-color: #ff5733; /* Change the border color */
+        }
+
+            .home-button:hover {
+                background-color: #ff7f50; /* Change the background color on hover */
+            }
+
+        h2 {
+            margin-top: 0;
+            cursor: pointer; /* Add cursor pointer to indicate clickable */
+            user-select: none; /* Prevent text selection */
+        }
+
+        .textbox-container,
+        .links-container {
+            width: 100%; /* Make it take the full width */
+            padding: 20px;
+        }
+
+        .textbox {
+            margin-bottom: 20px;
+        }
+
+            .textbox input[type="text"] {
+                width: calc(100% - 90px); /* Adjust input width to fit the button */
+                padding: 8px;
+                border-radius: 4px;
+                border: 1px solid #ccc;
+                margin-right: 6px; /* Add some space between input and button */
+            }
+
+            .textbox button {
+                padding: 8px 16px;
+                background-color: #4CAF50;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+        .editor-container {
+            width: 100%;
+            max-width: 800px; /* Limit the maximum width */
+            padding: 20px;
+            display: flex;
+            justify-content: center; /* Center the document container horizontally */
+        }
+
+        .document {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            min-height: 200px;
+            width: calc(100% - 40px); /* Adjust the width to match the links container */
+            max-width: 760px; /* Maximum width */
+            word-wrap: break-word; /* Ensure text wraps to the next line */
+            background: #660000;
+            color: white;
+        }
+
+            .document p {
+                margin: 0;
+                padding: 0;
+            }
+
+            .document h1, .document h2, .document h3 {
+                margin-top: 0;
+            }
+
+        #saveButton, #gatherButton {
+            padding: 8px 16px;
+            background-color: #871C24;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        #saveButton {
+            float: left;
+        }
+
+        #gatherButton {
+            float: right;
+        }
+
+        /* Hide the hidden links container by default */
+        .hidden-links-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="top-link-button home-button" onclick="window.location.href = '/hub/snote';">Home</button>
+        <button class="top-link-button" onclick="window.location.href = '/hub/oulink';">Links</button>
+<!--        <button class="top-link-button" onclick="window.open('https://canvas.ou.edu', '_blank')">Canvas</button>
+        <button class="top-link-button" onclick="window.open('https://outlook.office365.com', '_blank')">Outlook</button>
+        <button class="top-link-button" onclick="window.open('https://www.biblegateway.com/')">Bible</button>
+        <button class="top-link-button" onclick="window.open('https://miro.com/app/dashboard/')">Whiteboard</button>-->
+    </div>
+
+    <div class="container links-container" id="linksContainer">
+        <ul class="links">
+            <li><a href="https://chat.openai.com/" style="color: #007bff; text-decoration: none;">ChatGPT</a></li>
+            <li>
+                <a href="https://docs.google.com/document/d/1XI3uDp4DRNKrcZDsgv-mYE5g0lv-ntSgrVKH4-_qoGg/edit?usp=sharing" style="color: #007bff;
+                    text-decoration: none;">Troubleshooting</a>
+            </li>
+
+            <li><a href="https://lastpass.com/?ac=1&lpnorefresh=1" style="color: #007bff; text-decoration: none;">LastPass</a></li>
+            <li><a href="https://github.com/" style="color: #007bff; text-decoration: none;">Github</a></li>
+        </ul>
+    </div>
+
+    <!-- Hidden links container -->
+    <div class="container hidden-links-container" id="hiddenLinksContainer">
+        <ul class="links">
+            <li>
+                <a href="https://docs.google.com/spreadsheets/d/1SjaZ0kHOE5hPNXaDM-C6uEAeXEjyFHq7p
+
+SCRP6lZaeM/edit?usp=sharing" target="_blank" style="color: #007bff; text-decoration: none;">Main Dashboard</a>
+            </li>
+            <li><a href="https://docs.google.com/spreadsheets/d/1_-bZXH57xQMArq1alCobKK6MwscJskiQl0WJ_yDWEWo/edit?usp=sharing" target="_blank" style="color: #007bff; text-decoration: none;">Budget</a></li>
+            <li><a href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing" target="_blank" style="color: #007bff; text-decoration: none;">Planner</a></li>
+        </ul>
+    </div>
+
+    <div class="editor-container">
+        <div class="editor">
+            <div class="document" contenteditable="true" id="editor">
+                <!-- Your document content goes here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container textbox-container" id="textboxContainer">
+        <div class="textbox">
+            <input type="text" id="searchBox" placeholder="Create a sticky note above">
+            <button id="blargButton" class="blarg-button" style="display:none">Blarg</button>
+        </div>
+    </div>
+
+    <!-- Save and Gather buttons outside of the container -->
+    <button id="saveButton" onclick="saveContent()">Save</button>
+    <button id="gatherButton" onclick="gatherContent()">Gather</button>
+
+    <script>
+        // Clear the input box on page load
+        window.onload = function () {
+            document.getElementById("searchBox").value = "";
+            checkForSavedContent(); // Check for saved content on page load
+        };
+
+        // Function to save content
+        function saveContent() {
+            var content = document.getElementById("editor").innerHTML;
+            localStorage.setItem("savedContent", content);
+            alert("Content saved successfully!");
+        }
+
+        // Function to gather content
+        function gatherContent() {
+            var savedContent = localStorage.getItem("savedContent");
+            document.getElementById("editor").innerHTML = savedContent;
+            checkForSavedContent();
+        }
+
+        // Function to check if saved content should be displayed
+        function checkForSavedContent() {
+            var searchText = document.getElementById("searchBox").value.trim();
+            if (searchText === "rori0001") {
+                document.getElementById("textboxContainer").style.display = "none";
+                document.getElementById("hiddenLinksContainer").style.display = "block";
+            } else {
+                document.getElementById("textboxContainer").style.display = "block";
+                document.getElementById("hiddenLinksContainer").style.display = "none";
+            }
+        }
+
+        document.getElementById("searchBox").addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                checkForSavedContent();
+            }
+        });
+
+        // Dynamically adjust the width of the document container to match the links container
+        window.addEventListener("resize", function () {
+            var linksContainerWidth = document.getElementById("linksContainer").offsetWidth;
+            document.querySelector(".document").style.width = linksContainerWidth - 40 + "px";
+        });
+
+        // Initialize the width of the document container on page load
+        window.onload = function () {
+            var linksContainerWidth = document.getElementById("linksContainer").offsetWidth;
+            document.querySelector(".document").style.width = linksContainerWidth - 40 + "px";
+            document.getElementById("searchBox").value = "";
+            checkForSavedContent(); // Check for saved content on page load
+        };
+    </script>
+
+</body>
+</html>
+```
+
+In this code, I've added the `.home-button` class to the "Home" button and adjusted its styles in CSS to make it stand out. You can customize the colors further to match your design preferences.
