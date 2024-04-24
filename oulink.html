@@ -23,6 +23,39 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
+        .top-bar {
+            background-color: #660000;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.63);
+        }
+
+        .top-link-button {
+            padding: 10px 20px;
+            background-color: #871C24;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+
+            .top-link-button:hover {
+                color: #fff;
+                background-color: forestgreen;
+                transform: scale(1.1);
+            }
+
+        .home-button {
+            background-color: #ff5733; /* Change the background color */
+            border-color: #ff5733; /* Change the border color */
+        }
+
+
         h1 {
             text-align: center;
             color: #fff; /* White */
@@ -73,6 +106,20 @@
     </style>
 </head>
 <body>
+    <div class="top-bar">
+        <button class="top-link-button" onclick="window.location.href = '/hub/snote';">Home</button>
+        <button class="top-link-button home-button" onclick="window.location.href = '/hub/oulink';">Links</button>
+        <button class="top-link-button" onclick="window.location.href = '/hub/troubleshooting';">Troubleshooting</button>
+        <!--<button class="top-link-button" onclick="window.open('https://canvas.ou.edu', '_blank')">Canvas</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://outlook.office365.com', '_blank')">Outlook</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://www.biblegateway.com/')">Bible</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://miro.com/app/dashboard/')">Whiteboard</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://one.ou.edu', '_blank')">OU One</button>-->
+        <!--<button class="top-link-button" onclick="window.open('/hub/whiteboard', '_blank')">Whiteboard</button>-->
+
+
+
+    </div>
     <div class="container">
         <h1>Main Links</h1>
         <div class="search-bar">
