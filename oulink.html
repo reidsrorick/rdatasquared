@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Main Links</title>
     <link rel="icon" type="image/jpeg" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Media_Viewer_Icon_-_Link_Hover.svg/1200px-Media_Viewer_Icon_-_Link_Hover.svg.png">
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -14,48 +15,43 @@
         }
 
         .container {
-            max-width: 1200px; /* Updated max-width to accommodate the new columns */
+            max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             background-color: #660000; /* OU Crimson */
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* Updated grid template */
-            grid-gap: 20px;
         }
 
         h1 {
             text-align: center;
             color: #fff; /* White */
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            grid-column: 1 / -1;
         }
 
-        ul {
-            list-style-type: none;
+        .link-columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-gap: 20px;
+            list-style: none;
             padding: 0;
-            text-align: center;
             margin: 0;
         }
 
-        li {
-            margin-bottom: 10px;
-        }
-
-        a {
-            text-decoration: none;
-            color: #fff; /* White */
-            transition: all 0.3s ease;
-            padding: 10px 15px;
-            display: block;
-            border-radius: 5px;
+        .link-item {
             background-color: #871C24; /* OU Crimson */
+            border-radius: 5px;
             box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            transition: all 0.3s ease;
         }
 
-            a:hover {
+            .link-item a {
+                text-decoration: none;
                 color: #fff; /* White */
+            }
+
+            .link-item:hover {
                 background-color: forestgreen; /* OU Orange */
                 transform: scale(1.1);
             }
@@ -63,7 +59,6 @@
         .search-bar {
             text-align: center;
             margin-bottom: 20px;
-            grid-column: 1 / -1;
         }
 
         .search-input {
@@ -74,156 +69,62 @@
             max-width: 300px;
             box-sizing: border-box;
         }
-
-        .top-bar {
-            background-color: #660000;
-            padding: 10px 0;
-            width: 100%;
-            text-align: center;
-            color: #fff;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.63);
-        }
-
-        .top-link-button {
-            padding: 10px 20px;
-            background-color: #871C24;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 0 10px;
-            transition: background-color 0.3s ease;
-        }
-
-            .top-link-button:hover {
-                color: #fff;
-                background-color: forestgreen;
-                transform: scale(1.1);
-            }
-
-        .home-button {
-            background-color: #ff5733; /* Change the background color */
-            border-color: #ff5733; /* Change the border color */
-        }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <button class="top-link-button" onclick="window.location.href = '/hub/snote';">Home</button>
-        <button class="top-link-button home-button" onclick="window.location.href = '/hub/oulink';">Links</button>
-        <button class="top-link-button" onclick="window.location.href = '/hub/troubleshooting';">Troubleshooting</button>
-    </div>
-
     <div class="container">
         <h1>Main Links</h1>
         <div class="search-bar">
             <input type="text" class="search-input" placeholder="Search links..." onkeyup="filterLinks()">
         </div>
-        <ul id="links-column-1">
-            <!-- First Column -->
-            <li><a href="https://canvas.ou.edu">Canvas</a></li>
-            <li><a href="https://one.ou.edu">ONE</a></li>
-            <li><a href="https://time.ou.edu">Time.ou</a></li>
-            <li><a href="https://chat.openai.com">ChatGPT</a></li>
-            <li><a href="https://hotpot.ai/">Hotspot AI</a></li>
-            <li><a href="https://aistudio.google.com/app/u/0/library">Google AI Studio</a></li>
-            <li><a href="https://web.groupme.com/chats">GroupMe</a></li>
-            <li><a href="https://www.remove.bg/">Remove.bg</a></li>
-        </ul>
-        <ul id="links-column-2">
-            <!-- Second Column -->
-            <li><a href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing">Planner</a></li>
-            <li><a href="https://quizlet.com">Quizlet</a></li>
-            <li><a href="https://github.com">GitHub</a></li>
-            <li><a href="https://linkedin.com">LinkedIn</a></li>
-            <li><a href="https://www.biblegateway.com/">Online Bible</a></li>
-            <li><a href="https://repeat.gg">Repeat.gg - $Gaming</a></li>
-            <li><a href="https://docs.google.com/document/d/1XI3uDp4DRNKrcZDsgv-mYE5g0lv-ntSgrVKH4-_qoGg/edit?usp=sharing">Troubleshooting</a></li>
-            <li><a href="https://cleanup.pictures/">Object Remover</a></li>
-        </ul>
-        <ul id="links-column-3">
-            <!-- Third Column -->
-            <li><a href="https://outlook.office365.com">Outlook</a></li>
-            <li><a href="https://mail.proton.me/u/0/inbox">Proton Mail</a></li>
-            <li><a href="https://app.simplelogin.io/dashboard/">Simplelogin</a></li>
-            <li><a href="https://lastpass.com/vault/">LastPass</a></li>
-            <li><a href="https://miro.com/app/dashboard/">Whiteboard</a></li>
-            <li><a href="https://app.destinyitemmanager.com/4611686018443471155/d2/inventory">Destiny Item Manager (DIM)</a></li>
-            <li><a href="https://gemini.google.com/app/4061d9b9ab56eccd">Gemini AI</a></li>
-            <li><a href="https://www.photopea.com/">Browser Photoshop</a></li>
+        <ul class="link-columns" id="link-columns">
+            <li class="link-item"><a href="https://canvas.ou.edu">Canvas</a></li>
+            <li class="link-item"><a href="https://one.ou.edu">ONE</a></li>
+            <li class="link-item"><a href="https://time.ou.edu">Time.ou</a></li>
+            <li class="link-item"><a href="https://chat.openai.com">ChatGPT</a></li>
+            <li class="link-item"><a href="https://hotpot.ai/">Hotspot AI</a></li>
+            <li class="link-item"><a href="https://aistudio.google.com/app/u/0/library">Google AI Studio</a></li>
+            <li class="link-item"><a href="https://web.groupme.com/chats">GroupMe</a></li>
+            <li class="link-item"><a href="https://www.remove.bg/">Remove.bg</a></li>
+            <li class="link-item"><a href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing">Planner</a></li>
+            <li class="link-item"><a href="https://quizlet.com">Quizlet</a></li>
+            <li class="link-item"><a href="https://github.com">GitHub</a></li>
+            <li class="link-item"><a href="https://linkedin.com">LinkedIn</a></li>
+            <li class="link-item"><a href="https://www.biblegateway.com/">Online Bible</a></li>
+            <li class="link-item"><a href="https://repeat.gg">Repeat.gg - $Gaming</a></li>
+            <li class="link-item"><a href="https://docs.google.com/document/d/1XI3uDp4DRNKrcZDsgv-mYE5g0lv-ntSgrVKH4-_qoGg/edit?usp=sharing">Troubleshooting</a></li>
+            <li class="link-item"><a href="https://cleanup.pictures/">Object Remover</a></li>
+
+            <li class="link-item"><a href="https://outlook.office365.com">Outlook</a></li>
+            <li class="link-item"><a href="https://mail.proton.me/u/0/inbox">Proton Mail</a></li>
+            <li class="link-item"><a href="https://app.simplelogin.io/dashboard/">Simplelogin</a></li>
+            <li class="link-item"><a href="https://lastpass.com/vault/">LastPass</a></li>
+            <li class="link-item"><a href="https://miro.com/app/dashboard/">Whiteboard</a></li>
+            <li class="link-item"><a href="https://app.destinyitemmanager.com/4611686018443471155/d2/inventory">Destiny Item Manager (DIM)</a></li>
+            <li class="link-item"><a href="https://gemini.google.com/app/4061d9b9ab56eccd">Gemini AI</a></li>
+            <li class="link-item"><a href="https://www.photopea.com/">Browser Photoshop</a></li>
+            <!-- Add more links here -->
         </ul>
     </div>
 
     <script>
-        // Store the original order of list items for each column
-        var originalOrder = {};
-
-        // Store the original order of list items for each column
-        document.addEventListener("DOMContentLoaded", function () {
-            var ul = document.querySelectorAll(".container ul");
-            ul.forEach(function (ul, columnIndex) {
-                var li = ul.getElementsByTagName('li');
-                originalOrder[columnIndex] = [];
-                for (var i = 0; i < li.length; i++) {
-                    originalOrder[columnIndex].push(li[i]);
-                }
-            });
-        });
-
         function filterLinks() {
             var input, filter, ul, li, a, i, txtValue;
             input = document.querySelector('.search-input');
-            filter = input.value.trim().toUpperCase(); // Trim whitespace and convert to uppercase
-            ul = document.querySelectorAll(".container ul");
-            var matchedItems = [];
+            filter = input.value.toUpperCase();
+            ul = document.getElementById("link-columns");
 
-            // If the search query is empty, reset the display of list items to their original order
-            if (filter === "") {
-                ul.forEach(function (ul, columnIndex) {
-                    ul.innerHTML = ""; // Clear the list
-                    originalOrder[columnIndex].forEach(function (item) {
-                        ul.appendChild(item);
-                        item.style.display = ""; // Show the item
-                    });
-                });
-                return;
-            }
-
-            // Hide all list items initially
-            ul.forEach(function (ul) {
-                li = ul.getElementsByTagName('li');
-                for (i = 0; i < li.length; i++) {
+            li = ul.getElementsByClassName('link-item');
+            for (i = 0; i < li.length; i++) {
+                a = li[i].getElementsByTagName("a")[0];
+                txtValue = a.textContent || a.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "";
+                } else {
                     li[i].style.display = "none";
                 }
-            });
-
-            // Collect matched items
-            ul.forEach(function (ul) {
-                li = ul.getElementsByTagName('li');
-                for (i = 0; i < li.length; i++) {
-                    a = li[i].getElementsByTagName("a")[0];
-                    txtValue = a.textContent || a.innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        matchedItems.push(li[i]);
-                    }
-                }
-            });
-
-            // Distribute matched items across columns
-            matchedItems.forEach(function (item, index) {
-                ul[index % ul.length].appendChild(item);
-                item.style.display = ""; // Show the matched item
-            });
+            }
         }
     </script>
-
-
-
-
-
-
-
-
 </body>
 </html>
