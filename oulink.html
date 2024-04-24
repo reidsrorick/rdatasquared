@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Main Links</title>
     <link rel="icon" type="image/jpeg" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Media_Viewer_Icon_-_Link_Hover.svg/1200px-Media_Viewer_Icon_-_Link_Hover.svg.png">
-
-
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #0c0e17; /* Light Gray */
-            <link rel="icon" type="image/jpeg" href="https://cdn-icons-png.flaticon.com/512/10595/10595761.png">
         }
 
         .container {
@@ -123,7 +120,7 @@
         <div class="search-bar">
             <input type="text" class="search-input" placeholder="Search links..." onkeyup="filterLinks()">
         </div>
-        <ul>
+        <ul id="links-column-1">
             <!-- First Column -->
             <li><a href="https://canvas.ou.edu">Canvas</a></li>
             <li><a href="https://one.ou.edu">ONE</a></li>
@@ -133,9 +130,8 @@
             <li><a href="https://aistudio.google.com/app/u/0/library">Google AI Studio</a></li>
             <li><a href="https://web.groupme.com/chats">GroupMe</a></li>
             <li><a href="https://www.remove.bg/">Remove.bg</a></li>
-            
         </ul>
-        <ul>
+        <ul id="links-column-2">
             <!-- Second Column -->
             <li><a href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing">Planner</a></li>
             <li><a href="https://quizlet.com">Quizlet</a></li>
@@ -146,7 +142,7 @@
             <li><a href="https://docs.google.com/document/d/1XI3uDp4DRNKrcZDsgv-mYE5g0lv-ntSgrVKH4-_qoGg/edit?usp=sharing">Troubleshooting</a></li>
             <li><a href="https://cleanup.pictures/">Object Remover</a></li>
         </ul>
-        <ul>
+        <ul id="links-column-3">
             <!-- Third Column -->
             <li><a href="https://outlook.office365.com">Outlook</a></li>
             <li><a href="https://mail.proton.me/u/0/inbox">Proton Mail</a></li>
@@ -156,32 +152,78 @@
             <li><a href="https://app.destinyitemmanager.com/4611686018443471155/d2/inventory">Destiny Item Manager (DIM)</a></li>
             <li><a href="https://gemini.google.com/app/4061d9b9ab56eccd">Gemini AI</a></li>
             <li><a href="https://www.photopea.com/">Browser Photoshop</a></li>
-
-
-
         </ul>
     </div>
 
     <script>
+        // Store the original order of list items for each column
+        var originalOrder = {};
+
+        // Store the original order of list items for each column
+        document.addEventListener("DOMContentLoaded", function () {
+            var ul = document.querySelectorAll(".container ul");
+            ul.forEach(function (ul, columnIndex) {
+                var li = ul.getElementsByTagName('li');
+                originalOrder[columnIndex] = [];
+                for (var i = 0; i < li.length; i++) {
+                    originalOrder[columnIndex].push(li[i]);
+                }
+            });
+        });
+
         function filterLinks() {
             var input, filter, ul, li, a, i, txtValue;
             input = document.querySelector('.search-input');
-            filter = input.value.toUpperCase();
+            filter = input.value.trim().toUpperCase(); // Trim whitespace and convert to uppercase
             ul = document.querySelectorAll(".container ul");
+            var matchedItems = [];
 
+            // If the search query is empty, reset the display of list items to their original order
+            if (filter === "") {
+                ul.forEach(function (ul, columnIndex) {
+                    ul.innerHTML = ""; // Clear the list
+                    originalOrder[columnIndex].forEach(function (item) {
+                        ul.appendChild(item);
+                        item.style.display = ""; // Show the item
+                    });
+                });
+                return;
+            }
+
+            // Hide all list items initially
+            ul.forEach(function (ul) {
+                li = ul.getElementsByTagName('li');
+                for (i = 0; i < li.length; i++) {
+                    li[i].style.display = "none";
+                }
+            });
+
+            // Collect matched items
             ul.forEach(function (ul) {
                 li = ul.getElementsByTagName('li');
                 for (i = 0; i < li.length; i++) {
                     a = li[i].getElementsByTagName("a")[0];
                     txtValue = a.textContent || a.innerText;
                     if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        li[i].style.display = "";
-                    } else {
-                        li[i].style.display = "none";
+                        matchedItems.push(li[i]);
                     }
                 }
             });
+
+            // Distribute matched items across columns
+            matchedItems.forEach(function (item, index) {
+                ul[index % ul.length].appendChild(item);
+                item.style.display = ""; // Show the matched item
+            });
         }
     </script>
+
+
+
+
+
+
+
+
 </body>
 </html>
