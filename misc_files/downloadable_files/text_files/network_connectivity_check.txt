@@ -6,7 +6,7 @@ set day=%date:~7,2%
 set month=%date:~4,2%
 set year=%date:~10,4%
 
-call "C:\Users\reids\Desktop\Network Logs\Create Network Log Folders.bat"
+call "C:\Users\%username%\Desktop\Network Logs\Create Network Log Folders.bat"
 echo.
 echo Network checks will begin in 10 seconds.
 timeout /t 10
