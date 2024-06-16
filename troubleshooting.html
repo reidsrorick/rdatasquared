@@ -81,6 +81,7 @@
             color: #fff;
             font-weight: bold;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.63);
+            /*position: fixed;*/
         }
 
         .top-link-button {
@@ -107,15 +108,15 @@
     </style>
 </head>
 <body>
-    <div class="top-bar">
+    <div class="top-bar" style=" top: 0px;">
         <button class="top-link-button" onclick="window.location.href = '/hub/snote';">Home</button>
         <button class="top-link-button" onclick="window.location.href = '/hub/oulink';">Links</button>
         <button class="top-link-button home-button" onclick="window.location.href = '/hub/troubleshooting';">Troubleshooting</button>
     </div>
 
     <div class="container">
-        <h1>Troubleshooting</h1>
-        <p style="color:white; text-align:center">This page is for troubleshooting tips and helpful files.</p>
+        <!--<h1>Troubleshooting</h1>
+        <p style="color:white; text-align:center">This page is for troubleshooting tips and helpful files.</p>-->
 
         <h1>Batch Files</h1>
         <p style="color:white; text-align:center; margin-bottom: 0">Below are helpful batch files I have created in .txt format. To use them yourself you need to: </p>
@@ -198,10 +199,16 @@
                 <p style="display:inline">Drag a .txt file into this program and it will create a copy of it as a .bat file!</p>
             </li>
 
+        </ul>
+
+
+        <h1>Zip Files</h1>
+        <ul>
+
             <!--Python Setup-->
             <li>
                 <a href="\hub\misc_files\downloadable_files\zip_files\Python Setup.zip">Python Setup Zip</a>
-                <p style="display:inline">Zip file containing 2 batch files. 1 for downloading python and the second for downloading specific packages.</p>
+                <p style="display:inline">Zip file containing 2 batch files. The first for downloading python and the second for downloading specific packages.</p>
             </li>
 
 
