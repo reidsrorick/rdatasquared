@@ -11,9 +11,10 @@
             background-color: #f0f0f0;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Changed from center to flex-start */
+            align-items: flex-start;
             height: 100vh;
             margin: 0;
+            padding: 10px;
         }
 
         .container {
@@ -22,11 +23,14 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 50px; /* Added margin-top to position higher */
+            margin-top: 30px;
+            width: 100%;
+            max-width: 500px;
         }
 
         h1 {
             margin-bottom: 20px;
+            font-size: 24px;
         }
 
         .button {
@@ -41,6 +45,8 @@
             text-decoration: none;
             transition: background-color 0.3s;
             cursor: pointer;
+            width: 100%;
+            max-width: 200px;
         }
 
             .button:hover {
@@ -51,6 +57,14 @@
                 background-color: #ccc;
                 cursor: not-allowed;
             }
+
+        @media (max-width: 600px) {
+            .button {
+                font-size: 14px;
+                padding: 10px 20px;
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
