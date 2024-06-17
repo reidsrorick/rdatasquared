@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/gfmioo4VBEtPucdVNIYAyaqruXFRWDCc0nsBLORfOS0_s9r5r00Bn_IpjhCumkEusg">
+    <title>Game Links</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Changed from center to flex-start */
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px; /* Added margin-top to position higher */
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .button {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+            .button:hover {
+                background-color: #0056b3;
+            }
+
+            .button:active, .button.clicked {
+                background-color: #ccc;
+                cursor: not-allowed;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Game Links</h1>
+        <button class="button" onclick="openLink(this, 'https://www.nytimes.com/games/wordle/index.html')">Wordle</button>
+        <button class="button" onclick="openLink(this, 'https://www.nytimes.com/games/connections')">Connections</button>
+        <button class="button" onclick="openLink(this, 'https://www.nytimes.com/games/strands')">Strands</button>
+        <button class="button" onclick="openLink(this, 'https://www.cinenerdle2.app/')">Cine2Nerdle</button>
+        <button class="button" onclick="openLink(this, 'https://contexto.me/')">Contexto</button>
+        <button class="button" onclick="openLink(this, 'https://www.nytimes.com/crosswords/game/mini')">Daily Mini</button>
+    </div>
+
+    <script>
+        function openLink(button, url) {
+            window.open(url, '_blank');
+            button.classList.add('clicked');
+            button.disabled = true;
+        }
+    </script>
+</body>
+</html>
