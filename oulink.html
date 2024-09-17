@@ -4,85 +4,186 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Main Links</title>
+    <link rel="icon" type="image/jpeg" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Media_Viewer_Icon_-_Link_Hover.svg/1200px-Media_Viewer_Icon_-_Link_Hover.svg.png">
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #fff; /* White */
+            background-color: #0c0e17; /* Light Gray */
         }
+
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             background-color: #660000; /* OU Crimson */
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-gap: 20px;
         }
+
+        .top-bar {
+            background-color: #660000;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.63);
+        }
+
+        .top-link-button {
+            padding: 10px 20px;
+            background-color: #871C24;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+
+            .top-link-button:hover {
+                color: #fff;
+                background-color: forestgreen;
+                transform: scale(1.1);
+            }
+
+        .home-button {
+            background-color: #ff5733; /* Change the background color */
+            border-color: #ff5733; /* Change the border color */
+        }
+
+
         h1 {
             text-align: center;
-            grid-column: 1 / -1;
             color: #fff; /* White */
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        ul {
-            list-style-type: none;
+
+        .link-columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-gap: 20px;
+            list-style: none;
             padding: 0;
-            text-align: center;
+            margin: 0;
         }
-        li {
-            margin-bottom: 10px;
-        }
-        a {
-            text-decoration: none;
-            color: #fff; /* White */
-            transition: all 0.3s ease;
-            padding: 10px 15px;
-            display: block;
-            border-radius: 5px;
+
+        .link-item {
             background-color: #871C24; /* OU Crimson */
+            border-radius: 5px;
             box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+            text-align:center;
         }
-        a:hover {
-            color: #fff; /* White */
-            background-color: #BF5700; /* OU Orange */
-            transform: scale(1.1);
+
+            .link-item a {
+                text-decoration: none;
+                color: #fff; /* White */
+            }
+
+            .link-item:hover {
+                background-color: forestgreen; /* OU Orange */
+                transform: scale(1.1);
+            }
+
+        .search-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
         }
     </style>
 </head>
+
 <body>
+    <div class="top-bar">
+        <button class="top-link-button" onclick="window.location.href = '/hub/snote';">Home</button>
+        <button class="top-link-button home-button" onclick="window.location.href = '/hub/oulink';">Links</button>
+        <button class="top-link-button" onclick="window.location.href = '/hub/troubleshooting';">Troubleshooting</button>
+        <button class="top-link-button" onclick="window.location.href = '/hub/nyt_games';">NYT Games</button>
+        <!--<button class="top-link-button" onclick="window.location.href = 'https://app.powerbi.com/groups/me/reports/5e06708b-217f-47a2-a1a7-4a5a86a51b01/485f00bc0a44b6af903e?experience=power-bi';">Power BI</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://canvas.ou.edu', '_blank')">Canvas</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://outlook.office365.com', '_blank')">Outlook</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://www.biblegateway.com/')">Bible</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://miro.com/app/dashboard/')">Whiteboard</button>-->
+        <!--<button class="top-link-button" onclick="window.open('https://one.ou.edu', '_blank')">OU One</button>-->
+        <!--<button class="top-link-button" onclick="window.open('/hub/whiteboard', '_blank')">Whiteboard</button>-->
+
+
+
+    </div>
     <div class="container">
         <h1>Main Links</h1>
-        <ul>
-            <!-- First Column -->
-            <li><a target="_blank" href="https://canvas.ou.edu">Canvas</a></li>
-            <li><a target="_blank" href="https://one.ou.edu">ONE</a></li>
-            <li><a target="_blank" href="https://time.ou.edu">Time.ou</a></li>
-            <li><a href="#">Placeholder</a></li>
-            <!-- Add more links as needed -->
-        </ul>
-        <ul>
-            <!-- Second Column -->
-            <li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing">Planner</a></li>
-            <li><a target="_blank" href="https://chat.openai.com">ChatGPT</a></li>
-            <li><a target="_blank" href="https://quizlet.com">Quizlet</a></li>
-            <li><a target="_blank" href="https://github.com">GitHub</a></li>
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="Search links..." onkeyup="filterLinks()">
+        </div>
+        <ul class="link-columns" id="link-columns">
+            <li class="link-item"><a href="https://canvas.ou.edu">Canvas</a></li>
+            <li class="link-item"><a href="https://one.ou.edu">OU ONE</a></li>
+            <li class="link-item"><a href="https://time.ou.edu">Time.ou</a></li>
+            <li class="link-item"><a href="https://chat.openai.com">ChatGPT</a></li>
+            <li class="link-item"><a href="https://hotpot.ai/">Hotpot AI</a></li>
+            <li class="link-item"><a href="https://aistudio.google.com/app/u/0/library">Google AI Studio</a></li>
+            <li class="link-item"><a href="https://web.groupme.com/chats">GroupMe</a></li>
+            <li class="link-item"><a href="https://www.remove.bg/">Remove.bg</a></li>
+            <li class="link-item"><a href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing">Planner</a></li>
+            <li class="link-item"><a href="https://quizlet.com">Quizlet</a></li>
+            <li class="link-item"><a href="https://github.com">GitHub</a></li>
+            <li class="link-item"><a href="https://linkedin.com">LinkedIn</a></li>
+            <li class="link-item"><a href="https://www.bible.com/bible/111/MAT.1.NIV">Online Bible</a></li>
+            <li class="link-item"><a href="https://repeat.gg">Repeat.gg - $Gaming</a></li>
+            <li class="link-item"><a href="https://docs.google.com/document/d/1XI3uDp4DRNKrcZDsgv-mYE5g0lv-ntSgrVKH4-_qoGg/edit?usp=sharing">Troubleshooting</a></li>
+            <li class="link-item"><a href="https://cleanup.pictures/">Object Remover</a></li>
+            <li class="link-item"><a href="https://outlook.office365.com">Outlook</a></li>
+            <li class="link-item"><a href="https://mail.proton.me/u/0/inbox">Proton Mail</a></li>
+            <li class="link-item"><a href="https://app.simplelogin.io/dashboard/">Simplelogin</a></li>
+            <li class="link-item"><a href="https://lastpass.com/vault/">LastPass</a></li>
+            <li class="link-item"><a href="https://miro.com/app/dashboard/">Whiteboard</a></li>
+            <li class="link-item"><a href="https://app.destinyitemmanager.com/4611686018443471155/d2/inventory">Destiny Item Manager (DIM)</a></li>
+            <li class="link-item"><a href="https://gemini.google.com/app/4061d9b9ab56eccd">Gemini AI</a></li>
+            <li class="link-item"><a href="https://www.photopea.com/">Browser Photoshop</a></li>
+            <li class="link-item"><a href="https://convertico.com/">Icon Converter</a></li>
+            <li class="link-item"><a href="https://www.online-stopwatch.com/">Online Stopwatch</a></li>
+            <li class="link-item"><a href="https://tryhackme.com/dashboard">TryHackMe</a></li>
+            <!--<li class="link-item"><a href="https://docs.google.com/forms/d/e/1FAIpQLScJrzvV22nWrBk2g7V-TvG63_eU2JdHh8shGyFQAo9M3Fgu-w/viewform">Date Form</a></li>-->
+            <!--<li class="link-item"><a href="https://docs.google.com/spreadsheets/d/15o4IQprPbd9_wrrbcoepeUh0kFtrYKmvH5aAvv4LbrU/edit?resourcekey#gid=355412112">Date Sheet</a></li>-->
+            <li class="link-item"><a href="https://app.powerbi.com/groups/me/reports/5e06708b-217f-47a2-a1a7-4a5a86a51b01/e603d4cd8b4f7dca44c5?experience=power-bi">Power BI</a></li>
+            <li class="link-item"><a href="https://www.speedtest.net/">SpeedTest.net</a></li>
+            <li class="link-item"><a href="https://claude.ai/new">Claude AI</a></li>
 
-            <!-- Add more links as needed -->
-        </ul>
-        <ul>
-            <!-- Third Column -->
-
-
-            <li><a target="_blank" href="https://outlook.office365.com">Outlook</a></li>
-            <li><a target="_blank" href="https://mail.proton.me/u/0/inbox">Proton Mail</a></li>
-            <li><a target="_blank" href="https://simplelogin.com">Simplelogin</a></li>
-            <li><a href="#">Placeholder</a></li>
-            <!-- Add more links as needed -->
+            <!-- Add more links here -->
         </ul>
     </div>
+
+    <script>
+        function filterLinks() {
+            var input, filter, ul, li, a, i, txtValue;
+            input = document.querySelector('.search-input');
+            filter = input.value.toUpperCase();
+            ul = document.getElementById("link-columns");
+
+            li = ul.getElementsByClassName('link-item');
+            for (i = 0; i < li.length; i++) {
+                a = li[i].getElementsByTagName("a")[0];
+                txtValue = a.textContent || a.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "";
+                } else {
+                    li[i].style.display = "none";
+                }
+            }
+        }
+    </script>
 </body>
 </html>

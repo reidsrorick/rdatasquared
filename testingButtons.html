@@ -1,12 +1,16 @@
-﻿<!DOCTYPE html>
+Certainly! Below is the modified HTML and CSS code with the changes applied to make the "Home" button stand out:
+
+HTML:
+```html
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sticky Note</title>
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3209/3209265.png">
-    
-    
+    <link rel="icon" type="image/jpeg" href="https://t4.ftcdn.net/jpg/00/57/19/97/360_F_57199799_mFswieKhp3lxajaxzFJkTzhOhtw2yCYb.jpg">
+
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -53,6 +57,15 @@
                 color: #fff;
                 background-color: forestgreen;
                 transform: scale(1.1);
+            }
+
+        .home-button {
+            background-color: #ff5733; /* Change the background color */
+            border-color: #ff5733; /* Change the border color */
+        }
+
+            .home-button:hover {
+                background-color: #ff7f50; /* Change the background color on hover */
             }
 
         h2 {
@@ -109,7 +122,6 @@
             color: white;
         }
 
-
             .document p {
                 margin: 0;
                 padding: 0;
@@ -141,12 +153,6 @@
         .hidden-links-container {
             display: none;
         }
-
-        .home-button {
-            background-color: #ff5733; /* Change the background color */
-            border-color: #ff5733; /* Change the border color */
-        }
-
     </style>
 </head>
 <body>
@@ -154,52 +160,36 @@
     <div class="top-bar">
         <button class="top-link-button home-button" onclick="window.location.href = '/hub/snote';">Home</button>
         <button class="top-link-button" onclick="window.location.href = '/hub/oulink';">Links</button>
-        <button class="top-link-button" onclick="window.location.href = '/hub/troubleshooting';">Troubleshooting</button>
-        <button class="top-link-button" onclick="window.location.href = '/hub/nyt_games';">NYT Games</button>
-        <!--<button class="top-link-button" onclick="window.open('https://canvas.ou.edu', '_blank')">Canvas</button>-->
-        <!--<button class="top-link-button" onclick="window.open('https://outlook.office365.com', '_blank')">Outlook</button>-->
-        <!--<button class="top-link-button" onclick="window.open('https://www.biblegateway.com/')">Bible</button>-->
-        <!--<button class="top-link-button" onclick="window.open('https://miro.com/app/dashboard/')">Whiteboard</button>-->
-        <!--<button class="top-link-button" onclick="window.open('https://one.ou.edu', '_blank')">OU One</button>-->
-        <!--<button class="top-link-button" onclick="window.open('/hub/whiteboard', '_blank')">Whiteboard</button>-->
-
-
-
+<!--        <button class="top-link-button" onclick="window.open('https://canvas.ou.edu', '_blank')">Canvas</button>
+        <button class="top-link-button" onclick="window.open('https://outlook.office365.com', '_blank')">Outlook</button>
+        <button class="top-link-button" onclick="window.open('https://www.biblegateway.com/')">Bible</button>
+        <button class="top-link-button" onclick="window.open('https://miro.com/app/dashboard/')">Whiteboard</button>-->
     </div>
 
     <div class="container links-container" id="linksContainer">
         <ul class="links">
             <li><a href="https://chat.openai.com/" style="color: #007bff; text-decoration: none;">ChatGPT</a></li>
-            <li><a href="https://docs.google.com/document/d/1XI3uDp4DRNKrcZDsgv-mYE5g0lv-ntSgrVKH4-_qoGg/edit?usp=sharing" style="color: #007bff; text-decoration: none;">Troubleshooting</a></li>
+            <li>
+                <a href="https://docs.google.com/document/d/1XI3uDp4DRNKrcZDsgv-mYE5g0lv-ntSgrVKH4-_qoGg/edit?usp=sharing" style="color: #007bff;
+                    text-decoration: none;">Troubleshooting</a>
+            </li>
+
             <li><a href="https://lastpass.com/?ac=1&lpnorefresh=1" style="color: #007bff; text-decoration: none;">LastPass</a></li>
             <li><a href="https://github.com/" style="color: #007bff; text-decoration: none;">Github</a></li>
-            <!--<li><a href="Insert_Link_Here" style="color: #007bff; text-decoration: none;">Insert_Title_Here</a></li>-->
-            <!--<li><a href="Insert_Link_Here" style="color: #007bff; text-decoration: none;">Insert_Title_Here</a></li>-->
-            <!-- Original links -->
         </ul>
     </div>
 
     <!-- Hidden links container -->
     <div class="container hidden-links-container" id="hiddenLinksContainer">
-
-        <h1 style="text-align:center; display:flow">Miscellaneous</h1>
         <ul class="links">
+            <li>
+                <a href="https://docs.google.com/spreadsheets/d/1SjaZ0kHOE5hPNXaDM-C6uEAeXEjyFHq7p
 
-
-            <!--[Main_Hub]-->
-            <li><a href="https://docs.google.com/spreadsheets/d/1SjaZ0kHOE5hPNXaDM-C6uEAeXEjyFHq7pSCRP6lZaeM/edit?usp=sharing" target="_blank" style="color: #007bff; text-decoration: none;">Main Dashboard</a></li>
-
-            <!--Budget-->
+SCRP6lZaeM/edit?usp=sharing" target="_blank" style="color: #007bff; text-decoration: none;">Main Dashboard</a>
+            </li>
             <li><a href="https://docs.google.com/spreadsheets/d/1_-bZXH57xQMArq1alCobKK6MwscJskiQl0WJ_yDWEWo/edit?usp=sharing" target="_blank" style="color: #007bff; text-decoration: none;">Budget</a></li>
-
-
-            <!--Placeholder Link-->
-            <!--<li><a href="Insert_Link_Here" target="_blank" style="color: #007bff; text-decoration: none;">Insert_Title_Here</a></li>-->
+            <li><a href="https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing" target="_blank" style="color: #007bff; text-decoration: none;">Planner</a></li>
         </ul>
-
-
-
-
     </div>
 
     <div class="editor-container">
@@ -277,3 +267,6 @@
 
 </body>
 </html>
+```
+
+In this code, I've added the `.home-button` class to the "Home" button and adjusted its styles in CSS to make it stand out. You can customize the colors further to match your design preferences.

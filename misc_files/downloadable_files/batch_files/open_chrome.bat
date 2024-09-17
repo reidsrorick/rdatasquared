@@ -1,0 +1,1 @@
+start chrome --new-window https://docs.google.com/spreadsheets/d/1UuIFiE6nM1AYaHFtn9D55nURxUHtvL_mZFVv3D63rGY/edit?usp=sharing https://reidsrorick.github.io/hub/snote https://calendar.google.com/calendar/u/0/r

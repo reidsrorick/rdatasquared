@@ -1,0 +1,67 @@
+@echo off
+color 0a
+echo %random% %random% %random% happyface :)
+timeout /t 1 >nul
+
+echo %random% %random% %random% happyface :)
+timeout /t 1 >nul
+
+echo %random% %random% %random% happyface :)
+timeout /t 1 >nul
+
+echo %random% %random% %random% happyface :)
+
+
+dir /s
+
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+echo :) > %random%%random%.txt
+cls
+color 07
+echo Computer successfully infected.
+echo Press any key to exit.
+pause >nul
+rem del "%~f0"
+exit

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting</title>
+    <link rel="icon" type="image/jpeg" href="https://cdn-icons-png.flaticon.com/512/10595/10595761.png">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #0c0e17; /* Light Gray */
+        }
+
+        .container {
+            max-width: 1100px; /* Updated max-width to accommodate the new columns */
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #660000; /* OU Crimson */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: grid;
+            /*grid-gap: 20px;*/
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff; /* White */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            grid-column: 1 / -1;
+        }
+
+        ul {
+            /* list-style-type: none;*/
+            padding: 0;
+            text-align: center;
+            margin-left: 10px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            text-align: left;
+            color: white;
+        }
+
+        a {
+            text-decoration: underline;
+            color: #fff; /* White */
+            transition: all 0.3s ease;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+
+            a:hover {
+                color: chartreuse;
+                /*transform: scale(1,2)*/
+            }
+
+        .search-bar {
+            text-align: center;
+            margin-bottom: 20px;
+            grid-column: 1 / -1;
+        }
+
+        .search-input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
+        }
+
+        .top-bar {
+            background-color: #660000;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.63);
+            /*position: fixed;*/
+        }
+
+        .top-link-button {
+            padding: 10px 20px;
+            background-color: #871C24;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+
+            .top-link-button:hover {
+                color: #fff;
+                background-color: forestgreen;
+                transform: scale(1.1);
+            }
+
+        .home-button {
+            background-color: #ff5733; /* Change the background color */
+            border-color: #ff5733; /* Change the border color */
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar" style=" top: 0px;">
+        <button class="top-link-button" onclick="window.location.href = '/hub/snote';">Home</button>
+        <button class="top-link-button" onclick="window.location.href = '/hub/oulink';">Links</button>
+        <button class="top-link-button home-button" onclick="window.location.href = '/hub/troubleshooting';">Troubleshooting</button>
+        <button class="top-link-button" onclick="window.location.href = '/hub/nyt_games';">NYT Games</button>
+    </div>
+
+    <div class="container">
+        <!--<h1>Troubleshooting</h1>
+    <p style="color:white; text-align:center">This page is for troubleshooting tips and helpful files.</p>-->
+
+        <h1>Batch Files</h1>
+        <p style="color:white; text-align:center; margin-bottom: 0">Below are helpful batch files I have created in .txt format. To use them yourself you need to: </p>
+        <ol style=" list-style-position:inside; margin-top: 0; padding:0">
+            <li style="text-align:center">Click on the link</li>
+            <li style="text-align:center">Copy the contents</li>
+            <li style="text-align:center">Create a new text document file (.txt)</li>
+            <li style="text-align:center">Paste the content</li>
+            <li style="text-align:center">Change the extension from .txt to .bat</li>
+        </ol>
+        <ul>
+
+            <!--Timer Lock Windows-->
+            <li>
+                <a href="/hub/misc_files/downloadable_files/text_files/lock_windows.txt">Timer Lock Windows:</a>
+                <p style="display:inline">This file will ask for an input time for your windows to automatically lock itself.</p>
+            </li>
+
+            <!--Open Chrome w/ Tabs:-->
+            <li>
+                <a href="/hub/misc_files/downloadable_files/text_files/open_chrome.txt">Open Chrome w/ Tabs:</a>
+                <p style="display:inline">This file will opens a new chrome window with my planner, website, and calendar as tabs.</p>
+            </li>
+
+            <!--Shutdown Menu-->
+            <li>
+                <a href="/hub/misc_files/downloadable_files/text_files/shutdown_menu.txt">Shutdown Menu</a>
+                <p style="display:inline">This file provides options to schedule a shutdown, restart, lock, or an immediate log off.</p>
+            </li>
+
+            <!--Simple Network Connectivity Checker-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\text_files\network_connectivity.txt">Simple Network Connectivity Checker</a>
+                <p style="display:inline">This batch file will run in the background and constantly check if you are connected to the internet with timestamps.</p>
+            </li>
+
+
+            <!--Network Connectivity Checker-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\text_files\network_connectivity_check.txt">Network Connectivity</a>
+                <p style="display:inline">This batch file will run in the background and constantly check if you are connected to the internet with timestamps.</p>
+                <a style="display: inline-block" href="\hub\misc_files\downloadable_files\text_files\create_network_log_folders.txt">Network Log</a>
+                <p style="display:inline">This file is to create and log the network connectivity from above file. You need this to run it.</p>
+
+            </li>
+
+            <!--Happy Face Prank-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\text_files\happyface.txt">Happy Face!</a>
+                <p style="display:inline">This batch file is just a prank. It will show all your files and then create a bunch of text files with a ":)". That is all. Fun little prank.</p>
+            </li>
+
+            <!--Matrix Hackerman-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\text_files\matrix.txt">Matrix Numbers</a>
+                <p style="display:inline">All this does is open a command prompt window that starts producing random green numbers. Looks kinda cool.</p>
+            </li>
+
+            <!--File Mover-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\python_files\file_mover_2.0.py">Move to D: Drive</a>
+                <p style="display:inline">[Insert Explanation Here]</p>
+            </li>
+
+            <!--Copy File to Startup-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\text_files\startup.txt">Startup Folder</a>
+                <p style="display:inline">This batch file will allow you to drag and drop a program into it for it to copy into your startup folder.</p>
+            </li>
+
+            <!--File to .txt-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\text_files\to_txt.txt">.txt Converter</a>
+                <p style="display:inline">Drag a .bat file into this program and it will create a copy of it as a .txt file!</p>
+            </li>
+
+            <!--File to .bat-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\text_files\to_bat.txt">.bat Converter</a>
+                <p style="display:inline">Drag a .txt file into this program and it will create a copy of it as a .bat file!</p>
+            </li>
+
+        </ul>
+
+
+        <h1>Zip Files</h1>
+        <ul>
+
+            <!--Python Setup-->
+            <li>
+                <a href="\hub\misc_files\downloadable_files\zip_files\Python Setup.zip">Python Setup Zip</a>
+                <p style="display:inline">Zip file containing 2 batch files. The first for downloading python and the second for downloading specific packages.</p>
+            </li>
+        </ul>
+
+        <h1>Python Files</h1>
+        <ul>
+
+            <li>
+                <p> Oop! There seems to be nothing here at the moment...</p>
+            </li>
+
+
+        </ul>
+
+        <h1>PDF Files</h1>
+        <ul>
+            
+            <li>
+                <a href="https://github.com/reidsrorick/hub/tree/master/misc_files/pdf_files">All PDFs</a>
+            </li>
+
+            <li>
+                <a href="\hub\misc_files\pdf_files\Troubleshooting_Document.pdf">Troubleshoot PDF</a>
+            </li>
+
+        </ul>
+
+        <h1>Word Documents</h1>
+        <ul>
+
+            <li>
+                https://github.com/reidsrorick/hub/tree/master/misc_files/word_files
+                <a href="https://github.com/reidsrorick/hub/tree/master/misc_files/word_files">All Word Docs</a>
+            </li>
+
+            <li>
+                <a href="\hub\misc_files\word_files\WORD TEMPLATE.docx">Documentation Template</a>
+            </li>
+
+            <li>
+                <a href="\hub\misc_files\word_files\Batch Files.docx">Batch Files Doc</a>
+            </li>
+
+        </ul>
+    </div>
+
+
+</body>
+</html>
