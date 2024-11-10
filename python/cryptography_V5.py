@@ -27,7 +27,6 @@ def alpha_array_creation():
            key_alpha_array.append(letters1[i])
 
      return key_alpha_array
-
 def vigenere_table_creation(key_alpha_array):
      vigenere = []
 # This should create a Vigenère table
@@ -43,7 +42,6 @@ def vigenere_table_creation(key_alpha_array):
          key_alpha_array[-1]=first_letter
          vigenere.append(key_alpha_array.copy())
      return vigenere
-
 def text_input(input1):
      # this is the text you would like to be encrypted
      # plain_text = "Hello World, don't mind if I do." # this is the text you would like to be encrypted
@@ -52,7 +50,6 @@ def text_input(input1):
           if i.upper() in letters1:
                arr_plain_text.append(i.upper())
      return arr_plain_text
-
 def create_keystream(arr_plain_text, keystream):
      #keystream = input("Enter the Keystream for the Vigenere: ") # this is the key to iterate over the X axis of the vignere
      arr_keystream = [] # this is the same as the above input, just each letter is separated into an array
@@ -76,7 +73,6 @@ def create_keystream(arr_plain_text, keystream):
           # Keystream =  ['H', 'I', 'D', 'D', 'E', 'N', 'H', 'I', 'D', 'D', 'E', 'N', 'H', 'I', 'D', 'D', 'E', 'N', 'H', 'I', 'D', 'D', 'E'] Length: 23
           # It repeats the keystream through until it equals the same length as the plaintext
           #keystream = "HIDDEN" # this is the key to iterate over the X axis of the vignere 
-
 def create_cipher_text(arr_plain_text, full_keystream, vigenere):
      cipher_text =[]
      y_index = []
@@ -98,7 +94,6 @@ def create_cipher_text(arr_plain_text, full_keystream, vigenere):
           actual_cipher_text += i
      print("Cipher Text:",actual_cipher_text)
      return actual_cipher_text
-
 def find_plain_text(arr_cipher_text, full_keystream, vigenere):
      array_with_cipher_text = arr_cipher_text
      array_with_full_keystream = full_keystream
@@ -124,25 +119,19 @@ def find_plain_text(arr_cipher_text, full_keystream, vigenere):
           plain_text_answer += (letters1[i])
      print(plain_text_answer)
      return plain_text_answer
-          
-
-
-
-
 def encrypt():
-     input1 = input("Please enter the text you want to be encrypted: ")
-     cipher_key = input("Please enter the cipher key you would like to use for encryption: ")
+     input1 = input("Please enter the text you want to be encrypted:\n> ")
+     cipher_key = input("Please enter the cipher key you would like to use for encryption:\n> ")
      key_alpha_array = alpha_array_creation()
      vigenere = vigenere_table_creation(key_alpha_array)
      arr_plain_text = text_input(input1)
      full_keystream = create_keystream(arr_plain_text, cipher_key)
      actual_cipher_text = create_cipher_text(arr_plain_text, full_keystream, vigenere)
      pyperclip.copy(actual_cipher_text)
-
 def decrypt():
      
-     input1 = input("Please enter your ciphertext to be decrypted: ")
-     cipher_key = input("Please enter your cipher key: ")
+     input1 = input("Please enter your ciphertext to be decrypted:\n> ")
+     cipher_key = input("Please enter your cipher key:\n> ")
 
      key_alpha_array = alpha_array_creation()
      vigenere = vigenere_table_creation(key_alpha_array)
@@ -150,7 +139,6 @@ def decrypt():
      full_keystream = create_keystream(arr_cipher_text, cipher_key)
      plainy = find_plain_text(arr_cipher_text, full_keystream, vigenere)
      pyperclip.copy(plainy)
-
 def encrypt_decrypt():
      repeat = True
      while repeat:
