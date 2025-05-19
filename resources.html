@@ -1,227 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reid's Resources</title>
-  <meta name="version" content="v1.1.1 - Last updated 2025-05-18 06:50 PM UTC-5">
+  <meta name="version" content="v1.1.2 - Last updated 2025-05-18 07:05 PM UTC-5">
   <link rel="icon" href="https://store-images.s-microsoft.com/image/apps.11140.e558b2b9-a096-4448-9308-6aae81f68198.0d0bbaca-cfbb-45b7-87f5-0c6df98b109a.774676f6-9c30-4106-9909-7b9bedf304c5.png" type="image/png">
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #2c3e50, #4b79a1);
-      height: 100vh;
-      overflow-x: hidden;
-    }
-
-    #menu-toggle {
-      display: none;
-    }
-
-    .menu-icon {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      font-size: 30px;
-      color: white;
-      cursor: pointer;
-      z-index: 1001;
-    }
-
-    #menu-toggle:checked + .menu-icon {
-      display: none;
-    }
-
-    .menu-panel {
-      position: fixed;
-      top: 0;
-      left: -100%;
-      width: 300px;
-      height: 100%;
-      background: #000;
-      padding: 40px 20px 20px 20px;
-      transition: left 0.5s ease-in-out;
-      z-index: 1000;
-      overflow-y: auto;
-    }
-
-    #menu-toggle:checked ~ .menu-panel.visible {
-      left: 0;
-    }
-
-    .overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.5s ease-in-out;
-      z-index: 999;
-    }
-
-    #menu-toggle:checked ~ .overlay {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .menu-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .back-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-      margin-right: 10px;
-    }
-
-    button.link-btn,
-    a.link-btn {
-      display: block;
-      width: 100%;
-      background: none;
-      border: none;
-      color: white;
-      text-align: left;
-      padding: 12px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    button.link-btn:hover,
-    a.link-btn:hover {
-      background: #222;
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-      z-index: 1002;
-    }
-
-    .close-btn:hover {
-      color: #ccc;
-    }
-
-    .content {
-      text-align: center;
-      padding-top: 100px;
-      color: white;
-    }
-
-    .version-id {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 12px;
-      z-index: 1002;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: linear-gradient(135deg, #2c3e50, #4b79a1); height: 100vh; overflow-x: hidden; }
+    #menu-toggle { display: none; }
+    .menu-icon { position: fixed; top: 20px; left: 20px; font-size: 30px; color: white; cursor: pointer; z-index: 1001; }
+    #menu-toggle:checked + .menu-icon { display: none; }
+    .menu-panel { position: fixed; top: 0; left: -100%; width: 300px; height: 100%; background: #000; padding: 40px 20px 20px 20px; transition: left 0.5s ease-in-out; z-index: 1000; overflow-y: auto; }
+    #menu-toggle:checked ~ .menu-panel.visible { left: 0; }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); opacity: 0; pointer-events: none; transition: opacity 0.5s ease-in-out; z-index: 999; }
+    #menu-toggle:checked ~ .overlay { opacity: 1; pointer-events: all; }
+    .menu-header { display: flex; align-items: center; margin-bottom: 20px; color: white; font-size: 18px; font-weight: bold; }
+    .back-btn { background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-right: 10px; }
+    button.link-btn, a.link-btn { display: block; width: 100%; background: none; border: none; color: white; text-align: left; padding: 12px 20px; font-size: 16px; cursor: pointer; text-decoration: none; }
+    button.link-btn:hover, a.link-btn:hover { background: #222; }
+    .close-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: white; font-size: 24px; cursor: pointer; z-index: 1002; }
+    .close-btn:hover { color: #ccc; }
+    .content { text-align: center; padding-top: 100px; color: white; }
+    .version-id { position: fixed; bottom: 10px; left: 10px; color: rgba(255, 255, 255, 0.5); font-size: 12px; z-index: 1002; }
   </style>
 </head>
-
 <body>
-
-  <!-- Toggle Button -->
   <input type="checkbox" id="menu-toggle">
   <label for="menu-toggle" class="menu-icon">&#9776;</label>
-
-  <!-- Main Menu -->
   <div class="menu-panel visible" id="mainMenu">
     <button class="close-btn" onclick="resetMenus()">✕</button>
     <button class="link-btn" onclick="openSubMenu('personalMenu')">Personal ➡</button>
     <button class="link-btn" onclick="openSubMenu('workMenu')">Work ➡</button>
     <button class="link-btn" onclick="openSubMenu('Travel_Links')">Travel ➡</button>
+    <button class="link-btn" onclick="openSubMenu('Media_Links')">Media ➡</button>
   </div>
-
-  <!-- Personal Menu -->
   <div class="menu-panel" id="personalMenu">
     <button class="close-btn" onclick="resetMenus()">✕</button>
-    <div class="menu-header">
-      <button class="back-btn" onclick="backToMainMenu()">←</button>
-      Personal
-    </div>
+    <div class="menu-header"><button class="back-btn" onclick="backToMainMenu()">←</button>Personal</div>
     <a class="link-btn" href="https://app.powerbi.com/groups/me/reports/a56e5b6d-b6b5-42a0-998e-8ee9219edbd2/e8dbd98b1348b233c94e?experience=power-bi&clientSideAuth=0" target="_blank">PowerBI Budget</a>
     <a class="link-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdAmhA1ocBDFMmqYyoJ8HbWfRtG1yYt0zeqfBXbAf3RVUKPvQ/viewform" target="_blank">Budget Form</a>
     <a class="link-btn" href="https://docs.google.com/spreadsheets/d/19o-Q9yZwUdCzIbdrZoghhJR8Pi2OZ8qEuw7FwDWPf9k/edit?gid=100963105#gid=100963105" target="_blank">Budget Sheet</a>
     <a class="link-btn" href="https://mail.proton.me/u/8/inbox" target="_blank">Proton Mail</a>
     <a class="link-btn" href="https://www.rdatasquared.com/" target="_blank">rDataSquared</a>
+    <a class="link-btn" href="https://github.com/reidsrorick/hub" target="_blank">Github</a>
   </div>
-
-  <!-- Work Menu -->
   <div class="menu-panel" id="workMenu">
     <button class="close-btn" onclick="resetMenus()">✕</button>
-    <div class="menu-header">
-      <button class="back-btn" onclick="backToMainMenu()">←</button>
-      Work
-    </div>
+    <div class="menu-header"><button class="back-btn" onclick="backToMainMenu()">←</button>Work</div>
     <a class="link-btn" href="https://outlook.office.com" target="_blank">Outlook</a>
     <a class="link-btn" href="https://teams.microsoft.com" target="_blank">Teams</a>
     <a class="link-btn" href="https://sharepoint.com" target="_blank">SharePoint</a>
     <a class="link-btn" href="https://zoom.us" target="_blank">Zoom</a>
     <a class="link-btn" href="https://opportune.com" target="_blank">Opportune Website</a>
   </div>
-
-  <!-- Travel Menu -->
   <div class="menu-panel" id="Travel_Links">
+    <button class="close-btn" onclick="resetMenus()">✕</button>
+    <div class="menu-header"><button class="back-btn" onclick="backToMainMenu()">←</button>Travel</div>
+    <a class="link-btn" href="https://www.marriott.com/default.mi" target="_blank">Marriott Bonvoy</a>
+  </div>
+  <label for="menu-toggle" class="overlay" onclick="resetMenus()"></label>
+  <div class="content"><h1>Reid's Resources</h1><p>Welcome to your quick-access hub.</p></div>
+  <div class="version-id">v1.2.4</div>
+  <script>
+    
+    function openSubMenu(menuId) {
+      const panels = document.querySelectorAll('.menu-panel'); panels.forEach(panel => panel.classList.remove('visible')); document.getElementById(menuId).classList.add('visible'); }
+    function backToMainMenu() {
+      const panels = document.querySelectorAll('.menu-panel'); panels.forEach(panel => panel.classList.remove('visible')); document.getElementById('mainMenu').classList.add('visible'); }
+    function resetMenus() { backToMainMenu(); document.getElementById('menu-toggle').checked = false; }
+  </script>
+
+  <!-- Media Menu -->
+  <div class="menu-panel" id="Media_Links">
     <button class="close-btn" onclick="resetMenus()">✕</button>
     <div class="menu-header">
       <button class="back-btn" onclick="backToMainMenu()">←</button>
-      Travel
+      Media
     </div>
-    <a class="link-btn" href="https://www.marriott.com/default.mi" target="_blank">Marriott Bonvoy</a>
+    <a class="link-btn" href="https://www.youtube.com" target="_blank">YouTube</a>
+    <a class="link-btn" href="https://www.netflix.com" target="_blank">Netflix</a>
+    <a class="link-btn" href="https://www.disneyplus.com" target="_blank">Disney+</a>
   </div>
 
-  <!-- Overlay -->
-  <label for="menu-toggle" class="overlay" onclick="resetMenus()"></label>
-
-  <!-- Page Content -->
-  <div class="content">
-    <h1>Reid's Resources</h1>
-    <p>Welcome to your quick-access hub.</p>
+  <!-- Media Menu -->
+  <div class="menu-panel" id="Media_Links">
+    <button class="close-btn" onclick="resetMenus()">✕</button>
+    <div class="menu-header">
+      <button class="back-btn" onclick="backToMainMenu()">←</button>
+      Media
+    </div>
+    <a class="link-btn" href="https://www.youtube.com" target="_blank">YouTube</a>
+    <a class="link-btn" href="https://www.netflix.com" target="_blank">Netflix</a>
+    <a class="link-btn" href="https://www.disneyplus.com" target="_blank">Disney+</a>
   </div>
 
-  <!-- Version ID -->
-  <div class="version-id">v1.1.1</div>
-
-  <!-- Script -->
   <script>
-    const panels = document.querySelectorAll('.menu-panel');
-
+    
     function openSubMenu(menuId) {
+      const panels = document.querySelectorAll('.menu-panel');
       panels.forEach(panel => panel.classList.remove('visible'));
       document.getElementById(menuId).classList.add('visible');
     }
-
     function backToMainMenu() {
+      const panels = document.querySelectorAll('.menu-panel');
       panels.forEach(panel => panel.classList.remove('visible'));
       document.getElementById('mainMenu').classList.add('visible');
     }
-
     function resetMenus() {
       backToMainMenu();
       document.getElementById('menu-toggle').checked = false;
     }
   </script>
-
 </body>
 </html>
