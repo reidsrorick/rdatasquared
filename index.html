@@ -41,14 +41,9 @@
       <p class="site-title">Reid Rorick</p>
       <p class="site-subtitle">Process & Technology Consultant</p>
     </div>
+
 <div id="navbar"></div>
-<script>
-  fetch("/02_active/profile/nav.html")
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById("navbar").innerHTML = html;
-    });
-</script>
+<script src="/02_active/profile/nav-loader.js"></script>
 
   </header>
   <div class="container">
