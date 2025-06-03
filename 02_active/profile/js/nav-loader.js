@@ -1,4 +1,4 @@
-fetch("/02_active/profile/nav.html")
+fetch("/02_active/profile/html/nav.html")
   .then(res => res.text())
   .then(html => {
     const navDiv = document.getElementById("navbar");
