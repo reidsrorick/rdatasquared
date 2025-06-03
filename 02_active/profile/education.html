@@ -39,14 +39,15 @@
       <p class="site-title">Reid Rorick</p>
       <p class="site-subtitle">Process & Technology Consultant</p>
     </div>
-    <nav>
-      <a href="../../index.html">Home</a>
-      <a href="#">Experience</a>
-      <a href="/02_active/profile/education.html">Education</a>
-      <a href="#">Skills</a>
-      <a href="/02_active/profile/about_profile.html">About the Website</a>
-      <a href="/02_active/profile/contact.html">Contact</a>
-    </nav>
+<div id="navbar"></div>
+<script>
+  fetch("/02_active/profile/nav.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("navbar").innerHTML = html;
+    });
+</script>
+
   </header>
   <div class="container">
     <article>
@@ -57,7 +58,7 @@
     </article>
   </div>
   <footer>
-    &copy; 2025 Reid Rorick | Education Page v1.0.0
+    &copy; 2025 Reid Rorick | Education Page v1.0.1
   </footer>
 </body>
 </html>
