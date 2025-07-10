@@ -153,9 +153,9 @@
 
   <div class="quick-links" id="linksContainer">
     <div class="quick-link">
-      <h2>01 - AI Trend Summary</h2>
-      <p>Summarize top 5 AI trends with links</p>
-      <button onclick="copyAndOpen(`Summarize the top 5 trends in artificial intelligence today and provide credible links for each.`)">Use Prompt</button>
+      <h2>01 - ChatGPT Tasks</h2>
+      <p>Schedule a task to run</p>
+      <button onclick="copyAndOpen(`I want you to schedule a task to email me. These are the details:\n • Date - \n • Time (CT) - \n • Recurring - \n • Action - `)">Use Prompt</button>
     </div>
     <div class="quick-link">
       <h2>02 - Email Assistant</h2>
