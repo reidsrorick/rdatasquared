@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Prompt Templates</title>
+  <link rel="icon" href="https://link-pakistan.com/wp-content/uploads/2025/04/link-pakistan-siteicon-512x512-1.png" type="image/png">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, rgb(183, 140, 45), rgb(86, 86, 86), rgb(25, 44, 79));
+      margin: 0;
+      padding: 40px 20px 60px 20px;
+      position: relative;
+      min-height: 100vh;
+      background-attachment: fixed;
+    }
+    .logo-corner {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 999;
+      background-color: rgba(230, 230, 230, 0.9);
+      padding: 6px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .logo-corner img {
+      width: 120px;
+      height: auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .search-bar {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .search-bar input {
+      width: 60%;
+      max-width: 400px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .quick-link {
+      width: 260px;
+      background-color: #ffffffee;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      padding: 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      color: inherit;
+      display: block;
+    }
+    .quick-link:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+      color: #0077cc;
+    }
+    .quick-link h2 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      color: #2f4858;
+    }
+    .quick-link p {
+      font-size: 14px;
+      color: #5f6c7b;
+    }
+    .quick-link button {
+      margin-top: 10px;
+      background-color: #10a37f;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .quick-link button:hover {
+      background-color: #0e8f6b;
+    }
+    .version {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #ffffff;
+      font-style: italic;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+    .sticky-note {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 220px;
+      background: #fffbe6;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      font-size: 14px;
+      z-index: 998;
+    }
+    .sticky-note textarea {
+      width: 100%;
+      height: 100px;
+      border: none;
+      background: transparent;
+      resize: none;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      outline: none;
+    }
+    .sticky-note button {
+      width: 100%;
+      padding: 5px;
+      background: #f4f4f4;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-corner">
+    <a href="https://www.opportune.com" target="_blank">
+      <img src="https://marvel-b1-cdn.bc0a.com/f00000000293946/opportune.com/assets/img/opportune-footer-logo.png" alt="Opportune Logo">
+    </a>
+  </div>
+
+  <h1>AI Prompt Templates</h1>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search prompts..." onkeyup="filterLinks()">
+  </div>
+
+  <div class="quick-links" id="linksContainer">
+    <div class="quick-link">
+      <h2>01 - AI Trend Summary</h2>
+      <p>Summarize top 5 AI trends with links</p>
+      <button onclick="copyAndOpen(`Summarize the top 5 trends in artificial intelligence today and provide credible links for each.`)">Use Prompt</button>
+    </div>
+    <div class="quick-link">
+      <h2>02 - Email Assistant</h2>
+      <p>Draft a polite follow-up email professionally</p>
+      <button onclick="copyAndOpen(`Act as a professional email assistant. Help me draft a polite follow-up email regarding a pending request.`)">Use Prompt</button>
+    </div>
+    <div class="quick-link">
+      <h2>03 - Meal Planner</h2>
+      <p>Create a 5-day high-protein low-carb plan</p>
+      <button onclick="copyAndOpen(`Generate a 5-day meal plan that’s high-protein, low-carb, and includes a grocery list.`)">Use Prompt</button>
+    </div>
+    <div class="quick-link">
+      <h2>04 - Blockchain 101</h2>
+      <p>Explain blockchain in simple terms</p>
+      <button onclick="copyAndOpen(`Help me learn a new technical concept: explain how a blockchain works using simple terms and a real-world analogy.`)">Use Prompt</button>
+    </div>
+    <div class="quick-link">
+      <h2>05 - Time Block Plan</h2>
+      <p>Create a weekly time-block plan for consultants</p>
+      <button onclick="copyAndOpen(`Create a weekly productivity schedule using time blocking for an early-career consultant working remotely.`)">Use Prompt</button>
+    </div>
+  </div>
+
+  <div class="sticky-note">
+    <button onclick="toggleSticky()" id="stickyToggle">📝 Sticky Note</button>
+    <div id="stickyContentBox" style="display:none; margin-top:8px;">
+      <textarea id="stickyContent" placeholder="Write your note here..."></textarea>
+      <button onclick="clearSticky()" style="margin-top:5px;">Clear Note</button>
+    </div>
+  </div>
+
+  <div class="version">Version 1.0.2</div>
+
+  <script>
+    function copyAndOpen(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        window.open('https://chat.openai.com/', '_blank');
+      }).catch(err => {
+        alert('Failed to copy prompt: ' + err);
+      });
+    }
+
+    function filterLinks() {
+      var input = document.getElementById("searchInput");
+      var filter = input.value.toLowerCase();
+      var links = document.getElementById("linksContainer").getElementsByClassName("quick-link");
+      for (var i = 0; i < links.length; i++) {
+        var txtValue = links[i].textContent || links[i].innerText;
+        links[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+      }
+    }
+
+    const sticky = document.getElementById("stickyContent");
+    sticky.value = localStorage.getItem("stickyNote") || "";
+    sticky.addEventListener("input", () => {
+      localStorage.setItem("stickyNote", sticky.value);
+    });
+    function clearSticky() {
+      sticky.value = "";
+      localStorage.removeItem("stickyNote");
+    }
+    function toggleSticky() {
+      var box = document.getElementById("stickyContentBox");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+  </script>
+
+  <div style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;">
+    <iframe src="https://free.timeanddate.com/clock/i9xxizwu/n64/tt0/tb4" frameborder="0" width="209" height="34" style="border: none;"></iframe>
+  </div>
+
+</body>
+</html>
