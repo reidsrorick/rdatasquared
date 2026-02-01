@@ -35,25 +35,30 @@ def vigenere_decrypt(ciphertext, key):
 
 
 def main():
-    choice = input("Do you want to encrypt or decrypt? (e/d): ").lower()
+    while True:
+        choice = input("Do you want to encrypt or decrypt? (e/d), or 'q' to quit: ").lower()
 
-    if choice not in ('e', 'd'):
-        print("Invalid choice. Use 'e' for encrypt or 'd' for decrypt.")
-        return
+        if choice == 'q':
+            print("Exiting the program.")
+            break
 
-    key = input("Enter the key: ").strip()
-    if not key.isalpha():
-        print("Key must only contain letters.")
-        return
+        if choice not in ('e', 'd'):
+            print("Invalid choice. Use 'e' for encrypt, 'd' for decrypt, or 'q' to quit.")
+            continue
 
-    if choice == 'e':
-        plaintext = input("Enter the plaintext: ")
-        ciphertext = vigenere_encrypt(plaintext, key)
-        print("Encrypted text:", ciphertext)
-    else:
-        ciphertext = input("Enter the ciphertext: ")
-        plaintext = vigenere_decrypt(ciphertext, key)
-        print("Decrypted text:", plaintext)
+        key = input("Enter the key: ").strip()
+        if not key.isalpha():
+            print("Key must only contain letters.")
+            continue
+
+        if choice == 'e':
+            plaintext = input("Enter the plaintext: ")
+            ciphertext = vigenere_encrypt(plaintext, key)
+            print("Encrypted text:", ciphertext)
+        else:
+            ciphertext = input("Enter the ciphertext: ")
+            plaintext = vigenere_decrypt(ciphertext, key)
+            print("Decrypted text:", plaintext)
 
 
 if __name__ == "__main__":

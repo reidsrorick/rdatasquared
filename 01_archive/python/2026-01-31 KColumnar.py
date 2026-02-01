@@ -48,24 +48,30 @@ def keyed_columnar_decrypt(ciphertext, key):
 
 
 def main():
-    mode = input("Do you want to encrypt or decrypt? (e/d): ").lower()
-    if mode not in ('e', 'd'):
-        print("Invalid mode. Use 'e' for encrypt or 'd' for decrypt.")
-        return
+    while True:
+        mode = input("Do you want to encrypt or decrypt? (e/d), or 'q' to quit: ").lower()
 
-    key = input("Enter the key: ").strip()
-    if not key.isalpha():
-        print("Key must only contain letters.")
-        return
+        if mode == 'q':
+            print("Exiting the program.")
+            break
 
-    text = input("Enter the text: ")
+        if mode not in ('e', 'd'):
+            print("Invalid mode. Use 'e' for encrypt, 'd' for decrypt, or 'q' to quit.")
+            continue
 
-    if mode == 'e':
-        result = keyed_columnar_encrypt(text, key)
-    else:
-        result = keyed_columnar_decrypt(text, key)
+        key = input("Enter the key: ").strip()
+        if not key.isalpha():
+            print("Key must only contain letters.")
+            continue
 
-    print("Result:", result)
+        text = input("Enter the text: ")
+
+        if mode == 'e':
+            result = keyed_columnar_encrypt(text, key)
+        else:
+            result = keyed_columnar_decrypt(text, key)
+
+        print("Result:", result)
 
 
 if __name__ == "__main__":
