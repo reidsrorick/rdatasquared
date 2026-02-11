@@ -314,14 +314,11 @@
     /***********************
      * CONFIG
      ***********************/
-    // If you want ONLY ONE list area (no starred section at top),
-    // set this to false:
-    const SHOW_STARRED_SECTION = true;
+    const SHOW_STARRED_SECTION = true; // keep your current behavior
 
     /***********************
      * 1) EDIT YOUR GAMES
      ***********************/
-    // Put all games here. They will be displayed in ONE list, sorted A→Z.
     const GAMES = [
       { id: "moviedle", name: "Moviedle", url: "https://pix-media.com/games/moviedle", desc: "Can you name the movie in 6 seconds or less?", tags: ["Daily"] },
       { id: "moviedle2", name: "Moviedle 2", url: "https://moviedle.xyz/", desc: "Guess today's movie by exploring its cast, directors, genres and when it was released.", tags: ["Daily"] },
@@ -338,29 +335,33 @@
       { id: "connections", name: "Connections", url: "https://www.nytimes.com/games/connections", desc: "Create four groups of four!", tags: ["Daily"] },
       { id: "strands", name: "Strands", url: "https://www.nytimes.com/games/strands", desc: "Find hidden words and uncover the day’s theme.", tags: ["Daily"] },
       { id: "spellingbee", name: "Spelling Bee", url: "https://www.nytimes.com/puzzles/spelling-bee", desc: "Make words from a letter hive", tags: ["Daily"] },
-      
+
       { id: "contexto", name: "Contexto", url: "https://contexto.me/", desc: "Find the secret word by similarity", tags: ["Daily"] },
       { id: "linkedIn", name: "LinkedIn Games", url: "https://www.linkedin.com/games/", desc: "Prep your mind for the workday and compare results.", tags: ["Daily"] },
     ];
 
     /***********************
      * 2) STAR STORAGE (per user)
+     * - Store as an ARRAY to preserve "star order"
      ***********************/
-    const STORAGE_KEY = "ultimateDailyGames:stars:v1";
+    const STORAGE_KEY = "ultimateDailyGames:stars:v2";
 
     function loadStars() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         const arr = raw ? JSON.parse(raw) : [];
-        return new Set(Array.isArray(arr) ? arr : []);
+        return Array.isArray(arr) ? arr : [];
       } catch {
-        return new Set();
+        return [];
       }
     }
 
-    function saveStars(starSet) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([...starSet]));
+    function saveStars(starArray) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(starArray));
     }
+
+    // IMPORTANT: stars is an ARRAY in "star order"
+    let stars = loadStars();
 
     /***********************
      * 3) SORTING + SEARCH
@@ -373,13 +374,16 @@
       return list.slice().sort((a,b) => a.name.localeCompare(b.name));
     }
 
-    let stars = loadStars();
     let query = "";
 
     function matchesQuery(game) {
       if (!query) return true;
       const hay = normalize(`${game.name} ${game.desc || ""} ${(game.tags || []).join(" ")}`);
       return hay.includes(query);
+    }
+
+    function gameById(id) {
+      return GAMES.find(g => g.id === id) || null;
     }
 
     /***********************
@@ -471,7 +475,7 @@
       starBtn.className = "iconBtn";
       starBtn.type = "button";
 
-      const isStarred = stars.has(game.id);
+      const isStarred = stars.includes(game.id);
       if (isStarred) starBtn.classList.add("starred");
 
       starBtn.title = isStarred ? "Unstar" : "Star";
@@ -512,19 +516,24 @@
 
       const allSorted = sortAZ(GAMES);
 
+      // ⭐ Starred section: NOT alphabetical.
+      // It follows the saved "stars" array order (order starred).
       if (SHOW_STARRED_SECTION) {
-        const starredSorted = allSorted.filter(g => stars.has(g.id));
-        if (starredSorted.length) {
+        const starredInStarOrder = stars
+          .map(id => gameById(id))
+          .filter(Boolean);
+
+        if (starredInStarOrder.length) {
           sectionsEl.appendChild(
             buildSection(
-              { title: "Starred", icon: "⭐", games: starredSorted },
+              { title: "Starred", icon: "⭐", games: starredInStarOrder },
               { cardStyle: "starred", emptyText: "No starred games match your search." }
             )
           );
         }
       }
 
-      // One main area, alphabetically sorted
+      // All games: alphabetically sorted
       sectionsEl.appendChild(
         buildSection(
           { title: "All Games (A–Z)", icon: "🎮", games: allSorted },
@@ -537,13 +546,16 @@
      * 5) INTERACTIONS
      ***********************/
     function toggleStar(gameId) {
-      if (stars.has(gameId)) {
-        stars.delete(gameId);
+      const idx = stars.indexOf(gameId);
+
+      if (idx !== -1) {
+        stars.splice(idx, 1); // remove, preserve order of remaining
         toast("Unstarred");
       } else {
-        stars.add(gameId);
+        stars.push(gameId); // append to end -> preserves "star order"
         toast("Starred");
       }
+
       saveStars(stars);
       render();
     }
@@ -554,16 +566,19 @@
     });
 
     clearStarsBtn.addEventListener("click", () => {
-      stars = new Set();
+      stars = [];
       saveStars(stars);
       render();
       toast("Cleared stars");
     });
 
     exportBtn.addEventListener("click", async () => {
-      const allSorted = sortAZ(GAMES);
-      const starred = allSorted.filter(g => stars.has(g.id));
-      const lines = starred.map(g => `${g.name} — ${g.url}`);
+      // export in star order too
+      const starredInStarOrder = stars
+        .map(id => gameById(id))
+        .filter(Boolean);
+
+      const lines = starredInStarOrder.map(g => `${g.name} — ${g.url}`);
 
       const text =
         lines.length
