@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Game Collection</title>
+  <style>
+    :root{
+      --bg:#f5f5f5;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --shadow:0 10px 24px rgba(0,0,0,.10);
+      --gold:#d4a017;
+      --gold2:#b88910;
+      --chip:#3f3f3f;
+      --chipHover:#4a4a4a;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    header{
+      padding:42px 16px 18px;
+      text-align:center;
+    }
+    h1{
+      margin:0 0 10px;
+      font-size: clamp(34px, 4vw, 52px);
+      letter-spacing:.5px;
+    }
+    .subtitle{
+      margin:0;
+      color:var(--muted);
+      font-size: 15px;
+    }
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding: 0 14px 60px;
+    }
+
+    .section{
+      background:var(--card);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      padding: 22px 22px 26px;
+      margin: 18px 0;
+    }
+    .sectionHeader{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding: 8px 2px 14px;
+      border-bottom: 2px solid rgba(212,160,23,.55);
+      margin-bottom: 18px;
+    }
+    .icon{
+      width:22px;height:22px;display:inline-flex;
+      align-items:center;justify-content:center;
+      color:var(--gold2);
+    }
+    .sectionTitle{
+      font-size: 26px;
+      margin:0;
+    }
+
+    /* Toolbar */
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin: 8px 0 18px;
+    }
+    .search{
+      flex: 1 1 280px;
+      position:relative;
+    }
+    .search input{
+      width:100%;
+      padding:12px 12px 12px 40px;
+      border-radius: 12px;
+      border:1px solid #e5e7eb;
+      outline:none;
+      background:#fff;
+      font-size:14px;
+    }
+    .search svg{
+      position:absolute; left:12px; top:50%;
+      transform:translateY(-50%);
+      width:18px;height:18px;
+      color:#9ca3af;
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex: 0 1 auto;
+    }
+    .btn{
+      border:1px solid #e5e7eb;
+      background:#fff;
+      color:#111827;
+      padding:10px 12px;
+      border-radius:12px;
+      font-size:14px;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+    .btn:hover{ background:#fafafa; border-color:#d1d5db; }
+    .btn:active{ transform: translateY(1px); }
+    .btnDanger{
+      border-color: rgba(239,68,68,.25);
+      color:#b91c1c;
+    }
+    .btnDanger:hover{ background: rgba(239,68,68,.06); }
+
+    /* Cards grid */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 16px;
+    }
+    @media (max-width:720px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .gameCard{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 16px 16px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, var(--chip), #353535);
+      color:#fff;
+      min-height:64px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.18);
+      transition: transform .12s ease, filter .12s ease;
+      border: 1px solid rgba(255,255,255,.08);
+      cursor:pointer;
+      user-select:none;
+      outline: none;
+    }
+    .gameCard:hover{
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+      background: linear-gradient(180deg, var(--chipHover), #3a3a3a);
+    }
+    .gameCard:focus-visible{
+      box-shadow: 0 0 0 3px rgba(212,160,23,.55), 0 8px 18px rgba(0,0,0,.18);
+    }
+
+    /* Pinned styling (used in pinned section only) */
+    .gameCard.pinned{
+      background: linear-gradient(180deg, var(--gold), var(--gold2));
+      border-color: rgba(255,255,255,.25);
+    }
+
+    .left{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      min-width: 0;
+    }
+    .nameRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .gameName{
+      font-size: 16px;
+      font-weight:700;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      min-width:0;
+    }
+    .tag{
+      font-size: 11px;
+      color: rgba(255,255,255,.85);
+      background: rgba(0,0,0,.18);
+      padding: 4px 8px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+    .desc{
+      font-size: 12px;
+      color: rgba(255,255,255,.88);
+      opacity:.92;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 46ch;
+    }
+
+    .right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex: 0 0 auto;
+    }
+    .iconBtn{
+      width:38px;height:38px;
+      border-radius: 11px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.14);
+      cursor:pointer;
+      transition: transform .06s ease, background .12s ease, border-color .12s ease;
+      color:#fff;
+    }
+    .iconBtn:hover{
+      background: rgba(0,0,0,.22);
+      border-color: rgba(255,255,255,.28);
+    }
+    .iconBtn:active{ transform: translateY(1px); }
+
+    .empty{
+      color: var(--muted);
+      font-size:14px;
+      padding: 10px 2px 0;
+      display:none;
+    }
+    .hint{
+      color: var(--muted);
+      font-size: 13px;
+      margin: 10px 0 0;
+    }
+
+    /* simple toast */
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform: translateX(-50%);
+      background: rgba(17,24,39,.92);
+      color:#fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      display:none;
+      gap:8px;
+      align-items:center;
+      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+      z-index: 50;
+    }
+    .toast.show{ display:flex; }
+    .toast svg{ width:16px;height:16px; opacity:.9; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Game Collection</h1>
+    <p class="subtitle">A curated collection of daily brain teasers and word games</p>
+  </header>
+
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2"/>
+          <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input id="searchInput" type="search" placeholder="Search games…" autocomplete="off" />
+      </div>
+      <div class="actions">
+        <button class="btn" id="exportBtn" title="Copy pinned list to clipboard">
+          <span>Export pins</span>
+        </button>
+        <button class="btn btnDanger" id="clearPinsBtn" title="Remove all pinned games (only for you)">
+          <span>Clear pins</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="sections"></div>
+
+    <p class="hint">
+      💡 Tip: Click a card to open the game (always opens in a new tab). Pinning is saved only on your device.
+    </p>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span id="toastText">Saved</span>
+  </div>
+
+  <script>
+    /***********************
+     * 1) EDIT YOUR GAMES
+     ***********************/
+    const GAME_DATA = [
+      {
+        id: "movie-tv",
+        title: "Movie & TV",
+        icon: "🎞️",
+        games: [
+          { id: "moviedle", name: "Moviedle", url: "https://moviedle.xyz/", desc: "Guess the movie from short clips", tags: ["Daily"] },
+          { id: "moviedle2", name: "Moviedle 2", url: "https://moviedle2.com/", desc: "Another daily movie guessing variant", tags: ["Daily"] },
+          { id: "framed", name: "Framed", url: "https://framed.wtf/", desc: "Guess the movie from a frame", tags: ["Daily"] },
+          { id: "cine2nerdle", name: "Cine2Nerdle", url: "https://cine2nerdle.app/", desc: "Movie equation puzzle", tags: ["Daily"] },
+          { id: "episode", name: "Episode", url: "https://episode.wtf/", desc: "Guess the TV episode from stills", tags: ["Daily"] },
+        ],
+      },
+      {
+        id: "word-games",
+        title: "Word Games",
+        icon: "🅰️",
+        games: [
+          { id: "wordle", name: "Wordle", url: "https://www.nytimes.com/games/wordle/index.html", desc: "Classic daily word puzzle", tags: ["Daily"] },
+          { id: "spellingbee", name: "Spelling Bee", url: "https://www.nytimes.com/puzzles/spelling-bee", desc: "Make words from a letter hive", tags: ["Daily"] },
+          { id: "contexto", name: "Contexto", url: "https://contexto.me/", desc: "Find the secret word by similarity", tags: ["Daily"] },
+        ],
+      },
+    ];
+
+    /***********************
+     * 2) PIN STORAGE (per user)
+     ***********************/
+    const STORAGE_KEY = "myGameCollection:pins:v3";
+
+    function loadPins() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(arr) ? arr : []);
+      } catch {
+        return new Set();
+      }
+    }
+
+    function savePins(pinSet) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...pinSet]));
+    }
+
+    /***********************
+     * 3) RENDERING
+     ***********************/
+    const sectionsEl = document.getElementById("sections");
+    const searchInput = document.getElementById("searchInput");
+    const clearPinsBtn = document.getElementById("clearPinsBtn");
+    const exportBtn = document.getElementById("exportBtn");
+
+    let pins = loadPins();
+    let query = "";
+
+    function normalize(s) {
+      return (s || "").toLowerCase().trim();
+    }
+
+    function matchesQuery(game) {
+      if (!query) return true;
+      const hay = normalize(`${game.name} ${game.desc || ""} ${(game.tags || []).join(" ")} ${game.sectionTitle || ""}`);
+      return hay.includes(query);
+    }
+
+    function buildSection({ title, icon, games }, { showPinnedStyle = false, emptyText = "No games match your search in this section." } = {}) {
+      const container = document.createElement("section");
+      container.className = "section";
+
+      const header = document.createElement("div");
+      header.className = "sectionHeader";
+
+      const iconEl = document.createElement("div");
+      iconEl.className = "icon";
+      iconEl.textContent = icon || "🎮";
+
+      const titleEl = document.createElement("h2");
+      titleEl.className = "sectionTitle";
+      titleEl.textContent = title;
+
+      header.appendChild(iconEl);
+      header.appendChild(titleEl);
+
+      const grid = document.createElement("div");
+      grid.className = "grid";
+
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = emptyText;
+
+      const filtered = games.filter(matchesQuery);
+      for (const game of filtered) {
+        grid.appendChild(buildCard(game, { forcePinnedStyle: showPinnedStyle }));
+      }
+
+      empty.style.display = filtered.length ? "none" : "block";
+
+      container.appendChild(header);
+      container.appendChild(grid);
+      container.appendChild(empty);
+      return container;
+    }
+
+    function buildCard(game, { forcePinnedStyle = false } = {}) {
+      const card = document.createElement("div");
+      card.className = "gameCard";
+      card.setAttribute("role", "link");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("aria-label", `Open ${game.name} in a new tab`);
+
+      // Only show gold styling in pinned section
+      if (forcePinnedStyle) card.classList.add("pinned");
+
+      const left = document.createElement("div");
+      left.className = "left";
+
+      const nameRow = document.createElement("div");
+      nameRow.className = "nameRow";
+
+      const name = document.createElement("div");
+      name.className = "gameName";
+      name.textContent = game.name;
+
+      nameRow.appendChild(name);
+
+      if (game.tags && game.tags.length) {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = game.tags[0];
+        nameRow.appendChild(tag);
+      }
+
+      const desc = document.createElement("div");
+      desc.className = "desc";
+      desc.textContent = game.desc || "";
+
+      left.appendChild(nameRow);
+      left.appendChild(desc);
+
+      const right = document.createElement("div");
+      right.className = "right";
+
+      const pinBtn = document.createElement("button");
+      pinBtn.className = "iconBtn";
+      pinBtn.type = "button";
+
+      const isPinned = pins.has(game.id);
+      pinBtn.title = isPinned ? "Unpin" : "Pin to top";
+      pinBtn.setAttribute("aria-label", pinBtn.title);
+      pinBtn.innerHTML = getPinSVG(isPinned);
+
+      // Important: stop card navigation
+      pinBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePin(game.id);
+      });
+
+      right.appendChild(pinBtn);
+
+      card.appendChild(left);
+      card.appendChild(right);
+
+      // Click anywhere on the card to open in a NEW TAB
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("button")) return;
+        window.open(game.url, "_blank", "noopener,noreferrer");
+      });
+
+      // Keyboard support: Enter/Space opens in a NEW TAB
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          window.open(game.url, "_blank", "noopener,noreferrer");
+        }
+      });
+
+      return card;
+    }
+
+    function renderPinnedSection() {
+      // Pinned section order follows GAME_DATA order.
+      const pinnedGames = [];
+      for (const section of GAME_DATA) {
+        for (const g of section.games) {
+          if (pins.has(g.id)) pinnedGames.push({ ...g, sectionTitle: section.title });
+        }
+      }
+
+      const filtered = pinnedGames.filter(matchesQuery);
+      if (!filtered.length) return null;
+
+      return buildSection(
+        { title: "Pinned", icon: "📌", games: filtered },
+        { showPinnedStyle: true, emptyText: "No pinned games match your search." }
+      );
+    }
+
+    function renderNormalSections() {
+      const frags = [];
+      for (const section of GAME_DATA) {
+        // keep original order, only filter on render
+        const games = section.games.map(g => ({ ...g, sectionTitle: section.title }));
+        frags.push(buildSection({ title: section.title, icon: section.icon, games }));
+      }
+      return frags;
+    }
+
+    function render() {
+      sectionsEl.innerHTML = "";
+
+      const pinnedSection = renderPinnedSection();
+      if (pinnedSection) sectionsEl.appendChild(pinnedSection);
+
+      for (const sec of renderNormalSections()) sectionsEl.appendChild(sec);
+    }
+
+    /***********************
+     * 4) INTERACTIONS
+     ***********************/
+    function togglePin(gameId) {
+      if (pins.has(gameId)) {
+        pins.delete(gameId);
+        toast("Unpinned");
+      } else {
+        pins.add(gameId);
+        toast("Pinned");
+      }
+      savePins(pins);
+      render();
+    }
+
+    searchInput.addEventListener("input", () => {
+      query = normalize(searchInput.value);
+      render();
+    });
+
+    clearPinsBtn.addEventListener("click", () => {
+      pins = new Set();
+      savePins(pins);
+      render();
+      toast("Cleared pins");
+    });
+
+    exportBtn.addEventListener("click", async () => {
+      const pinnedLines = [];
+      for (const section of GAME_DATA) {
+        for (const g of section.games) {
+          if (pins.has(g.id)) pinnedLines.push(`${g.name} — ${g.url}`);
+        }
+      }
+
+      const text =
+        pinnedLines.length
+          ? `My pinned games:\n\n${pinnedLines.join("\n")}\n`
+          : "No pinned games yet.";
+
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("Copied pins");
+      } catch {
+        window.prompt("Copy your pinned list:", text);
+      }
+    });
+
+    /***********************
+     * 5) SVG ICONS
+     ***********************/
+    function getPinSVG(isPinned) {
+      if (isPinned) {
+        return `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M14 4 20 10 17 13v4l-2 2-4-4-5 5v-7l5-5-4-4 2-2h4l3-3Z"
+              fill="currentColor" opacity=".95"/>
+          </svg>
+        `;
+      }
+      return `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M14 4 20 10 17 13v4l-2 2-4-4-5 5v-7l5-5-4-4 2-2h4l3-3Z"
+            stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      `;
+    }
+
+    /***********************
+     * 6) TOAST
+     ***********************/
+    const toastEl = document.getElementById("toast");
+    const toastText = document.getElementById("toastText");
+    let toastTimer = null;
+
+    function toast(message) {
+      toastText.textContent = message;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1400);
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
