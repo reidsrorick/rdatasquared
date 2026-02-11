@@ -4,20 +4,82 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>The Ultimate Daily Game Collection</title>
+
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="/02_active/images/2025-12-25_RDataSquared_Logo-removebg-preview.png">
+
   <style>
+    /* =========================================================
+       THEME TOKENS (Light default)
+       ========================================================= */
     :root{
+      /* page */
       --bg:#f5f5f5;
-      --card:#ffffff;
       --text:#1f2937;
       --muted:#6b7280;
+
+      /* containers */
+      --card:#ffffff;
       --shadow:0 10px 24px rgba(0,0,0,.10);
+      --border:#e5e7eb;
+
+      /* accents */
       --gold:#d4a017;
       --gold2:#b88910;
+
+      /* game cards */
       --chip:#3f3f3f;
       --chipHover:#4a4a4a;
+      --chipBorder:rgba(255,255,255,.08);
+
+      /* controls */
+      --controlBg:#ffffff;
+      --controlText:#111827;
+      --controlBorder:#e5e7eb;
+
+      /* misc */
       --radius:16px;
+      --focus: rgba(212,160,23,.55);
+      --toastBg: rgba(17,24,39,.92);
     }
+
+    /* =========================================================
+       DARK THEME OVERRIDES
+       ========================================================= */
+    html[data-theme="dark"]{
+      --bg:#0b1220;
+      --text:#e5e7eb;
+      --muted:#a7b0bf;
+
+      --card:#0f1a2e;
+      --shadow:0 12px 28px rgba(0,0,0,.45);
+      --border: rgba(255,255,255,.10);
+
+      /* keep gold */
+      --gold:#d4a017;
+      --gold2:#b88910;
+
+      /* game cards slightly lighter than bg */
+      --chip:#1f2937;
+      --chipHover:#243044;
+      --chipBorder:rgba(255,255,255,.10);
+
+      --controlBg:#0b162a;
+      --controlText:#e5e7eb;
+      --controlBorder: rgba(255,255,255,.12);
+
+      --focus: rgba(212,160,23,.65);
+      --toastBg: rgba(0,0,0,.85);
+    }
+
+    /* Use OS preference as default if cookie not set (JS will override) */
+    @media (prefers-color-scheme: dark) {
+      html:not([data-theme]) { color-scheme: dark; }
+    }
+
+    /* =========================================================
+       BASE
+       ========================================================= */
     *{box-sizing:border-box}
     body{
       margin:0;
@@ -45,12 +107,16 @@
       padding: 0 14px 60px;
     }
 
+    /* =========================================================
+       SECTIONS
+       ========================================================= */
     .section{
       background:var(--card);
       box-shadow:var(--shadow);
       border-radius:var(--radius);
       padding: 22px 22px 26px;
       margin: 18px 0;
+      border: 1px solid var(--border);
     }
     .sectionHeader{
       display:flex;
@@ -71,7 +137,9 @@
       margin:0;
     }
 
-    /* Toolbar */
+    /* =========================================================
+       TOOLBAR
+       ========================================================= */
     .toolbar{
       display:flex;
       gap:10px;
@@ -83,31 +151,36 @@
     .search{
       flex: 1 1 280px;
       position:relative;
+      min-width: 220px;
     }
     .search input{
       width:100%;
       padding:12px 12px 12px 40px;
       border-radius: 12px;
-      border:1px solid #e5e7eb;
+      border:1px solid var(--controlBorder);
       outline:none;
-      background:#fff;
+      background:var(--controlBg);
+      color: var(--controlText);
       font-size:14px;
     }
+    .search input::placeholder{ color: color-mix(in oklab, var(--muted) 80%, transparent); }
     .search svg{
       position:absolute; left:12px; top:50%;
       transform:translateY(-50%);
       width:18px;height:18px;
-      color:#9ca3af;
+      color: color-mix(in oklab, var(--muted) 85%, transparent);
     }
+
     .actions{
       display:flex;
       gap:10px;
       flex: 0 1 auto;
+      align-items:center;
     }
     .btn{
-      border:1px solid #e5e7eb;
-      background:#fff;
-      color:#111827;
+      border:1px solid var(--controlBorder);
+      background:var(--controlBg);
+      color:var(--controlText);
       padding:10px 12px;
       border-radius:12px;
       font-size:14px;
@@ -116,16 +189,31 @@
       display:inline-flex;
       gap:8px;
       align-items:center;
+      user-select:none;
+      white-space:nowrap;
     }
-    .btn:hover{ background:#fafafa; border-color:#d1d5db; }
+    .btn:hover{ background: color-mix(in oklab, var(--controlBg) 88%, white); border-color: color-mix(in oklab, var(--controlBorder) 70%, white); }
+    html[data-theme="dark"] .btn:hover{ background: color-mix(in oklab, var(--controlBg) 88%, black); border-color: color-mix(in oklab, var(--controlBorder) 70%, white); }
     .btn:active{ transform: translateY(1px); }
     .btnDanger{
-      border-color: rgba(239,68,68,.25);
-      color:#b91c1c;
+      border-color: rgba(239,68,68,.35);
+      color:#ef4444;
     }
-    .btnDanger:hover{ background: rgba(239,68,68,.06); }
+    .btnDanger:hover{ background: rgba(239,68,68,.08); }
 
-    /* Cards grid */
+    /* Theme toggle button */
+    .btnIcon{
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      justify-content:center;
+      border-radius: 12px;
+      font-size: 18px;
+    }
+
+    /* =========================================================
+       GRID + CARDS
+       ========================================================= */
     .grid{
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -143,12 +231,12 @@
       gap:12px;
       padding: 16px 16px;
       border-radius: 14px;
-      background: linear-gradient(180deg, var(--chip), #353535);
+      background: linear-gradient(180deg, var(--chip), color-mix(in oklab, var(--chip) 80%, black));
       color:#fff;
       min-height:64px;
       box-shadow: 0 8px 18px rgba(0,0,0,.18);
       transition: transform .12s ease, filter .12s ease;
-      border: 1px solid rgba(255,255,255,.08);
+      border: 1px solid var(--chipBorder);
       cursor:pointer;
       user-select:none;
       outline:none;
@@ -156,10 +244,10 @@
     .gameCard:hover{
       transform: translateY(-1px);
       filter: brightness(1.02);
-      background: linear-gradient(180deg, var(--chipHover), #3a3a3a);
+      background: linear-gradient(180deg, var(--chipHover), color-mix(in oklab, var(--chipHover) 80%, black));
     }
     .gameCard:focus-visible{
-      box-shadow: 0 0 0 3px rgba(212,160,23,.55), 0 8px 18px rgba(0,0,0,.18);
+      box-shadow: 0 0 0 3px var(--focus), 0 8px 18px rgba(0,0,0,.18);
     }
 
     /* Starred section card styling */
@@ -173,6 +261,7 @@
       flex-direction:column;
       gap:3px;
       min-width: 0;
+      flex: 1 1 auto;
     }
     .nameRow{
       display:flex;
@@ -251,13 +340,13 @@
       margin: 10px 0 0;
     }
 
-    /* simple toast */
+    /* toast */
     .toast{
       position:fixed;
       left:50%;
       bottom:18px;
       transform: translateX(-50%);
-      background: rgba(17,24,39,.92);
+      background: var(--toastBg);
       color:#fff;
       padding: 10px 12px;
       border-radius: 999px;
@@ -267,9 +356,93 @@
       align-items:center;
       box-shadow: 0 10px 24px rgba(0,0,0,.22);
       z-index: 50;
+      max-width: calc(100vw - 24px);
     }
     .toast.show{ display:flex; }
     .toast svg{ width:16px;height:16px; opacity:.9; }
+
+    /* =========================================================
+       MOBILE FRIENDLY IMPROVEMENTS
+       ========================================================= */
+    @media (max-width: 720px) {
+      header{
+        padding: 28px 14px 10px;
+      }
+      h1{
+        font-size: clamp(26px, 7vw, 40px);
+        line-height: 1.1;
+      }
+
+      .wrap{
+        padding: 0 12px 44px;
+      }
+
+      .section{
+        padding: 16px 14px 18px;
+        margin: 14px 0;
+        border-radius: 14px;
+      }
+
+      .sectionTitle{ font-size: 22px; }
+
+      /* toolbar stacks nicely */
+      .toolbar{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin: 6px 0 14px;
+      }
+
+      .search{ min-width: 0; }
+
+      /* make buttons thumb-friendly */
+      .actions{
+        display:grid;
+        grid-template-columns: 1fr 1fr 44px; /* Export / Clear / Theme */
+        gap:10px;
+        width:100%;
+      }
+      .btn{
+        justify-content:center;
+        padding:12px 12px;
+      }
+
+      .gameCard{
+        padding: 14px 14px;
+        gap: 10px;
+      }
+
+      /* allow wrapping on mobile */
+      .gameName{
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+      }
+      .desc{
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        max-width: none;
+        line-height: 1.25;
+      }
+
+      .iconBtn{
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      /* stack action buttons on tiny screens */
+      .actions{
+        grid-template-columns: 1fr 1fr; /* Export / Clear */
+      }
+      .btnIcon{
+        grid-column: 1 / -1; /* theme toggle full width */
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -287,6 +460,7 @@
         </svg>
         <input id="searchInput" type="search" placeholder="Search games…" autocomplete="off" />
       </div>
+
       <div class="actions">
         <button class="btn" id="exportBtn" title="Copy starred list to clipboard">
           <span>Export stars</span>
@@ -294,13 +468,18 @@
         <button class="btn btnDanger" id="clearStarsBtn" title="Remove all stars (only for you)">
           <span>Clear stars</span>
         </button>
+
+        <!-- Theme toggle -->
+        <button class="btn btnIcon" id="themeToggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">
+          <span id="themeIcon" aria-hidden="true">🌙</span>
+        </button>
       </div>
     </div>
 
     <div id="sections"></div>
 
     <p class="hint">
-      💡 Tip: Click a card to open the game (always opens in a new tab). Stars save only on your device.
+      💡 Tip: Click a card to open the game (always opens in a new tab). Stars and theme save only on your device.
     </p>
   </div>
 
@@ -316,6 +495,40 @@
      * CONFIG
      ***********************/
     const SHOW_STARRED_SECTION = true; // keep your current behavior
+
+    /***********************
+     * 0) COOKIES (theme)
+     ***********************/
+    const THEME_COOKIE = "rd2_theme"; // "light" | "dark"
+    function setCookie(name, value, days = 365) {
+      const date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      const expires = "expires=" + date.toUTCString();
+      document.cookie = `${name}=${encodeURIComponent(value)}; ${expires}; path=/; SameSite=Lax`;
+    }
+    function getCookie(name) {
+      const key = name + "=";
+      const parts = document.cookie.split(";").map(s => s.trim());
+      for (const p of parts) {
+        if (p.startsWith(key)) return decodeURIComponent(p.substring(key.length));
+      }
+      return null;
+    }
+
+    function getPreferredTheme() {
+      const cookieTheme = getCookie(THEME_COOKIE);
+      if (cookieTheme === "light" || cookieTheme === "dark") return cookieTheme;
+      // fallback to OS
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      // icon: moon means "switch to dark"? or indicates current?
+      // We'll display current mode icon: 🌙 for dark, ☀️ for light
+      const icon = document.getElementById("themeIcon");
+      if (icon) icon.textContent = theme === "dark" ? "🌙" : "☀️";
+    }
 
     /***********************
      * 1) EDIT YOUR GAMES
@@ -596,6 +809,16 @@
       }
     });
 
+    // Theme toggle (cookie saved)
+    const themeToggleBtn = document.getElementById("themeToggle");
+    themeToggleBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || getPreferredTheme();
+      const next = current === "dark" ? "light" : "dark";
+      applyTheme(next);
+      setCookie(THEME_COOKIE, next, 365);
+      toast(next === "dark" ? "Dark mode" : "Light mode");
+    });
+
     /***********************
      * 6) TOAST
      ***********************/
@@ -610,6 +833,11 @@
       toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1400);
     }
 
+    /***********************
+     * INIT
+     ***********************/
+    // Apply theme from cookie (or OS if not set)
+    applyTheme(getPreferredTheme());
     render();
   </script>
 </body>
