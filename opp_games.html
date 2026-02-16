@@ -169,6 +169,7 @@
       transform:translateY(-50%);
       width:18px;height:18px;
       color: color-mix(in oklab, var(--muted) 85%, transparent);
+      pointer-events:none; /* ✅ prevents odd tap behavior on mobile */
     }
 
     .actions{
@@ -391,9 +392,16 @@
         align-items: stretch;
         gap: 10px;
         margin: 6px 0 14px;
+
+        /* ✅ FIX: stop space-between from creating giant vertical gaps */
+        justify-content: flex-start;
       }
 
-      .search{ min-width: 0; }
+      /* ✅ FIX: prevent search container from stretching tall in column layout */
+      .search{
+        min-width: 0;
+        flex: 0 0 auto;
+      }
 
       /* make buttons thumb-friendly */
       .actions{
@@ -524,8 +532,6 @@
 
     function applyTheme(theme) {
       document.documentElement.setAttribute("data-theme", theme);
-      // icon: moon means "switch to dark"? or indicates current?
-      // We'll display current mode icon: 🌙 for dark, ☀️ for light
       const icon = document.getElementById("themeIcon");
       if (icon) icon.textContent = theme === "dark" ? "🌙" : "☀️";
     }
@@ -546,6 +552,7 @@
       { id: "spots", name: "Spots", url: "https://spots.wtf/", desc: "Your goal is to guess the secret 4-color code. There are 6 possible colors:", tags: ["Daily"] },
       { id: "spotle", name: "Spotle", url: "https://spotle.io/", desc: "10 guesses, 1000 artists. Will you win today?", tags: ["Daily"] },
       { id: "worldle", name: "Worldle", url: "https://worldle.teuteuf.fr/", desc: "Guess the territory", tags: ["Daily"] },
+      { id: "worldle", name: "Skikaku", url: "https://shikakuofthe.day/", desc: "", tags: ["Daily"] },
 
       { id: "wordle", name: "Wordle", url: "https://www.nytimes.com/games/wordle/index.html", desc: "Classic daily word puzzle", tags: ["Daily"] },
       { id: "connections", name: "Connections", url: "https://www.nytimes.com/games/connections", desc: "Create four groups of four!", tags: ["Daily"] },
