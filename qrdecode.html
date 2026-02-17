@@ -19,7 +19,7 @@
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       background: radial-gradient(1000px 600px at 20% 10%, #172554 0%, transparent 50%),
                   radial-gradient(900px 550px at 80% 0%, #1f2937 0%, transparent 50%),
                   var(--bg);
@@ -49,15 +49,15 @@
     h1{margin:0 0 8px; font-size:22px}
     p{margin:0 0 12px; color:var(--muted); line-height:1.45}
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    button, select, input[type="file"]{
+    button, select, input[type="file"], textarea.input{
       border:1px solid var(--border);
       background:#0f172a;
       color:var(--text);
       padding:10px 12px;
       border-radius:12px;
-      cursor:pointer;
       font-weight:600;
     }
+    button{cursor:pointer}
     button:hover{border-color:#3b82f6}
     button:disabled{opacity:.55; cursor:not-allowed}
     .pill{
@@ -74,6 +74,12 @@
     }
     .status-dot.ok{background:var(--ok); box-shadow: 0 0 0 3px rgba(52,211,153,0.15)}
     .status-dot.bad{background:var(--bad); box-shadow: 0 0 0 3px rgba(251,113,133,0.15)}
+
+    #readerWrap{
+      display:grid;
+      gap:10px;
+    }
+
     #reader{
       width:100%;
       border-radius:14px;
@@ -84,13 +90,35 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      position:relative;
     }
-    .result{
+
+    /* Paste/Drop overlay */
+    .dropHint{
+      position:absolute;
+      inset:0;
       display:flex;
-      flex-direction:column;
-      gap:10px;
-      margin-top:12px;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:14px;
+      pointer-events:none;
+      color:rgba(229,231,235,0.8);
+      font-size:13px;
+      line-height:1.4;
     }
+    .dropHint strong{color:#fff}
+    .dropActive{
+      outline:2px solid rgba(96,165,250,0.85);
+      box-shadow: 0 0 0 6px rgba(96,165,250,0.12);
+    }
+
+    .divider{
+      height:1px;
+      background:rgba(148,163,184,0.15);
+      margin:12px 0;
+    }
+
     textarea{
       width:100%;
       min-height:120px;
@@ -103,6 +131,13 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       outline:none;
     }
+
+    textarea.input{
+      min-height:82px;
+      font-weight:500;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
     .actions{
       display:flex;
       gap:10px;
@@ -111,11 +146,6 @@
     .hint{
       font-size:12px;
       color:var(--muted);
-    }
-    .divider{
-      height:1px;
-      background:rgba(148,163,184,0.15);
-      margin:12px 0;
     }
     .small{
       font-size:12px;
@@ -132,16 +162,14 @@
       background: rgba(96,165,250,0.08);
       color:#bfdbfe;
     }
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
   </style>
 </head>
 <body>
   <div class="app">
     <section class="card">
       <h1>QR Code Interpreter</h1>
-      <p>Scan a QR code using your camera or upload an image. The decoded content will appear on the right.</p>
+      <p>Scan with camera, upload an image, or <strong>paste / drop a QR image</strong>. Decoding stays in your browser.</p>
 
       <div class="row" style="justify-content:space-between; margin-bottom:10px;">
         <div class="row">
@@ -159,18 +187,38 @@
         </div>
       </div>
 
-      <div id="reader">
-        <div class="small">Camera preview will appear here</div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="row" style="justify-content:space-between;">
-        <div class="row">
-          <input id="fileInput" type="file" accept="image/*" />
-          <button id="scanFileBtn">Scan uploaded image</button>
+      <div id="readerWrap">
+        <div id="reader">
+          <div class="dropHint" id="dropHint">
+            <div>
+              <div style="font-size:14px; margin-bottom:6px;">
+                <strong>Paste</strong> a QR image (Ctrl/Cmd+V) or <strong>drag & drop</strong> it here
+              </div>
+              <div class="small">Also supports: upload image • camera scan • paste data URL below</div>
+            </div>
+          </div>
         </div>
-        <div class="hint">Tip: On iPhone/Safari, camera access requires HTTPS (or localhost).</div>
+
+        <div class="row" style="justify-content:space-between;">
+          <div class="row">
+            <input id="fileInput" type="file" accept="image/*" />
+            <button id="scanFileBtn">Scan uploaded image</button>
+          </div>
+          <div class="hint">Tip: iOS Safari camera access requires HTTPS (or localhost).</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div>
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <div class="small"><strong>Paste a QR image as a Data URL</strong> (optional)</div>
+            <button id="scanDataUrlBtn">Scan data URL</button>
+          </div>
+          <textarea id="dataUrlInput" class="input" placeholder="Paste something like: data:image/png;base64,iVBORw0K..."></textarea>
+          <div class="small" style="margin-top:6px;">
+            If you copy an image from your OS and paste, you usually don’t need this box.
+          </div>
+        </div>
       </div>
     </section>
 
@@ -195,26 +243,33 @@
     </aside>
   </div>
 
-  <!-- QR lib -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <script>
-    // 🔨🤖🔧 QR Interpreter — camera + image upload
+    // 🔨🤖🔧 QR Interpreter — camera + upload + paste image + drag/drop + data URL
 
     const startBtn = document.getElementById("startBtn");
     const stopBtn = document.getElementById("stopBtn");
     const cameraSelect = document.getElementById("cameraSelect");
+
     const output = document.getElementById("output");
     const copyBtn = document.getElementById("copyBtn");
     const openBtn = document.getElementById("openBtn");
     const clearBtn = document.getElementById("clearBtn");
+
     const fileInput = document.getElementById("fileInput");
     const scanFileBtn = document.getElementById("scanFileBtn");
+
+    const scanDataUrlBtn = document.getElementById("scanDataUrlBtn");
+    const dataUrlInput = document.getElementById("dataUrlInput");
 
     const dot = document.getElementById("dot");
     const statusText = document.getElementById("statusText");
     const typeEl = document.getElementById("type");
     const lastScanEl = document.getElementById("lastScan");
+
+    const reader = document.getElementById("reader");
+    const dropHint = document.getElementById("dropHint");
 
     const readerId = "reader";
     let html5QrCode = null;
@@ -228,8 +283,7 @@
     }
 
     function nowString(){
-      const d = new Date();
-      return d.toLocaleString();
+      return new Date().toLocaleString();
     }
 
     function looksLikeUrl(str){
@@ -262,6 +316,70 @@
       lastScanEl.textContent = has ? nowString() : "—";
     }
 
+    async function ensureScanner(){
+      html5QrCode = html5QrCode || new Html5Qrcode(readerId);
+      return html5QrCode;
+    }
+
+    async function stopCamera(){
+      if(!html5QrCode || !isRunning) return;
+      try{
+        await html5QrCode.stop();
+        await html5QrCode.clear();
+      } catch (e){
+        console.warn("Stop error:", e);
+      } finally {
+        isRunning = false;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        setStatus("Idle", "warn");
+      }
+    }
+
+    async function decodeFile(file){
+      if(!file) return;
+
+      // Stop camera to avoid resource conflicts on some devices
+      if(isRunning) await stopCamera();
+
+      const scanner = await ensureScanner();
+      setStatus("Scanning image…", "warn");
+
+      try{
+        const decodedText = await scanner.scanFile(file, true);
+        setOutput(decodedText);
+        setStatus("Decoded ✔️", "ok");
+      } catch (e){
+        setStatus("No QR found in that image ❗", "bad");
+        console.error(e);
+      }
+    }
+
+    async function decodeDataUrl(dataUrl){
+      if(!dataUrl || !dataUrl.trim()) {
+        setStatus("Paste a data URL first ❓", "warn");
+        return;
+      }
+
+      const trimmed = dataUrl.trim();
+      if(!/^data:image\/(png|jpeg|jpg|webp|gif|bmp);base64,/i.test(trimmed)) {
+        setStatus("That doesn’t look like an image data URL ❗", "bad");
+        return;
+      }
+
+      // Convert data URL → File → scanFile
+      try {
+        const res = await fetch(trimmed);
+        const blob = await res.blob();
+        const ext = blob.type.split("/")[1] || "png";
+        const file = new File([blob], `pasted.${ext}`, { type: blob.type });
+        await decodeFile(file);
+      } catch (e){
+        setStatus("Could not read that data URL ❗", "bad");
+        console.error(e);
+      }
+    }
+
     copyBtn.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(output.value);
@@ -275,7 +393,6 @@
     openBtn.addEventListener("click", () => {
       const text = output.value.trim();
       if (!looksLikeUrl(text)) return;
-      // Safe open: new tab, no opener
       window.open(text, "_blank", "noopener,noreferrer");
     });
 
@@ -287,7 +404,6 @@
     async function populateCameras(){
       cameraSelect.innerHTML = "";
       try{
-        // Some browsers require permission before listing device labels.
         const devices = await Html5Qrcode.getCameras();
         if(!devices || devices.length === 0){
           const opt = document.createElement("option");
@@ -306,7 +422,6 @@
           cameraSelect.appendChild(opt);
         });
 
-        // Prefer back camera if present
         const backIndex = devices.findIndex(d => /back|rear|environment/i.test(d.label || ""));
         if(backIndex >= 0) cameraSelect.selectedIndex = backIndex;
 
@@ -326,15 +441,14 @@
         return;
       }
 
-      html5QrCode = html5QrCode || new Html5Qrcode(readerId);
-
+      const scanner = await ensureScanner();
       setStatus("Requesting camera permission…", "warn");
 
       try{
         const config = {
           fps: 10,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          qrbox: (w, h) => {
+            const minEdge = Math.min(w, h);
             const size = Math.floor(minEdge * 0.72);
             return { width: size, height: size };
           },
@@ -342,14 +456,13 @@
           aspectRatio: 1.777
         };
 
-        await html5QrCode.start(
+        await scanner.start(
           { deviceId: { exact: cameraId } },
           config,
           (decodedText) => {
             setOutput(decodedText);
             setStatus("Decoded ✔️ (keep scanning)", "ok");
           },
-          // optional scan error callback (ignored to avoid spam)
           () => {}
         );
 
@@ -363,21 +476,6 @@
       }
     }
 
-    async function stopCamera(){
-      if(!html5QrCode || !isRunning) return;
-      try{
-        await html5QrCode.stop();
-        await html5QrCode.clear();
-      } catch (e){
-        console.warn("Stop error:", e);
-      } finally {
-        isRunning = false;
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        setStatus("Idle", "warn");
-      }
-    }
-
     startBtn.addEventListener("click", startCamera);
     stopBtn.addEventListener("click", stopCamera);
 
@@ -387,21 +485,67 @@
         setStatus("Choose an image first ❓", "warn");
         return;
       }
+      await decodeFile(file);
+    });
 
-      // Stop camera to avoid resource conflicts on some devices
-      if(isRunning) await stopCamera();
+    scanDataUrlBtn.addEventListener("click", async () => {
+      await decodeDataUrl(dataUrlInput.value);
+    });
 
-      html5QrCode = html5QrCode || new Html5Qrcode(readerId);
+    // ✅ Paste support (Ctrl/Cmd+V) — if clipboard contains an image, decode it.
+    window.addEventListener("paste", async (event) => {
+      const items = event.clipboardData?.items;
+      if(!items) return;
 
-      setStatus("Scanning image…", "warn");
-      try{
-        const decodedText = await html5QrCode.scanFile(file, true);
-        setOutput(decodedText);
-        setStatus("Decoded from image ✔️", "ok");
-      } catch (e){
-        setStatus("No QR found in image ❗", "bad");
-        console.error(e);
+      // Find first image item
+      for (const item of items) {
+        if (item.type && item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            setStatus("Pasted image detected…", "warn");
+            await decodeFile(file);
+            return;
+          }
+        }
       }
+
+      // If user pasted a data URL as text, auto-fill box and try decode
+      const text = event.clipboardData?.getData("text/plain") || "";
+      if (/^data:image\//i.test(text.trim())) {
+        dataUrlInput.value = text.trim();
+        setStatus("Pasted data URL detected…", "warn");
+        await decodeDataUrl(text.trim());
+      }
+    });
+
+    // ✅ Drag & drop support
+    ["dragenter","dragover"].forEach(evName => {
+      reader.addEventListener(evName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        reader.classList.add("dropActive");
+      });
+    });
+
+    ["dragleave","drop"].forEach(evName => {
+      reader.addEventListener(evName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        reader.classList.remove("dropActive");
+      });
+    });
+
+    reader.addEventListener("drop", async (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        setStatus("Drop an image file (PNG/JPG/WebP) ❗", "bad");
+        return;
+      }
+
+      setStatus("Dropped image detected…", "warn");
+      await decodeFile(file);
     });
 
     // Initial setup
@@ -409,8 +553,6 @@
       setStatus("Initializing…", "warn");
       await populateCameras();
 
-      // If permissions are already granted, labels are available; otherwise user can hit Start.
-      // Also update cameras when devices change
       if (navigator.mediaDevices?.addEventListener) {
         navigator.mediaDevices.addEventListener("devicechange", populateCameras);
       }
