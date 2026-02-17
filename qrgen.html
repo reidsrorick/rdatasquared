@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QR Generator + Text Around</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#101a2e;
+      --panel2:#0f1730;
+      --text:#eaf0ff;
+      --muted:#9fb0d0;
+      --accent:#6aa6ff;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1000px 700px at 20% 0%, rgba(106,166,255,.18), transparent 60%),
+                  radial-gradient(900px 700px at 90% 20%, rgba(124,92,255,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family:var(--sans);
+    }
+    header{
+      padding:24px 18px 10px;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    header h1{
+      font-size:20px; margin:0 0 6px; letter-spacing:.2px;
+      display:flex; align-items:center; gap:10px;
+    }
+    header p{margin:0; color:var(--muted); font-size:13px;}
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:14px 18px 28px;
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:16px;
+    }
+    @media (max-width: 980px){
+      .wrap{grid-template-columns:1fr}
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px;
+      border-bottom:1px solid var(--border);
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px;
+    }
+    .card .hd strong{font-size:13px; letter-spacing:.3px}
+    .card .bd{padding:14px}
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .grid-1{display:grid; grid-template-columns:1fr; gap:10px;}
+    label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px;}
+    input, select, textarea, button{
+      width:100%;
+      background: rgba(12,18,35,.55);
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 10px;
+      font-size:13px;
+      outline:none;
+    }
+    textarea{min-height:86px; resize:vertical; font-family:var(--mono); font-size:12px;}
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(106,166,255,.55);
+      box-shadow:0 0 0 3px rgba(106,166,255,.16);
+    }
+    .row{display:flex; gap:10px; align-items:end}
+    .row > *{flex:1}
+    .hint{color:var(--muted); font-size:12px; margin-top:8px; line-height:1.35}
+    .btns{display:flex; gap:10px; margin-top:10px}
+    button{
+      cursor:pointer;
+      border:1px solid rgba(106,166,255,.35);
+      background: linear-gradient(180deg, rgba(106,166,255,.22), rgba(106,166,255,.10));
+    }
+    button.secondary{
+      border-color: var(--border);
+      background: rgba(12,18,35,.35);
+    }
+    button:active{transform: translateY(1px)}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid var(--border);
+      background: rgba(12,18,35,.35);
+      white-space:nowrap;
+    }
+    .previewArea{
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap:16px;
+      padding:14px;
+    }
+    @media (max-width: 980px){
+      .previewArea{grid-template-columns:1fr}
+    }
+    .canvasCard{
+      background: rgba(10,16,33,.55);
+      border:1px solid var(--border);
+      border-radius: 18px;
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+      justify-content:center;
+      min-height:420px;
+    }
+    canvas{
+      max-width:100%;
+      height:auto;
+      background:#fff;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.08);
+    }
+    .mono{
+      font-family:var(--mono);
+      font-size:12px;
+      color:var(--muted);
+      word-break:break-word;
+      line-height:1.4;
+      background: rgba(12,18,35,.55);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+    }
+    .sectionTitle{
+      margin:10px 0 8px;
+      font-size:12px;
+      letter-spacing:.3px;
+      color:var(--text);
+      opacity:.9;
+    }
+    .divider{
+      height:1px;
+      background: var(--border);
+      margin:12px 0;
+    }
+    .tiny{
+      font-size:11px;
+      color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🔨🤖🔧 QR Code Generator + Text Around</h1>
+  <p>Create a QR for multiple types and add text on all four sides. Download as PNG.</p>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: Controls -->
+  <div class="card">
+    <div class="hd">
+      <strong>CONTENT</strong>
+      <span class="pill" id="statusPill">Ready</span>
+    </div>
+    <div class="bd">
+      <div class="grid-1">
+        <div>
+          <label for="type">QR Type</label>
+          <select id="type">
+            <option value="text">Text</option>
+            <option value="website">Website</option>
+            <option value="contact">Contact (vCard)</option>
+            <option value="wifi">WiFi</option>
+            <option value="email">Email</option>
+            <option value="discord">Discord</option>
+            <option value="sms">SMS</option>
+            <option value="phone">Phone</option>
+            <option value="spotify">Spotify</option>
+            <option value="calendar">Calendar (iCal event)</option>
+            <option value="linkedin">LinkedIn</option>
+          </select>
+        </div>
+
+        <div id="dynamicFields"></div>
+
+        <div class="divider"></div>
+
+        <div class="sectionTitle">TEXT AROUND THE QR</div>
+        <div class="grid">
+          <div>
+            <label for="topText">Top</label>
+            <input id="topText" placeholder="Top text (optional)" />
+          </div>
+          <div>
+            <label for="bottomText">Bottom</label>
+            <input id="bottomText" placeholder="Bottom text (optional)" />
+          </div>
+          <div>
+            <label for="leftText">Left</label>
+            <input id="leftText" placeholder="Left text (optional)" />
+          </div>
+          <div>
+            <label for="rightText">Right</label>
+            <input id="rightText" placeholder="Right text (optional)" />
+          </div>
+        </div>
+
+        <div class="grid">
+          <div>
+            <label for="fontFamily">Font</label>
+            <select id="fontFamily">
+              <option value="system">System</option>
+              <option value="mono">Monospace</option>
+              <option value="serif">Serif</option>
+            </select>
+          </div>
+          <div>
+            <label for="fontSize">Font size (px)</label>
+            <input id="fontSize" type="number" min="8" max="64" value="18" />
+          </div>
+          <div>
+            <label for="textColor">Text color</label>
+            <input id="textColor" type="color" value="#000000" />
+          </div>
+          <div>
+            <label for="pad">Text padding (px)</label>
+            <input id="pad" type="number" min="0" max="200" value="28" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sectionTitle">QR STYLE</div>
+        <div class="grid">
+          <div>
+            <label for="size">QR size (px)</label>
+            <input id="size" type="number" min="120" max="1400" value="420" />
+          </div>
+          <div>
+            <label for="qrMargin">QR quiet zone</label>
+            <input id="qrMargin" type="number" min="0" max="40" value="12" />
+          </div>
+          <div>
+            <label for="fg">QR color</label>
+            <input id="fg" type="color" value="#000000" />
+          </div>
+          <div>
+            <label for="bg">Background</label>
+            <input id="bg" type="color" value="#ffffff" />
+          </div>
+        </div>
+
+        <div class="btns">
+          <button id="downloadBtn">Download PNG</button>
+          <button class="secondary" id="copyPayloadBtn">Copy payload</button>
+        </div>
+
+        <div class="hint">
+          💡 Tip: For best scanning, keep short text around the edges and leave enough padding.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Preview -->
+  <div class="card">
+    <div class="hd">
+      <strong>PREVIEW</strong>
+      <span class="pill">PNG Output Canvas</span>
+    </div>
+    <div class="previewArea">
+      <div class="canvasCard">
+        <canvas id="outCanvas" width="600" height="600" aria-label="QR preview canvas"></canvas>
+        <div class="tiny">Download includes the surrounding text.</div>
+      </div>
+
+      <div>
+        <div class="sectionTitle">Generated payload</div>
+        <div class="mono" id="payloadBox">(payload will appear here)</div>
+        <div class="hint">
+          Some apps interpret formats differently. If one scanner app doesn’t recognize a type, try another.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR library -->
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script>
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+
+  function escText(s){ return String(s ?? "").trim(); }
+  function isEmpty(s){ return escText(s).length === 0; }
+
+  function formatDateToICS(dtLocal){
+    // input type="datetime-local" -> "YYYY-MM-DDTHH:MM"
+    // Convert to UTC-ish basic format: YYYYMMDDTHHMMSSZ
+    // We'll treat the local input as local time and convert to UTC properly.
+    if (!dtLocal) return "";
+    const d = new Date(dtLocal);
+    if (Number.isNaN(d.getTime())) return "";
+    const pad = (n)=> String(n).padStart(2,"0");
+    const yyyy = d.getUTCFullYear();
+    const mm = pad(d.getUTCMonth()+1);
+    const dd = pad(d.getUTCDate());
+    const hh = pad(d.getUTCHours());
+    const mi = pad(d.getUTCMinutes());
+    const ss = pad(d.getUTCSeconds());
+    return `${yyyy}${mm}${dd}T${hh}${mi}${ss}Z`;
+  }
+
+  function pickFont(familySel){
+    switch (familySel) {
+      case "mono": return 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+      case "serif": return 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
+      default: return 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+    }
+  }
+
+  // Measure text height reasonably
+  function textMetrics(ctx, text){
+    const m = ctx.measureText(text);
+    // actualBoundingBox* supported in most modern browsers; fallback if not.
+    const h = (m.actualBoundingBoxAscent && m.actualBoundingBoxDescent)
+      ? (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)
+      : (parseInt(ctx.font.match(/(\d+)px/)?.[1] || "16", 10) * 1.2);
+    return { w: m.width, h };
+  }
+
+  // ---------- Dynamic forms ----------
+  const fieldTemplates = {
+    text: () => `
+      <div class="grid-1">
+        <div>
+          <label>Text</label>
+          <textarea id="f_text" placeholder="Anything you want...">Hello!</textarea>
+        </div>
+      </div>
+    `,
+    website: () => `
+      <div class="grid-1">
+        <div>
+          <label>URL</label>
+          <input id="f_url" placeholder="https://example.com" value="https://example.com" />
+        </div>
+      </div>
+    `,
+    contact: () => `
+      <div class="grid">
+        <div><label>First name</label><input id="f_fn" placeholder="Jane" /></div>
+        <div><label>Last name</label><input id="f_ln" placeholder="Doe" /></div>
+        <div><label>Phone</label><input id="f_phone" placeholder="+1 555 123 4567" /></div>
+        <div><label>Email</label><input id="f_email" placeholder="jane@example.com" /></div>
+        <div><label>Company</label><input id="f_org" placeholder="Acme Inc." /></div>
+        <div><label>Title</label><input id="f_title" placeholder="Product Manager" /></div>
+      </div>
+      <div class="grid-1" style="margin-top:10px">
+        <div><label>Website</label><input id="f_web" placeholder="https://..." /></div>
+        <div><label>Address (single line)</label><input id="f_adr" placeholder="123 Main St, City, ST 12345, USA" /></div>
+      </div>
+      <div class="hint">Generates a vCard (VCARD 3.0) that most phone cameras recognize.</div>
+    `,
+    wifi: () => `
+      <div class="grid-1">
+        <div class="grid">
+          <div><label>SSID</label><input id="f_ssid" placeholder="MyWiFi" /></div>
+          <div>
+            <label>Security</label>
+            <select id="f_sec">
+              <option value="WPA">WPA/WPA2/WPA3</option>
+              <option value="WEP">WEP</option>
+              <option value="nopass">None</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid">
+          <div><label>Password</label><input id="f_pass" placeholder="password" /></div>
+          <div>
+            <label>Hidden network?</label>
+            <select id="f_hidden">
+              <option value="false">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="hint">Uses the standard WIFI: format.</div>
+    `,
+    email: () => `
+      <div class="grid-1">
+        <div><label>To</label><input id="f_to" placeholder="someone@example.com" /></div>
+        <div><label>Subject</label><input id="f_sub" placeholder="Hello" /></div>
+        <div><label>Body</label><textarea id="f_body" placeholder="Write your message..."></textarea></div>
+      </div>
+    `,
+    discord: () => `
+      <div class="grid-1">
+        <div>
+          <label>Discord link or text</label>
+          <input id="f_discord" placeholder="https://discord.gg/yourInvite OR @username" />
+        </div>
+        <div class="hint">
+          Best compatibility: use a Discord invite URL (discord.gg/...). You can also encode plain text like a username.
+        </div>
+      </div>
+    `,
+    sms: () => `
+      <div class="grid-1">
+        <div><label>Phone number</label><input id="f_smsnum" placeholder="+15551234567" /></div>
+        <div><label>Message</label><textarea id="f_smsmsg" placeholder="Hi!"></textarea></div>
+      </div>
+      <div class="hint">Uses SMSTO: number:message for broad support.</div>
+    `,
+    phone: () => `
+      <div class="grid-1">
+        <div><label>Phone number</label><input id="f_tel" placeholder="+15551234567" /></div>
+      </div>
+    `,
+    spotify: () => `
+      <div class="grid-1">
+        <div>
+          <label>Spotify URL or URI</label>
+          <input id="f_spotify" placeholder="https://open.spotify.com/track/... OR spotify:track:..." />
+        </div>
+      </div>
+    `,
+    calendar: () => `
+      <div class="grid">
+        <div><label>Title</label><input id="f_cal_title" placeholder="Meeting" /></div>
+        <div><label>Location</label><input id="f_cal_loc" placeholder="Office / Zoom" /></div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div><label>Start</label><input id="f_cal_start" type="datetime-local" /></div>
+        <div><label>End</label><input id="f_cal_end" type="datetime-local" /></div>
+      </div>
+      <div class="grid-1" style="margin-top:10px">
+        <div><label>Description</label><textarea id="f_cal_desc" placeholder="Agenda..."></textarea></div>
+      </div>
+      <div class="hint">Generates a minimal iCalendar VEVENT.</div>
+    `,
+    linkedin: () => `
+      <div class="grid-1">
+        <div>
+          <label>LinkedIn URL</label>
+          <input id="f_li" placeholder="https://www.linkedin.com/in/username/" />
+        </div>
+      </div>
+    `
+  };
+
+  function renderFields(){
+    const t = $("type").value;
+    $("dynamicFields").innerHTML = fieldTemplates[t] ? fieldTemplates[t]() : fieldTemplates.text();
+    // attach listeners to new inputs
+    $("dynamicFields").querySelectorAll("input,select,textarea").forEach(el=>{
+      el.addEventListener("input", updateAll);
+      el.addEventListener("change", updateAll);
+    });
+    updateAll();
+  }
+
+  // ---------- Payload builders ----------
+  function buildPayload(){
+    const t = $("type").value;
+    switch(t){
+      case "text": {
+        const txt = escText($("f_text")?.value);
+        return txt || " ";
+      }
+      case "website": {
+        let url = escText($("f_url")?.value);
+        if (!url) return " ";
+        // Add scheme if user typed example.com
+        if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+        return url;
+      }
+      case "contact": {
+        const fn = escText($("f_fn")?.value);
+        const ln = escText($("f_ln")?.value);
+        const phone = escText($("f_phone")?.value);
+        const email = escText($("f_email")?.value);
+        const org = escText($("f_org")?.value);
+        const title = escText($("f_title")?.value);
+        const web = escText($("f_web")?.value);
+        const adr = escText($("f_adr")?.value);
+
+        const n = `${ln};${fn};;;`;
+        const full = escText([fn, ln].filter(Boolean).join(" ")) || (email || phone || "Contact");
+
+        const lines = [
+          "BEGIN:VCARD",
+          "VERSION:3.0",
+          `N:${n}`,
+          `FN:${full}`
+        ];
+        if (org) lines.push(`ORG:${org}`);
+        if (title) lines.push(`TITLE:${title}`);
+        if (phone) lines.push(`TEL;TYPE=CELL:${phone}`);
+        if (email) lines.push(`EMAIL;TYPE=INTERNET:${email}`);
+        if (web) {
+          let u = web;
+          if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+          lines.push(`URL:${u}`);
+        }
+        if (adr) lines.push(`ADR;TYPE=HOME:;;${adr};;;;`);
+        lines.push("END:VCARD");
+        return lines.join("\n");
+      }
+      case "wifi": {
+        const ssid = escText($("f_ssid")?.value);
+        const sec = escText($("f_sec")?.value || "WPA");
+        const pass = escText($("f_pass")?.value);
+        const hidden = escText($("f_hidden")?.value || "false");
+        if (!ssid) return "WIFI:T:WPA;S:;P:;;";
+        const esc = (s)=> s.replace(/([\\;,:"])/g, "\\$1"); // common escaping
+        const T = sec || "WPA";
+        const S = esc(ssid);
+        const P = esc(pass);
+        const H = hidden === "true" ? "true" : "false";
+        return `WIFI:T:${T};S:${S};P:${P};H:${H};;`;
+      }
+      case "email": {
+        const to = escText($("f_to")?.value);
+        const sub = escText($("f_sub")?.value);
+        const body = escText($("f_body")?.value);
+        const qp = new URLSearchParams();
+        if (sub) qp.set("subject", sub);
+        if (body) qp.set("body", body);
+        const q = qp.toString();
+        return `mailto:${encodeURIComponent(to)}${q ? "?" + q : ""}`;
+      }
+      case "discord": {
+        const v = escText($("f_discord")?.value);
+        if (!v) return " ";
+        // if it's a URL, keep as-is; else plain text.
+        return v;
+      }
+      case "sms": {
+        const num = escText($("f_smsnum")?.value);
+        const msg = escText($("f_smsmsg")?.value);
+        if (!num && !msg) return "SMSTO::";
+        // SMSTO is widely supported: SMSTO:number:message
+        return `SMSTO:${num}:${msg}`;
+      }
+      case "phone": {
+        const num = escText($("f_tel")?.value);
+        return `tel:${num}`;
+      }
+      case "spotify": {
+        const s = escText($("f_spotify")?.value);
+        return s || " ";
+      }
+      case "calendar": {
+        const title = escText($("f_cal_title")?.value) || "Event";
+        const loc = escText($("f_cal_loc")?.value);
+        const desc = escText($("f_cal_desc")?.value);
+        const start = escText($("f_cal_start")?.value);
+        const end = escText($("f_cal_end")?.value);
+
+        const dtStart = formatDateToICS(start);
+        const dtEnd = formatDateToICS(end);
+
+        const uid = `${crypto?.randomUUID?.() || (Date.now() + "-" + Math.random().toString(16).slice(2))}@qr.local`;
+        const stamp = formatDateToICS(new Date().toISOString());
+
+        const lines = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//QR Generator//EN",
+          "BEGIN:VEVENT",
+          `UID:${uid}`,
+          `DTSTAMP:${stamp}`,
+          dtStart ? `DTSTART:${dtStart}` : "",
+          dtEnd ? `DTEND:${dtEnd}` : "",
+          `SUMMARY:${title.replace(/\n/g," ")}`,
+          loc ? `LOCATION:${loc.replace(/\n/g," ")}` : "",
+          desc ? `DESCRIPTION:${desc.replace(/\n/g,"\\n")}` : "",
+          "END:VEVENT",
+          "END:VCALENDAR"
+        ].filter(Boolean);
+
+        return lines.join("\n");
+      }
+      case "linkedin": {
+        let url = escText($("f_li")?.value);
+        if (!url) return " ";
+        if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+        return url;
+      }
+      default:
+        return " ";
+    }
+  }
+
+  // ---------- Rendering ----------
+  const outCanvas = $("outCanvas");
+  const outCtx = outCanvas.getContext("2d");
+
+  // internal QR canvas (no surrounding text)
+  const qrCanvas = document.createElement("canvas");
+  const qr = new QRious({
+    element: qrCanvas,
+    size: 420,
+    value: "Hello!",
+    level: "M",
+    background: "#ffffff",
+    foreground: "#000000",
+    padding: 12
+  });
+
+  function setStatus(msg){
+    $("statusPill").textContent = msg;
+  }
+
+  function drawCenteredText(ctx, text, x, y){
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+  }
+
+  function render(){
+    const payload = buildPayload();
+    $("payloadBox").textContent = payload;
+
+    // Update QR settings
+    const size = Math.max(120, Math.min(1400, parseInt($("size").value || "420", 10)));
+    const padding = Math.max(0, Math.min(40, parseInt($("qrMargin").value || "12", 10)));
+    const fg = $("fg").value || "#000000";
+    const bg = $("bg").value || "#ffffff";
+
+    qr.size = size;
+    qr.value = payload;
+    qr.padding = padding;
+    qr.foreground = fg;
+    qr.background = bg;
+
+    // Text-around settings
+    const topText = escText($("topText").value);
+    const bottomText = escText($("bottomText").value);
+    const leftText = escText($("leftText").value);
+    const rightText = escText($("rightText").value);
+
+    const fontSize = Math.max(8, Math.min(64, parseInt($("fontSize").value || "18", 10)));
+    const pad = Math.max(0, Math.min(200, parseInt($("pad").value || "28", 10)));
+    const textColor = $("textColor").value || "#000000";
+    const font = pickFont($("fontFamily").value);
+
+    // Determine extra space needed for each side based on text presence
+    // We'll allocate (pad + textHeight) per side where text exists, else just small margin.
+    const tmp = document.createElement("canvas").getContext("2d");
+    tmp.font = `${fontSize}px ${font}`;
+
+    const topH = isEmpty(topText) ? 0 : (pad + textMetrics(tmp, topText).h);
+    const botH = isEmpty(bottomText) ? 0 : (pad + textMetrics(tmp, bottomText).h);
+    const leftW = isEmpty(leftText) ? 0 : (pad + textMetrics(tmp, leftText).h);   // rotated: height ~ thickness
+    const rightW = isEmpty(rightText) ? 0 : (pad + textMetrics(tmp, rightText).h);
+
+    const extra = 10; // a little breathing room
+    const outW = size + leftW + rightW + extra*2;
+    const outH = size + topH + botH + extra*2;
+
+    outCanvas.width = outW;
+    outCanvas.height = outH;
+
+    // Fill background (whole image)
+    outCtx.save();
+    outCtx.fillStyle = bg;
+    outCtx.fillRect(0, 0, outW, outH);
+
+    // Draw QR in the center area with offsets
+    const qrX = extra + leftW;
+    const qrY = extra + topH;
+    outCtx.drawImage(qrCanvas, qrX, qrY, size, size);
+
+    // Prepare text drawing
+    outCtx.fillStyle = textColor;
+    outCtx.font = `${fontSize}px ${font}`;
+    outCtx.textAlign = "center";
+    outCtx.textBaseline = "middle";
+
+    // Top text
+    if (!isEmpty(topText)){
+      const y = qrY - (topH / 2);
+      drawCenteredText(outCtx, topText, qrX + size/2, y);
+    }
+
+    // Bottom text
+    if (!isEmpty(bottomText)){
+      const y = qrY + size + (botH / 2);
+      drawCenteredText(outCtx, bottomText, qrX + size/2, y);
+    }
+
+    // Left text (rotated -90°)
+    if (!isEmpty(leftText)){
+      outCtx.save();
+      // rotate around center point of left band
+      const cx = extra + (leftW / 2);
+      const cy = qrY + size/2;
+      outCtx.translate(cx, cy);
+      outCtx.rotate(-Math.PI/2);
+      outCtx.textAlign = "center";
+      outCtx.textBaseline = "middle";
+      outCtx.fillText(leftText, 0, 0);
+      outCtx.restore();
+    }
+
+    // Right text (rotated +90°)
+    if (!isEmpty(rightText)){
+      outCtx.save();
+      const cx = qrX + size + (rightW / 2);
+      const cy = qrY + size/2;
+      outCtx.translate(cx, cy);
+      outCtx.rotate(Math.PI/2);
+      outCtx.textAlign = "center";
+      outCtx.textBaseline = "middle";
+      outCtx.fillText(rightText, 0, 0);
+      outCtx.restore();
+    }
+
+    outCtx.restore();
+    setStatus("Updated ✔️");
+  }
+
+  function updateAll(){
+    try{
+      render();
+    } catch (e){
+      console.error(e);
+      setStatus("Error ❗");
+    }
+  }
+
+  // ---------- Download / Copy ----------
+  function downloadPNG(){
+    // Convert to blob and download
+    outCanvas.toBlob((blob)=>{
+      if (!blob) return;
+      const a = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = `qr-${$("type").value}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  async function copyPayload(){
+    const payload = $("payloadBox").textContent || "";
+    try{
+      await navigator.clipboard.writeText(payload);
+      setStatus("Copied ✔️");
+      setTimeout(()=>setStatus("Ready"), 700);
+    } catch {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = payload;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      setStatus("Copied ✔️");
+      setTimeout(()=>setStatus("Ready"), 700);
+    }
+  }
+
+  // ---------- Wire up ----------
+  $("type").addEventListener("change", renderFields);
+
+  [
+    "topText","bottomText","leftText","rightText",
+    "fontFamily","fontSize","textColor","pad",
+    "size","qrMargin","fg","bg"
+  ].forEach(id=>{
+    $(id).addEventListener("input", updateAll);
+    $(id).addEventListener("change", updateAll);
+  });
+
+  $("downloadBtn").addEventListener("click", downloadPNG);
+  $("copyPayloadBtn").addEventListener("click", copyPayload);
+
+  // initial
+  renderFields();
+  updateAll();
+</script>
+</body>
+</html>
