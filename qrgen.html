@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>QR Generator + Text Around</title>
+  <title>QR Generator + Text Around + Logo</title>
   <style>
     :root{
       --bg:#0b1220;
-      --panel:#101a2e;
-      --panel2:#0f1730;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(12,18,35,.55);
       --text:#eaf0ff;
       --muted:#9fb0d0;
       --accent:#6aa6ff;
@@ -32,10 +32,7 @@
       max-width:1200px;
       margin:0 auto;
     }
-    header h1{
-      font-size:20px; margin:0 0 6px; letter-spacing:.2px;
-      display:flex; align-items:center; gap:10px;
-    }
+    header h1{font-size:20px; margin:0 0 6px; letter-spacing:.2px}
     header p{margin:0; color:var(--muted); font-size:13px;}
     .wrap{
       max-width:1200px;
@@ -44,6 +41,7 @@
       display:grid;
       grid-template-columns: 420px 1fr;
       gap:16px;
+      align-items:start;
     }
     @media (max-width: 980px){
       .wrap{grid-template-columns:1fr}
@@ -63,12 +61,10 @@
     }
     .card .hd strong{font-size:13px; letter-spacing:.3px}
     .card .bd{padding:14px}
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
+
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
     .grid-1{display:grid; grid-template-columns:1fr; gap:10px;}
+
     label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px;}
     input, select, textarea, button{
       width:100%;
@@ -85,8 +81,6 @@
       border-color: rgba(106,166,255,.55);
       box-shadow:0 0 0 3px rgba(106,166,255,.16);
     }
-    .row{display:flex; gap:10px; align-items:end}
-    .row > *{flex:1}
     .hint{color:var(--muted); font-size:12px; margin-top:8px; line-height:1.35}
     .btns{display:flex; gap:10px; margin-top:10px}
     button{
@@ -111,6 +105,34 @@
       background: rgba(12,18,35,.35);
       white-space:nowrap;
     }
+    .mono{
+      font-family:var(--mono);
+      font-size:12px;
+      color:var(--muted);
+      word-break:break-word;
+      line-height:1.4;
+      background: rgba(12,18,35,.55);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+    }
+    .sectionTitle{
+      margin:10px 0 8px;
+      font-size:12px;
+      letter-spacing:.3px;
+      color:var(--text);
+      opacity:.9;
+    }
+    .divider{height:1px; background: var(--border); margin:12px 0;}
+    .tiny{font-size:11px; color:var(--muted);}
+
+    /* Sticky preview so it doesn't shift while you scroll settings */
+    .stickyWrap{
+      position: sticky;
+      top: 14px;
+      align-self: start;
+    }
+
     .previewArea{
       display:grid;
       grid-template-columns: 1fr 320px;
@@ -119,6 +141,7 @@
     }
     @media (max-width: 980px){
       .previewArea{grid-template-columns:1fr}
+      .stickyWrap{position:relative; top:auto;}
     }
     .canvasCard{
       background: rgba(10,16,33,.55);
@@ -139,46 +162,22 @@
       border-radius:12px;
       border:1px solid rgba(0,0,0,.08);
     }
-    .mono{
-      font-family:var(--mono);
-      font-size:12px;
-      color:var(--muted);
-      word-break:break-word;
-      line-height:1.4;
-      background: rgba(12,18,35,.55);
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:12px;
-    }
-    .sectionTitle{
-      margin:10px 0 8px;
-      font-size:12px;
-      letter-spacing:.3px;
-      color:var(--text);
-      opacity:.9;
-    }
-    .divider{
-      height:1px;
-      background: var(--border);
-      margin:12px 0;
-    }
-    .tiny{
-      font-size:11px;
-      color:var(--muted);
-    }
+    .row{display:flex; gap:10px; align-items:end}
+    .row > *{flex:1}
+    .danger{color:#ffb4b4}
   </style>
 </head>
 <body>
 <header>
-  <h1>🔨🤖🔧 QR Code Generator + Text Around</h1>
-  <p>Create a QR for multiple types and add text on all four sides. Download as PNG.</p>
+  <h1>🔨🤖🔧 QR Code Generator + Text Around + Logo</h1>
+  <p>Live preview that stays put while you scroll. Add a center logo safely.</p>
 </header>
 
 <div class="wrap">
   <!-- LEFT: Controls -->
   <div class="card">
     <div class="hd">
-      <strong>CONTENT</strong>
+      <strong>SETTINGS</strong>
       <span class="pill" id="statusPill">Ready</span>
     </div>
     <div class="bd">
@@ -206,22 +205,10 @@
 
         <div class="sectionTitle">TEXT AROUND THE QR</div>
         <div class="grid">
-          <div>
-            <label for="topText">Top</label>
-            <input id="topText" placeholder="Top text (optional)" />
-          </div>
-          <div>
-            <label for="bottomText">Bottom</label>
-            <input id="bottomText" placeholder="Bottom text (optional)" />
-          </div>
-          <div>
-            <label for="leftText">Left</label>
-            <input id="leftText" placeholder="Left text (optional)" />
-          </div>
-          <div>
-            <label for="rightText">Right</label>
-            <input id="rightText" placeholder="Right text (optional)" />
-          </div>
+          <div><label for="topText">Top</label><input id="topText" placeholder="Top text (optional)" /></div>
+          <div><label for="bottomText">Bottom</label><input id="bottomText" placeholder="Bottom text (optional)" /></div>
+          <div><label for="leftText">Left</label><input id="leftText" placeholder="Left text (optional)" /></div>
+          <div><label for="rightText">Right</label><input id="rightText" placeholder="Right text (optional)" /></div>
         </div>
 
         <div class="grid">
@@ -233,90 +220,159 @@
               <option value="serif">Serif</option>
             </select>
           </div>
-          <div>
-            <label for="fontSize">Font size (px)</label>
-            <input id="fontSize" type="number" min="8" max="64" value="18" />
-          </div>
-          <div>
-            <label for="textColor">Text color</label>
-            <input id="textColor" type="color" value="#000000" />
-          </div>
-          <div>
-            <label for="pad">Text padding (px)</label>
-            <input id="pad" type="number" min="0" max="200" value="28" />
-          </div>
+          <div><label for="fontSize">Font size (px)</label><input id="fontSize" type="number" min="8" max="64" value="18" /></div>
+          <div><label for="textColor">Text color</label><input id="textColor" type="color" value="#000000" /></div>
+          <div><label for="pad">Text padding (px)</label><input id="pad" type="number" min="0" max="200" value="28" /></div>
         </div>
 
         <div class="divider"></div>
 
         <div class="sectionTitle">QR STYLE</div>
         <div class="grid">
+          <div><label for="size">QR size (px)</label><input id="size" type="number" min="160" max="1400" value="420" /></div>
+          <div><label for="qrMargin">Quiet zone</label><input id="qrMargin" type="number" min="0" max="40" value="12" /></div>
+          <div><label for="fg">QR color</label><input id="fg" type="color" value="#000000" /></div>
+          <div><label for="bg">Background</label><input id="bg" type="color" value="#ffffff" /></div>
+        </div>
+
+        <div class="grid">
           <div>
-            <label for="size">QR size (px)</label>
-            <input id="size" type="number" min="120" max="1400" value="420" />
+            <label for="ecc">Error correction</label>
+            <select id="ecc">
+              <option value="L">L (7%)</option>
+              <option value="M" selected>M (15%)</option>
+              <option value="Q">Q (25%)</option>
+              <option value="H">H (30%)</option>
+            </select>
           </div>
           <div>
-            <label for="qrMargin">QR quiet zone</label>
-            <input id="qrMargin" type="number" min="0" max="40" value="12" />
-          </div>
-          <div>
-            <label for="fg">QR color</label>
-            <input id="fg" type="color" value="#000000" />
-          </div>
-          <div>
-            <label for="bg">Background</label>
-            <input id="bg" type="color" value="#ffffff" />
+            <label for="safeMode">Logo safe mode</label>
+            <select id="safeMode">
+              <option value="on" selected>On (auto ECC)</option>
+              <option value="off">Off</option>
+            </select>
           </div>
         </div>
+
+        <div class="divider"></div>
+
+        <div class="sectionTitle">CENTER LOGO / IMAGE</div>
+        <div class="grid-1">
+          <div class="row">
+            <div>
+              <label for="logoFile">Upload image</label>
+              <input id="logoFile" type="file" accept="image/*" />
+            </div>
+            <div>
+              <label for="logoUrl">…or Image URL</label>
+              <input id="logoUrl" placeholder="https://.../logo.png" />
+            </div>
+          </div>
+
+          <div class="grid">
+            <div><label for="logoEnabled">Enabled</label>
+              <select id="logoEnabled">
+                <option value="no" selected>No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+            <div><label for="logoSizePct">Logo size (% of QR)</label>
+              <input id="logoSizePct" type="number" min="8" max="40" value="18" />
+            </div>
+            <div><label for="logoPadding">Logo padding (px)</label>
+              <input id="logoPadding" type="number" min="0" max="40" value="10" />
+            </div>
+            <div><label for="logoRadius">Logo bg radius (px)</label>
+              <input id="logoRadius" type="number" min="0" max="60" value="16" />
+            </div>
+          </div>
+
+          <div class="grid">
+            <div><label for="logoBg">Logo background</label><input id="logoBg" type="color" value="#ffffff" /></div>
+            <div><label for="logoBorder">Border color</label><input id="logoBorder" type="color" value="#ffffff" /></div>
+            <div><label for="logoBorderW">Border width (px)</label><input id="logoBorderW" type="number" min="0" max="16" value="0" /></div>
+            <div><label for="logoShadow">Shadow</label>
+              <select id="logoShadow">
+                <option value="off" selected>Off</option>
+                <option value="on">On</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="hint">
+            ❗ Adding a logo covers modules. Keep logo ≤ ~20% for best scanning. Safe mode will bump ECC to H automatically.
+          </div>
+        </div>
+
+        <div class="divider"></div>
 
         <div class="btns">
           <button id="downloadBtn">Download PNG</button>
           <button class="secondary" id="copyPayloadBtn">Copy payload</button>
         </div>
-
-        <div class="hint">
-          💡 Tip: For best scanning, keep short text around the edges and leave enough padding.
-        </div>
       </div>
     </div>
   </div>
 
-  <!-- RIGHT: Preview -->
-  <div class="card">
+  <!-- RIGHT: Sticky Preview -->
+  <div class="card stickyWrap">
     <div class="hd">
-      <strong>PREVIEW</strong>
-      <span class="pill">PNG Output Canvas</span>
+      <strong>LIVE PREVIEW</strong>
+      <span class="pill">Sticky canvas</span>
     </div>
     <div class="previewArea">
       <div class="canvasCard">
         <canvas id="outCanvas" width="600" height="600" aria-label="QR preview canvas"></canvas>
-        <div class="tiny">Download includes the surrounding text.</div>
+        <div class="tiny" id="scanHint">Tip: Use ECC H when a logo is enabled.</div>
       </div>
 
       <div>
         <div class="sectionTitle">Generated payload</div>
         <div class="mono" id="payloadBox">(payload will appear here)</div>
-        <div class="hint">
-          Some apps interpret formats differently. If one scanner app doesn’t recognize a type, try another.
-        </div>
+        <div class="hint" id="warnBox"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- QR library -->
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 <script>
-  // ---------- Helpers ----------
   const $ = (id) => document.getElementById(id);
+  const outCanvas = $("outCanvas");
+  const outCtx = outCanvas.getContext("2d");
 
-  function escText(s){ return String(s ?? "").trim(); }
-  function isEmpty(s){ return escText(s).length === 0; }
+  const qrCanvas = document.createElement("canvas");
+  const qr = new QRious({
+    element: qrCanvas,
+    size: 420,
+    value: "Hello!",
+    level: "M",
+    background: "#ffffff",
+    foreground: "#000000",
+    padding: 12
+  });
+
+  // ---------- Utils ----------
+  const escText = (s)=> String(s ?? "").trim();
+  const isEmpty = (s)=> escText(s).length === 0;
+
+  function pickFont(familySel){
+    switch (familySel) {
+      case "mono": return 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+      case "serif": return 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
+      default: return 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+    }
+  }
+
+  function textMetrics(ctx, text){
+    const m = ctx.measureText(text);
+    const h = (m.actualBoundingBoxAscent && m.actualBoundingBoxDescent)
+      ? (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)
+      : (parseInt(ctx.font.match(/(\d+)px/)?.[1] || "16", 10) * 1.2);
+    return { w: m.width, h };
+  }
 
   function formatDateToICS(dtLocal){
-    // input type="datetime-local" -> "YYYY-MM-DDTHH:MM"
-    // Convert to UTC-ish basic format: YYYYMMDDTHHMMSSZ
-    // We'll treat the local input as local time and convert to UTC properly.
     if (!dtLocal) return "";
     const d = new Date(dtLocal);
     if (Number.isNaN(d.getTime())) return "";
@@ -330,40 +386,27 @@
     return `${yyyy}${mm}${dd}T${hh}${mi}${ss}Z`;
   }
 
-  function pickFont(familySel){
-    switch (familySel) {
-      case "mono": return 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
-      case "serif": return 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
-      default: return 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
-    }
-  }
+  function setStatus(msg){ $("statusPill").textContent = msg; }
 
-  // Measure text height reasonably
-  function textMetrics(ctx, text){
-    const m = ctx.measureText(text);
-    // actualBoundingBox* supported in most modern browsers; fallback if not.
-    const h = (m.actualBoundingBoxAscent && m.actualBoundingBoxDescent)
-      ? (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)
-      : (parseInt(ctx.font.match(/(\d+)px/)?.[1] || "16", 10) * 1.2);
-    return { w: m.width, h };
+  // Debounce so rapid slider/typing stays smooth
+  function debounce(fn, ms=40){
+    let t;
+    return (...args)=>{
+      clearTimeout(t);
+      t = setTimeout(()=>fn(...args), ms);
+    };
   }
 
   // ---------- Dynamic forms ----------
   const fieldTemplates = {
     text: () => `
       <div class="grid-1">
-        <div>
-          <label>Text</label>
-          <textarea id="f_text" placeholder="Anything you want...">Hello!</textarea>
-        </div>
+        <div><label>Text</label><textarea id="f_text">Hello!</textarea></div>
       </div>
     `,
     website: () => `
       <div class="grid-1">
-        <div>
-          <label>URL</label>
-          <input id="f_url" placeholder="https://example.com" value="https://example.com" />
-        </div>
+        <div><label>URL</label><input id="f_url" value="https://example.com" /></div>
       </div>
     `,
     contact: () => `
@@ -379,7 +422,7 @@
         <div><label>Website</label><input id="f_web" placeholder="https://..." /></div>
         <div><label>Address (single line)</label><input id="f_adr" placeholder="123 Main St, City, ST 12345, USA" /></div>
       </div>
-      <div class="hint">Generates a vCard (VCARD 3.0) that most phone cameras recognize.</div>
+      <div class="hint">vCard 3.0</div>
     `,
     wifi: () => `
       <div class="grid-1">
@@ -405,24 +448,17 @@
           </div>
         </div>
       </div>
-      <div class="hint">Uses the standard WIFI: format.</div>
     `,
     email: () => `
       <div class="grid-1">
         <div><label>To</label><input id="f_to" placeholder="someone@example.com" /></div>
         <div><label>Subject</label><input id="f_sub" placeholder="Hello" /></div>
-        <div><label>Body</label><textarea id="f_body" placeholder="Write your message..."></textarea></div>
+        <div><label>Body</label><textarea id="f_body"></textarea></div>
       </div>
     `,
     discord: () => `
       <div class="grid-1">
-        <div>
-          <label>Discord link or text</label>
-          <input id="f_discord" placeholder="https://discord.gg/yourInvite OR @username" />
-        </div>
-        <div class="hint">
-          Best compatibility: use a Discord invite URL (discord.gg/...). You can also encode plain text like a username.
-        </div>
+        <div><label>Discord link or text</label><input id="f_discord" placeholder="https://discord.gg/yourInvite OR @username" /></div>
       </div>
     `,
     sms: () => `
@@ -430,7 +466,6 @@
         <div><label>Phone number</label><input id="f_smsnum" placeholder="+15551234567" /></div>
         <div><label>Message</label><textarea id="f_smsmsg" placeholder="Hi!"></textarea></div>
       </div>
-      <div class="hint">Uses SMSTO: number:message for broad support.</div>
     `,
     phone: () => `
       <div class="grid-1">
@@ -439,10 +474,7 @@
     `,
     spotify: () => `
       <div class="grid-1">
-        <div>
-          <label>Spotify URL or URI</label>
-          <input id="f_spotify" placeholder="https://open.spotify.com/track/... OR spotify:track:..." />
-        </div>
+        <div><label>Spotify URL or URI</label><input id="f_spotify" placeholder="https://open.spotify.com/track/..." /></div>
       </div>
     `,
     calendar: () => `
@@ -457,27 +489,22 @@
       <div class="grid-1" style="margin-top:10px">
         <div><label>Description</label><textarea id="f_cal_desc" placeholder="Agenda..."></textarea></div>
       </div>
-      <div class="hint">Generates a minimal iCalendar VEVENT.</div>
     `,
     linkedin: () => `
       <div class="grid-1">
-        <div>
-          <label>LinkedIn URL</label>
-          <input id="f_li" placeholder="https://www.linkedin.com/in/username/" />
-        </div>
+        <div><label>LinkedIn URL</label><input id="f_li" placeholder="https://www.linkedin.com/in/username/" /></div>
       </div>
     `
   };
 
   function renderFields(){
     const t = $("type").value;
-    $("dynamicFields").innerHTML = fieldTemplates[t] ? fieldTemplates[t]() : fieldTemplates.text();
-    // attach listeners to new inputs
+    $("dynamicFields").innerHTML = (fieldTemplates[t] ? fieldTemplates[t]() : fieldTemplates.text());
     $("dynamicFields").querySelectorAll("input,select,textarea").forEach(el=>{
-      el.addEventListener("input", updateAll);
-      el.addEventListener("change", updateAll);
+      el.addEventListener("input", scheduleUpdate);
+      el.addEventListener("change", scheduleUpdate);
     });
-    updateAll();
+    scheduleUpdate();
   }
 
   // ---------- Payload builders ----------
@@ -491,7 +518,6 @@
       case "website": {
         let url = escText($("f_url")?.value);
         if (!url) return " ";
-        // Add scheme if user typed example.com
         if (!/^https?:\/\//i.test(url)) url = "https://" + url;
         return url;
       }
@@ -507,13 +533,8 @@
 
         const n = `${ln};${fn};;;`;
         const full = escText([fn, ln].filter(Boolean).join(" ")) || (email || phone || "Contact");
+        const lines = ["BEGIN:VCARD","VERSION:3.0",`N:${n}`,`FN:${full}`];
 
-        const lines = [
-          "BEGIN:VCARD",
-          "VERSION:3.0",
-          `N:${n}`,
-          `FN:${full}`
-        ];
         if (org) lines.push(`ORG:${org}`);
         if (title) lines.push(`TITLE:${title}`);
         if (phone) lines.push(`TEL;TYPE=CELL:${phone}`);
@@ -532,8 +553,7 @@
         const sec = escText($("f_sec")?.value || "WPA");
         const pass = escText($("f_pass")?.value);
         const hidden = escText($("f_hidden")?.value || "false");
-        if (!ssid) return "WIFI:T:WPA;S:;P:;;";
-        const esc = (s)=> s.replace(/([\\;,:"])/g, "\\$1"); // common escaping
+        const esc = (s)=> String(s).replace(/([\\;,:"])/g, "\\$1");
         const T = sec || "WPA";
         const S = esc(ssid);
         const P = esc(pass);
@@ -552,15 +572,11 @@
       }
       case "discord": {
         const v = escText($("f_discord")?.value);
-        if (!v) return " ";
-        // if it's a URL, keep as-is; else plain text.
-        return v;
+        return v || " ";
       }
       case "sms": {
         const num = escText($("f_smsnum")?.value);
         const msg = escText($("f_smsmsg")?.value);
-        if (!num && !msg) return "SMSTO::";
-        // SMSTO is widely supported: SMSTO:number:message
         return `SMSTO:${num}:${msg}`;
       }
       case "phone": {
@@ -584,7 +600,7 @@
         const uid = `${crypto?.randomUUID?.() || (Date.now() + "-" + Math.random().toString(16).slice(2))}@qr.local`;
         const stamp = formatDateToICS(new Date().toISOString());
 
-        const lines = [
+        return [
           "BEGIN:VCALENDAR",
           "VERSION:2.0",
           "PRODID:-//QR Generator//EN",
@@ -598,9 +614,7 @@
           desc ? `DESCRIPTION:${desc.replace(/\n/g,"\\n")}` : "",
           "END:VEVENT",
           "END:VCALENDAR"
-        ].filter(Boolean);
-
-        return lines.join("\n");
+        ].filter(Boolean).join("\n");
       }
       case "linkedin": {
         let url = escText($("f_li")?.value);
@@ -613,24 +627,85 @@
     }
   }
 
-  // ---------- Rendering ----------
-  const outCanvas = $("outCanvas");
-  const outCtx = outCanvas.getContext("2d");
+  // ---------- Logo handling ----------
+  let logoImg = null;       // HTMLImageElement
+  let logoReady = false;
+  let logoSource = "";      // URL for display/debug
+  let logoObjectUrl = null; // revoke on new upload
 
-  // internal QR canvas (no surrounding text)
-  const qrCanvas = document.createElement("canvas");
-  const qr = new QRious({
-    element: qrCanvas,
-    size: 420,
-    value: "Hello!",
-    level: "M",
-    background: "#ffffff",
-    foreground: "#000000",
-    padding: 12
+  function clearLogo(){
+    logoImg = null;
+    logoReady = false;
+    logoSource = "";
+    if (logoObjectUrl){
+      URL.revokeObjectURL(logoObjectUrl);
+      logoObjectUrl = null;
+    }
+  }
+
+  function loadLogoFromUrl(url){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      // Try to keep CORS safe when loading remote URL (won't always work depending on server)
+      img.crossOrigin = "anonymous";
+      img.onload = ()=> resolve(img);
+      img.onerror = ()=> reject(new Error("Failed to load logo image (CORS or URL issue). Try uploading the file instead."));
+      img.src = url;
+    });
+  }
+
+  async function handleLogoUrlInput(){
+    const url = escText($("logoUrl").value);
+    if (!url) return;
+    try{
+      setStatus("Loading logo…");
+      const img = await loadLogoFromUrl(url);
+      clearLogo();
+      logoImg = img;
+      logoReady = true;
+      logoSource = url;
+      setStatus("Logo loaded ✔️");
+      scheduleUpdate();
+    }catch(e){
+      $("warnBox").innerHTML = `<span class="danger">Logo URL error:</span> ${e.message}`;
+      setStatus("Logo error ❗");
+    }
+  }
+
+  $("logoFile").addEventListener("change", ()=>{
+    const f = $("logoFile").files?.[0];
+    if (!f) return;
+    clearLogo();
+    const url = URL.createObjectURL(f);
+    logoObjectUrl = url;
+    const img = new Image();
+    img.onload = ()=>{
+      logoImg = img;
+      logoReady = true;
+      logoSource = f.name;
+      setStatus("Logo loaded ✔️");
+      scheduleUpdate();
+    };
+    img.onerror = ()=>{
+      $("warnBox").innerHTML = `<span class="danger">Could not load uploaded image.</span>`;
+      setStatus("Logo error ❗");
+    };
+    img.src = url;
   });
 
-  function setStatus(msg){
-    $("statusPill").textContent = msg;
+  $("logoUrl").addEventListener("change", handleLogoUrlInput);
+  $("logoUrl").addEventListener("blur", handleLogoUrlInput);
+
+  // ---------- Drawing (QR + text + logo) ----------
+  function roundRectPath(ctx, x, y, w, h, r){
+    const rr = Math.max(0, Math.min(r, Math.min(w, h)/2));
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y, x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x, y+h, rr);
+    ctx.arcTo(x, y+h, x, y, rr);
+    ctx.arcTo(x, y, x+w, y, rr);
+    ctx.closePath();
   }
 
   function drawCenteredText(ctx, text, x, y){
@@ -643,19 +718,16 @@
     const payload = buildPayload();
     $("payloadBox").textContent = payload;
 
-    // Update QR settings
-    const size = Math.max(120, Math.min(1400, parseInt($("size").value || "420", 10)));
+    const size = Math.max(160, Math.min(1400, parseInt($("size").value || "420", 10)));
     const padding = Math.max(0, Math.min(40, parseInt($("qrMargin").value || "12", 10)));
     const fg = $("fg").value || "#000000";
     const bg = $("bg").value || "#ffffff";
 
-    qr.size = size;
-    qr.value = payload;
-    qr.padding = padding;
-    qr.foreground = fg;
-    qr.background = bg;
+    const wantLogo = $("logoEnabled").value === "yes";
+    const safeMode = $("safeMode").value === "on";
+    const eccUser = $("ecc").value || "M";
+    const ecc = (wantLogo && safeMode) ? "H" : eccUser;
 
-    // Text-around settings
     const topText = escText($("topText").value);
     const bottomText = escText($("bottomText").value);
     const leftText = escText($("leftText").value);
@@ -666,94 +738,148 @@
     const textColor = $("textColor").value || "#000000";
     const font = pickFont($("fontFamily").value);
 
-    // Determine extra space needed for each side based on text presence
-    // We'll allocate (pad + textHeight) per side where text exists, else just small margin.
     const tmp = document.createElement("canvas").getContext("2d");
     tmp.font = `${fontSize}px ${font}`;
 
+    const extra = 10;
     const topH = isEmpty(topText) ? 0 : (pad + textMetrics(tmp, topText).h);
     const botH = isEmpty(bottomText) ? 0 : (pad + textMetrics(tmp, bottomText).h);
-    const leftW = isEmpty(leftText) ? 0 : (pad + textMetrics(tmp, leftText).h);   // rotated: height ~ thickness
+    const leftW = isEmpty(leftText) ? 0 : (pad + textMetrics(tmp, leftText).h);
     const rightW = isEmpty(rightText) ? 0 : (pad + textMetrics(tmp, rightText).h);
 
-    const extra = 10; // a little breathing room
     const outW = size + leftW + rightW + extra*2;
     const outH = size + topH + botH + extra*2;
 
     outCanvas.width = outW;
     outCanvas.height = outH;
 
-    // Fill background (whole image)
+    // Update QR
+    qr.size = size;
+    qr.value = payload;
+    qr.padding = padding;
+    qr.foreground = fg;
+    qr.background = bg;
+    qr.level = ecc;
+
+    // Draw background
     outCtx.save();
     outCtx.fillStyle = bg;
-    outCtx.fillRect(0, 0, outW, outH);
+    outCtx.fillRect(0,0,outW,outH);
 
-    // Draw QR in the center area with offsets
+    // Draw QR
     const qrX = extra + leftW;
     const qrY = extra + topH;
     outCtx.drawImage(qrCanvas, qrX, qrY, size, size);
 
-    // Prepare text drawing
+    // Draw surrounding text
     outCtx.fillStyle = textColor;
     outCtx.font = `${fontSize}px ${font}`;
-    outCtx.textAlign = "center";
-    outCtx.textBaseline = "middle";
 
-    // Top text
     if (!isEmpty(topText)){
-      const y = qrY - (topH / 2);
-      drawCenteredText(outCtx, topText, qrX + size/2, y);
+      drawCenteredText(outCtx, topText, qrX + size/2, qrY - (topH/2));
     }
-
-    // Bottom text
     if (!isEmpty(bottomText)){
-      const y = qrY + size + (botH / 2);
-      drawCenteredText(outCtx, bottomText, qrX + size/2, y);
+      drawCenteredText(outCtx, bottomText, qrX + size/2, qrY + size + (botH/2));
     }
-
-    // Left text (rotated -90°)
     if (!isEmpty(leftText)){
       outCtx.save();
-      // rotate around center point of left band
-      const cx = extra + (leftW / 2);
-      const cy = qrY + size/2;
-      outCtx.translate(cx, cy);
+      outCtx.translate(extra + (leftW/2), qrY + size/2);
       outCtx.rotate(-Math.PI/2);
-      outCtx.textAlign = "center";
-      outCtx.textBaseline = "middle";
-      outCtx.fillText(leftText, 0, 0);
+      drawCenteredText(outCtx, leftText, 0, 0);
       outCtx.restore();
     }
-
-    // Right text (rotated +90°)
     if (!isEmpty(rightText)){
       outCtx.save();
-      const cx = qrX + size + (rightW / 2);
-      const cy = qrY + size/2;
-      outCtx.translate(cx, cy);
+      outCtx.translate(qrX + size + (rightW/2), qrY + size/2);
       outCtx.rotate(Math.PI/2);
-      outCtx.textAlign = "center";
-      outCtx.textBaseline = "middle";
-      outCtx.fillText(rightText, 0, 0);
+      drawCenteredText(outCtx, rightText, 0, 0);
       outCtx.restore();
     }
 
-    outCtx.restore();
+    // Draw logo on top of QR (with optional rounded bg)
+    const warn = [];
+    if (wantLogo){
+      if (!logoReady){
+        warn.push("Logo is enabled but no image is loaded yet (upload or URL).");
+      } else {
+        const logoPct = Math.max(8, Math.min(40, parseInt($("logoSizePct").value || "18", 10))) / 100;
+        const logoSize = Math.round(size * logoPct);
+        const lp = Math.max(0, Math.min(40, parseInt($("logoPadding").value || "10", 10)));
+        const r = Math.max(0, Math.min(60, parseInt($("logoRadius").value || "16", 10)));
+        const bgc = $("logoBg").value || "#ffffff";
+        const borderC = $("logoBorder").value || "#ffffff";
+        const borderW = Math.max(0, Math.min(16, parseInt($("logoBorderW").value || "0", 10)));
+        const shadowOn = $("logoShadow").value === "on";
+
+        // Area centered on QR
+        const cx = qrX + size/2;
+        const cy = qrY + size/2;
+        const totalW = logoSize + lp*2;
+        const totalH = logoSize + lp*2;
+        const x = Math.round(cx - totalW/2);
+        const y = Math.round(cy - totalH/2);
+
+        // soft rules-of-thumb
+        if (logoPct > 0.22) warn.push("Logo size is > 22% of QR. Consider 18–20% for best scan reliability.");
+        if (ecc !== "H") warn.push("Consider ECC = H when using a logo (or enable Safe Mode).");
+
+        outCtx.save();
+        if (shadowOn){
+          outCtx.shadowColor = "rgba(0,0,0,.25)";
+          outCtx.shadowBlur = 10;
+          outCtx.shadowOffsetY = 4;
+        }
+
+        // background behind logo (rounded rectangle)
+        outCtx.fillStyle = bgc;
+        roundRectPath(outCtx, x, y, totalW, totalH, r);
+        outCtx.fill();
+
+        // border
+        if (borderW > 0){
+          outCtx.shadowColor = "transparent";
+          outCtx.lineWidth = borderW;
+          outCtx.strokeStyle = borderC;
+          roundRectPath(outCtx, x + borderW/2, y + borderW/2, totalW - borderW, totalH - borderW, Math.max(0, r - borderW/2));
+          outCtx.stroke();
+        }
+
+        // draw logo image inside, preserving aspect ratio
+        outCtx.shadowColor = "transparent";
+        const targetX = x + lp;
+        const targetY = y + lp;
+        const targetS = logoSize;
+
+        const iw = logoImg.naturalWidth || logoImg.width;
+        const ih = logoImg.naturalHeight || logoImg.height;
+        const scale = Math.min(targetS / iw, targetS / ih);
+        const dw = Math.round(iw * scale);
+        const dh = Math.round(ih * scale);
+        const dx = Math.round(targetX + (targetS - dw)/2);
+        const dy = Math.round(targetY + (targetS - dh)/2);
+
+        outCtx.drawImage(logoImg, dx, dy, dw, dh);
+        outCtx.restore();
+      }
+    }
+
+    // UI messages
+    $("scanHint").textContent = wantLogo ? `ECC: ${ecc} (logo ${safeMode ? "safe mode" : "manual"})` : `ECC: ${ecc}`;
+    $("warnBox").innerHTML = warn.length ? warn.map(w=>`• ${w}`).join("<br/>") : "";
     setStatus("Updated ✔️");
+    outCtx.restore();
   }
 
-  function updateAll(){
-    try{
-      render();
-    } catch (e){
+  const scheduleUpdate = debounce(()=>{
+    try{ render(); }
+    catch(e){
       console.error(e);
       setStatus("Error ❗");
     }
-  }
+  }, 25);
 
   // ---------- Download / Copy ----------
   function downloadPNG(){
-    // Convert to blob and download
     outCanvas.toBlob((blob)=>{
       if (!blob) return;
       const a = document.createElement("a");
@@ -774,7 +900,6 @@
       setStatus("Copied ✔️");
       setTimeout(()=>setStatus("Ready"), 700);
     } catch {
-      // fallback
       const ta = document.createElement("textarea");
       ta.value = payload;
       document.body.appendChild(ta);
@@ -792,10 +917,13 @@
   [
     "topText","bottomText","leftText","rightText",
     "fontFamily","fontSize","textColor","pad",
-    "size","qrMargin","fg","bg"
+    "size","qrMargin","fg","bg",
+    "ecc","safeMode",
+    "logoEnabled","logoSizePct","logoPadding","logoRadius",
+    "logoBg","logoBorder","logoBorderW","logoShadow"
   ].forEach(id=>{
-    $(id).addEventListener("input", updateAll);
-    $(id).addEventListener("change", updateAll);
+    $(id).addEventListener("input", scheduleUpdate);
+    $(id).addEventListener("change", scheduleUpdate);
   });
 
   $("downloadBtn").addEventListener("click", downloadPNG);
@@ -803,7 +931,7 @@
 
   // initial
   renderFields();
-  updateAll();
+  scheduleUpdate();
 </script>
 </body>
 </html>
