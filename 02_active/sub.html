@@ -26,7 +26,7 @@
       padding:24px;
     }
     .wrap{width:min(1080px,100%);display:grid;gap:14px}
-    .header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
     h1{font-size:20px;margin:0}
     .card{
       background:var(--card);
@@ -102,7 +102,6 @@
       margin-top: 10px;
     }
     @media (max-width:860px){.subgrid{grid-template-columns:1fr}}
-
     .checkrow{
       display:flex;
       gap:10px;
@@ -122,12 +121,32 @@
       width:auto;
       transform: translateY(1px);
     }
+
+    .tabs{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .tabbtn{
+      padding:8px 12px;
+      border-radius:12px;
+      font-weight:800;
+    }
+    .tabbtn.active{
+      background:rgba(122,167,255,.22);
+      border-color:rgba(122,167,255,.65);
+    }
+    .hidden{display:none !important;}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <h1>Vigenère</h1>
+      <h1 id="pageTitle">Vigenère</h1>
+      <div class="tabs">
+        <button id="tabVig" class="tabbtn active" type="button">VIGENÈRE</button>
+        <button id="tabCol" class="tabbtn" type="button">COLUMNAR</button>
+      </div>
     </div>
 
     <div class="card">
@@ -203,6 +222,29 @@
         </div>
       </details>
 
+      <!-- Columnar options -->
+      <details id="columnarPanel" class="hidden">
+        <summary>Columnar options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="colPad">Padding</label>
+            <select id="colPad">
+              <option value="none" selected>None</option>
+              <option value="pad">Pad to rectangle</option>
+            </select>
+          </div>
+          <div>
+            <label for="padChar">Pad char</label>
+            <input id="padChar" type="text" value="X" maxlength="1" placeholder="X" />
+          </div>
+        </div>
+
+        <div class="checkrow">
+          <label><input id="stripPadOnDecode" type="checkbox" checked /> Strip pad on decode</label>
+        </div>
+      </details>
+
       <div style="height: 10px"></div>
 
       <div class="row">
@@ -238,8 +280,8 @@
         <label for="codebook">Mappings</label>
         <textarea id="codebook" rows="10" placeholder="ZAA=!&#10;ZAB=?&#10;..."></textarea>
         <div class="btns">
-          <button class="small" id="resetCodebookBtn">Reset defaults</button>
-          <button class="small" id="validateCodebookBtn">Validate</button>
+          <button class="small" id="resetCodebookBtn" type="button">Reset defaults</button>
+          <button class="small" id="validateCodebookBtn" type="button">Validate</button>
         </div>
         <div class="tiny" id="codebookStatus"></div>
       </details>
@@ -258,16 +300,40 @@
       </div>
 
       <div class="btns">
-        <button class="primary" id="runBtn">Run</button>
-        <button id="swapBtn">Swap</button>
-        <button class="small" id="copyBtn">Copy</button>
-        <button class="small" id="clearBtn">Clear</button>
+        <button class="primary" id="runBtn" type="button">Run</button>
+        <button id="swapBtn" type="button">Swap</button>
+        <button class="small" id="copyBtn" type="button">Copy</button>
+        <button class="small" id="clearBtn" type="button">Clear</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ---------- helpers ----------
+    // =========================
+    // Tabs
+    // =========================
+    let activeCipher = "vigenere"; // "vigenere" | "columnar"
+
+    const tabVig = document.getElementById("tabVig");
+    const tabCol = document.getElementById("tabCol");
+    const pageTitle = document.getElementById("pageTitle");
+    const columnarPanel = document.getElementById("columnarPanel");
+
+    function setActiveCipher(which){
+      activeCipher = which;
+      tabVig.classList.toggle("active", which === "vigenere");
+      tabCol.classList.toggle("active", which === "columnar");
+      pageTitle.textContent = (which === "vigenere") ? "Vigenère" : "Columnar";
+      columnarPanel.classList.toggle("hidden", which !== "columnar");
+      maybeRun();
+    }
+
+    tabVig.addEventListener("click", ()=> setActiveCipher("vigenere"));
+    tabCol.addEventListener("click", ()=> setActiveCipher("columnar"));
+
+    // =========================
+    // Key builder
+    // =========================
     function lettersOnly(str){ return (str || "").replace(/[^A-Za-z]/g, ""); }
     function reverseStr(s){ return s.split("").reverse().join(""); }
     function concatWithOverlap(a, b, overlap){
@@ -279,16 +345,12 @@
     }
     function repeatJoin(base, times, overlap){
       let out = "";
-      for (let i = 0; i < times; i++){
-        out = concatWithOverlap(out, base, overlap);
-      }
+      for (let i = 0; i < times; i++) out = concatWithOverlap(out, base, overlap);
       return out;
     }
-
     function buildKey(rawBase, pattern, altParts, repeatBuilt, targetLen, overlap){
       const base = lettersOnly(rawBase);
       const rev = reverseStr(base);
-
       let segments = [];
 
       switch (pattern){
@@ -298,7 +360,6 @@
         case "base_rev_base": segments = [base, rev, base]; break;
         case "rev_base_rev": segments = [rev, base, rev]; break;
         case "base_rev_rev_base": segments = [base, rev, rev, base]; break;
-
         case "alt_base": {
           const n = Math.max(1, Math.min(50, Number(altParts) || 1));
           segments = Array.from({length:n}, (_,i)=> (i % 2 === 0 ? base : rev));
@@ -313,9 +374,7 @@
       }
 
       let built = "";
-      for (const seg of segments){
-        built = concatWithOverlap(built, seg, overlap);
-      }
+      for (const seg of segments) built = concatWithOverlap(built, seg, overlap);
 
       const rep = Math.max(1, Math.min(50, Number(repeatBuilt) || 1));
       built = repeatJoin(built, rep, overlap);
@@ -323,14 +382,15 @@
       const L = Math.max(0, Math.floor(Number(targetLen) || 0));
       if (L > 0){
         if (built.length === 0) return "";
-        while (built.length < L) built = concatWithOverlap(built, built, false);
+        while (built.length < L) built = built + built;
         built = built.slice(0, L);
       }
-
       return built;
     }
 
-    // ---------- Vigenère core ----------
+    // =========================
+    // Vigenère
+    // =========================
     function isUpper(ch){const c=ch.charCodeAt(0);return c>=65&&c<=90}
     function isLower(ch){const c=ch.charCodeAt(0);return c>=97&&c<=122}
     function alphaIndex(ch){
@@ -339,7 +399,7 @@
       if (isLower(ch)) return code-97;
       return -1;
     }
-    function sanitizeKey(keyRaw){
+    function sanitizeKeyShifts(keyRaw){
       const shifts=[];
       for (const ch of keyRaw){
         const idx=alphaIndex(ch);
@@ -355,13 +415,8 @@
       const wrapped=(moved + 26) % 26;
       return String.fromCharCode(base + wrapped);
     }
-    function applyCaseMode(str, caseMode){
-      if (caseMode==="upper") return str.toUpperCase();
-      if (caseMode==="lower") return str.toLowerCase();
-      return str;
-    }
     function vigenere(text, keyRaw, mode){
-      const key=sanitizeKey(keyRaw);
+      const key = sanitizeKeyShifts(keyRaw);
       if (key.length===0) return text;
       const direction=(mode==="decode")?-1:1;
 
@@ -376,7 +431,96 @@
       return out;
     }
 
-    // ---------- Tokenize mode (spell-out) ----------
+    // =========================
+    // Columnar Transposition
+    // =========================
+    function getColumnOrder(keyLetters){
+      // stable sort by (char, originalIndex)
+      const arr = [...keyLetters].map((ch, i)=>({ch: ch.toUpperCase(), i}));
+      arr.sort((a,b)=> a.ch.localeCompare(b.ch) || (a.i - b.i));
+      return arr.map(x=>x.i); // indices in read order
+    }
+
+    function columnarEncode(plain, keyLetters, padMode, padChar){
+      const key = lettersOnly(keyLetters);
+      const cols = key.length;
+      if (cols === 0) return plain;
+
+      const order = getColumnOrder(key);
+      const pad = (padChar && padChar.length) ? padChar[0] : "X";
+      let text = plain;
+
+      if (padMode === "pad"){
+        const rem = text.length % cols;
+        if (rem !== 0){
+          text = text + pad.repeat(cols - rem);
+        }
+      }
+
+      const L = text.length;
+      const rows = Math.ceil(L / cols);
+
+      let out = "";
+      for (const c of order){
+        for (let r = 0; r < rows; r++){
+          const idx = r * cols + c;
+          if (idx < L) out += text[idx];
+        }
+      }
+      return out;
+    }
+
+    function columnarDecode(cipher, keyLetters, padMode, padChar, stripPad){
+      const key = lettersOnly(keyLetters);
+      const cols = key.length;
+      if (cols === 0) return cipher;
+
+      const order = getColumnOrder(key);
+      const pad = (padChar && padChar.length) ? padChar[0] : "X";
+
+      const L = cipher.length;
+      const rows = Math.ceil(L / cols);
+      const rem = L % cols;
+
+      // lengths per ORIGINAL column index (0..cols-1)
+      // if not padded: columns < rem have rows chars, else rows-1 (when rem != 0)
+      // if padded: all columns have rows chars (because rectangle)
+      const colLen = new Array(cols).fill(rows);
+      if (padMode !== "pad" && rem !== 0){
+        for (let c = rem; c < cols; c++) colLen[c] = rows - 1;
+      }
+
+      // fill columns in SORTED read order
+      const colsData = new Array(cols).fill("").map(()=>[]);
+      let pos = 0;
+      for (const colIndex of order){
+        const take = colLen[colIndex];
+        const slice = cipher.slice(pos, pos + take);
+        colsData[colIndex] = slice.split("");
+        pos += take;
+      }
+
+      // read row-wise across ORIGINAL columns
+      let out = "";
+      for (let r = 0; r < rows; r++){
+        for (let c = 0; c < cols; c++){
+          const ch = colsData[c][r];
+          if (ch !== undefined) out += ch;
+        }
+      }
+
+      if (padMode === "pad" && stripPad){
+        // strip trailing pad chars only (common convention)
+        const re = new RegExp(pad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "+$");
+        out = out.replace(re, "");
+      }
+
+      return out;
+    }
+
+    // =========================
+    // Tokenize mode (spell-out)
+    // =========================
     const DIGIT_WORDS=["ZERO","ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE"];
     const PUNCT_TOKENS=new Map([
       [" ","SPACE"],[".","DOT"],[",","COMMA"],["!","EXCLAMATION"],["?","QUESTION"],
@@ -440,7 +584,9 @@
       return out;
     }
 
-    // ---------- Mapping mode ----------
+    // =========================
+    // Mapping mode
+    // =========================
     const DEFAULT_MAPPING_TEXT =
 `ZAA=!
 ZAB=?
@@ -493,7 +639,6 @@ ZZZ=Z`;
         tokenToChar.set(token,ch);
         charToToken.set(ch,token);
       }
-
       return { tokenToChar, charToToken, errors };
     }
 
@@ -543,7 +688,44 @@ ZZZ=Z`;
       return out;
     }
 
-    // ---------- UI ----------
+    // =========================
+    // Shared pipeline
+    // =========================
+    function applyCaseMode(str, caseMode){
+      if (caseMode==="upper") return str.toUpperCase();
+      if (caseMode==="lower") return str.toLowerCase();
+      return str;
+    }
+
+    function preprocessForEncode(input, handling, keepSpaces, mappingText){
+      if (handling === "strip") return normalizeStrip(input, keepSpaces);
+      if (handling === "tokenize"){
+        let t = tokenizeSpell(input, keepSpaces);
+        if (!keepSpaces) t = t.replace(/\s+/g,"");
+        return t;
+      }
+      if (handling === "mapping"){
+        const mp = parseMapping(mappingText);
+        return mappingEncodePreprocess(input, mp, keepSpaces);
+      }
+      return input; // keep
+    }
+
+    function postprocessAfterDecode(decoded, handling, keepSpaces, mappingText){
+      if (handling === "tokenize"){
+        if (keepSpaces) return detokenizeSpell(decoded);
+        return decoded;
+      }
+      if (handling === "mapping"){
+        const mp = parseMapping(mappingText);
+        return mappingDecodePostprocess(decoded, mp);
+      }
+      return decoded;
+    }
+
+    // =========================
+    // UI wiring
+    // =========================
     const keyEl=document.getElementById("key");
     const modeEl=document.getElementById("mode");
     const handlingEl=document.getElementById("nonalpha");
@@ -560,6 +742,10 @@ ZZZ=Z`;
     const showBuiltKeyEl=document.getElementById("showBuiltKey");
     const builtKeyWrap=document.getElementById("builtKeyWrap");
     const builtKeyEl=document.getElementById("builtKey");
+
+    const colPadEl = document.getElementById("colPad");
+    const padCharEl = document.getElementById("padChar");
+    const stripPadOnDecodeEl = document.getElementById("stripPadOnDecode");
 
     const mappingPanel=document.getElementById("mappingPanel");
     const mappingEl=document.getElementById("codebook");
@@ -607,52 +793,38 @@ ZZZ=Z`;
       return built;
     }
 
-    function process(input, builtKey, cipherMode, handling, spacingMode, caseMode, mappingText){
-      const keepSpaces = (spacingMode==="keepSpaces");
-
-      if (cipherMode==="encode"){
-        let pre=input;
-
-        if (handling==="strip"){
-          pre=normalizeStrip(pre, keepSpaces);
-        } else if (handling==="tokenize"){
-          pre=tokenizeSpell(pre, keepSpaces);
-          if (!keepSpaces) pre=pre.replace(/\s+/g,"");
-        } else if (handling==="mapping"){
-          const mp=parseMapping(mappingText);
-          pre=mappingEncodePreprocess(pre, mp, keepSpaces);
-        }
-
-        let out=vigenere(pre, builtKey, "encode");
-        out=applyCaseMode(out, caseMode);
-        return out;
-      } else {
-        let dec=vigenere(input, builtKey, "decode");
-        dec=applyCaseMode(dec, caseMode);
-
-        if (handling==="tokenize"){
-          if (keepSpaces) return detokenizeSpell(dec);
-          return dec;
-        }
-        if (handling==="mapping"){
-          const mp=parseMapping(mappingText);
-          return mappingDecodePostprocess(dec, mp);
-        }
-        return dec;
-      }
-    }
-
     function run(){
       const builtKey = computeBuiltKey();
-      outputEl.value = process(
-        inputEl.value,
-        builtKey,
-        modeEl.value,
-        handlingEl.value,
-        spacingEl.value,
-        caseEl.value,
-        mappingEl.value
-      );
+      const keepSpaces = (spacingEl.value === "keepSpaces");
+      const handling = handlingEl.value;
+
+      // preprocess (encode only)
+      if (modeEl.value === "encode"){
+        const pre = preprocessForEncode(inputEl.value, handling, keepSpaces, mappingEl.value);
+
+        let coreOut = pre;
+        if (activeCipher === "vigenere"){
+          coreOut = vigenere(pre, builtKey, "encode");
+        } else {
+          coreOut = columnarEncode(pre, builtKey, colPadEl.value, padCharEl.value);
+        }
+
+        outputEl.value = applyCaseMode(coreOut, caseEl.value);
+      } else {
+        // decode
+        let coreIn = inputEl.value;
+
+        let coreOut = coreIn;
+        if (activeCipher === "vigenere"){
+          coreOut = vigenere(coreIn, builtKey, "decode");
+        } else {
+          coreOut = columnarDecode(coreIn, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
+        }
+
+        coreOut = applyCaseMode(coreOut, caseEl.value);
+        outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+      }
+
       if (handlingEl.value==="mapping") validateMapping();
     }
 
@@ -670,7 +842,8 @@ ZZZ=Z`;
 
     [
       keyEl, modeEl, handlingEl, spacingEl, caseEl, inputEl, autoRunEl, mappingEl,
-      keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, showBuiltKeyEl
+      keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, showBuiltKeyEl,
+      colPadEl, padCharEl, stripPadOnDecodeEl
     ].forEach(el => el.addEventListener("input", maybeRun));
 
     modeEl.addEventListener("change", maybeRun);
@@ -681,11 +854,13 @@ ZZZ=Z`;
     spacingEl.addEventListener("change", maybeRun);
     caseEl.addEventListener("change", maybeRun);
     autoRunEl.addEventListener("change", ()=>{ if (autoRunEl.value==="on") run(); });
+
     keyPatternEl.addEventListener("change", ()=>{
       const isAlt = keyPatternEl.value === "alt_base" || keyPatternEl.value === "alt_rev";
       altPartsEl.disabled = !isAlt;
       maybeRun();
     });
+
     showBuiltKeyEl.addEventListener("change", ()=>{
       builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
     });
@@ -715,9 +890,10 @@ ZZZ=Z`;
     mappingEl.value = DEFAULT_MAPPING_TEXT;
     mappingPanel.open = false;
     keyPanel.open = false;
+    columnarPanel.open = false;
     altPartsEl.disabled = true;
-
     updateMappingVisibility();
+    setActiveCipher("vigenere");
     run();
   </script>
 </body>
