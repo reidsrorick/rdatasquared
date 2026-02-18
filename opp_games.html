@@ -13,31 +13,28 @@
        THEME TOKENS (Light default)
        ========================================================= */
     :root{
-      /* page */
       --bg:#f5f5f5;
       --text:#1f2937;
       --muted:#6b7280;
 
-      /* containers */
       --card:#ffffff;
       --shadow:0 10px 24px rgba(0,0,0,.10);
       --border:#e5e7eb;
 
-      /* accents */
       --gold:#d4a017;
       --gold2:#b88910;
 
-      /* game cards */
       --chip:#3f3f3f;
       --chipHover:#4a4a4a;
       --chipBorder:rgba(255,255,255,.08);
 
-      /* controls */
       --controlBg:#ffffff;
       --controlText:#111827;
       --controlBorder:#e5e7eb;
 
-      /* misc */
+      --complete1:#18a999;
+      --complete2:#0f7b6d;
+
       --radius:16px;
       --focus: rgba(212,160,23,.55);
       --toastBg: rgba(17,24,39,.92);
@@ -55,11 +52,9 @@
       --shadow:0 12px 28px rgba(0,0,0,.45);
       --border: rgba(255,255,255,.10);
 
-      /* keep gold */
       --gold:#d4a017;
       --gold2:#b88910;
 
-      /* game cards slightly lighter than bg */
       --chip:#1f2937;
       --chipHover:#243044;
       --chipBorder:rgba(255,255,255,.10);
@@ -68,11 +63,13 @@
       --controlText:#e5e7eb;
       --controlBorder: rgba(255,255,255,.12);
 
+      --complete1:#16b6a4;
+      --complete2:#0d7f72;
+
       --focus: rgba(212,160,23,.65);
       --toastBg: rgba(0,0,0,.85);
     }
 
-    /* Use OS preference as default if cookie not set (JS will override) */
     @media (prefers-color-scheme: dark) {
       html:not([data-theme]) { color-scheme: dark; }
     }
@@ -169,7 +166,7 @@
       transform:translateY(-50%);
       width:18px;height:18px;
       color: color-mix(in oklab, var(--muted) 85%, transparent);
-      pointer-events:none; /* ✅ prevents odd tap behavior on mobile */
+      pointer-events:none;
     }
 
     .actions{
@@ -202,7 +199,6 @@
     }
     .btnDanger:hover{ background: rgba(239,68,68,.08); }
 
-    /* Theme toggle button */
     .btnIcon{
       width: 44px;
       height: 44px;
@@ -251,10 +247,14 @@
       box-shadow: 0 0 0 3px var(--focus), 0 8px 18px rgba(0,0,0,.18);
     }
 
-    /* Starred section card styling */
     .gameCard.starredCard{
       background: linear-gradient(180deg, var(--gold), var(--gold2));
       border-color: rgba(255,255,255,.25);
+    }
+
+    .gameCard.completedCard{
+      background: linear-gradient(180deg, var(--complete1), var(--complete2));
+      border-color: rgba(255,255,255,.22);
     }
 
     .left{
@@ -269,6 +269,7 @@
       align-items:center;
       gap:10px;
       min-width:0;
+      flex-wrap:wrap;
     }
     .gameName{
       font-size: 16px;
@@ -285,6 +286,7 @@
       padding: 4px 8px;
       border-radius: 999px;
       flex: 0 0 auto;
+      line-height: 1;
     }
     .desc{
       font-size: 12px;
@@ -303,7 +305,6 @@
       flex: 0 0 auto;
     }
 
-    /* Star button */
     .iconBtn{
       width:38px;height:38px;
       border-radius: 11px;
@@ -363,20 +364,126 @@
     .toast svg{ width:16px;height:16px; opacity:.9; }
 
     /* =========================================================
+       COMPLETED (COLLAPSIBLE) — prettier dropdown
+       ========================================================= */
+    details.sectionDetails{
+      margin: 18px 0;
+    }
+    details.sectionDetails > summary{
+      list-style:none;
+      cursor:pointer;
+      outline:none;
+    }
+    details.sectionDetails > summary::-webkit-details-marker{ display:none; }
+
+    .summaryInner{
+      position: relative;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding: 18px 18px;
+      background:
+        radial-gradient(1200px 240px at 20% -40%, rgba(212,160,23,.22), transparent 60%),
+        radial-gradient(1200px 240px at 80% 140%, rgba(24,169,153,.18), transparent 60%),
+        var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: transform .10s ease, border-color .14s ease, box-shadow .14s ease;
+      user-select:none;
+    }
+    summary:hover .summaryInner{
+      transform: translateY(-1px);
+      border-color: color-mix(in oklab, var(--border) 60%, var(--gold) 40%);
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+    }
+    summary:focus-visible .summaryInner{
+      box-shadow: 0 0 0 3px var(--focus), var(--shadow);
+    }
+
+    .summaryTitle{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+      flex: 1 1 auto;
+    }
+    .summaryTitle h2{
+      margin:0;
+      font-size:22px;
+      letter-spacing:.2px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+      background: color-mix(in oklab, var(--controlBg) 80%, transparent);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1;
+      white-space:nowrap;
+    }
+
+    .summaryMeta{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .resetBtn{
+      border:1px solid rgba(239,68,68,.35);
+      background: color-mix(in oklab, var(--controlBg) 92%, transparent);
+      color:#ef4444;
+      padding:8px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .resetBtn:hover{ background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.55); }
+    .resetBtn:active{ transform: translateY(1px); }
+
+    .chev{
+      width:36px;height:36px;
+      border-radius: 14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border: 1px solid var(--controlBorder);
+      background: var(--controlBg);
+      color: var(--controlText);
+      transition: transform .14s ease;
+      flex: 0 0 auto;
+    }
+    .chev svg{ width:18px; height:18px; }
+    details.sectionDetails[open] .chev{ transform: rotate(180deg); }
+
+    .detailsBody{
+      margin-top: 10px;
+    }
+
+    /* =========================================================
        MOBILE FRIENDLY IMPROVEMENTS
        ========================================================= */
     @media (max-width: 720px) {
-      header{
-        padding: 28px 14px 10px;
-      }
+      header{ padding: 28px 14px 10px; }
       h1{
         font-size: clamp(26px, 7vw, 40px);
         line-height: 1.1;
       }
 
-      .wrap{
-        padding: 0 12px 44px;
-      }
+      .wrap{ padding: 0 12px 44px; }
 
       .section{
         padding: 16px 14px 18px;
@@ -386,41 +493,29 @@
 
       .sectionTitle{ font-size: 22px; }
 
-      /* toolbar stacks nicely */
       .toolbar{
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
         margin: 6px 0 14px;
-
-        /* ✅ FIX: stop space-between from creating giant vertical gaps */
         justify-content: flex-start;
       }
 
-      /* ✅ FIX: prevent search container from stretching tall in column layout */
       .search{
         min-width: 0;
         flex: 0 0 auto;
       }
 
-      /* make buttons thumb-friendly */
       .actions{
         display:grid;
-        grid-template-columns: 1fr 1fr 44px; /* Export / Clear / Theme */
+        grid-template-columns: 1fr 1fr 44px;
         gap:10px;
         width:100%;
       }
-      .btn{
-        justify-content:center;
-        padding:12px 12px;
-      }
+      .btn{ justify-content:center; padding:12px 12px; }
 
-      .gameCard{
-        padding: 14px 14px;
-        gap: 10px;
-      }
+      .gameCard{ padding: 14px 14px; gap: 10px; }
 
-      /* allow wrapping on mobile */
       .gameName{
         white-space: normal;
         overflow: visible;
@@ -439,20 +534,61 @@
         height: 44px;
         font-size: 20px;
       }
+
+      .summaryInner{
+        padding: 14px 14px;
+        border-radius: 14px;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .summaryTitle h2{ font-size: 20px; }
+      .summaryMeta{
+        width:100%;
+        justify-content: space-between;
+      }
+      .chev{ margin-left:auto; }
     }
 
     @media (max-width: 420px) {
-      /* stack action buttons on tiny screens */
-      .actions{
-        grid-template-columns: 1fr 1fr; /* Export / Clear */
-      }
+      .actions{ grid-template-columns: 1fr 1fr; }
       .btnIcon{
-        grid-column: 1 / -1; /* theme toggle full width */
+        grid-column: 1 / -1;
         width: 100%;
       }
+      .resetBtn{ width: 100%; justify-content:center; }
+    }
+
+    /* =========================================================
+       FOOTER (VERSION)
+       ========================================================= */
+    footer{
+      max-width:980px;
+      margin: 0 auto;
+      padding: 0 14px 22px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      opacity: .9;
+    }
+    .versionBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--card) 85%, transparent);
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background: var(--gold2);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--gold2) 20%, transparent);
     }
   </style>
 </head>
+
 <body>
   <header>
     <h1>The Ultimate Daily Game Collection</h1>
@@ -477,7 +613,6 @@
           <span>Clear stars</span>
         </button>
 
-        <!-- Theme toggle -->
         <button class="btn btnIcon" id="themeToggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">
           <span id="themeIcon" aria-hidden="true">🌙</span>
         </button>
@@ -487,7 +622,7 @@
     <div id="sections"></div>
 
     <p class="hint">
-      💡 Tip: Click a card to open the game (always opens in a new tab). Stars and theme save only on your device.
+      💡 Tip: Click a card to open the game (always opens in a new tab). Stars, completions, last-played, and theme save only on your device.
     </p>
   </div>
 
@@ -498,22 +633,38 @@
     <span id="toastText">Saved</span>
   </div>
 
+  <!-- ✅ Version footer -->
+  <footer>
+    <span class="versionBadge">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="versionText">Version</span>
+    </span>
+  </footer>
+
   <script>
+    /***********************
+     * VERSION
+     * Change this whenever you ship an update
+     ***********************/
+    const VERSION = "v1.0.0";
+
     /***********************
      * CONFIG
      ***********************/
-    const SHOW_STARRED_SECTION = true; // keep your current behavior
+    const SHOW_STARRED_SECTION = true;
 
     /***********************
      * 0) COOKIES (theme)
      ***********************/
     const THEME_COOKIE = "rd2_theme"; // "light" | "dark"
+
     function setCookie(name, value, days = 365) {
       const date = new Date();
       date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
       const expires = "expires=" + date.toUTCString();
       document.cookie = `${name}=${encodeURIComponent(value)}; ${expires}; path=/; SameSite=Lax`;
     }
+
     function getCookie(name) {
       const key = name + "=";
       const parts = document.cookie.split(";").map(s => s.trim());
@@ -526,7 +677,6 @@
     function getPreferredTheme() {
       const cookieTheme = getCookie(THEME_COOKIE);
       if (cookieTheme === "light" || cookieTheme === "dark") return cookieTheme;
-      // fallback to OS
       return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
 
@@ -552,7 +702,6 @@
       { id: "spots", name: "Spots", url: "https://spots.wtf/", desc: "Your goal is to guess the secret 4-color code. There are 6 possible colors:", tags: ["Daily"] },
       { id: "spotle", name: "Spotle", url: "https://spotle.io/", desc: "10 guesses, 1000 artists. Will you win today?", tags: ["Daily"] },
       { id: "worldle", name: "Worldle", url: "https://worldle.teuteuf.fr/", desc: "Guess the territory", tags: ["Daily"] },
-      { id: "worldle", name: "Skikaku", url: "https://shikakuofthe.day/", desc: "", tags: ["Daily"] },
 
       { id: "wordle", name: "Wordle", url: "https://www.nytimes.com/games/wordle/index.html", desc: "Classic daily word puzzle", tags: ["Daily"] },
       { id: "connections", name: "Connections", url: "https://www.nytimes.com/games/connections", desc: "Create four groups of four!", tags: ["Daily"] },
@@ -561,18 +710,17 @@
 
       { id: "contexto", name: "Contexto", url: "https://contexto.me/", desc: "Find the secret word by similarity", tags: ["Daily"] },
       { id: "linkedIn", name: "LinkedIn Games", url: "https://www.linkedin.com/games/", desc: "Prep your mind for the workday and compare results.", tags: ["Daily"] },
-      { id: "linkedIn", name: "Redactle", url: "https://redactle.net/", desc: "Guess a word to reveal matches in the article.", tags: ["Daily"] },
+      { id: "Redactle", name: "Redactle", url: "https://redactle.net/", desc: "Guess a word to reveal matches in the article.", tags: ["Daily"] },
     ];
 
     /***********************
      * 2) STAR STORAGE (per user)
-     * - Store as an ARRAY to preserve "star order"
      ***********************/
-    const STORAGE_KEY = "ultimateDailyGames:stars:v2";
+    const STAR_KEY = "ultimateDailyGames:stars:v2";
 
     function loadStars() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(STAR_KEY);
         const arr = raw ? JSON.parse(raw) : [];
         return Array.isArray(arr) ? arr : [];
       } catch {
@@ -581,14 +729,123 @@
     }
 
     function saveStars(starArray) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(starArray));
+      localStorage.setItem(STAR_KEY, JSON.stringify(starArray));
     }
 
-    // IMPORTANT: stars is an ARRAY in "star order"
     let stars = loadStars();
 
     /***********************
-     * 3) SORTING + SEARCH
+     * 3) CLICK TRACKING (per user)
+     * - keeps BOTH:
+     *   - completedToday: last click timestamp for *today*
+     *   - lastPlayed: most recent click timestamp overall
+     ***********************/
+    const CLICK_KEY = "ultimateDailyGames:clicks:v2";
+
+    function getTodayKey() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function loadClicks() {
+      try {
+        const raw = localStorage.getItem(CLICK_KEY);
+        const obj = raw ? JSON.parse(raw) : {};
+        return (obj && typeof obj === "object") ? obj : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveClicks(clickObj) {
+      localStorage.setItem(CLICK_KEY, JSON.stringify(clickObj));
+    }
+
+    // clicks[gameId] = { todayKey, todayTs, lastTs }
+    let clicks = loadClicks();
+
+    function markClicked(gameId) {
+      const now = Date.now();
+      const todayKey = getTodayKey();
+      const prev = clicks[gameId] && typeof clicks[gameId] === "object" ? clicks[gameId] : {};
+      clicks[gameId] = { ...prev, todayKey, todayTs: now, lastTs: now };
+      saveClicks(clicks);
+    }
+
+    function isCompletedToday(gameId) {
+      const todayKey = getTodayKey();
+      return clicks?.[gameId]?.todayKey === todayKey;
+    }
+
+    function getLastPlayedTs(gameId) {
+      return clicks?.[gameId]?.lastTs ?? 0;
+    }
+
+    function formatTime(ts) {
+      if (!ts) return "";
+      try {
+        return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      } catch { return ""; }
+    }
+
+    function formatDateTime(ts) {
+      if (!ts) return "";
+      try {
+        const d = new Date(ts);
+        const date = d.toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" });
+        const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        return `${date} • ${time}`;
+      } catch { return ""; }
+    }
+
+    // Reset only "today" completion state (keeps lastTs)
+    function resetToday() {
+      const todayKey = getTodayKey();
+      let changed = false;
+
+      for (const [id, info] of Object.entries(clicks)) {
+        if (!info || typeof info !== "object") continue;
+        if (info.todayKey === todayKey) {
+          const next = { ...info };
+          delete next.todayKey;
+          delete next.todayTs;
+          clicks[id] = next;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        saveClicks(clicks);
+        render();
+        toast("Reset today's completions");
+      } else {
+        toast("Nothing to reset");
+      }
+    }
+
+    /***********************
+     * 4) COMPLETED COLLAPSE STATE (minimized by default)
+     ***********************/
+    const COMPLETED_COLLAPSE_KEY = "ultimateDailyGames:completedCollapsed:v1";
+
+    function loadCompletedCollapsed() {
+      try {
+        const raw = localStorage.getItem(COMPLETED_COLLAPSE_KEY);
+        return raw === null ? true : raw === "1";
+      } catch {
+        return true;
+      }
+    }
+
+    function saveCompletedCollapsed(isCollapsed) {
+      localStorage.setItem(COMPLETED_COLLAPSE_KEY, isCollapsed ? "1" : "0");
+    }
+
+    /***********************
+     * 5) SORTING + SEARCH
      ***********************/
     function normalize(s) {
       return (s || "").toLowerCase().trim();
@@ -602,7 +859,9 @@
 
     function matchesQuery(game) {
       if (!query) return true;
-      const hay = normalize(`${game.name} ${game.desc || ""} ${(game.tags || []).join(" ")}`);
+      const last = getLastPlayedTs(game.id);
+      const lastTxt = last ? ` last played ${formatDateTime(last)}` : "";
+      const hay = normalize(`${game.name} ${game.desc || ""} ${(game.tags || []).join(" ")}${lastTxt}`);
       return hay.includes(query);
     }
 
@@ -611,7 +870,26 @@
     }
 
     /***********************
-     * 4) RENDERING
+     * 6) MIDNIGHT AUTO-RESET (rerender at local midnight)
+     ***********************/
+    function msUntilNextLocalMidnight() {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 0, 0);
+      return next.getTime() - now.getTime();
+    }
+
+    let midnightTimer = null;
+    function scheduleMidnightRerender() {
+      clearTimeout(midnightTimer);
+      midnightTimer = setTimeout(() => {
+        render();
+        scheduleMidnightRerender();
+      }, msUntilNextLocalMidnight() + 50);
+    }
+
+    /***********************
+     * 7) RENDERING
      ***********************/
     const sectionsEl = document.getElementById("sections");
     const searchInput = document.getElementById("searchInput");
@@ -665,6 +943,7 @@
       card.setAttribute("aria-label", `Open ${game.name} in a new tab`);
 
       if (cardStyle === "starred") card.classList.add("starredCard");
+      if (cardStyle === "completed") card.classList.add("completedCard");
 
       const left = document.createElement("div");
       left.className = "left";
@@ -683,6 +962,24 @@
         tag.className = "tag";
         tag.textContent = game.tags[0];
         nameRow.appendChild(tag);
+      }
+
+      const lastTs = getLastPlayedTs(game.id);
+      if (lastTs) {
+        const lastTag = document.createElement("span");
+        lastTag.className = "tag";
+        lastTag.textContent = `Last played: ${formatDateTime(lastTs)}`;
+        nameRow.appendChild(lastTag);
+      }
+
+      if (cardStyle === "completed") {
+        const todayTs = clicks?.[game.id]?.todayTs ?? 0;
+        if (todayTs) {
+          const todayTag = document.createElement("span");
+          todayTag.className = "tag";
+          todayTag.textContent = `Today: ${formatTime(todayTs)}`;
+          nameRow.appendChild(todayTag);
+        }
       }
 
       const desc = document.createElement("div");
@@ -706,7 +1003,6 @@
       starBtn.setAttribute("aria-label", starBtn.title);
       starBtn.textContent = isStarred ? "⭐" : "☆";
 
-      // prevent navigation when clicking star
       starBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -718,16 +1014,18 @@
       card.appendChild(left);
       card.appendChild(right);
 
-      // Card click opens in NEW TAB
       card.addEventListener("click", (e) => {
         if (e.target.closest("button")) return;
+        markClicked(game.id);
+        render();
         window.open(game.url, "_blank", "noopener,noreferrer");
       });
 
-      // Keyboard support opens in NEW TAB
       card.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
+          markClicked(game.id);
+          render();
           window.open(game.url, "_blank", "noopener,noreferrer");
         }
       });
@@ -735,17 +1033,102 @@
       return card;
     }
 
+    function buildCompletedCollapsible(completedToday) {
+      const collapsed = loadCompletedCollapsed();
+
+      const details = document.createElement("details");
+      details.className = "sectionDetails";
+      details.open = !collapsed;
+
+      const summary = document.createElement("summary");
+
+      const summaryInner = document.createElement("div");
+      summaryInner.className = "summaryInner";
+
+      const left = document.createElement("div");
+      left.className = "summaryTitle";
+
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.textContent = "✅";
+
+      const title = document.createElement("h2");
+      title.textContent = "Completed (Today)";
+
+      const countPill = document.createElement("span");
+      countPill.className = "pill";
+      countPill.textContent = `${completedToday.length} done`;
+
+      left.appendChild(icon);
+      left.appendChild(title);
+      left.appendChild(countPill);
+
+      const meta = document.createElement("div");
+      meta.className = "summaryMeta";
+
+      const resetBtn = document.createElement("button");
+      resetBtn.type = "button";
+      resetBtn.className = "resetBtn";
+      resetBtn.title = "Clear today's completed list (keeps last played)";
+      resetBtn.innerHTML = `<span aria-hidden="true">↺</span><span>Reset today</span>`;
+      resetBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resetToday();
+      });
+
+      const chev = document.createElement("span");
+      chev.className = "chev";
+      chev.setAttribute("aria-hidden", "true");
+      chev.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      `;
+
+      meta.appendChild(resetBtn);
+      meta.appendChild(chev);
+
+      summaryInner.appendChild(left);
+      summaryInner.appendChild(meta);
+
+      summary.appendChild(summaryInner);
+      details.appendChild(summary);
+
+      const body = buildSection(
+        { title: "", icon: "", games: completedToday },
+        { cardStyle: "completed", emptyText: "No completed games match your search." }
+      );
+      body.classList.add("detailsBody");
+      body.querySelector(".sectionHeader")?.remove();
+
+      details.appendChild(body);
+
+      details.addEventListener("toggle", () => {
+        saveCompletedCollapsed(!details.open);
+      });
+
+      return details;
+    }
+
     function render() {
       sectionsEl.innerHTML = "";
 
       const allSorted = sortAZ(GAMES);
 
-      // ⭐ Starred section: NOT alphabetical.
-      // It follows the saved "stars" array order (order starred).
+      const completedToday = allSorted
+        .filter(g => isCompletedToday(g.id))
+        .sort((a, b) => (clicks?.[b.id]?.todayTs ?? 0) - (clicks?.[a.id]?.todayTs ?? 0))
+        .filter(matchesQuery);
+
+      sectionsEl.appendChild(buildCompletedCollapsible(completedToday));
+
       if (SHOW_STARRED_SECTION) {
         const starredInStarOrder = stars
           .map(id => gameById(id))
-          .filter(Boolean);
+          .filter(Boolean)
+          .filter(g => !isCompletedToday(g.id))
+          .filter(matchesQuery);
 
         if (starredInStarOrder.length) {
           sectionsEl.appendChild(
@@ -757,26 +1140,29 @@
         }
       }
 
-      // All games: alphabetically sorted
+      const remaining = allSorted
+        .filter(g => !isCompletedToday(g.id))
+        .filter(matchesQuery);
+
       sectionsEl.appendChild(
         buildSection(
-          { title: "All Games (A–Z)", icon: "🎮", games: allSorted },
+          { title: "All Games (A–Z)", icon: "🎮", games: remaining },
           { cardStyle: "normal", emptyText: "No games match your search." }
         )
       );
     }
 
     /***********************
-     * 5) INTERACTIONS
+     * 8) INTERACTIONS
      ***********************/
     function toggleStar(gameId) {
       const idx = stars.indexOf(gameId);
 
       if (idx !== -1) {
-        stars.splice(idx, 1); // remove, preserve order of remaining
+        stars.splice(idx, 1);
         toast("Unstarred");
       } else {
-        stars.push(gameId); // append to end -> preserves "star order"
+        stars.push(gameId);
         toast("Starred");
       }
 
@@ -797,9 +1183,8 @@
     });
 
     exportBtn.addEventListener("click", async () => {
-      // export in star order too
       const starredInStarOrder = stars
-        .map(id => gameById(id))
+        .map(id => GAMES.find(g => g.id === id))
         .filter(Boolean);
 
       const lines = starredInStarOrder.map(g => `${g.name} — ${g.url}`);
@@ -817,7 +1202,6 @@
       }
     });
 
-    // Theme toggle (cookie saved)
     const themeToggleBtn = document.getElementById("themeToggle");
     themeToggleBtn.addEventListener("click", () => {
       const current = document.documentElement.getAttribute("data-theme") || getPreferredTheme();
@@ -828,7 +1212,7 @@
     });
 
     /***********************
-     * 6) TOAST
+     * 9) TOAST
      ***********************/
     const toastEl = document.getElementById("toast");
     const toastText = document.getElementById("toastText");
@@ -844,9 +1228,13 @@
     /***********************
      * INIT
      ***********************/
-    // Apply theme from cookie (or OS if not set)
+    // Show version in footer
+    const versionEl = document.getElementById("versionText");
+    if (versionEl) versionEl.textContent = `Version ${VERSION}`;
+
     applyTheme(getPreferredTheme());
     render();
+    scheduleMidnightRerender();
   </script>
 </body>
 </html>
