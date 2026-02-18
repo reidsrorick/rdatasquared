@@ -13,35 +13,28 @@
        THEME TOKENS (Light default)
        ========================================================= */
     :root{
-      /* page */
       --bg:#f5f5f5;
       --text:#1f2937;
       --muted:#6b7280;
 
-      /* containers */
       --card:#ffffff;
       --shadow:0 10px 24px rgba(0,0,0,.10);
       --border:#e5e7eb;
 
-      /* accents */
       --gold:#d4a017;
       --gold2:#b88910;
 
-      /* game cards */
       --chip:#3f3f3f;
       --chipHover:#4a4a4a;
       --chipBorder:rgba(255,255,255,.08);
 
-      /* controls */
       --controlBg:#ffffff;
       --controlText:#111827;
       --controlBorder:#e5e7eb;
 
-      /* completed */
       --complete1:#18a999;
       --complete2:#0f7b6d;
 
-      /* misc */
       --radius:16px;
       --focus: rgba(212,160,23,.55);
       --toastBg: rgba(17,24,39,.92);
@@ -59,11 +52,9 @@
       --shadow:0 12px 28px rgba(0,0,0,.45);
       --border: rgba(255,255,255,.10);
 
-      /* keep gold */
       --gold:#d4a017;
       --gold2:#b88910;
 
-      /* game cards slightly lighter than bg */
       --chip:#1f2937;
       --chipHover:#243044;
       --chipBorder:rgba(255,255,255,.10);
@@ -79,7 +70,6 @@
       --toastBg: rgba(0,0,0,.85);
     }
 
-    /* Use OS preference as default if cookie not set (JS will override) */
     @media (prefers-color-scheme: dark) {
       html:not([data-theme]) { color-scheme: dark; }
     }
@@ -209,7 +199,6 @@
     }
     .btnDanger:hover{ background: rgba(239,68,68,.08); }
 
-    /* Theme toggle button */
     .btnIcon{
       width: 44px;
       height: 44px;
@@ -258,13 +247,11 @@
       box-shadow: 0 0 0 3px var(--focus), 0 8px 18px rgba(0,0,0,.18);
     }
 
-    /* Starred section card styling */
     .gameCard.starredCard{
       background: linear-gradient(180deg, var(--gold), var(--gold2));
       border-color: rgba(255,255,255,.25);
     }
 
-    /* Completed section card styling */
     .gameCard.completedCard{
       background: linear-gradient(180deg, var(--complete1), var(--complete2));
       border-color: rgba(255,255,255,.22);
@@ -318,7 +305,6 @@
       flex: 0 0 auto;
     }
 
-    /* Star button */
     .iconBtn{
       width:38px;height:38px;
       border-radius: 11px;
@@ -378,14 +364,8 @@
     .toast svg{ width:16px;height:16px; opacity:.9; }
 
     /* =========================================================
-       COMPLETED (COLLAPSIBLE)
+       COMPLETED (COLLAPSIBLE) — prettier dropdown
        ========================================================= */
-    .detailsReset{
-      border:0;
-      padding:0;
-      margin:0;
-      background:transparent;
-    }
     details.sectionDetails{
       margin: 18px 0;
     }
@@ -397,15 +377,30 @@
     details.sectionDetails > summary::-webkit-details-marker{ display:none; }
 
     .summaryInner{
+      position: relative;
       display:flex;
       align-items:center;
       gap:12px;
-      padding: 22px 22px 12px;
-      background: var(--card);
+      padding: 18px 18px;
+      background:
+        radial-gradient(1200px 240px at 20% -40%, rgba(212,160,23,.22), transparent 60%),
+        radial-gradient(1200px 240px at 80% 140%, rgba(24,169,153,.18), transparent 60%),
+        var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+      transition: transform .10s ease, border-color .14s ease, box-shadow .14s ease;
+      user-select:none;
     }
+    summary:hover .summaryInner{
+      transform: translateY(-1px);
+      border-color: color-mix(in oklab, var(--border) 60%, var(--gold) 40%);
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+    }
+    summary:focus-visible .summaryInner{
+      box-shadow: 0 0 0 3px var(--focus), var(--shadow);
+    }
+
     .summaryTitle{
       display:flex;
       align-items:center;
@@ -415,8 +410,24 @@
     }
     .summaryTitle h2{
       margin:0;
-      font-size:26px;
+      font-size:22px;
+      letter-spacing:.2px;
     }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+      background: color-mix(in oklab, var(--controlBg) 80%, transparent);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1;
+      white-space:nowrap;
+    }
+
     .summaryMeta{
       display:flex;
       align-items:center;
@@ -424,25 +435,42 @@
       flex: 0 0 auto;
       color: var(--muted);
       font-size: 14px;
-      user-select:none;
     }
+
+    .resetBtn{
+      border:1px solid rgba(239,68,68,.35);
+      background: color-mix(in oklab, var(--controlBg) 92%, transparent);
+      color:#ef4444;
+      padding:8px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .resetBtn:hover{ background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.55); }
+    .resetBtn:active{ transform: translateY(1px); }
+
     .chev{
-      width:28px;height:28px;
-      border-radius: 10px;
+      width:36px;height:36px;
+      border-radius: 14px;
       display:inline-flex;
       align-items:center;
       justify-content:center;
       border: 1px solid var(--controlBorder);
       background: var(--controlBg);
       color: var(--controlText);
-      transition: transform .12s ease;
+      transition: transform .14s ease;
+      flex: 0 0 auto;
     }
+    .chev svg{ width:18px; height:18px; }
     details.sectionDetails[open] .chev{ transform: rotate(180deg); }
 
     .detailsBody{
-      margin-top: -10px;
-      border-top-left-radius: 0;
-      border-top-right-radius: 0;
+      margin-top: 10px;
     }
 
     /* =========================================================
@@ -470,17 +498,17 @@
         align-items: stretch;
         gap: 10px;
         margin: 6px 0 14px;
-        justify-content: flex-start; /* FIX: prevents giant vertical gaps */
+        justify-content: flex-start;
       }
 
       .search{
         min-width: 0;
-        flex: 0 0 auto; /* FIX: prevents stretching tall */
+        flex: 0 0 auto;
       }
 
       .actions{
         display:grid;
-        grid-template-columns: 1fr 1fr 44px; /* Export / Clear / Theme */
+        grid-template-columns: 1fr 1fr 44px;
         gap:10px;
         width:100%;
       }
@@ -507,12 +535,19 @@
         font-size: 20px;
       }
 
-      /* Collapsible header on mobile */
+      /* Completed dropdown header on mobile */
       .summaryInner{
-        padding: 16px 14px 10px;
+        padding: 14px 14px;
         border-radius: 14px;
+        gap: 10px;
+        flex-wrap: wrap;
       }
-      .summaryTitle h2{ font-size: 22px; }
+      .summaryTitle h2{ font-size: 20px; }
+      .summaryMeta{
+        width:100%;
+        justify-content: space-between;
+      }
+      .chev{ margin-left:auto; }
     }
 
     @media (max-width: 420px) {
@@ -521,6 +556,7 @@
         grid-column: 1 / -1;
         width: 100%;
       }
+      .resetBtn{ width: 100%; justify-content:center; }
     }
   </style>
 </head>
@@ -636,7 +672,6 @@
 
     /***********************
      * 2) STAR STORAGE (per user)
-     * - Store as an ARRAY to preserve "star order"
      ***********************/
     const STAR_KEY = "ultimateDailyGames:stars:v2";
 
@@ -686,28 +721,14 @@
       localStorage.setItem(CLICK_KEY, JSON.stringify(clickObj));
     }
 
-    // Structure:
-    // clicks[gameId] = {
-    //   todayKey: "YYYY-MM-DD",
-    //   todayTs: number,
-    //   lastTs: number
-    // }
+    // clicks[gameId] = { todayKey, todayTs, lastTs }
     let clicks = loadClicks();
 
     function markClicked(gameId) {
       const now = Date.now();
       const todayKey = getTodayKey();
       const prev = clicks[gameId] && typeof clicks[gameId] === "object" ? clicks[gameId] : {};
-      clicks[gameId] = {
-        todayKey,
-        todayTs: now,
-        lastTs: now,
-        // preserve any unknown future fields
-        ...prev,
-        todayKey,
-        todayTs: now,
-        lastTs: now
-      };
+      clicks[gameId] = { ...prev, todayKey, todayTs: now, lastTs: now };
       saveClicks(clicks);
     }
 
@@ -737,6 +758,31 @@
       } catch { return ""; }
     }
 
+    // ✅ Reset only "today" completion state (keeps lastTs)
+    function resetToday() {
+      const todayKey = getTodayKey();
+      let changed = false;
+
+      for (const [id, info] of Object.entries(clicks)) {
+        if (!info || typeof info !== "object") continue;
+        if (info.todayKey === todayKey) {
+          const next = { ...info };
+          delete next.todayKey;
+          delete next.todayTs;
+          clicks[id] = next;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        saveClicks(clicks);
+        render();
+        toast("Reset today's completions");
+      } else {
+        toast("Nothing to reset");
+      }
+    }
+
     /***********************
      * 4) COMPLETED COLLAPSE STATE (minimized by default)
      ***********************/
@@ -745,7 +791,6 @@
     function loadCompletedCollapsed() {
       try {
         const raw = localStorage.getItem(COMPLETED_COLLAPSE_KEY);
-        // default: collapsed (true) if never set
         return raw === null ? true : raw === "1";
       } catch {
         return true;
@@ -869,7 +914,6 @@
 
       nameRow.appendChild(name);
 
-      // "Daily" tag (existing)
       if (game.tags && game.tags.length) {
         const tag = document.createElement("span");
         tag.className = "tag";
@@ -877,7 +921,6 @@
         nameRow.appendChild(tag);
       }
 
-      // Always show "Last played" if available
       const lastTs = getLastPlayedTs(game.id);
       if (lastTs) {
         const lastTag = document.createElement("span");
@@ -886,7 +929,6 @@
         nameRow.appendChild(lastTag);
       }
 
-      // If in completed section, also show "Today at ..."
       if (cardStyle === "completed") {
         const todayTs = clicks?.[game.id]?.todayTs ?? 0;
         if (todayTs) {
@@ -918,7 +960,6 @@
       starBtn.setAttribute("aria-label", starBtn.title);
       starBtn.textContent = isStarred ? "⭐" : "☆";
 
-      // prevent navigation/completion when clicking star
       starBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -930,7 +971,6 @@
       card.appendChild(left);
       card.appendChild(right);
 
-      // Card click opens in NEW TAB + marks "completed today" + updates last played
       card.addEventListener("click", (e) => {
         if (e.target.closest("button")) return;
         markClicked(game.id);
@@ -938,7 +978,6 @@
         window.open(game.url, "_blank", "noopener,noreferrer");
       });
 
-      // Keyboard support
       card.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -959,6 +998,7 @@
       details.open = !collapsed;
 
       const summary = document.createElement("summary");
+
       const summaryInner = document.createElement("div");
       summaryInner.className = "summaryInner";
 
@@ -970,37 +1010,54 @@
       icon.textContent = "✅";
 
       const title = document.createElement("h2");
-      title.className = "sectionTitle";
       title.textContent = "Completed (Today)";
+
+      const countPill = document.createElement("span");
+      countPill.className = "pill";
+      countPill.textContent = `${completedToday.length} done`;
 
       left.appendChild(icon);
       left.appendChild(title);
+      left.appendChild(countPill);
 
       const meta = document.createElement("div");
       meta.className = "summaryMeta";
 
-      const count = document.createElement("span");
-      count.textContent = `${completedToday.length}`;
+      const resetBtn = document.createElement("button");
+      resetBtn.type = "button";
+      resetBtn.className = "resetBtn";
+      resetBtn.title = "Clear today's completed list (keeps last played)";
+      resetBtn.innerHTML = `<span aria-hidden="true">↺</span><span>Reset today</span>`;
+
+      // ✅ IMPORTANT: prevent summary toggle when clicking reset
+      resetBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resetToday();
+      });
 
       const chev = document.createElement("span");
       chev.className = "chev";
-      chev.textContent = "⌄";
+      chev.setAttribute("aria-hidden", "true");
+      chev.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      `;
 
-      meta.appendChild(count);
+      meta.appendChild(resetBtn);
       meta.appendChild(chev);
 
       summaryInner.appendChild(left);
       summaryInner.appendChild(meta);
-      summary.appendChild(summaryInner);
 
+      summary.appendChild(summaryInner);
       details.appendChild(summary);
 
-      // Body content (use existing buildSection but remove its header)
       const body = buildSection(
         { title: "", icon: "", games: completedToday },
         { cardStyle: "completed", emptyText: "No completed games match your search." }
       );
-
       body.classList.add("detailsBody");
       body.querySelector(".sectionHeader")?.remove();
 
@@ -1018,16 +1075,14 @@
 
       const allSorted = sortAZ(GAMES);
 
-      // Completed today (most recent first)
       const completedToday = allSorted
         .filter(g => isCompletedToday(g.id))
         .sort((a, b) => (clicks?.[b.id]?.todayTs ?? 0) - (clicks?.[a.id]?.todayTs ?? 0))
         .filter(matchesQuery);
 
-      // Always show collapsible at top (minimized by default)
+      // Collapsible at top, minimized by default
       sectionsEl.appendChild(buildCompletedCollapsible(completedToday));
 
-      // Starred: preserve star order, but remove completed today so they “shift”
       if (SHOW_STARRED_SECTION) {
         const starredInStarOrder = stars
           .map(id => gameById(id))
@@ -1045,7 +1100,6 @@
         }
       }
 
-      // All games: alphabetical, excluding completed today (since they moved)
       const remaining = allSorted
         .filter(g => !isCompletedToday(g.id))
         .filter(matchesQuery);
@@ -1108,7 +1162,6 @@
       }
     });
 
-    // Theme toggle (cookie saved)
     const themeToggleBtn = document.getElementById("themeToggle");
     themeToggleBtn.addEventListener("click", () => {
       const current = document.documentElement.getAttribute("data-theme") || getPreferredTheme();
