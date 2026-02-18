@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vigenère Cipher (Hide Punctuation & Numbers)</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: rgba(255,255,255,0.08);
+      --text: #eaf0ff;
+      --muted: rgba(234,240,255,0.7);
+      --accent: #7aa7ff;
+      --border: rgba(255,255,255,0.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 900px at 20% 10%, #192a5a 0%, transparent 55%),
+                  radial-gradient(900px 700px at 80% 20%, #3a1a6a 0%, transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .wrap { width: min(1080px, 100%); display: grid; gap: 14px; }
+    .header { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+    h1 { font-size: 20px; margin: 0; }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      backdrop-filter: blur(8px);
+    }
+    label { display:block; color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    input[type="text"], textarea, select {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.25);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: rgba(122,167,255,0.7);
+      box-shadow: 0 0 0 3px rgba(122,167,255,0.18);
+    }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .row { grid-template-columns: 1fr; } }
+
+    .btns { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+    button {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+    }
+    button:hover { background: rgba(255,255,255,0.10); border-color: rgba(122,167,255,0.5); }
+    button:active { transform: translateY(1px); }
+    .primary { background: rgba(122,167,255,0.20); border-color: rgba(122,167,255,0.55); }
+    .small { font-size: 12px; padding: 8px 10px; border-radius: 10px; }
+    .note { color: var(--muted); font-size: 12px; line-height: 1.4; margin-top: 10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    details {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.15);
+      margin-top: 12px;
+    }
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+    }
+    .tiny { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Vigenère Cipher (Punctuation & Digits Hidden)</h1>
+      <div class="hint">
+        New: <span class="mono">Codebook (Zxx)</span> mode uses mappings like <span class="mono">ZAA=!</span>, <span class="mono">ZAO=0</span> so ciphertext stays letters-only.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="key">Key (letters only are used)</label>
+          <input id="key" type="text" value="lemon" placeholder="e.g. lemon" autocomplete="off" />
+        </div>
+
+        <div>
+          <label for="mode">Cipher Mode</label>
+          <select id="mode">
+            <option value="encode" selected>Encode</option>
+            <option value="decode">Decode</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="nonalpha">Punctuation/Digits Handling</label>
+          <select id="nonalpha">
+            <option value="keep">Keep (preserve non-letters)</option>
+            <option value="strip">Strip (remove non-letters)</option>
+            <option value="tokenize">Tokenize (spell out digits/punct)</option>
+            <option value="codebook" selected>Codebook</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="height: 10px"></div>
+
+      <div class="row">
+        <div>
+          <label for="stripSpaces">Spacing option (Strip/Tokenize/Codebook)</label>
+          <select id="stripSpaces">
+            <option value="keepSpaces" selected>Keep spaces (readable)</option>
+            <option value="noSpaces">Remove spaces (max concealment)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="caseMode">Output case</label>
+          <select id="caseMode">
+            <option value="preserve" selected>Preserve original letter case</option>
+            <option value="upper">Force UPPERCASE</option>
+            <option value="lower">Force lowercase</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="autoRun">Auto-run</label>
+          <select id="autoRun">
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+      </div>
+
+      <details id="codebookPanel" open>
+        <summary>Codebook (Zxx) mapping list</summary>
+        <div class="tiny">
+          Format: <span class="mono">ZAA=!</span> or <span class="mono">ZAY=SPACE</span>. One mapping per line.
+          Letters-only output is achieved by replacing non-letters before Vigenère.
+          <br>
+          Special safety mapping included: <span class="mono">ZZZ=Z</span> (escapes literal Z so it won’t collide with tokens).
+        </div>
+        <div style="height: 10px"></div>
+        <label for="codebook">Mappings</label>
+        <textarea id="codebook" rows="10"></textarea>
+        <div class="btns">
+          <button class="small" id="resetCodebookBtn">Reset defaults</button>
+          <button class="small" id="validateCodebookBtn">Validate codebook</button>
+        </div>
+        <div class="tiny" id="codebookStatus"></div>
+      </details>
+
+      <div style="height: 12px"></div>
+
+      <div class="grid">
+        <div>
+          <label for="input">Input</label>
+          <textarea id="input">Attack at 5:30pm! Meet @ 7.</textarea>
+        </div>
+        <div>
+          <label for="output">Output</label>
+          <textarea id="output" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="runBtn">Run</button>
+        <button id="swapBtn">Swap input/output</button>
+        <button class="small" id="copyBtn">Copy output</button>
+        <button class="small" id="clearBtn">Clear</button>
+      </div>
+
+      <div class="note">
+        💡 If you want your ciphertext to be strictly <b>A–Z only</b>, use <b>Codebook (Zxx)</b> with <b>Remove spaces</b>.
+        If you keep spaces, Codebook will encode spaces using the <span class="mono">SPACE</span> mapping (so output still stays letters-only).
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Vigenère core ----------
+    function isUpper(ch) { const c = ch.charCodeAt(0); return c >= 65 && c <= 90; }
+    function isLower(ch) { const c = ch.charCodeAt(0); return c >= 97 && c <= 122; }
+    function alphaIndex(ch) {
+      const code = ch.charCodeAt(0);
+      if (isUpper(ch)) return code - 65;
+      if (isLower(ch)) return code - 97;
+      return -1;
+    }
+    function sanitizeKey(keyRaw) {
+      const shifts = [];
+      for (const ch of keyRaw) {
+        const idx = alphaIndex(ch);
+        if (idx !== -1) shifts.push(idx);
+      }
+      return shifts;
+    }
+    function shiftChar(ch, shift, direction) {
+      const idx = alphaIndex(ch);
+      if (idx === -1) return ch;
+      const base = isUpper(ch) ? 65 : 97;
+      const moved = (idx + direction * shift) % 26;
+      const wrapped = (moved + 26) % 26;
+      return String.fromCharCode(base + wrapped);
+    }
+    function applyCaseMode(str, caseMode) {
+      if (caseMode === "upper") return str.toUpperCase();
+      if (caseMode === "lower") return str.toLowerCase();
+      return str;
+    }
+    function vigenere(text, keyRaw, mode /* 'encode'|'decode' */) {
+      const key = sanitizeKey(keyRaw);
+      if (key.length === 0) return text;
+      const direction = (mode === "decode") ? -1 : 1;
+
+      let ki = 0;
+      let out = "";
+
+      for (const ch of text) {
+        const idx = alphaIndex(ch);
+        if (idx === -1) { out += ch; continue; }
+        const shift = key[ki % key.length];
+        out += shiftChar(ch, shift, direction);
+        ki++;
+      }
+      return out;
+    }
+
+    // ---------- Tokenize mode (spell-out) ----------
+    const DIGIT_WORDS = ["ZERO","ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE"];
+    const PUNCT_TOKENS = new Map([
+      [" ", "SPACE"], [".", "DOT"], [",", "COMMA"], ["!", "EXCLAMATION"], ["?", "QUESTION"],
+      [":", "COLON"], [";", "SEMICOLON"], ["-", "DASH"], ["_", "UNDERSCORE"],
+      ["'", "APOSTROPHE"], ["\"", "QUOTE"], ["(", "LPAREN"], [")", "RPAREN"],
+      ["[", "LBRACKET"], ["]", "RBRACKET"], ["{", "LBRACE"], ["}", "RBRACE"],
+      ["@", "AT"], ["#", "HASH"], ["$", "DOLLAR"], ["%", "PERCENT"], ["&", "AMPERSAND"],
+      ["*", "ASTERISK"], ["/", "SLASH"], ["\\", "BACKSLASH"], ["+", "PLUS"], ["=", "EQUALS"]
+    ]);
+    const TOKEN_TO_PUNCT = (() => {
+      const rev = new Map();
+      for (const [k, v] of PUNCT_TOKENS.entries()) rev.set(v, k);
+      DIGIT_WORDS.forEach((w, i) => rev.set(w, String(i)));
+      return rev;
+    })();
+
+    function normalizeStrip(text, keepSpaces) {
+      let out = "";
+      for (const ch of text) {
+        const idx = alphaIndex(ch);
+        if (idx !== -1) out += ch;
+        else if (keepSpaces && ch === " ") out += " ";
+      }
+      return out;
+    }
+
+    function tokenizeSpell(text, keepSpaces) {
+      const parts = [];
+      for (const ch of text) {
+        const idx = alphaIndex(ch);
+        if (idx !== -1) { parts.push(ch); continue; }
+
+        if (ch >= "0" && ch <= "9") { parts.push(DIGIT_WORDS[ch.charCodeAt(0) - 48]); continue; }
+
+        if (PUNCT_TOKENS.has(ch)) {
+          const tok = PUNCT_TOKENS.get(ch);
+          if (tok === "SPACE") { if (keepSpaces) parts.push("SPACE"); }
+          else parts.push(tok);
+          continue;
+        }
+
+        const code = ch.codePointAt(0);
+        parts.push("CHAR" + code.toString(16).toUpperCase());
+      }
+      return parts.join(" ");
+    }
+
+    function detokenizeSpell(tokenText) {
+      const tokens = tokenText.trim().split(/\s+/).filter(Boolean);
+      let out = "";
+      for (const t of tokens) {
+        const up = t.toUpperCase();
+        if (up.startsWith("CHAR")) {
+          const hex = up.slice(4);
+          const code = parseInt(hex, 16);
+          out += Number.isNaN(code) ? t : String.fromCodePoint(code);
+          continue;
+        }
+        if (up === "SPACE") { out += " "; continue; }
+        if (TOKEN_TO_PUNCT.has(up)) { out += TOKEN_TO_PUNCT.get(up); continue; }
+        if (/^[A-Z]$/i.test(t)) { out += t; continue; }
+        out += "[" + t + "]";
+      }
+      return out;
+    }
+
+    // ---------- Codebook (Zxx) mode ----------
+    const DEFAULT_CODEBOOK_TEXT =
+`ZAA=!
+ZAB=?
+ZAC=.
+ZAD=,
+ZAE=:
+ZAF=;
+ZAG=-
+ZAH=@
+ZAI=#
+ZAJ=$
+ZAK=%
+ZAL=&
+ZAM=(
+ZAN=)
+ZAO=0
+ZAP=1
+ZAQ=2
+ZAR=3
+ZAS=4
+ZAT=5
+ZAU=6
+ZAV=7
+ZAW=8
+ZAX=9
+ZAY=SPACE
+ZZZ=Z`;
+
+    function parseCodebook(text) {
+      // Returns { tokenToChar, charToToken, errors[] }
+      const tokenToChar = new Map();
+      const charToToken = new Map();
+      const errors = [];
+
+      const lines = text.split(/\r?\n/);
+      for (let li = 0; li < lines.length; li++) {
+        const raw = lines[li].trim();
+        if (!raw || raw.startsWith("#")) continue;
+
+        const m = raw.match(/^([A-Za-z]{3})\s*=\s*(.+)$/);
+        if (!m) { errors.push(`Line ${li+1}: invalid format (expected ZAA=!)`); continue; }
+
+        const token = m[1].toUpperCase();
+        let rhs = m[2];
+
+        // Accept SPACE literal for a space
+        let ch;
+        if (rhs.toUpperCase() === "SPACE") ch = " ";
+        else {
+          // take the first character literally
+          ch = rhs[0];
+        }
+
+        if (!/^[A-Z]{3}$/.test(token)) {
+          errors.push(`Line ${li+1}: token must be exactly 3 letters A–Z`);
+          continue;
+        }
+        if (tokenToChar.has(token)) errors.push(`Line ${li+1}: duplicate token ${token}`);
+        if (charToToken.has(ch)) errors.push(`Line ${li+1}: duplicate char mapping for ${JSON.stringify(ch)}`);
+
+        tokenToChar.set(token, ch);
+        charToToken.set(ch, token);
+      }
+
+      // Safety: require ZZZ=Z for collision-free decoding (recommended)
+      if (!tokenToChar.has("ZZZ") || tokenToChar.get("ZZZ") !== "Z") {
+        errors.push(`Missing recommended safety mapping: ZZZ=Z (escapes literal 'Z' to avoid token collisions).`);
+      }
+
+      // Safety: if SPACE is meant to be encodable in keepSpaces mode
+      if (!charToToken.has(" ")) {
+        errors.push(`No SPACE mapping found (e.g. ZAY=SPACE). "Keep spaces" won’t be able to encode spaces as letters-only.`);
+      }
+
+      return { tokenToChar, charToToken, errors };
+    }
+
+    function codebookEncodePreprocess(plaintext, cb, keepSpaces) {
+      // Output: letters-only stream (A–Z/a–z) BEFORE Vigenère
+      // Rules:
+      //  - Letters pass through (preserve case here; caseMode can override later)
+      //  - 'Z' letter is escaped to token for 'Z' (e.g. ZZZ) if present
+      //  - Any mapped non-letter is replaced with its token
+      //  - Space: if keepSpaces -> encode as token; else drop
+      //  - Unknown chars: drop (you can extend by adding mappings)
+      let out = "";
+
+      for (const ch of plaintext) {
+        const idx = alphaIndex(ch);
+        if (idx !== -1) {
+          // Escape literal 'Z' to avoid collisions with tokens starting with 'Z'
+          if (ch === "Z" || ch === "z") {
+            const tok = cb.charToToken.get("Z");
+            if (tok) out += tok; // token is letters-only
+            else out += ch; // fallback (not recommended)
+          } else {
+            out += ch;
+          }
+          continue;
+        }
+
+        if (ch === " ") {
+          if (!keepSpaces) continue;
+          const tok = cb.charToToken.get(" ");
+          if (tok) out += tok;
+          continue;
+        }
+
+        const tok = cb.charToToken.get(ch);
+        if (tok) out += tok;
+        // else drop unknown chars
+      }
+
+      return out;
+    }
+
+    function codebookDecodePostprocess(decodedLettersOnly, cb) {
+      // Scan for tokens (3 letters) that start with Z and exist in codebook;
+      // replace with mapped character; otherwise keep letter as-is.
+      // This is why escaping literal 'Z' is important (ZZZ=Z).
+      let out = "";
+      const text = decodedLettersOnly;
+
+      for (let i = 0; i < text.length;) {
+        const ch = text[i];
+        if ((ch === "Z" || ch === "z") && i + 2 < text.length) {
+          const tok = text.substring(i, i + 3).toUpperCase();
+          if (cb.tokenToChar.has(tok)) {
+            out += cb.tokenToChar.get(tok);
+            i += 3;
+            continue;
+          }
+        }
+        out += text[i];
+        i++;
+      }
+      return out;
+    }
+
+    // ---------- Pipeline ----------
+    function process(input, key, cipherMode, nonalphaMode, spacingMode, caseMode, codebookText) {
+      const keepSpaces = (spacingMode === "keepSpaces");
+
+      if (cipherMode === "encode") {
+        let pre = input;
+
+        if (nonalphaMode === "strip") {
+          pre = normalizeStrip(pre, keepSpaces);
+        } else if (nonalphaMode === "tokenize") {
+          pre = tokenizeSpell(pre, keepSpaces);
+          if (!keepSpaces) pre = pre.replace(/\s+/g, "");
+        } else if (nonalphaMode === "codebook") {
+          const cb = parseCodebook(codebookText);
+          if (cb.errors.length) {
+            // Still attempt with whatever parsed
+            // (show errors in UI; output remains deterministic)
+          }
+          pre = codebookEncodePreprocess(pre, cb, keepSpaces);
+        } else {
+          // keep
+        }
+
+        let out = vigenere(pre, key, "encode");
+        out = applyCaseMode(out, caseMode);
+        return out;
+      } else {
+        // decode
+        let dec = vigenere(input, key, "decode");
+        dec = applyCaseMode(dec, caseMode);
+
+        if (nonalphaMode === "tokenize") {
+          if (keepSpaces) return detokenizeSpell(dec);
+          return dec; // ambiguous without separators
+        }
+
+        if (nonalphaMode === "codebook") {
+          const cb = parseCodebook(codebookText);
+          return codebookDecodePostprocess(dec, cb);
+        }
+
+        return dec;
+      }
+    }
+
+    // ---------- UI wiring ----------
+    const keyEl = document.getElementById("key");
+    const modeEl = document.getElementById("mode");
+    const nonalphaEl = document.getElementById("nonalpha");
+    const spacingEl = document.getElementById("stripSpaces");
+    const caseEl = document.getElementById("caseMode");
+    const autoRunEl = document.getElementById("autoRun");
+
+    const codebookPanel = document.getElementById("codebookPanel");
+    const codebookEl = document.getElementById("codebook");
+    const codebookStatusEl = document.getElementById("codebookStatus");
+    const resetCodebookBtn = document.getElementById("resetCodebookBtn");
+    const validateCodebookBtn = document.getElementById("validateCodebookBtn");
+
+    const inputEl = document.getElementById("input");
+    const outputEl = document.getElementById("output");
+
+    const runBtn = document.getElementById("runBtn");
+    const swapBtn = document.getElementById("swapBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    function updateCodebookVisibility() {
+      const isCB = nonalphaEl.value === "codebook";
+      codebookPanel.style.display = isCB ? "" : "none";
+    }
+
+    function validateCodebook() {
+      const cb = parseCodebook(codebookEl.value);
+      if (cb.errors.length) {
+        codebookStatusEl.textContent = "❗ Codebook issues:\n- " + cb.errors.join("\n- ");
+        codebookStatusEl.style.whiteSpace = "pre-wrap";
+        codebookStatusEl.style.color = "rgba(255,200,200,0.95)";
+      } else {
+        codebookStatusEl.textContent = "✔️ Codebook looks good.";
+        codebookStatusEl.style.whiteSpace = "normal";
+        codebookStatusEl.style.color = "rgba(180,255,210,0.95)";
+      }
+    }
+
+    function run() {
+      outputEl.value = process(
+        inputEl.value,
+        keyEl.value,
+        modeEl.value,
+        nonalphaEl.value,
+        spacingEl.value,
+        caseEl.value,
+        codebookEl.value
+      );
+      if (nonalphaEl.value === "codebook") validateCodebook();
+    }
+
+    function maybeRun() { if (autoRunEl.value === "on") run(); }
+
+    resetCodebookBtn.addEventListener("click", () => {
+      codebookEl.value = DEFAULT_CODEBOOK_TEXT;
+      validateCodebook();
+      maybeRun();
+    });
+
+    validateCodebookBtn.addEventListener("click", validateCodebook);
+
+    runBtn.addEventListener("click", run);
+    [keyEl, modeEl, nonalphaEl, spacingEl, caseEl, inputEl, autoRunEl, codebookEl]
+      .forEach(el => el.addEventListener("input", maybeRun));
+
+    modeEl.addEventListener("change", maybeRun);
+    nonalphaEl.addEventListener("change", () => {
+      updateCodebookVisibility();
+      maybeRun();
+    });
+    spacingEl.addEventListener("change", maybeRun);
+    caseEl.addEventListener("change", maybeRun);
+    autoRunEl.addEventListener("change", () => { if (autoRunEl.value === "on") run(); });
+
+    swapBtn.addEventListener("click", () => {
+      const tmp = inputEl.value;
+      inputEl.value = outputEl.value;
+      outputEl.value = tmp;
+      if (autoRunEl.value === "on") run();
+      inputEl.focus();
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(outputEl.value);
+      } catch {
+        outputEl.focus();
+        outputEl.select();
+        document.execCommand("copy");
+      }
+      copyBtn.textContent = "Copied ✔️";
+      setTimeout(() => (copyBtn.textContent = "Copy output"), 900);
+    });
+
+    clearBtn.addEventListener("click", () => {
+      inputEl.value = "";
+      outputEl.value = "";
+      inputEl.focus();
+    });
+
+    // init
+    codebookEl.value = DEFAULT_CODEBOOK_TEXT;
+    updateCodebookVisibility();
+    run();
+  </script>
+</body>
+</html>
