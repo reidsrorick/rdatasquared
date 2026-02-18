@@ -535,7 +535,6 @@
         font-size: 20px;
       }
 
-      /* Completed dropdown header on mobile */
       .summaryInner{
         padding: 14px 14px;
         border-radius: 14px;
@@ -557,6 +556,35 @@
         width: 100%;
       }
       .resetBtn{ width: 100%; justify-content:center; }
+    }
+
+    /* =========================================================
+       FOOTER (VERSION)
+       ========================================================= */
+    footer{
+      max-width:980px;
+      margin: 0 auto;
+      padding: 0 14px 22px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      opacity: .9;
+    }
+    .versionBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--card) 85%, transparent);
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background: var(--gold2);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--gold2) 20%, transparent);
     }
   </style>
 </head>
@@ -605,7 +633,21 @@
     <span id="toastText">Saved</span>
   </div>
 
+  <!-- ✅ Version footer -->
+  <footer>
+    <span class="versionBadge">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="versionText">Version</span>
+    </span>
+  </footer>
+
   <script>
+    /***********************
+     * VERSION
+     * Change this whenever you ship an update
+     ***********************/
+    const VERSION = "v1.0.0";
+
     /***********************
      * CONFIG
      ***********************/
@@ -758,7 +800,7 @@
       } catch { return ""; }
     }
 
-    // ✅ Reset only "today" completion state (keeps lastTs)
+    // Reset only "today" completion state (keeps lastTs)
     function resetToday() {
       const todayKey = getTodayKey();
       let changed = false;
@@ -1028,8 +1070,6 @@
       resetBtn.className = "resetBtn";
       resetBtn.title = "Clear today's completed list (keeps last played)";
       resetBtn.innerHTML = `<span aria-hidden="true">↺</span><span>Reset today</span>`;
-
-      // ✅ IMPORTANT: prevent summary toggle when clicking reset
       resetBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1080,7 +1120,6 @@
         .sort((a, b) => (clicks?.[b.id]?.todayTs ?? 0) - (clicks?.[a.id]?.todayTs ?? 0))
         .filter(matchesQuery);
 
-      // Collapsible at top, minimized by default
       sectionsEl.appendChild(buildCompletedCollapsible(completedToday));
 
       if (SHOW_STARRED_SECTION) {
@@ -1144,7 +1183,7 @@
 
     exportBtn.addEventListener("click", async () => {
       const starredInStarOrder = stars
-        .map(id => gameById(id))
+        .map(id => GAMES.find(g => g.id === id))
         .filter(Boolean);
 
       const lines = starredInStarOrder.map(g => `${g.name} — ${g.url}`);
@@ -1188,6 +1227,10 @@
     /***********************
      * INIT
      ***********************/
+    // Show version in footer
+    const versionEl = document.getElementById("versionText");
+    if (versionEl) versionEl.textContent = `Version ${VERSION}`;
+
     applyTheme(getPreferredTheme());
     render();
     scheduleMidnightRerender();
