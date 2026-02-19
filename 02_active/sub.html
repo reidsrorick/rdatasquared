@@ -183,6 +183,7 @@
             <label for="keyPattern">Pattern</label>
             <select id="keyPattern">
               <option value="base" selected>Base</option>
+              <option value="rev">Reverse</option>
               <option value="base_rev">Base + Reverse</option>
               <option value="rev_base">Reverse + Base</option>
               <option value="base_rev_base">Base + Reverse + Base</option>
@@ -213,6 +214,7 @@
 
         <div class="checkrow">
           <label><input id="overlapJoin" type="checkbox" /> Overlap join</label>
+          <label><input id="swapAdjacent" type="checkbox" /> Swap adjacent letters</label>
           <label><input id="showBuiltKey" type="checkbox" checked /> Show built key</label>
         </div>
 
@@ -222,7 +224,6 @@
         </div>
       </details>
 
-      <!-- Columnar options -->
       <details id="columnarPanel" class="hidden">
         <summary>Columnar options</summary>
 
@@ -313,7 +314,6 @@
     // Tabs
     // =========================
     let activeCipher = "vigenere"; // "vigenere" | "columnar"
-
     const tabVig = document.getElementById("tabVig");
     const tabCol = document.getElementById("tabCol");
     const pageTitle = document.getElementById("pageTitle");
@@ -327,7 +327,6 @@
       columnarPanel.classList.toggle("hidden", which !== "columnar");
       maybeRun();
     }
-
     tabVig.addEventListener("click", ()=> setActiveCipher("vigenere"));
     tabCol.addEventListener("click", ()=> setActiveCipher("columnar"));
 
@@ -336,6 +335,7 @@
     // =========================
     function lettersOnly(str){ return (str || "").replace(/[^A-Za-z]/g, ""); }
     function reverseStr(s){ return s.split("").reverse().join(""); }
+
     function concatWithOverlap(a, b, overlap){
       if (!overlap) return a + b;
       if (!a || !b) return a + b;
@@ -348,13 +348,25 @@
       for (let i = 0; i < times; i++) out = concatWithOverlap(out, base, overlap);
       return out;
     }
-    function buildKey(rawBase, pattern, altParts, repeatBuilt, targetLen, overlap){
+    function swapAdjacentPairs(s){
+      let out = "";
+      for (let i = 0; i < s.length; i += 2){
+        const a = s[i];
+        const b = s[i+1];
+        if (b === undefined) { out += a; break; }
+        out += b + a;
+      }
+      return out;
+    }
+
+    function buildKey(rawBase, pattern, altParts, repeatBuilt, targetLen, overlap, swapAdjacent){
       const base = lettersOnly(rawBase);
       const rev = reverseStr(base);
       let segments = [];
 
       switch (pattern){
         case "base": segments = [base]; break;
+        case "rev": segments = [rev]; break;
         case "base_rev": segments = [base, rev]; break;
         case "rev_base": segments = [rev, base]; break;
         case "base_rev_base": segments = [base, rev, base]; break;
@@ -385,6 +397,9 @@
         while (built.length < L) built = built + built;
         built = built.slice(0, L);
       }
+
+      if (swapAdjacent) built = swapAdjacentPairs(built);
+
       return built;
     }
 
@@ -435,12 +450,10 @@
     // Columnar Transposition
     // =========================
     function getColumnOrder(keyLetters){
-      // stable sort by (char, originalIndex)
       const arr = [...keyLetters].map((ch, i)=>({ch: ch.toUpperCase(), i}));
       arr.sort((a,b)=> a.ch.localeCompare(b.ch) || (a.i - b.i));
-      return arr.map(x=>x.i); // indices in read order
+      return arr.map(x=>x.i);
     }
-
     function columnarEncode(plain, keyLetters, padMode, padChar){
       const key = lettersOnly(keyLetters);
       const cols = key.length;
@@ -452,9 +465,7 @@
 
       if (padMode === "pad"){
         const rem = text.length % cols;
-        if (rem !== 0){
-          text = text + pad.repeat(cols - rem);
-        }
+        if (rem !== 0) text = text + pad.repeat(cols - rem);
       }
 
       const L = text.length;
@@ -469,7 +480,6 @@
       }
       return out;
     }
-
     function columnarDecode(cipher, keyLetters, padMode, padChar, stripPad){
       const key = lettersOnly(keyLetters);
       const cols = key.length;
@@ -482,15 +492,11 @@
       const rows = Math.ceil(L / cols);
       const rem = L % cols;
 
-      // lengths per ORIGINAL column index (0..cols-1)
-      // if not padded: columns < rem have rows chars, else rows-1 (when rem != 0)
-      // if padded: all columns have rows chars (because rectangle)
       const colLen = new Array(cols).fill(rows);
       if (padMode !== "pad" && rem !== 0){
         for (let c = rem; c < cols; c++) colLen[c] = rows - 1;
       }
 
-      // fill columns in SORTED read order
       const colsData = new Array(cols).fill("").map(()=>[]);
       let pos = 0;
       for (const colIndex of order){
@@ -500,7 +506,6 @@
         pos += take;
       }
 
-      // read row-wise across ORIGINAL columns
       let out = "";
       for (let r = 0; r < rows; r++){
         for (let c = 0; c < cols; c++){
@@ -510,11 +515,9 @@
       }
 
       if (padMode === "pad" && stripPad){
-        // strip trailing pad chars only (common convention)
         const re = new RegExp(pad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "+$");
         out = out.replace(re, "");
       }
-
       return out;
     }
 
@@ -546,7 +549,6 @@
       }
       return out;
     }
-
     function tokenizeSpell(text, keepSpaces){
       const parts=[];
       for (const ch of text){
@@ -564,7 +566,6 @@
       }
       return parts.join(" ");
     }
-
     function detokenizeSpell(tokenText){
       const tokens=tokenText.trim().split(/\s+/).filter(Boolean);
       let out="";
@@ -619,7 +620,6 @@ ZZZ=Z`;
       const tokenToChar=new Map();
       const charToToken=new Map();
       const errors=[];
-
       const lines=text.split(/\r?\n/);
       for (let li=0; li<lines.length; li++){
         const raw=lines[li].trim();
@@ -672,7 +672,6 @@ ZZZ=Z`;
     function mappingDecodePostprocess(decodedLettersOnly, mp){
       let out="";
       const text=decodedLettersOnly;
-
       for (let i=0; i<text.length;){
         if (i+2<text.length){
           const tok=text.substring(i,i+3).toUpperCase();
@@ -708,7 +707,7 @@ ZZZ=Z`;
         const mp = parseMapping(mappingText);
         return mappingEncodePreprocess(input, mp, keepSpaces);
       }
-      return input; // keep
+      return input;
     }
 
     function postprocessAfterDecode(decoded, handling, keepSpaces, mappingText){
@@ -739,6 +738,7 @@ ZZZ=Z`;
     const repeatBuiltEl=document.getElementById("repeatBuilt");
     const targetLenEl=document.getElementById("targetLen");
     const overlapJoinEl=document.getElementById("overlapJoin");
+    const swapAdjacentEl=document.getElementById("swapAdjacent");
     const showBuiltKeyEl=document.getElementById("showBuiltKey");
     const builtKeyWrap=document.getElementById("builtKeyWrap");
     const builtKeyEl=document.getElementById("builtKey");
@@ -786,7 +786,8 @@ ZZZ=Z`;
         altPartsEl.value,
         repeatBuiltEl.value,
         targetLenEl.value,
-        overlapJoinEl.checked
+        overlapJoinEl.checked,
+        swapAdjacentEl.checked
       );
       builtKeyEl.value = built;
       builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
@@ -798,7 +799,6 @@ ZZZ=Z`;
       const keepSpaces = (spacingEl.value === "keepSpaces");
       const handling = handlingEl.value;
 
-      // preprocess (encode only)
       if (modeEl.value === "encode"){
         const pre = preprocessForEncode(inputEl.value, handling, keepSpaces, mappingEl.value);
 
@@ -811,14 +811,12 @@ ZZZ=Z`;
 
         outputEl.value = applyCaseMode(coreOut, caseEl.value);
       } else {
-        // decode
-        let coreIn = inputEl.value;
+        let coreOut = inputEl.value;
 
-        let coreOut = coreIn;
         if (activeCipher === "vigenere"){
-          coreOut = vigenere(coreIn, builtKey, "decode");
+          coreOut = vigenere(coreOut, builtKey, "decode");
         } else {
-          coreOut = columnarDecode(coreIn, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
+          coreOut = columnarDecode(coreOut, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
         }
 
         coreOut = applyCaseMode(coreOut, caseEl.value);
@@ -831,6 +829,9 @@ ZZZ=Z`;
     function maybeRun(){ if (autoRunEl.value==="on") run(); }
 
     // events
+    document.getElementById("tabVig").addEventListener("click", ()=> setActiveCipher("vigenere"));
+    document.getElementById("tabCol").addEventListener("click", ()=> setActiveCipher("columnar"));
+
     resetMappingBtn.addEventListener("click", ()=>{
       mappingEl.value = DEFAULT_MAPPING_TEXT;
       validateMapping();
@@ -842,7 +843,7 @@ ZZZ=Z`;
 
     [
       keyEl, modeEl, handlingEl, spacingEl, caseEl, inputEl, autoRunEl, mappingEl,
-      keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, showBuiltKeyEl,
+      keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, swapAdjacentEl, showBuiltKeyEl,
       colPadEl, padCharEl, stripPadOnDecodeEl
     ].forEach(el => el.addEventListener("input", maybeRun));
 
