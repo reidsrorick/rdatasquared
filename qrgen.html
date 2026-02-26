@@ -306,8 +306,35 @@
 
         <div class="divider"></div>
 
+        <div class="sectionTitle">DOWNLOAD</div>
+        <div class="grid">
+          <div>
+            <label for="fileName">File name (no extension needed)</label>
+            <input id="fileName" placeholder="my-qr-code" value="qr-code" />
+          </div>
+          <div>
+            <label for="fileFormat">Format</label>
+            <select id="fileFormat">
+              <option value="png" selected>PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="webp">WEBP</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <label for="jpgQuality">JPG/WEBP quality</label>
+            <input id="jpgQuality" type="number" min="0.1" max="1" step="0.05" value="0.92" />
+          </div>
+          <div class="hint" style="margin:0; align-self:end">
+            Tip: PNG is best for QR scanning ✔️
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
         <div class="btns">
-          <button id="downloadBtn">Download PNG</button>
+          <button id="downloadBtn">Download</button>
           <button class="secondary" id="copyPayloadBtn">Copy payload</button>
         </div>
       </div>
@@ -627,14 +654,14 @@
     }
   }
 
-  // ---------- Logo handling ----------
-  let logoImg = null;       // HTMLImageElement
+  // ---------- Logo handling (UPDATED / FIXED) ----------
+  let logoBitmap = null;     // ImageBitmap
   let logoReady = false;
-  let logoSource = "";      // URL for display/debug
-  let logoObjectUrl = null; // revoke on new upload
+  let logoSource = "";       // URL/name for display/debug
+  let logoObjectUrl = null;  // revoke on new upload
 
   function clearLogo(){
-    logoImg = null;
+    logoBitmap = null;
     logoReady = false;
     logoSource = "";
     if (logoObjectUrl){
@@ -643,54 +670,70 @@
     }
   }
 
-  function loadLogoFromUrl(url){
-    return new Promise((resolve, reject)=>{
-      const img = new Image();
-      // Try to keep CORS safe when loading remote URL (won't always work depending on server)
-      img.crossOrigin = "anonymous";
-      img.onload = ()=> resolve(img);
-      img.onerror = ()=> reject(new Error("Failed to load logo image (CORS or URL issue). Try uploading the file instead."));
-      img.src = url;
-    });
+  async function decodeToBitmapFromBlob(blob){
+    return await createImageBitmap(blob);
+  }
+
+  async function loadLogoFromFile(file){
+    return await decodeToBitmapFromBlob(file);
+  }
+
+  async function loadLogoFromUrl(url){
+    if (/^data:/i.test(url)){
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return await decodeToBitmapFromBlob(blob);
+    }
+    const res = await fetch(url, { mode: "cors", cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status} while fetching image.`);
+    const blob = await res.blob();
+    return await decodeToBitmapFromBlob(blob);
   }
 
   async function handleLogoUrlInput(){
     const url = escText($("logoUrl").value);
     if (!url) return;
+
     try{
       setStatus("Loading logo…");
-      const img = await loadLogoFromUrl(url);
+      const bmp = await loadLogoFromUrl(url);
+
       clearLogo();
-      logoImg = img;
+      logoBitmap = bmp;
       logoReady = true;
       logoSource = url;
+
+      $("warnBox").innerHTML = "";
       setStatus("Logo loaded ✔️");
       scheduleUpdate();
     }catch(e){
-      $("warnBox").innerHTML = `<span class="danger">Logo URL error:</span> ${e.message}`;
+      $("warnBox").innerHTML =
+        `<span class="danger">Logo URL error:</span> ${escText(e.message)}<br>` +
+        `<span class="tiny">Tip: Many sites block cross-origin image use on canvas (CORS). Upload the file instead, or host it with CORS enabled.</span>`;
       setStatus("Logo error ❗");
     }
   }
 
-  $("logoFile").addEventListener("change", ()=>{
+  $("logoFile").addEventListener("change", async ()=>{
     const f = $("logoFile").files?.[0];
     if (!f) return;
-    clearLogo();
-    const url = URL.createObjectURL(f);
-    logoObjectUrl = url;
-    const img = new Image();
-    img.onload = ()=>{
-      logoImg = img;
+
+    try{
+      setStatus("Decoding logo…");
+      clearLogo();
+      logoObjectUrl = URL.createObjectURL(f); // optional
+      const bmp = await loadLogoFromFile(f);
+      logoBitmap = bmp;
       logoReady = true;
       logoSource = f.name;
+
+      $("warnBox").innerHTML = "";
       setStatus("Logo loaded ✔️");
       scheduleUpdate();
-    };
-    img.onerror = ()=>{
-      $("warnBox").innerHTML = `<span class="danger">Could not load uploaded image.</span>`;
+    }catch(e){
+      $("warnBox").innerHTML = `<span class="danger">Could not decode uploaded image.</span>`;
       setStatus("Logo error ❗");
-    };
-    img.src = url;
+    }
   });
 
   $("logoUrl").addEventListener("change", handleLogoUrlInput);
@@ -819,7 +862,6 @@
         const x = Math.round(cx - totalW/2);
         const y = Math.round(cy - totalH/2);
 
-        // soft rules-of-thumb
         if (logoPct > 0.22) warn.push("Logo size is > 22% of QR. Consider 18–20% for best scan reliability.");
         if (ecc !== "H") warn.push("Consider ECC = H when using a logo (or enable Safe Mode).");
 
@@ -844,28 +886,33 @@
           outCtx.stroke();
         }
 
-        // draw logo image inside, preserving aspect ratio
+        // draw logo bitmap inside, preserving aspect ratio
         outCtx.shadowColor = "transparent";
         const targetX = x + lp;
         const targetY = y + lp;
         const targetS = logoSize;
 
-        const iw = logoImg.naturalWidth || logoImg.width;
-        const ih = logoImg.naturalHeight || logoImg.height;
+        const iw = logoBitmap.width;
+        const ih = logoBitmap.height;
         const scale = Math.min(targetS / iw, targetS / ih);
         const dw = Math.round(iw * scale);
         const dh = Math.round(ih * scale);
         const dx = Math.round(targetX + (targetS - dw)/2);
         const dy = Math.round(targetY + (targetS - dh)/2);
 
-        outCtx.drawImage(logoImg, dx, dy, dw, dh);
+        outCtx.drawImage(logoBitmap, dx, dy, dw, dh);
         outCtx.restore();
       }
     }
 
     // UI messages
     $("scanHint").textContent = wantLogo ? `ECC: ${ecc} (logo ${safeMode ? "safe mode" : "manual"})` : `ECC: ${ecc}`;
-    $("warnBox").innerHTML = warn.length ? warn.map(w=>`• ${w}`).join("<br/>") : "";
+    if (warn.length){
+      $("warnBox").innerHTML = warn.map(w=>`• ${w}`).join("<br/>");
+    } else if (!/Logo URL error/i.test($("warnBox").textContent || "")) {
+      // clear non-error warnings but keep URL error tip until next success
+      $("warnBox").innerHTML = "";
+    }
     setStatus("Updated ✔️");
     outCtx.restore();
   }
@@ -879,18 +926,38 @@
   }, 25);
 
   // ---------- Download / Copy ----------
-  function downloadPNG(){
+  function safeFileStem(stem){
+    // Keep it simple + filesystem-friendly
+    const cleaned = escText(stem)
+      .replace(/[\u0000-\u001f\u007f]+/g, "")
+      .replace(/[<>:"/\\|?*]+/g, "-")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 120);
+    return cleaned || "qr-code";
+  }
+
+  function downloadImage(){
+    const fmt = ($("fileFormat")?.value || "png").toLowerCase();
+    const stem = safeFileStem($("fileName")?.value || "");
+    const filename = `${stem}.${fmt}`;
+
+    const mime = fmt === "jpg" ? "image/jpeg" : (fmt === "webp" ? "image/webp" : "image/png");
+    const q = Math.max(0.1, Math.min(1, parseFloat($("jpgQuality")?.value || "0.92")));
+
     outCanvas.toBlob((blob)=>{
       if (!blob) return;
       const a = document.createElement("a");
       const url = URL.createObjectURL(blob);
       a.href = url;
-      a.download = `qr-${$("type").value}.png`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    }, "image/png");
+      setStatus("Downloaded ✔️");
+      setTimeout(()=>setStatus("Ready"), 700);
+    }, mime, (mime === "image/jpeg" || mime === "image/webp") ? q : undefined);
   }
 
   async function copyPayload(){
@@ -920,13 +987,24 @@
     "size","qrMargin","fg","bg",
     "ecc","safeMode",
     "logoEnabled","logoSizePct","logoPadding","logoRadius",
-    "logoBg","logoBorder","logoBorderW","logoShadow"
+    "logoBg","logoBorder","logoBorderW","logoShadow",
+    "fileName","fileFormat","jpgQuality"
   ].forEach(id=>{
-    $(id).addEventListener("input", scheduleUpdate);
-    $(id).addEventListener("change", scheduleUpdate);
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", scheduleUpdate);
+    el.addEventListener("change", scheduleUpdate);
   });
 
-  $("downloadBtn").addEventListener("click", downloadPNG);
+  // Enter in filename triggers download
+  $("fileName")?.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter"){
+      e.preventDefault();
+      downloadImage();
+    }
+  });
+
+  $("downloadBtn").addEventListener("click", downloadImage);
   $("copyPayloadBtn").addEventListener("click", copyPayload);
 
   // initial
