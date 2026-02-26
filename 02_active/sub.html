@@ -27,7 +27,7 @@
     }
     .wrap{width:min(1080px,100%);display:grid;gap:14px}
     .header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-    h1{font-size:20px;margin:0}
+    h1{font-size:20px;margin:0;user-select:none}
     .card{
       background:var(--card);
       border:1px solid var(--border);
@@ -146,6 +146,7 @@
       <div class="tabs">
         <button id="tabVig" class="tabbtn active" type="button">VIGENÈRE</button>
         <button id="tabCol" class="tabbtn" type="button">COLUMNAR</button>
+        <button id="tabBook" class="tabbtn" type="button">BOOK</button>
       </div>
     </div>
 
@@ -175,7 +176,8 @@
         </div>
       </div>
 
-      <details id="keyPanel">
+      <!-- Hidden unless unlocked -->
+      <details id="keyPanel" class="hidden">
         <summary>Key options</summary>
 
         <div class="subgrid">
@@ -246,6 +248,44 @@
         </div>
       </details>
 
+      <details id="bookPanel" class="hidden">
+        <summary>Book options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="bookSelect">Selection</label>
+            <select id="bookSelect">
+              <option value="first" selected>FIRST</option>
+              <option value="random">RANDOM</option>
+            </select>
+          </div>
+          <div>
+            <label for="bookSeed">Seed</label>
+            <input id="bookSeed" type="text" value="" placeholder="OPTIONAL..." autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="subgrid">
+          <div>
+            <label for="bookFormat">Format</label>
+            <select id="bookFormat">
+              <option value="w-l" selected>W-L</option>
+              <option value="w:l">W:L</option>
+              <option value="w.l">W.L</option>
+            </select>
+          </div>
+          <div>
+            <label for="bookSep">Token separator</label>
+            <input id="bookSep" type="text" value=" " placeholder=" " />
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label for="bookText">Book text</label>
+          <textarea id="bookText" rows="10" placeholder="PASTE BOOK TEXT HERE..."></textarea>
+        </div>
+      </details>
+
       <div style="height: 10px"></div>
 
       <div class="row">
@@ -311,24 +351,75 @@
 
   <script>
     // =========================
+    // Constants
+    // =========================
+    const DEFAULT_MAPPING_TEXT =
+`ZAA=!
+ZAB=?
+ZAC=.
+ZAD=,
+ZAE=:
+ZAF=;
+ZAG=-
+ZAH=@
+ZAI=#
+ZAJ=$
+ZAK=%
+ZAL=&
+ZAM=(
+ZAN=)
+ZAO=0
+ZAP=1
+ZAQ=2
+ZAR=3
+ZAS=4
+ZAT=5
+ZAU=6
+ZAV=7
+ZAW=8
+ZAX=9
+ZAY=SPACE
+ZZZ=Z`;
+
+    // =========================
+    // Hidden mode (session-only)
+    // =========================
+    let advKeyUnlocked = false; // always resets on refresh
+    let titleClicks = 0;
+    let titleTimer = null;
+
+    function resetClickState(){
+      titleClicks = 0;
+      if (titleTimer){
+        clearTimeout(titleTimer);
+        titleTimer = null;
+      }
+    }
+
+    // =========================
     // Tabs
     // =========================
-    let activeCipher = "vigenere"; // "vigenere" | "columnar"
+    let activeCipher = "vigenere";
     const tabVig = document.getElementById("tabVig");
     const tabCol = document.getElementById("tabCol");
+    const tabBook = document.getElementById("tabBook");
     const pageTitle = document.getElementById("pageTitle");
     const columnarPanel = document.getElementById("columnarPanel");
+    const bookPanel = document.getElementById("bookPanel");
 
     function setActiveCipher(which){
       activeCipher = which;
       tabVig.classList.toggle("active", which === "vigenere");
       tabCol.classList.toggle("active", which === "columnar");
-      pageTitle.textContent = (which === "vigenere") ? "Vigenère" : "Columnar";
+      tabBook.classList.toggle("active", which === "book");
+      pageTitle.textContent = (which === "vigenere") ? "Vigenère" : (which === "columnar" ? "Columnar" : "Book");
       columnarPanel.classList.toggle("hidden", which !== "columnar");
+      bookPanel.classList.toggle("hidden", which !== "book");
       maybeRun();
     }
     tabVig.addEventListener("click", ()=> setActiveCipher("vigenere"));
     tabCol.addEventListener("click", ()=> setActiveCipher("columnar"));
+    tabBook.addEventListener("click", ()=> setActiveCipher("book"));
 
     // =========================
     // Key builder
@@ -359,7 +450,7 @@
       return out;
     }
 
-    function buildKey(rawBase, pattern, altParts, repeatBuilt, targetLen, overlap, swapAdjacent){
+    function buildKeyAdvanced(rawBase, pattern, altParts, repeatBuilt, targetLen, overlap, swapAdjacent){
       const base = lettersOnly(rawBase);
       const rev = reverseStr(base);
       let segments = [];
@@ -399,8 +490,11 @@
       }
 
       if (swapAdjacent) built = swapAdjacentPairs(built);
-
       return built;
+    }
+
+    function buildKeyNormal(rawBase){
+      return lettersOnly(rawBase);
     }
 
     // =========================
@@ -522,6 +616,109 @@
     }
 
     // =========================
+    // Book cipher
+    // =========================
+    function xfnv1a(str){
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < str.length; i++){
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+    function mulberry32(seed){
+      let a = seed >>> 0;
+      return function(){
+        a |= 0;
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function parseBookWords(bookText){
+      const rawWords = (bookText || "").split(/\s+/).filter(Boolean);
+      const words = [];
+      for (const w of rawWords){
+        const cleaned = w.replace(/[^A-Za-z]/g, "").toUpperCase();
+        if (cleaned.length) words.push(cleaned);
+      }
+      return words;
+    }
+    function buildBookIndex(words){
+      const idx = new Map();
+      for (let wi = 0; wi < words.length; wi++){
+        const word = words[wi];
+        for (let li = 0; li < word.length; li++){
+          const ch = word[li];
+          if (ch < "A" || ch > "Z") continue;
+          if (!idx.has(ch)) idx.set(ch, []);
+          idx.get(ch).push({ w: wi + 1, l: li + 1 });
+        }
+      }
+      return idx;
+    }
+    function fmtToken(w, l, fmt){
+      if (fmt === "w:l") return `${w}:${l}`;
+      if (fmt === "w.l") return `${w}.${l}`;
+      return `${w}-${l}`;
+    }
+    function parseToken(tok, fmt){
+      let sep = "-";
+      if (fmt === "w:l") sep = ":";
+      if (fmt === "w.l") sep = ".";
+      const parts = tok.split(sep);
+      if (parts.length !== 2) return null;
+      const w = parseInt(parts[0], 10);
+      const l = parseInt(parts[1], 10);
+      if (!Number.isFinite(w) || !Number.isFinite(l) || w <= 0 || l <= 0) return null;
+      return { w, l };
+    }
+    function bookEncode(plainText, bookText, selection, seedStr, fmt, tokenSep){
+      const words = parseBookWords(bookText);
+      if (!words.length) return "";
+      const index = buildBookIndex(words);
+      const rng = mulberry32(xfnv1a(seedStr || ""));
+
+      const sep = (tokenSep === "") ? " " : tokenSep;
+      const out = [];
+      const upper = plainText.toUpperCase();
+
+      for (const ch of upper){
+        if (ch < "A" || ch > "Z") continue;
+        const list = index.get(ch);
+        if (!list || !list.length) return "";
+        const pick = (selection === "random") ? list[Math.floor(rng() * list.length)] : list[0];
+        out.push(fmtToken(pick.w, pick.l, fmt));
+      }
+      return out.join(sep);
+    }
+    function bookDecode(cipherText, bookText, fmt, tokenSep){
+      const words = parseBookWords(bookText);
+      if (!words.length) return "";
+      const sep = (tokenSep === "") ? " " : tokenSep;
+
+      let tokens = [];
+      if (sep.trim() === ""){
+        tokens = cipherText.trim().split(/\s+/).filter(Boolean);
+      } else {
+        tokens = cipherText.split(sep).map(s=>s.trim()).filter(Boolean);
+      }
+
+      let out = "";
+      for (const t of tokens){
+        const parsed = parseToken(t, fmt);
+        if (!parsed) return "";
+        const w = parsed.w, l = parsed.l;
+        if (w < 1 || w > words.length) return "";
+        const word = words[w - 1];
+        if (l < 1 || l > word.length) return "";
+        out += word[l - 1];
+      }
+      return out;
+    }
+
+    // =========================
     // Tokenize mode (spell-out)
     // =========================
     const DIGIT_WORDS=["ZERO","ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE"];
@@ -588,34 +785,6 @@
     // =========================
     // Mapping mode
     // =========================
-    const DEFAULT_MAPPING_TEXT =
-`ZAA=!
-ZAB=?
-ZAC=.
-ZAD=,
-ZAE=:
-ZAF=;
-ZAG=-
-ZAH=@
-ZAI=#
-ZAJ=$
-ZAK=%
-ZAL=&
-ZAM=(
-ZAN=)
-ZAO=0
-ZAP=1
-ZAQ=2
-ZAR=3
-ZAS=4
-ZAT=5
-ZAU=6
-ZAV=7
-ZAW=8
-ZAX=9
-ZAY=SPACE
-ZZZ=Z`;
-
     function parseMapping(text){
       const tokenToChar=new Map();
       const charToToken=new Map();
@@ -747,6 +916,12 @@ ZZZ=Z`;
     const padCharEl = document.getElementById("padChar");
     const stripPadOnDecodeEl = document.getElementById("stripPadOnDecode");
 
+    const bookSelectEl = document.getElementById("bookSelect");
+    const bookSeedEl = document.getElementById("bookSeed");
+    const bookFormatEl = document.getElementById("bookFormat");
+    const bookSepEl = document.getElementById("bookSep");
+    const bookTextEl = document.getElementById("bookText");
+
     const mappingPanel=document.getElementById("mappingPanel");
     const mappingEl=document.getElementById("codebook");
     const mappingStatusEl=document.getElementById("codebookStatus");
@@ -779,8 +954,55 @@ ZZZ=Z`;
       return mp;
     }
 
+    function applyAdvVisibility(){
+      keyPanel.classList.toggle("hidden", !advKeyUnlocked);
+      if (!advKeyUnlocked) keyPanel.open = false;
+    }
+
+    function lockAdv(){
+      if (!advKeyUnlocked) return;
+      advKeyUnlocked = false;
+      resetClickState();
+      applyAdvVisibility();
+      maybeRun(); // re-run with normal key immediately
+    }
+
+    function toggleAdv(){
+      advKeyUnlocked = !advKeyUnlocked;
+      resetClickState();
+      applyAdvVisibility();
+      maybeRun();
+    }
+
+    // Secret unlock: 9 title clicks
+    pageTitle.addEventListener("click", ()=>{
+      titleClicks++;
+      if (titleTimer) clearTimeout(titleTimer);
+      titleTimer = setTimeout(()=> { titleClicks = 0; }, 1600);
+      if (titleClicks >= 9){
+        toggleAdv();
+      }
+    });
+
+    // Secret unlock: Ctrl+Alt+K
+    window.addEventListener("keydown", (e)=>{
+      if (e.ctrlKey && e.altKey && (e.key === "k" || e.key === "K")){
+        e.preventDefault();
+        toggleAdv();
+      }
+    });
+
+    // Auto-lock when user leaves the tab/window
+    document.addEventListener("visibilitychange", ()=>{
+      if (document.hidden) lockAdv();
+    });
+    window.addEventListener("blur", ()=> lockAdv());
+
     function computeBuiltKey(){
-      const built = buildKey(
+      if (!advKeyUnlocked){
+        return buildKeyNormal(keyEl.value);
+      }
+      const built = buildKeyAdvanced(
         keyEl.value,
         keyPatternEl.value,
         altPartsEl.value,
@@ -805,22 +1027,37 @@ ZZZ=Z`;
         let coreOut = pre;
         if (activeCipher === "vigenere"){
           coreOut = vigenere(pre, builtKey, "encode");
-        } else {
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+        } else if (activeCipher === "columnar"){
           coreOut = columnarEncode(pre, builtKey, colPadEl.value, padCharEl.value);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+        } else {
+          coreOut = bookEncode(
+            pre,
+            bookTextEl.value,
+            bookSelectEl.value,
+            bookSeedEl.value,
+            bookFormatEl.value,
+            bookSepEl.value
+          );
         }
-
-        outputEl.value = applyCaseMode(coreOut, caseEl.value);
+        outputEl.value = coreOut;
       } else {
         let coreOut = inputEl.value;
 
         if (activeCipher === "vigenere"){
           coreOut = vigenere(coreOut, builtKey, "decode");
-        } else {
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        } else if (activeCipher === "columnar"){
           coreOut = columnarDecode(coreOut, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        } else {
+          coreOut = bookDecode(coreOut, bookTextEl.value, bookFormatEl.value, bookSepEl.value);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
         }
-
-        coreOut = applyCaseMode(coreOut, caseEl.value);
-        outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
       }
 
       if (handlingEl.value==="mapping") validateMapping();
@@ -828,10 +1065,7 @@ ZZZ=Z`;
 
     function maybeRun(){ if (autoRunEl.value==="on") run(); }
 
-    // events
-    document.getElementById("tabVig").addEventListener("click", ()=> setActiveCipher("vigenere"));
-    document.getElementById("tabCol").addEventListener("click", ()=> setActiveCipher("columnar"));
-
+    // misc events
     resetMappingBtn.addEventListener("click", ()=>{
       mappingEl.value = DEFAULT_MAPPING_TEXT;
       validateMapping();
@@ -844,7 +1078,8 @@ ZZZ=Z`;
     [
       keyEl, modeEl, handlingEl, spacingEl, caseEl, inputEl, autoRunEl, mappingEl,
       keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, swapAdjacentEl, showBuiltKeyEl,
-      colPadEl, padCharEl, stripPadOnDecodeEl
+      colPadEl, padCharEl, stripPadOnDecodeEl,
+      bookSelectEl, bookSeedEl, bookFormatEl, bookSepEl, bookTextEl
     ].forEach(el => el.addEventListener("input", maybeRun));
 
     modeEl.addEventListener("change", maybeRun);
@@ -892,8 +1127,11 @@ ZZZ=Z`;
     mappingPanel.open = false;
     keyPanel.open = false;
     columnarPanel.open = false;
+    bookPanel.open = false;
     altPartsEl.disabled = true;
+
     updateMappingVisibility();
+    applyAdvVisibility();
     setActiveCipher("vigenere");
     run();
   </script>
