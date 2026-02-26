@@ -351,10 +351,9 @@
 
   <script>
     // =========================
-    // Secret unlock (exclusive)
+    // Hidden mode (session-only)
     // =========================
-    const ADV_KEY_FLAG = "advKeyOptsUnlocked";
-    let advKeyUnlocked = localStorage.getItem(ADV_KEY_FLAG) === "1";
+    let advKeyUnlocked = false; // ALWAYS RESET ON REFRESH
 
     // title-click unlock: 9 clicks within 1600ms gaps
     let titleClicks = 0;
@@ -946,6 +945,38 @@ ZZZ=Z`;
       return mp;
     }
 
+    function applyAdvVisibility(){
+      keyPanel.classList.toggle("hidden", !advKeyUnlocked);
+      if (!advKeyUnlocked) keyPanel.open = false;
+    }
+
+    function toggleAdv(){
+      advKeyUnlocked = !advKeyUnlocked;
+      applyAdvVisibility();
+      maybeRun();
+    }
+
+    // Secret unlock: 9 title clicks
+    pageTitle.addEventListener("click", ()=>{
+      titleClicks++;
+      if (titleTimer) clearTimeout(titleTimer);
+      titleTimer = setTimeout(()=> { titleClicks = 0; }, 1600);
+      if (titleClicks >= 9){
+        titleClicks = 0;
+        clearTimeout(titleTimer);
+        titleTimer = null;
+        toggleAdv();
+      }
+    });
+
+    // Secret unlock: Ctrl+Alt+K
+    window.addEventListener("keydown", (e)=>{
+      if (e.ctrlKey && e.altKey && (e.key === "k" || e.key === "K")){
+        e.preventDefault();
+        toggleAdv();
+      }
+    });
+
     function computeBuiltKey(){
       let built = "";
       if (!advKeyUnlocked){
@@ -960,10 +991,6 @@ ZZZ=Z`;
           overlapJoinEl.checked,
           swapAdjacentEl.checked
         );
-      }
-
-      // built key UI only exists in hidden panel; keep it consistent when unlocked
-      if (advKeyUnlocked){
         builtKeyEl.value = built;
         builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
       }
@@ -979,7 +1006,6 @@ ZZZ=Z`;
         const pre = preprocessForEncode(inputEl.value, handling, keepSpaces, mappingEl.value);
 
         let coreOut = pre;
-
         if (activeCipher === "vigenere"){
           coreOut = vigenere(pre, builtKey, "encode");
           coreOut = applyCaseMode(coreOut, caseEl.value);
@@ -996,7 +1022,6 @@ ZZZ=Z`;
             bookSepEl.value
           );
         }
-
         outputEl.value = coreOut;
       } else {
         let coreOut = inputEl.value;
@@ -1010,12 +1035,7 @@ ZZZ=Z`;
           coreOut = applyCaseMode(coreOut, caseEl.value);
           outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
         } else {
-          coreOut = bookDecode(
-            coreOut,
-            bookTextEl.value,
-            bookFormatEl.value,
-            bookSepEl.value
-          );
+          coreOut = bookDecode(coreOut, bookTextEl.value, bookFormatEl.value, bookSepEl.value);
           coreOut = applyCaseMode(coreOut, caseEl.value);
           outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
         }
@@ -1026,43 +1046,7 @@ ZZZ=Z`;
 
     function maybeRun(){ if (autoRunEl.value==="on") run(); }
 
-    function applyAdvVisibility(){
-      keyPanel.classList.toggle("hidden", !advKeyUnlocked);
-      if (!advKeyUnlocked){
-        // ensure no accidental UI stays open
-        keyPanel.open = false;
-      }
-    }
-
-    function toggleAdv(){
-      advKeyUnlocked = !advKeyUnlocked;
-      localStorage.setItem(ADV_KEY_FLAG, advKeyUnlocked ? "1" : "0");
-      applyAdvVisibility();
-      maybeRun();
-    }
-
-    // Title click unlock
-    pageTitle.addEventListener("click", ()=>{
-      titleClicks++;
-      if (titleTimer) clearTimeout(titleTimer);
-      titleTimer = setTimeout(()=> { titleClicks = 0; }, 1600);
-      if (titleClicks >= 9){
-        titleClicks = 0;
-        clearTimeout(titleTimer);
-        titleTimer = null;
-        toggleAdv();
-      }
-    });
-
-    // Keyboard unlock (Ctrl+Alt+K)
-    window.addEventListener("keydown", (e)=>{
-      if (e.ctrlKey && e.altKey && (e.key === "k" || e.key === "K")){
-        e.preventDefault();
-        toggleAdv();
-      }
-    });
-
-    // events
+    // misc events
     resetMappingBtn.addEventListener("click", ()=>{
       mappingEl.value = DEFAULT_MAPPING_TEXT;
       validateMapping();
@@ -1120,6 +1104,34 @@ ZZZ=Z`;
     });
 
     // init
+    const DEFAULT_MAPPING_TEXT =
+`ZAA=!
+ZAB=?
+ZAC=.
+ZAD=,
+ZAE=:
+ZAF=;
+ZAG=-
+ZAH=@
+ZAI=#
+ZAJ=$
+ZAK=%
+ZAL=&
+ZAM=(
+ZAN=)
+ZAO=0
+ZAP=1
+ZAQ=2
+ZAR=3
+ZAS=4
+ZAT=5
+ZAU=6
+ZAV=7
+ZAW=8
+ZAX=9
+ZAY=SPACE
+ZZZ=Z`;
+
     mappingEl.value = DEFAULT_MAPPING_TEXT;
     mappingPanel.open = false;
     keyPanel.open = false;
