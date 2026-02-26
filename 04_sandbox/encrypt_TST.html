@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vigenère</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:rgba(255,255,255,.08);
+      --text:#eaf0ff;
+      --muted:rgba(234,240,255,.7);
+      --border:rgba(255,255,255,.14);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:radial-gradient(1200px 900px at 20% 10%, #192a5a 0%, transparent 55%),
+                 radial-gradient(900px 700px at 80% 20%, #3a1a6a 0%, transparent 55%),
+                 var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+    .wrap{width:min(1080px,100%);display:grid;gap:14px}
+    .header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    h1{font-size:20px;margin:0;user-select:none}
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+      backdrop-filter:blur(8px);
+    }
+    label{display:block;color:var(--muted);font-size:13px;margin-bottom:8px}
+    input[type="text"], input[type="number"], textarea, select{
+      width:100%;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.25);
+      color:var(--text);
+      padding:10px 12px;
+      outline:none;
+    }
+    textarea{
+      min-height:150px;
+      resize:vertical;
+      line-height:1.45;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+      font-size:13px;
+    }
+    input[type="text"]::placeholder,
+    textarea::placeholder{
+      color:rgba(234,240,255,.45);
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus{
+      border-color:rgba(122,167,255,.7);
+      box-shadow:0 0 0 3px rgba(122,167,255,.18);
+    }
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    @media (max-width:860px){.grid{grid-template-columns:1fr}}
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    @media (max-width:860px){.row{grid-template-columns:1fr}}
+
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+      transition:transform .05s ease, background .15s ease, border-color .15s ease;
+    }
+    button:hover{background:rgba(255,255,255,.10);border-color:rgba(122,167,255,.5)}
+    button:active{transform:translateY(1px)}
+    .primary{background:rgba(122,167,255,.20);border-color:rgba(122,167,255,.55)}
+    .small{font-size:12px;padding:8px 10px;border-radius:10px}
+    .tiny{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.35}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}
+
+    details{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 12px;
+      background:rgba(0,0,0,.15);
+      margin-top:12px;
+    }
+    summary{cursor:pointer;font-weight:700;color:var(--text);outline:none}
+
+    .subgrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    @media (max-width:860px){.subgrid{grid-template-columns:1fr}}
+    .checkrow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top: 8px;
+    }
+    .checkrow label{
+      margin:0;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .checkrow input[type="checkbox"]{
+      width:auto;
+      transform: translateY(1px);
+    }
+
+    .tabs{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .tabbtn{
+      padding:8px 12px;
+      border-radius:12px;
+      font-weight:800;
+    }
+    .tabbtn.active{
+      background:rgba(122,167,255,.22);
+      border-color:rgba(122,167,255,.65);
+    }
+    .hidden{display:none !important;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1 id="pageTitle">Vigenère</h1>
+      <div class="tabs">
+        <button id="tabVig" class="tabbtn active" type="button">VIGENÈRE</button>
+        <button id="tabCol" class="tabbtn" type="button">COLUMNAR</button>
+        <button id="tabBook" class="tabbtn" type="button">BOOK</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="key">Key</label>
+          <input id="key" type="text" value="" placeholder="ENTER A KEY..." autocomplete="off" />
+        </div>
+
+        <div>
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="encode" selected>Encode</option>
+            <option value="decode">Decode</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="nonalpha">Handling</label>
+          <select id="nonalpha">
+            <option value="keep">Keep</option>
+            <option value="strip">Strip</option>
+            <option value="tokenize">Tokenize</option>
+            <option value="mapping" selected>Mapping</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Hidden unless unlocked -->
+      <details id="keyPanel" class="hidden">
+        <summary>Key options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="keyPattern">Pattern</label>
+            <select id="keyPattern">
+              <option value="base" selected>Base</option>
+              <option value="rev">Reverse</option>
+              <option value="base_rev">Base + Reverse</option>
+              <option value="rev_base">Reverse + Base</option>
+              <option value="base_rev_base">Base + Reverse + Base</option>
+              <option value="rev_base_rev">Reverse + Base + Reverse</option>
+              <option value="base_rev_rev_base">Base + Reverse + Reverse + Base</option>
+              <option value="alt_base">Alternate Base/Reverse (start Base)</option>
+              <option value="alt_rev">Alternate Base/Reverse (start Reverse)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="altParts">Alternate parts</label>
+            <input id="altParts" type="number" min="1" max="50" value="2" />
+          </div>
+        </div>
+
+        <div class="subgrid">
+          <div>
+            <label for="repeatBuilt">Repeat result</label>
+            <input id="repeatBuilt" type="number" min="1" max="50" value="1" />
+          </div>
+
+          <div>
+            <label for="targetLen">Cut to length (0 = off)</label>
+            <input id="targetLen" type="number" min="0" max="200000" value="0" />
+          </div>
+        </div>
+
+        <div class="checkrow">
+          <label><input id="overlapJoin" type="checkbox" /> Overlap join</label>
+          <label><input id="swapAdjacent" type="checkbox" /> Swap adjacent letters</label>
+          <label><input id="showBuiltKey" type="checkbox" checked /> Show built key</label>
+        </div>
+
+        <div id="builtKeyWrap" style="margin-top:10px;">
+          <label for="builtKey">Built key</label>
+          <input id="builtKey" class="mono" type="text" readonly placeholder="(BUILT KEY)" />
+        </div>
+      </details>
+
+      <details id="columnarPanel" class="hidden">
+        <summary>Columnar options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="colPad">Padding</label>
+            <select id="colPad">
+              <option value="none" selected>None</option>
+              <option value="pad">Pad to rectangle</option>
+            </select>
+          </div>
+          <div>
+            <label for="padChar">Pad char</label>
+            <input id="padChar" type="text" value="X" maxlength="1" placeholder="X" />
+          </div>
+        </div>
+
+        <div class="checkrow">
+          <label><input id="stripPadOnDecode" type="checkbox" checked /> Strip pad on decode</label>
+        </div>
+      </details>
+
+      <details id="bookPanel" class="hidden">
+        <summary>Book options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="bookSelect">Selection</label>
+            <select id="bookSelect">
+              <option value="first" selected>FIRST</option>
+              <option value="random">RANDOM</option>
+            </select>
+          </div>
+          <div>
+            <label for="bookSeed">Seed</label>
+            <input id="bookSeed" type="text" value="" placeholder="OPTIONAL..." autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="subgrid">
+          <div>
+            <label for="bookFormat">Format</label>
+            <select id="bookFormat">
+              <option value="w-l" selected>W-L</option>
+              <option value="w:l">W:L</option>
+              <option value="w.l">W.L</option>
+            </select>
+          </div>
+          <div>
+            <label for="bookSep">Token separator</label>
+            <input id="bookSep" type="text" value=" " placeholder=" " />
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label for="bookText">Book text</label>
+          <textarea id="bookText" rows="10" placeholder="PASTE BOOK TEXT HERE..."></textarea>
+        </div>
+      </details>
+
+      <div style="height: 10px"></div>
+
+      <div class="row">
+        <div>
+          <label for="stripSpaces">Spacing</label>
+          <select id="stripSpaces">
+            <option value="keepSpaces" selected>Keep spaces</option>
+            <option value="noSpaces">Remove spaces</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="caseMode">Case</label>
+          <select id="caseMode">
+            <option value="preserve">Preserve</option>
+            <option value="upper" selected>UPPERCASE</option>
+            <option value="lower">lowercase</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="autoRun">Auto-run</label>
+          <select id="autoRun">
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+      </div>
+
+      <details id="mappingPanel">
+        <summary>Mapping list</summary>
+        <div style="height: 10px"></div>
+        <label for="codebook">Mappings</label>
+        <textarea id="codebook" rows="10" placeholder="ZAA=!&#10;ZAB=?&#10;..."></textarea>
+        <div class="btns">
+          <button class="small" id="resetCodebookBtn" type="button">Reset defaults</button>
+          <button class="small" id="validateCodebookBtn" type="button">Validate</button>
+        </div>
+        <div class="tiny" id="codebookStatus"></div>
+      </details>
+
+      <div style="height: 12px"></div>
+
+      <div class="grid">
+        <div>
+          <label for="input">Input</label>
+          <textarea id="input" placeholder="TYPE OR PASTE TEXT HERE..."></textarea>
+        </div>
+        <div>
+          <label for="output">Output</label>
+          <textarea id="output" readonly placeholder="OUTPUT WILL APPEAR HERE..."></textarea>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="runBtn" type="button">Run</button>
+        <button id="swapBtn" type="button">Swap</button>
+        <button class="small" id="copyBtn" type="button">Copy</button>
+        <button class="small" id="clearBtn" type="button">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // Secret unlock (exclusive)
+    // =========================
+    const ADV_KEY_FLAG = "advKeyOptsUnlocked";
+    let advKeyUnlocked = localStorage.getItem(ADV_KEY_FLAG) === "1";
+
+    // title-click unlock: 9 clicks within 1600ms gaps
+    let titleClicks = 0;
+    let titleTimer = null;
+
+    // =========================
+    // Tabs
+    // =========================
+    let activeCipher = "vigenere"; // "vigenere" | "columnar" | "book"
+    const tabVig = document.getElementById("tabVig");
+    const tabCol = document.getElementById("tabCol");
+    const tabBook = document.getElementById("tabBook");
+    const pageTitle = document.getElementById("pageTitle");
+    const columnarPanel = document.getElementById("columnarPanel");
+    const bookPanel = document.getElementById("bookPanel");
+
+    function setActiveCipher(which){
+      activeCipher = which;
+      tabVig.classList.toggle("active", which === "vigenere");
+      tabCol.classList.toggle("active", which === "columnar");
+      tabBook.classList.toggle("active", which === "book");
+      pageTitle.textContent = (which === "vigenere") ? "Vigenère" : (which === "columnar" ? "Columnar" : "Book");
+      columnarPanel.classList.toggle("hidden", which !== "columnar");
+      bookPanel.classList.toggle("hidden", which !== "book");
+      maybeRun();
+    }
+    tabVig.addEventListener("click", ()=> setActiveCipher("vigenere"));
+    tabCol.addEventListener("click", ()=> setActiveCipher("columnar"));
+    tabBook.addEventListener("click", ()=> setActiveCipher("book"));
+
+    // =========================
+    // Key builder
+    // =========================
+    function lettersOnly(str){ return (str || "").replace(/[^A-Za-z]/g, ""); }
+    function reverseStr(s){ return s.split("").reverse().join(""); }
+
+    function concatWithOverlap(a, b, overlap){
+      if (!overlap) return a + b;
+      if (!a || !b) return a + b;
+      const la = a[a.length - 1].toLowerCase();
+      const fb = b[0].toLowerCase();
+      return (la === fb) ? (a + b.slice(1)) : (a + b);
+    }
+    function repeatJoin(base, times, overlap){
+      let out = "";
+      for (let i = 0; i < times; i++) out = concatWithOverlap(out, base, overlap);
+      return out;
+    }
+    function swapAdjacentPairs(s){
+      let out = "";
+      for (let i = 0; i < s.length; i += 2){
+        const a = s[i];
+        const b = s[i+1];
+        if (b === undefined) { out += a; break; }
+        out += b + a;
+      }
+      return out;
+    }
+
+    function buildKeyAdvanced(rawBase, pattern, altParts, repeatBuilt, targetLen, overlap, swapAdjacent){
+      const base = lettersOnly(rawBase);
+      const rev = reverseStr(base);
+      let segments = [];
+
+      switch (pattern){
+        case "base": segments = [base]; break;
+        case "rev": segments = [rev]; break;
+        case "base_rev": segments = [base, rev]; break;
+        case "rev_base": segments = [rev, base]; break;
+        case "base_rev_base": segments = [base, rev, base]; break;
+        case "rev_base_rev": segments = [rev, base, rev]; break;
+        case "base_rev_rev_base": segments = [base, rev, rev, base]; break;
+        case "alt_base": {
+          const n = Math.max(1, Math.min(50, Number(altParts) || 1));
+          segments = Array.from({length:n}, (_,i)=> (i % 2 === 0 ? base : rev));
+          break;
+        }
+        case "alt_rev": {
+          const n = Math.max(1, Math.min(50, Number(altParts) || 1));
+          segments = Array.from({length:n}, (_,i)=> (i % 2 === 0 ? rev : base));
+          break;
+        }
+        default: segments = [base];
+      }
+
+      let built = "";
+      for (const seg of segments) built = concatWithOverlap(built, seg, overlap);
+
+      const rep = Math.max(1, Math.min(50, Number(repeatBuilt) || 1));
+      built = repeatJoin(built, rep, overlap);
+
+      const L = Math.max(0, Math.floor(Number(targetLen) || 0));
+      if (L > 0){
+        if (built.length === 0) return "";
+        while (built.length < L) built = built + built;
+        built = built.slice(0, L);
+      }
+
+      if (swapAdjacent) built = swapAdjacentPairs(built);
+      return built;
+    }
+
+    function buildKeyNormal(rawBase){
+      return lettersOnly(rawBase);
+    }
+
+    // =========================
+    // Vigenère
+    // =========================
+    function isUpper(ch){const c=ch.charCodeAt(0);return c>=65&&c<=90}
+    function isLower(ch){const c=ch.charCodeAt(0);return c>=97&&c<=122}
+    function alphaIndex(ch){
+      const code=ch.charCodeAt(0);
+      if (isUpper(ch)) return code-65;
+      if (isLower(ch)) return code-97;
+      return -1;
+    }
+    function sanitizeKeyShifts(keyRaw){
+      const shifts=[];
+      for (const ch of keyRaw){
+        const idx=alphaIndex(ch);
+        if (idx!==-1) shifts.push(idx);
+      }
+      return shifts;
+    }
+    function shiftChar(ch, shift, direction){
+      const idx=alphaIndex(ch);
+      if (idx===-1) return ch;
+      const base=isUpper(ch)?65:97;
+      const moved=(idx + direction*shift) % 26;
+      const wrapped=(moved + 26) % 26;
+      return String.fromCharCode(base + wrapped);
+    }
+    function vigenere(text, keyRaw, mode){
+      const key = sanitizeKeyShifts(keyRaw);
+      if (key.length===0) return text;
+      const direction=(mode==="decode")?-1:1;
+
+      let ki=0, out="";
+      for (const ch of text){
+        const idx=alphaIndex(ch);
+        if (idx===-1){ out+=ch; continue; }
+        const shift=key[ki % key.length];
+        out+=shiftChar(ch, shift, direction);
+        ki++;
+      }
+      return out;
+    }
+
+    // =========================
+    // Columnar Transposition
+    // =========================
+    function getColumnOrder(keyLetters){
+      const arr = [...keyLetters].map((ch, i)=>({ch: ch.toUpperCase(), i}));
+      arr.sort((a,b)=> a.ch.localeCompare(b.ch) || (a.i - b.i));
+      return arr.map(x=>x.i);
+    }
+    function columnarEncode(plain, keyLetters, padMode, padChar){
+      const key = lettersOnly(keyLetters);
+      const cols = key.length;
+      if (cols === 0) return plain;
+
+      const order = getColumnOrder(key);
+      const pad = (padChar && padChar.length) ? padChar[0] : "X";
+      let text = plain;
+
+      if (padMode === "pad"){
+        const rem = text.length % cols;
+        if (rem !== 0) text = text + pad.repeat(cols - rem);
+      }
+
+      const L = text.length;
+      const rows = Math.ceil(L / cols);
+
+      let out = "";
+      for (const c of order){
+        for (let r = 0; r < rows; r++){
+          const idx = r * cols + c;
+          if (idx < L) out += text[idx];
+        }
+      }
+      return out;
+    }
+    function columnarDecode(cipher, keyLetters, padMode, padChar, stripPad){
+      const key = lettersOnly(keyLetters);
+      const cols = key.length;
+      if (cols === 0) return cipher;
+
+      const order = getColumnOrder(key);
+      const pad = (padChar && padChar.length) ? padChar[0] : "X";
+
+      const L = cipher.length;
+      const rows = Math.ceil(L / cols);
+      const rem = L % cols;
+
+      const colLen = new Array(cols).fill(rows);
+      if (padMode !== "pad" && rem !== 0){
+        for (let c = rem; c < cols; c++) colLen[c] = rows - 1;
+      }
+
+      const colsData = new Array(cols).fill("").map(()=>[]);
+      let pos = 0;
+      for (const colIndex of order){
+        const take = colLen[colIndex];
+        const slice = cipher.slice(pos, pos + take);
+        colsData[colIndex] = slice.split("");
+        pos += take;
+      }
+
+      let out = "";
+      for (let r = 0; r < rows; r++){
+        for (let c = 0; c < cols; c++){
+          const ch = colsData[c][r];
+          if (ch !== undefined) out += ch;
+        }
+      }
+
+      if (padMode === "pad" && stripPad){
+        const re = new RegExp(pad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "+$");
+        out = out.replace(re, "");
+      }
+      return out;
+    }
+
+    // =========================
+    // Book cipher
+    // =========================
+    function xfnv1a(str){
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < str.length; i++){
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+    function mulberry32(seed){
+      let a = seed >>> 0;
+      return function(){
+        a |= 0;
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function parseBookWords(bookText){
+      const rawWords = (bookText || "").split(/\s+/).filter(Boolean);
+      const words = [];
+      for (const w of rawWords){
+        const cleaned = w.replace(/[^A-Za-z]/g, "").toUpperCase();
+        if (cleaned.length) words.push(cleaned);
+      }
+      return words;
+    }
+    function buildBookIndex(words){
+      const idx = new Map();
+      for (let wi = 0; wi < words.length; wi++){
+        const word = words[wi];
+        for (let li = 0; li < word.length; li++){
+          const ch = word[li];
+          if (ch < "A" || ch > "Z") continue;
+          if (!idx.has(ch)) idx.set(ch, []);
+          idx.get(ch).push({ w: wi + 1, l: li + 1 });
+        }
+      }
+      return idx;
+    }
+    function fmtToken(w, l, fmt){
+      if (fmt === "w:l") return `${w}:${l}`;
+      if (fmt === "w.l") return `${w}.${l}`;
+      return `${w}-${l}`;
+    }
+    function parseToken(tok, fmt){
+      let sep = "-";
+      if (fmt === "w:l") sep = ":";
+      if (fmt === "w.l") sep = ".";
+      const parts = tok.split(sep);
+      if (parts.length !== 2) return null;
+      const w = parseInt(parts[0], 10);
+      const l = parseInt(parts[1], 10);
+      if (!Number.isFinite(w) || !Number.isFinite(l) || w <= 0 || l <= 0) return null;
+      return { w, l };
+    }
+    function bookEncode(plainText, bookText, selection, seedStr, fmt, tokenSep){
+      const words = parseBookWords(bookText);
+      if (!words.length) return "";
+      const index = buildBookIndex(words);
+      const rng = mulberry32(xfnv1a(seedStr || ""));
+
+      const sep = (tokenSep === "") ? " " : tokenSep;
+      const out = [];
+      const upper = plainText.toUpperCase();
+
+      for (const ch of upper){
+        if (ch < "A" || ch > "Z") continue;
+        const list = index.get(ch);
+        if (!list || !list.length) return "";
+        const pick = (selection === "random") ? list[Math.floor(rng() * list.length)] : list[0];
+        out.push(fmtToken(pick.w, pick.l, fmt));
+      }
+      return out.join(sep);
+    }
+    function bookDecode(cipherText, bookText, fmt, tokenSep){
+      const words = parseBookWords(bookText);
+      if (!words.length) return "";
+      const sep = (tokenSep === "") ? " " : tokenSep;
+
+      let tokens = [];
+      if (sep.trim() === ""){
+        tokens = cipherText.trim().split(/\s+/).filter(Boolean);
+      } else {
+        tokens = cipherText.split(sep).map(s=>s.trim()).filter(Boolean);
+      }
+
+      let out = "";
+      for (const t of tokens){
+        const parsed = parseToken(t, fmt);
+        if (!parsed) return "";
+        const w = parsed.w, l = parsed.l;
+        if (w < 1 || w > words.length) return "";
+        const word = words[w - 1];
+        if (l < 1 || l > word.length) return "";
+        out += word[l - 1];
+      }
+      return out;
+    }
+
+    // =========================
+    // Tokenize mode (spell-out)
+    // =========================
+    const DIGIT_WORDS=["ZERO","ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE"];
+    const PUNCT_TOKENS=new Map([
+      [" ","SPACE"],[".","DOT"],[",","COMMA"],["!","EXCLAMATION"],["?","QUESTION"],
+      [":","COLON"],[";","SEMICOLON"],["-","DASH"],["_","UNDERSCORE"],
+      ["'","APOSTROPHE"],["\"","QUOTE"],["(","LPAREN"],[")","RPAREN"],
+      ["[","LBRACKET"],["]","RBRACKET"],["{","LBRACE"],["}","RBRACE"],
+      ["@","AT"],["#","HASH"],["$","DOLLAR"],["%","PERCENT"],["&","AMPERSAND"],
+      ["*","ASTERISK"],["/","SLASH"],["\\","BACKSLASH"],["+","PLUS"],["=","EQUALS"]
+    ]);
+    const TOKEN_TO_PUNCT=(()=>{
+      const rev=new Map();
+      for (const [k,v] of PUNCT_TOKENS.entries()) rev.set(v,k);
+      DIGIT_WORDS.forEach((w,i)=>rev.set(w,String(i)));
+      return rev;
+    })();
+
+    function normalizeStrip(text, keepSpaces){
+      let out="";
+      for (const ch of text){
+        const idx=alphaIndex(ch);
+        if (idx!==-1) out+=ch;
+        else if (keepSpaces && ch===" ") out+=" ";
+      }
+      return out;
+    }
+    function tokenizeSpell(text, keepSpaces){
+      const parts=[];
+      for (const ch of text){
+        const idx=alphaIndex(ch);
+        if (idx!==-1){ parts.push(ch); continue; }
+        if (ch>="0" && ch<="9"){ parts.push(DIGIT_WORDS[ch.charCodeAt(0)-48]); continue; }
+        if (PUNCT_TOKENS.has(ch)){
+          const tok=PUNCT_TOKENS.get(ch);
+          if (tok==="SPACE"){ if (keepSpaces) parts.push("SPACE"); }
+          else parts.push(tok);
+          continue;
+        }
+        const code=ch.codePointAt(0);
+        parts.push("CHAR"+code.toString(16).toUpperCase());
+      }
+      return parts.join(" ");
+    }
+    function detokenizeSpell(tokenText){
+      const tokens=tokenText.trim().split(/\s+/).filter(Boolean);
+      let out="";
+      for (const t of tokens){
+        const up=t.toUpperCase();
+        if (up.startsWith("CHAR")){
+          const hex=up.slice(4);
+          const code=parseInt(hex,16);
+          out += Number.isNaN(code) ? t : String.fromCodePoint(code);
+          continue;
+        }
+        if (up==="SPACE"){ out+=" "; continue; }
+        if (TOKEN_TO_PUNCT.has(up)){ out+=TOKEN_TO_PUNCT.get(up); continue; }
+        if (/^[A-Z]$/i.test(t)){ out+=t; continue; }
+        out+="["+t+"]";
+      }
+      return out;
+    }
+
+    // =========================
+    // Mapping mode
+    // =========================
+    const DEFAULT_MAPPING_TEXT =
+`ZAA=!
+ZAB=?
+ZAC=.
+ZAD=,
+ZAE=:
+ZAF=;
+ZAG=-
+ZAH=@
+ZAI=#
+ZAJ=$
+ZAK=%
+ZAL=&
+ZAM=(
+ZAN=)
+ZAO=0
+ZAP=1
+ZAQ=2
+ZAR=3
+ZAS=4
+ZAT=5
+ZAU=6
+ZAV=7
+ZAW=8
+ZAX=9
+ZAY=SPACE
+ZZZ=Z`;
+
+    function parseMapping(text){
+      const tokenToChar=new Map();
+      const charToToken=new Map();
+      const errors=[];
+      const lines=text.split(/\r?\n/);
+      for (let li=0; li<lines.length; li++){
+        const raw=lines[li].trim();
+        if (!raw || raw.startsWith("#")) continue;
+
+        const m=raw.match(/^([A-Za-z]{3})\s*=\s*(.+)$/);
+        if (!m){ errors.push(`LINE ${li+1}: INVALID FORMAT`); continue; }
+
+        const token=m[1].toUpperCase();
+        const rhs=m[2];
+        const ch = (rhs.toUpperCase()==="SPACE") ? " " : rhs[0];
+
+        if (!/^[A-Z]{3}$/.test(token)){ errors.push(`LINE ${li+1}: TOKEN MUST BE 3 LETTERS`); continue; }
+        if (tokenToChar.has(token)) errors.push(`LINE ${li+1}: DUPLICATE TOKEN ${token}`);
+        if (charToToken.has(ch)) errors.push(`LINE ${li+1}: DUPLICATE CHAR MAPPING ${JSON.stringify(ch)}`);
+
+        tokenToChar.set(token,ch);
+        charToToken.set(ch,token);
+      }
+      return { tokenToChar, charToToken, errors };
+    }
+
+    function mappingEncodePreprocess(plaintext, mp, keepSpaces){
+      let out="";
+      for (const ch of plaintext){
+        const idx=alphaIndex(ch);
+
+        if (idx!==-1){
+          if (ch==="Z" || ch==="z"){
+            const tok=mp.charToToken.get("Z");
+            if (tok) out+=tok;
+            else out+=ch;
+          } else out+=ch;
+          continue;
+        }
+
+        if (ch===" "){
+          if (!keepSpaces) continue;
+          const tok=mp.charToToken.get(" ");
+          if (tok) out+=tok;
+          continue;
+        }
+
+        const tok=mp.charToToken.get(ch);
+        if (tok) out+=tok;
+      }
+      return out;
+    }
+
+    function mappingDecodePostprocess(decodedLettersOnly, mp){
+      let out="";
+      const text=decodedLettersOnly;
+      for (let i=0; i<text.length;){
+        if (i+2<text.length){
+          const tok=text.substring(i,i+3).toUpperCase();
+          if (mp.tokenToChar.has(tok)){
+            out += mp.tokenToChar.get(tok);
+            i += 3;
+            continue;
+          }
+        }
+        out += text[i];
+        i++;
+      }
+      return out;
+    }
+
+    // =========================
+    // Shared pipeline
+    // =========================
+    function applyCaseMode(str, caseMode){
+      if (caseMode==="upper") return str.toUpperCase();
+      if (caseMode==="lower") return str.toLowerCase();
+      return str;
+    }
+
+    function preprocessForEncode(input, handling, keepSpaces, mappingText){
+      if (handling === "strip") return normalizeStrip(input, keepSpaces);
+      if (handling === "tokenize"){
+        let t = tokenizeSpell(input, keepSpaces);
+        if (!keepSpaces) t = t.replace(/\s+/g,"");
+        return t;
+      }
+      if (handling === "mapping"){
+        const mp = parseMapping(mappingText);
+        return mappingEncodePreprocess(input, mp, keepSpaces);
+      }
+      return input;
+    }
+
+    function postprocessAfterDecode(decoded, handling, keepSpaces, mappingText){
+      if (handling === "tokenize"){
+        if (keepSpaces) return detokenizeSpell(decoded);
+        return decoded;
+      }
+      if (handling === "mapping"){
+        const mp = parseMapping(mappingText);
+        return mappingDecodePostprocess(decoded, mp);
+      }
+      return decoded;
+    }
+
+    // =========================
+    // UI wiring
+    // =========================
+    const keyEl=document.getElementById("key");
+    const modeEl=document.getElementById("mode");
+    const handlingEl=document.getElementById("nonalpha");
+    const spacingEl=document.getElementById("stripSpaces");
+    const caseEl=document.getElementById("caseMode");
+    const autoRunEl=document.getElementById("autoRun");
+
+    const keyPanel=document.getElementById("keyPanel");
+    const keyPatternEl=document.getElementById("keyPattern");
+    const altPartsEl=document.getElementById("altParts");
+    const repeatBuiltEl=document.getElementById("repeatBuilt");
+    const targetLenEl=document.getElementById("targetLen");
+    const overlapJoinEl=document.getElementById("overlapJoin");
+    const swapAdjacentEl=document.getElementById("swapAdjacent");
+    const showBuiltKeyEl=document.getElementById("showBuiltKey");
+    const builtKeyWrap=document.getElementById("builtKeyWrap");
+    const builtKeyEl=document.getElementById("builtKey");
+
+    const colPadEl = document.getElementById("colPad");
+    const padCharEl = document.getElementById("padChar");
+    const stripPadOnDecodeEl = document.getElementById("stripPadOnDecode");
+
+    const bookSelectEl = document.getElementById("bookSelect");
+    const bookSeedEl = document.getElementById("bookSeed");
+    const bookFormatEl = document.getElementById("bookFormat");
+    const bookSepEl = document.getElementById("bookSep");
+    const bookTextEl = document.getElementById("bookText");
+
+    const mappingPanel=document.getElementById("mappingPanel");
+    const mappingEl=document.getElementById("codebook");
+    const mappingStatusEl=document.getElementById("codebookStatus");
+    const resetMappingBtn=document.getElementById("resetCodebookBtn");
+    const validateMappingBtn=document.getElementById("validateCodebookBtn");
+
+    const inputEl=document.getElementById("input");
+    const outputEl=document.getElementById("output");
+
+    const runBtn=document.getElementById("runBtn");
+    const swapBtn=document.getElementById("swapBtn");
+    const copyBtn=document.getElementById("copyBtn");
+    const clearBtn=document.getElementById("clearBtn");
+
+    function updateMappingVisibility(){
+      mappingPanel.style.display = (handlingEl.value==="mapping") ? "" : "none";
+    }
+
+    function validateMapping(){
+      const mp=parseMapping(mappingEl.value);
+      if (mp.errors.length){
+        mappingStatusEl.textContent = "ISSUES:\n- " + mp.errors.join("\n- ");
+        mappingStatusEl.style.whiteSpace="pre-wrap";
+        mappingStatusEl.style.color="rgba(255,200,200,.95)";
+      } else {
+        mappingStatusEl.textContent = "OK";
+        mappingStatusEl.style.whiteSpace="normal";
+        mappingStatusEl.style.color="rgba(180,255,210,.95)";
+      }
+      return mp;
+    }
+
+    function computeBuiltKey(){
+      let built = "";
+      if (!advKeyUnlocked){
+        built = buildKeyNormal(keyEl.value);
+      } else {
+        built = buildKeyAdvanced(
+          keyEl.value,
+          keyPatternEl.value,
+          altPartsEl.value,
+          repeatBuiltEl.value,
+          targetLenEl.value,
+          overlapJoinEl.checked,
+          swapAdjacentEl.checked
+        );
+      }
+
+      // built key UI only exists in hidden panel; keep it consistent when unlocked
+      if (advKeyUnlocked){
+        builtKeyEl.value = built;
+        builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
+      }
+      return built;
+    }
+
+    function run(){
+      const builtKey = computeBuiltKey();
+      const keepSpaces = (spacingEl.value === "keepSpaces");
+      const handling = handlingEl.value;
+
+      if (modeEl.value === "encode"){
+        const pre = preprocessForEncode(inputEl.value, handling, keepSpaces, mappingEl.value);
+
+        let coreOut = pre;
+
+        if (activeCipher === "vigenere"){
+          coreOut = vigenere(pre, builtKey, "encode");
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+        } else if (activeCipher === "columnar"){
+          coreOut = columnarEncode(pre, builtKey, colPadEl.value, padCharEl.value);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+        } else {
+          coreOut = bookEncode(
+            pre,
+            bookTextEl.value,
+            bookSelectEl.value,
+            bookSeedEl.value,
+            bookFormatEl.value,
+            bookSepEl.value
+          );
+        }
+
+        outputEl.value = coreOut;
+      } else {
+        let coreOut = inputEl.value;
+
+        if (activeCipher === "vigenere"){
+          coreOut = vigenere(coreOut, builtKey, "decode");
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        } else if (activeCipher === "columnar"){
+          coreOut = columnarDecode(coreOut, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        } else {
+          coreOut = bookDecode(
+            coreOut,
+            bookTextEl.value,
+            bookFormatEl.value,
+            bookSepEl.value
+          );
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        }
+      }
+
+      if (handlingEl.value==="mapping") validateMapping();
+    }
+
+    function maybeRun(){ if (autoRunEl.value==="on") run(); }
+
+    function applyAdvVisibility(){
+      keyPanel.classList.toggle("hidden", !advKeyUnlocked);
+      if (!advKeyUnlocked){
+        // ensure no accidental UI stays open
+        keyPanel.open = false;
+      }
+    }
+
+    function toggleAdv(){
+      advKeyUnlocked = !advKeyUnlocked;
+      localStorage.setItem(ADV_KEY_FLAG, advKeyUnlocked ? "1" : "0");
+      applyAdvVisibility();
+      maybeRun();
+    }
+
+    // Title click unlock
+    pageTitle.addEventListener("click", ()=>{
+      titleClicks++;
+      if (titleTimer) clearTimeout(titleTimer);
+      titleTimer = setTimeout(()=> { titleClicks = 0; }, 1600);
+      if (titleClicks >= 9){
+        titleClicks = 0;
+        clearTimeout(titleTimer);
+        titleTimer = null;
+        toggleAdv();
+      }
+    });
+
+    // Keyboard unlock (Ctrl+Alt+K)
+    window.addEventListener("keydown", (e)=>{
+      if (e.ctrlKey && e.altKey && (e.key === "k" || e.key === "K")){
+        e.preventDefault();
+        toggleAdv();
+      }
+    });
+
+    // events
+    resetMappingBtn.addEventListener("click", ()=>{
+      mappingEl.value = DEFAULT_MAPPING_TEXT;
+      validateMapping();
+      maybeRun();
+    });
+    validateMappingBtn.addEventListener("click", validateMapping);
+
+    runBtn.addEventListener("click", run);
+
+    [
+      keyEl, modeEl, handlingEl, spacingEl, caseEl, inputEl, autoRunEl, mappingEl,
+      keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, swapAdjacentEl, showBuiltKeyEl,
+      colPadEl, padCharEl, stripPadOnDecodeEl,
+      bookSelectEl, bookSeedEl, bookFormatEl, bookSepEl, bookTextEl
+    ].forEach(el => el.addEventListener("input", maybeRun));
+
+    modeEl.addEventListener("change", maybeRun);
+    handlingEl.addEventListener("change", ()=>{
+      updateMappingVisibility();
+      maybeRun();
+    });
+    spacingEl.addEventListener("change", maybeRun);
+    caseEl.addEventListener("change", maybeRun);
+    autoRunEl.addEventListener("change", ()=>{ if (autoRunEl.value==="on") run(); });
+
+    keyPatternEl.addEventListener("change", ()=>{
+      const isAlt = keyPatternEl.value === "alt_base" || keyPatternEl.value === "alt_rev";
+      altPartsEl.disabled = !isAlt;
+      maybeRun();
+    });
+
+    showBuiltKeyEl.addEventListener("change", ()=>{
+      builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
+    });
+
+    swapBtn.addEventListener("click", ()=>{
+      const tmp=inputEl.value;
+      inputEl.value=outputEl.value;
+      outputEl.value=tmp;
+      if (autoRunEl.value==="on") run();
+      inputEl.focus();
+    });
+
+    copyBtn.addEventListener("click", async ()=>{
+      try { await navigator.clipboard.writeText(outputEl.value); }
+      catch { outputEl.focus(); outputEl.select(); document.execCommand("copy"); }
+      copyBtn.textContent="COPIED";
+      setTimeout(()=> (copyBtn.textContent="COPY"), 900);
+    });
+
+    clearBtn.addEventListener("click", ()=>{
+      inputEl.value="";
+      outputEl.value="";
+      inputEl.focus();
+    });
+
+    // init
+    mappingEl.value = DEFAULT_MAPPING_TEXT;
+    mappingPanel.open = false;
+    keyPanel.open = false;
+    columnarPanel.open = false;
+    bookPanel.open = false;
+    altPartsEl.disabled = true;
+
+    updateMappingVisibility();
+    applyAdvVisibility();
+    setActiveCipher("vigenere");
+    run();
+  </script>
+</body>
+</html>
