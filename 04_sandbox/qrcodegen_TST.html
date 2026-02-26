@@ -306,8 +306,35 @@
 
         <div class="divider"></div>
 
+        <div class="sectionTitle">DOWNLOAD</div>
+        <div class="grid">
+          <div>
+            <label for="fileName">File name (no extension needed)</label>
+            <input id="fileName" placeholder="my-qr-code" value="qr-code" />
+          </div>
+          <div>
+            <label for="fileFormat">Format</label>
+            <select id="fileFormat">
+              <option value="png" selected>PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="webp">WEBP</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <label for="jpgQuality">JPG/WEBP quality</label>
+            <input id="jpgQuality" type="number" min="0.1" max="1" step="0.05" value="0.92" />
+          </div>
+          <div class="hint" style="margin:0; align-self:end">
+            Tip: PNG is best for QR scanning ✔️
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
         <div class="btns">
-          <button id="downloadBtn">Download PNG</button>
+          <button id="downloadBtn">Download</button>
           <button class="secondary" id="copyPayloadBtn">Copy payload</button>
         </div>
       </div>
@@ -628,7 +655,6 @@
   }
 
   // ---------- Logo handling (UPDATED / FIXED) ----------
-  // Use ImageBitmap decoding for reliable width/height and clearer CORS failures.
   let logoBitmap = null;     // ImageBitmap
   let logoReady = false;
   let logoSource = "";       // URL/name for display/debug
@@ -645,7 +671,6 @@
   }
 
   async function decodeToBitmapFromBlob(blob){
-    // Note: If you need a legacy Safari fallback, ask and I’ll add it.
     return await createImageBitmap(blob);
   }
 
@@ -654,14 +679,11 @@
   }
 
   async function loadLogoFromUrl(url){
-    // Support data URLs too
     if (/^data:/i.test(url)){
       const res = await fetch(url);
       const blob = await res.blob();
       return await decodeToBitmapFromBlob(blob);
     }
-
-    // CORS-aware fetch. If the origin doesn't allow CORS, fetch will fail.
     const res = await fetch(url, { mode: "cors", cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status} while fetching image.`);
     const blob = await res.blob();
@@ -699,10 +721,7 @@
     try{
       setStatus("Decoding logo…");
       clearLogo();
-
-      // Optional: keep object URL for debugging; not required for decoding
-      logoObjectUrl = URL.createObjectURL(f);
-
+      logoObjectUrl = URL.createObjectURL(f); // optional
       const bmp = await loadLogoFromFile(f);
       logoBitmap = bmp;
       logoReady = true;
@@ -843,7 +862,6 @@
         const x = Math.round(cx - totalW/2);
         const y = Math.round(cy - totalH/2);
 
-        // soft rules-of-thumb
         if (logoPct > 0.22) warn.push("Logo size is > 22% of QR. Consider 18–20% for best scan reliability.");
         if (ecc !== "H") warn.push("Consider ECC = H when using a logo (or enable Safe Mode).");
 
@@ -889,7 +907,12 @@
 
     // UI messages
     $("scanHint").textContent = wantLogo ? `ECC: ${ecc} (logo ${safeMode ? "safe mode" : "manual"})` : `ECC: ${ecc}`;
-    $("warnBox").innerHTML = warn.length ? warn.map(w=>`• ${w}`).join("<br/>") : $("warnBox").innerHTML; // keep URL error tips if present
+    if (warn.length){
+      $("warnBox").innerHTML = warn.map(w=>`• ${w}`).join("<br/>");
+    } else if (!/Logo URL error/i.test($("warnBox").textContent || "")) {
+      // clear non-error warnings but keep URL error tip until next success
+      $("warnBox").innerHTML = "";
+    }
     setStatus("Updated ✔️");
     outCtx.restore();
   }
@@ -903,18 +926,38 @@
   }, 25);
 
   // ---------- Download / Copy ----------
-  function downloadPNG(){
+  function safeFileStem(stem){
+    // Keep it simple + filesystem-friendly
+    const cleaned = escText(stem)
+      .replace(/[\u0000-\u001f\u007f]+/g, "")
+      .replace(/[<>:"/\\|?*]+/g, "-")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 120);
+    return cleaned || "qr-code";
+  }
+
+  function downloadImage(){
+    const fmt = ($("fileFormat")?.value || "png").toLowerCase();
+    const stem = safeFileStem($("fileName")?.value || "");
+    const filename = `${stem}.${fmt}`;
+
+    const mime = fmt === "jpg" ? "image/jpeg" : (fmt === "webp" ? "image/webp" : "image/png");
+    const q = Math.max(0.1, Math.min(1, parseFloat($("jpgQuality")?.value || "0.92")));
+
     outCanvas.toBlob((blob)=>{
       if (!blob) return;
       const a = document.createElement("a");
       const url = URL.createObjectURL(blob);
       a.href = url;
-      a.download = `qr-${$("type").value}.png`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    }, "image/png");
+      setStatus("Downloaded ✔️");
+      setTimeout(()=>setStatus("Ready"), 700);
+    }, mime, (mime === "image/jpeg" || mime === "image/webp") ? q : undefined);
   }
 
   async function copyPayload(){
@@ -944,13 +987,24 @@
     "size","qrMargin","fg","bg",
     "ecc","safeMode",
     "logoEnabled","logoSizePct","logoPadding","logoRadius",
-    "logoBg","logoBorder","logoBorderW","logoShadow"
+    "logoBg","logoBorder","logoBorderW","logoShadow",
+    "fileName","fileFormat","jpgQuality"
   ].forEach(id=>{
-    $(id).addEventListener("input", scheduleUpdate);
-    $(id).addEventListener("change", scheduleUpdate);
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", scheduleUpdate);
+    el.addEventListener("change", scheduleUpdate);
   });
 
-  $("downloadBtn").addEventListener("click", downloadPNG);
+  // Enter in filename triggers download
+  $("fileName")?.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter"){
+      e.preventDefault();
+      downloadImage();
+    }
+  });
+
+  $("downloadBtn").addEventListener("click", downloadImage);
   $("copyPayloadBtn").addEventListener("click", copyPayload);
 
   // initial
