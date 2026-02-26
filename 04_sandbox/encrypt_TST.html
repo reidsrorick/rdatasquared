@@ -351,18 +351,55 @@
 
   <script>
     // =========================
+    // Constants
+    // =========================
+    const DEFAULT_MAPPING_TEXT =
+`ZAA=!
+ZAB=?
+ZAC=.
+ZAD=,
+ZAE=:
+ZAF=;
+ZAG=-
+ZAH=@
+ZAI=#
+ZAJ=$
+ZAK=%
+ZAL=&
+ZAM=(
+ZAN=)
+ZAO=0
+ZAP=1
+ZAQ=2
+ZAR=3
+ZAS=4
+ZAT=5
+ZAU=6
+ZAV=7
+ZAW=8
+ZAX=9
+ZAY=SPACE
+ZZZ=Z`;
+
+    // =========================
     // Hidden mode (session-only)
     // =========================
-    let advKeyUnlocked = false; // ALWAYS RESET ON REFRESH
-
-    // title-click unlock: 9 clicks within 1600ms gaps
+    let advKeyUnlocked = false; // always resets on refresh
     let titleClicks = 0;
     let titleTimer = null;
+
+    function resetClickState(){
+      titleClicks = 0;
+      if (titleTimer){
+        clearTimeout(titleTimer);
+        titleTimer = null;
+      }
+    }
 
     // =========================
     // Tabs
     // =========================
-    let activeCipher = "vigenere"; // "vigenere" | "columnar" | "book"
+    let activeCipher = "vigenere";
     const tabVig = document.getElementById("tabVig");
     const tabCol = document.getElementById("tabCol");
     const tabBook = document.getElementById("tabBook");
@@ -748,34 +785,6 @@
     // =========================
     // Mapping mode
     // =========================
-    const DEFAULT_MAPPING_TEXT =
-`ZAA=!
-ZAB=?
-ZAC=.
-ZAD=,
-ZAE=:
-ZAF=;
-ZAG=-
-ZAH=@
-ZAI=#
-ZAJ=$
-ZAK=%
-ZAL=&
-ZAM=(
-ZAN=)
-ZAO=0
-ZAP=1
-ZAQ=2
-ZAR=3
-ZAS=4
-ZAT=5
-ZAU=6
-ZAV=7
-ZAW=8
-ZAX=9
-ZAY=SPACE
-ZZZ=Z`;
-
     function parseMapping(text){
       const tokenToChar=new Map();
       const charToToken=new Map();
@@ -950,8 +959,17 @@ ZZZ=Z`;
       if (!advKeyUnlocked) keyPanel.open = false;
     }
 
+    function lockAdv(){
+      if (!advKeyUnlocked) return;
+      advKeyUnlocked = false;
+      resetClickState();
+      applyAdvVisibility();
+      maybeRun(); // re-run with normal key immediately
+    }
+
     function toggleAdv(){
       advKeyUnlocked = !advKeyUnlocked;
+      resetClickState();
       applyAdvVisibility();
       maybeRun();
     }
@@ -962,9 +980,6 @@ ZZZ=Z`;
       if (titleTimer) clearTimeout(titleTimer);
       titleTimer = setTimeout(()=> { titleClicks = 0; }, 1600);
       if (titleClicks >= 9){
-        titleClicks = 0;
-        clearTimeout(titleTimer);
-        titleTimer = null;
         toggleAdv();
       }
     });
@@ -977,23 +992,27 @@ ZZZ=Z`;
       }
     });
 
+    // Auto-lock when user leaves the tab/window
+    document.addEventListener("visibilitychange", ()=>{
+      if (document.hidden) lockAdv();
+    });
+    window.addEventListener("blur", ()=> lockAdv());
+
     function computeBuiltKey(){
-      let built = "";
       if (!advKeyUnlocked){
-        built = buildKeyNormal(keyEl.value);
-      } else {
-        built = buildKeyAdvanced(
-          keyEl.value,
-          keyPatternEl.value,
-          altPartsEl.value,
-          repeatBuiltEl.value,
-          targetLenEl.value,
-          overlapJoinEl.checked,
-          swapAdjacentEl.checked
-        );
-        builtKeyEl.value = built;
-        builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
+        return buildKeyNormal(keyEl.value);
       }
+      const built = buildKeyAdvanced(
+        keyEl.value,
+        keyPatternEl.value,
+        altPartsEl.value,
+        repeatBuiltEl.value,
+        targetLenEl.value,
+        overlapJoinEl.checked,
+        swapAdjacentEl.checked
+      );
+      builtKeyEl.value = built;
+      builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
       return built;
     }
 
@@ -1104,34 +1123,6 @@ ZZZ=Z`;
     });
 
     // init
-    const DEFAULT_MAPPING_TEXT =
-`ZAA=!
-ZAB=?
-ZAC=.
-ZAD=,
-ZAE=:
-ZAF=;
-ZAG=-
-ZAH=@
-ZAI=#
-ZAJ=$
-ZAK=%
-ZAL=&
-ZAM=(
-ZAN=)
-ZAO=0
-ZAP=1
-ZAQ=2
-ZAR=3
-ZAS=4
-ZAT=5
-ZAU=6
-ZAV=7
-ZAW=8
-ZAX=9
-ZAY=SPACE
-ZZZ=Z`;
-
     mappingEl.value = DEFAULT_MAPPING_TEXT;
     mappingPanel.open = false;
     keyPanel.open = false;
