@@ -651,8 +651,7 @@ ZZZ=Z`;
         const re = new RegExp(pad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "+$");
         out = out.replace(re, "");
       }
-      // Replace ., digraph with space
-      return out.replace(/\.,/g, " ");
+      return out;
     }
 
     // =========================
@@ -987,16 +986,13 @@ ZZZ=Z`;
       const cb = buildCheckerboard(keyword, g1, g2);
       let out = "";
       for (const ch of text){
-        if (ch === " "){
-          // space encodes as . then , (digraph)
-          out += (cb.letterToCode.get(".") || "") + (cb.letterToCode.get(",") || "");
-        } else if (ch === "." || ch === ","){
+        if (ch === "." || ch === ","){
           out += cb.letterToCode.get(ch) || "";
         } else {
           const up = ch.toUpperCase();
           if (up >= "A" && up <= "Z") out += cb.letterToCode.get(up) || "";
         }
-        // all other characters silently dropped
+        // spaces and all other characters silently dropped
       }
       return out;
     }
