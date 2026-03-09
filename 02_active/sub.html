@@ -247,6 +247,12 @@
         <div class="checkrow">
           <label><input id="stripPadOnDecode" type="checkbox" checked /> Strip pad on decode</label>
         </div>
+
+        <div style="margin-top:12px;">
+          <label for="colMask">Output mask <span style="color:rgba(234,240,255,.4);font-weight:400">(# = ciphertext char, anything else is literal)</span></label>
+          <input id="colMask" type="text" value="" placeholder="e.g.  ###-##-## ###-##-##  or  ##### #####" autocomplete="off" />
+          <div class="tiny" id="colMaskStatus"></div>
+        </div>
       </details>
 
       <details id="bookPanel" class="hidden">
@@ -1074,6 +1080,50 @@ ZZZ=Z`;
     }
 
     // =========================
+    // Output mask
+    // =========================
+    function applyMask(text, mask){
+      if (!mask) return text;
+      const slots = (mask.match(/#/g) || []).length;
+      if (slots === 0) return text;
+      // Cycle through mask repeatedly, pulling ciphertext chars on #, inserting literals otherwise
+      let out = "", ti = 0, mi = 0;
+      while (ti < text.length){
+        const m = mask[mi % mask.length];
+        mi++;
+        if (m === "#"){
+          out += text[ti++];
+        } else {
+          out += m;
+        }
+      }
+      return out;
+    }
+
+    function stripMask(text, mask){
+      if (!mask) return text;
+      const slots = (mask.match(/#/g) || []).length;
+      if (slots === 0) return text;
+      // Mirror applyMask: walk masked text, keep chars at # positions, skip literals
+      let out = "", mi = 0;
+      for (const ch of text){
+        const m = mask[mi % mask.length];
+        mi++;
+        if (m === "#") out += ch;
+        // literal position — discard
+      }
+      return out;
+    }
+
+    function updateMaskStatus(mask, cipherLen){
+      const el = document.getElementById("colMaskStatus");
+      if (!mask){ el.textContent = ""; return; }
+      const slots = (mask.match(/#/g) || []).length;
+      if (slots === 0){ el.textContent = "No # slots — mask has no placeholders."; return; }
+      el.textContent = `${slots} slots in mask`;
+    }
+
+    // =========================
     // UI wiring
     // =========================
     const keyEl=document.getElementById("key");
@@ -1095,6 +1145,7 @@ ZZZ=Z`;
     const builtKeyEl=document.getElementById("builtKey");
 
     const colPadEl = document.getElementById("colPad");
+    const colMaskEl = document.getElementById("colMask");
     const padCharEl = document.getElementById("padChar");
     const stripPadOnDecodeEl = document.getElementById("stripPadOnDecode");
 
@@ -1222,6 +1273,8 @@ ZZZ=Z`;
           // Columnar is a pure transposition — operate on raw input, no pre/post processing
           coreOut = columnarEncode(inputEl.value, builtKey, colPadEl.value, padCharEl.value);
           coreOut = applyCaseMode(coreOut, caseEl.value);
+          updateMaskStatus(colMaskEl.value, coreOut.length);
+          coreOut = applyMask(coreOut, colMaskEl.value);
         } else if (activeCipher === "checkerboard"){
           // Checkerboard handles its own punctuation (. and ,) — skip general preprocessing
           coreOut = checkerboardEncode(inputEl.value, keyEl.value, cbGap1El.value, cbGap2El.value);
@@ -1245,6 +1298,7 @@ ZZZ=Z`;
           outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
         } else if (activeCipher === "columnar"){
           // Columnar is a pure transposition — operate on raw input, no pre/post processing
+          coreOut = stripMask(coreOut, colMaskEl.value);
           coreOut = columnarDecode(coreOut, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
           coreOut = applyCaseMode(coreOut, caseEl.value);
           outputEl.value = coreOut;
@@ -1277,7 +1331,7 @@ ZZZ=Z`;
     [
       keyEl, modeEl, handlingEl, spacingEl, caseEl, inputEl, autoRunEl, mappingEl,
       keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, swapAdjacentEl, showBuiltKeyEl,
-      colPadEl, padCharEl, stripPadOnDecodeEl,
+      colPadEl, padCharEl, stripPadOnDecodeEl, colMaskEl,
       bookSelectEl, bookSeedEl, bookFormatEl, bookSepEl, bookTextEl,
       cbGap1El, cbGap2El
     ].forEach(el => el.addEventListener("input", maybeRun));
