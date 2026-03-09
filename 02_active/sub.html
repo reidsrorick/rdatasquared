@@ -147,6 +147,7 @@
         <button id="tabVig" class="tabbtn active" type="button">VIGENÈRE</button>
         <button id="tabCol" class="tabbtn" type="button">COLUMNAR</button>
         <button id="tabBook" class="tabbtn" type="button">BOOK</button>
+        <button id="tabCB" class="tabbtn" type="button">CHECKERBOARD</button>
       </div>
     </div>
 
@@ -286,6 +287,39 @@
         </div>
       </details>
 
+      <details id="cbPanel" class="hidden">
+        <summary>Checkerboard options</summary>
+
+        <div style="margin-top:10px;">
+          <label>Gap positions (must differ)</label>
+          <div style="display:flex;gap:10px;max-width:220px;">
+            <select id="cbGap1" style="flex:1">
+              <option value="2">2</option>
+              <option value="0">0</option><option value="1">1</option>
+              <option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8">8</option>
+              <option value="9">9</option>
+            </select>
+            <select id="cbGap2" style="flex:1">
+              <option value="6">6</option>
+              <option value="0">0</option><option value="1">1</option>
+              <option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option>
+              <option value="7">7</option><option value="8">8</option>
+              <option value="9">9</option>
+            </select>
+          </div>
+          <div class="tiny">Gap columns are blank in row 0 and act as row-prefix digits for rows below.</div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label>Checkerboard grid</label>
+          <div id="cbGrid" style="overflow-x:auto;"></div>
+          <div class="tiny" style="margin-top:6px;">Single-digit codes appear in row 0. Two-digit codes use gap digit + column digit.</div>
+        </div>
+      </details>
+
       <div style="height: 10px"></div>
 
       <div class="row">
@@ -403,23 +437,28 @@ ZZZ=Z`;
     const tabVig = document.getElementById("tabVig");
     const tabCol = document.getElementById("tabCol");
     const tabBook = document.getElementById("tabBook");
+    const tabCB = document.getElementById("tabCB");
     const pageTitle = document.getElementById("pageTitle");
     const columnarPanel = document.getElementById("columnarPanel");
     const bookPanel = document.getElementById("bookPanel");
+    const cbPanel = document.getElementById("cbPanel");
 
     function setActiveCipher(which){
       activeCipher = which;
       tabVig.classList.toggle("active", which === "vigenere");
       tabCol.classList.toggle("active", which === "columnar");
       tabBook.classList.toggle("active", which === "book");
-      pageTitle.textContent = (which === "vigenere") ? "Vigenère" : (which === "columnar" ? "Columnar" : "Book");
+      tabCB.classList.toggle("active", which === "checkerboard");
+      pageTitle.textContent = (which === "vigenere") ? "Vigenère" : (which === "columnar" ? "Columnar" : (which === "book" ? "Book" : "Checkerboard"));
       columnarPanel.classList.toggle("hidden", which !== "columnar");
       bookPanel.classList.toggle("hidden", which !== "book");
+      cbPanel.classList.toggle("hidden", which !== "checkerboard");
       maybeRun();
     }
     tabVig.addEventListener("click", ()=> setActiveCipher("vigenere"));
     tabCol.addEventListener("click", ()=> setActiveCipher("columnar"));
     tabBook.addEventListener("click", ()=> setActiveCipher("book"));
+    tabCB.addEventListener("click", ()=> setActiveCipher("checkerboard"));
 
     // =========================
     // Key builder
@@ -612,7 +651,8 @@ ZZZ=Z`;
         const re = new RegExp(pad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "+$");
         out = out.replace(re, "");
       }
-      return out;
+      // Replace ., digraph with space
+      return out.replace(/\.,/g, " ");
     }
 
     // =========================
@@ -892,6 +932,152 @@ ZZZ=Z`;
     }
 
     // =========================
+    // Straddling Checkerboard
+    // =========================
+    function buildCheckerboard(keyword, g1, g2){
+      g1 = parseInt(g1); g2 = parseInt(g2);
+
+      // Build ordered alphabet: keyword unique letters first, then rest
+      const seen = new Set();
+      const ordered = [];
+      for (const ch of (keyword || "").toUpperCase()){
+        if (ch >= "A" && ch <= "Z" && !seen.has(ch)){ seen.add(ch); ordered.push(ch); }
+      }
+      for (let i = 0; i < 26; i++){
+        const ch = String.fromCharCode(65+i);
+        if (!seen.has(ch)) ordered.push(ch);
+      }
+
+      // Top row columns (exclude gap positions)
+      const topCols = [];
+      for (let i = 0; i < 10; i++) if (i !== g1 && i !== g2) topCols.push(i);
+
+      const letterToCode = new Map();
+      const codeToLetter = new Map();
+
+      // Row 0: 8 letters → single digit
+      for (let i = 0; i < 8; i++){
+        const code = String(topCols[i]);
+        letterToCode.set(ordered[i], code);
+        codeToLetter.set(code, ordered[i]);
+      }
+      // Row 1 (prefix g1): 10 letters → two digits
+      for (let i = 0; i < 10; i++){
+        const code = String(g1) + String(i);
+        letterToCode.set(ordered[8+i], code);
+        codeToLetter.set(code, ordered[8+i]);
+      }
+      // Row 2 (prefix g2): 8 remaining letters → two digits (cols 0-7)
+      for (let i = 0; i < 8; i++){
+        const code = String(g2) + String(i);
+        letterToCode.set(ordered[18+i], code);
+        codeToLetter.set(code, ordered[18+i]);
+      }
+      // Row 2 cols 8-9: hardwired punctuation (. and ,)
+      const dotCode   = String(g2) + "8";
+      const commaCode = String(g2) + "9";
+      letterToCode.set(".", dotCode);   codeToLetter.set(dotCode,   ".");
+      letterToCode.set(",", commaCode); codeToLetter.set(commaCode, ",");
+
+      return { letterToCode, codeToLetter, g1, g2, ordered, topCols };
+    }
+
+    function checkerboardEncode(text, keyword, g1, g2){
+      if (g1 === g2) return "(ERROR: gap positions must differ)";
+      const cb = buildCheckerboard(keyword, g1, g2);
+      let out = "";
+      for (const ch of text){
+        if (ch === " "){
+          // space encodes as . then , (digraph)
+          out += (cb.letterToCode.get(".") || "") + (cb.letterToCode.get(",") || "");
+        } else if (ch === "." || ch === ","){
+          out += cb.letterToCode.get(ch) || "";
+        } else {
+          const up = ch.toUpperCase();
+          if (up >= "A" && up <= "Z") out += cb.letterToCode.get(up) || "";
+        }
+        // all other characters silently dropped
+      }
+      return out;
+    }
+
+    function checkerboardDecode(digits, keyword, g1, g2){
+      if (g1 === g2) return "(ERROR: gap positions must differ)";
+      const cb = buildCheckerboard(keyword, g1, g2);
+      const s1 = String(cb.g1), s2 = String(cb.g2);
+      const digOnly = digits.replace(/[^0-9]/g, "");
+      let out = "", i = 0;
+      while (i < digOnly.length){
+        const d = digOnly[i];
+        if (d === s1 || d === s2){
+          if (i+1 < digOnly.length){
+            const ch = cb.codeToLetter.get(d + digOnly[i+1]);
+            out += ch || "?";
+            i += 2;
+          } else { i++; }
+        } else {
+          out += cb.codeToLetter.get(d) || "?";
+          i++;
+        }
+      }
+      return out;
+    }
+
+    function renderCheckerboardGrid(keyword, g1, g2){
+      g1 = parseInt(g1); g2 = parseInt(g2);
+      const valid = g1 !== g2;
+      const cb = valid ? buildCheckerboard(keyword, g1, g2) : null;
+
+      const cellStyle = `style="border:1px solid rgba(255,255,255,.18);padding:5px 8px;text-align:center;min-width:34px;font-family:ui-monospace,monospace;font-size:13px;"`;
+      const headStyle = `style="border:1px solid rgba(255,255,255,.18);padding:5px 8px;text-align:center;min-width:34px;background:rgba(0,0,0,.25);color:rgba(234,240,255,.55);font-size:12px;"`;
+      const gapStyle  = `style="border:1px solid rgba(255,255,255,.18);padding:5px 8px;text-align:center;min-width:34px;background:rgba(122,167,255,.08);color:rgba(122,167,255,.7);font-size:12px;"`;
+
+      let html = `<table style="border-collapse:collapse;margin-top:4px;">`;
+
+      // Header row: col numbers
+      html += `<tr><td ${headStyle}></td>`;
+      for (let c = 0; c < 10; c++){
+        const isGap = valid && (c === g1 || c === g2);
+        html += `<td ${isGap ? gapStyle : headStyle}>${c}</td>`;
+      }
+      html += `</tr>`;
+
+      if (valid){
+        const topCols = cb.topCols;
+        // Row 0
+        html += `<tr><td ${headStyle}>0</td>`;
+        for (let c = 0; c < 10; c++){
+          if (c === g1 || c === g2){
+            html += `<td ${gapStyle}>▾</td>`;
+          } else {
+            const idx = topCols.indexOf(c);
+            html += `<td ${cellStyle}>${cb.ordered[idx] || ""}</td>`;
+          }
+        }
+        html += `</tr>`;
+
+        // Row 1 (prefix g1)
+        html += `<tr><td ${gapStyle}>${g1}</td>`;
+        for (let c = 0; c < 10; c++) html += `<td ${cellStyle}>${cb.ordered[8+c]}</td>`;
+        html += `</tr>`;
+
+        // Row 2 (prefix g2)
+        html += `<tr><td ${gapStyle}>${g2}</td>`;
+        for (let c = 0; c < 10; c++){
+          const ch = c < 8 ? cb.ordered[18+c] : (c === 8 ? "." : ",");
+          const style = (c >= 8) ? `style="border:1px solid rgba(255,255,255,.18);padding:5px 8px;text-align:center;min-width:34px;font-family:ui-monospace,monospace;font-size:13px;color:rgba(255,220,120,.9);"` : cellStyle;
+          html += `<td ${style}>${ch}</td>`;
+        }
+        html += `</tr>`;
+      } else {
+        html += `<tr><td colspan="11" style="padding:8px;color:rgba(255,200,200,.9);font-size:13px;">Gap positions must differ.</td></tr>`;
+      }
+
+      html += `</table>`;
+      return html;
+    }
+
+    // =========================
     // UI wiring
     // =========================
     const keyEl=document.getElementById("key");
@@ -930,6 +1116,14 @@ ZZZ=Z`;
 
     const inputEl=document.getElementById("input");
     const outputEl=document.getElementById("output");
+
+    const cbGap1El    = document.getElementById("cbGap1");
+    const cbGap2El    = document.getElementById("cbGap2");
+    const cbGridEl    = document.getElementById("cbGrid");
+
+    function updateCBGrid(){
+      cbGridEl.innerHTML = renderCheckerboardGrid(keyEl.value, cbGap1El.value, cbGap2El.value);
+    }
 
     const runBtn=document.getElementById("runBtn");
     const swapBtn=document.getElementById("swapBtn");
@@ -1029,8 +1223,12 @@ ZZZ=Z`;
           coreOut = vigenere(pre, builtKey, "encode");
           coreOut = applyCaseMode(coreOut, caseEl.value);
         } else if (activeCipher === "columnar"){
-          coreOut = columnarEncode(pre, builtKey, colPadEl.value, padCharEl.value);
+          // Columnar is a pure transposition — operate on raw input, no pre/post processing
+          coreOut = columnarEncode(inputEl.value, builtKey, colPadEl.value, padCharEl.value);
           coreOut = applyCaseMode(coreOut, caseEl.value);
+        } else if (activeCipher === "checkerboard"){
+          // Checkerboard handles its own punctuation (. and ,) — skip general preprocessing
+          coreOut = checkerboardEncode(inputEl.value, keyEl.value, cbGap1El.value, cbGap2El.value);
         } else {
           coreOut = bookEncode(
             pre,
@@ -1050,7 +1248,12 @@ ZZZ=Z`;
           coreOut = applyCaseMode(coreOut, caseEl.value);
           outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
         } else if (activeCipher === "columnar"){
+          // Columnar is a pure transposition — operate on raw input, no pre/post processing
           coreOut = columnarDecode(coreOut, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = coreOut;
+        } else if (activeCipher === "checkerboard"){
+          coreOut = checkerboardDecode(coreOut, keyEl.value, cbGap1El.value, cbGap2El.value);
           coreOut = applyCaseMode(coreOut, caseEl.value);
           outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
         } else {
@@ -1079,8 +1282,16 @@ ZZZ=Z`;
       keyEl, modeEl, handlingEl, spacingEl, caseEl, inputEl, autoRunEl, mappingEl,
       keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, swapAdjacentEl, showBuiltKeyEl,
       colPadEl, padCharEl, stripPadOnDecodeEl,
-      bookSelectEl, bookSeedEl, bookFormatEl, bookSepEl, bookTextEl
+      bookSelectEl, bookSeedEl, bookFormatEl, bookSepEl, bookTextEl,
+      cbGap1El, cbGap2El
     ].forEach(el => el.addEventListener("input", maybeRun));
+
+    // Also update grid when key changes
+    keyEl.addEventListener("input", updateCBGrid);
+    [cbGap1El, cbGap2El].forEach(el => {
+      el.addEventListener("input", updateCBGrid);
+      el.addEventListener("change", updateCBGrid);
+    });
 
     modeEl.addEventListener("change", maybeRun);
     handlingEl.addEventListener("change", ()=>{
@@ -1132,6 +1343,7 @@ ZZZ=Z`;
 
     updateMappingVisibility();
     applyAdvVisibility();
+    updateCBGrid();
     setActiveCipher("vigenere");
     run();
   </script>
