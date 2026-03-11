@@ -1,0 +1,1863 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cipher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cormorant+SC:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg:        #f5f5f3;
+      --sidebar:   #ffffff;
+      --main:      #f0f0ee;
+      --card:      #ffffff;
+      --border:    #e0dedd;
+      --border2:   #c8c4c0;
+      --yellow:    #f5c400;
+      --yellow2:   #e0b200;
+      --yellow3:   #ffd740;
+      --yellow-bg: #fffbe6;
+      --yellow-dim:#7a5e00;
+      --black:     #111111;
+      --black2:    #222222;
+      --muted:     #888480;
+      --muted2:    #b8b4b0;
+      --text:      #1a1a1a;
+      --text2:     #444440;
+      --mono:      'IBM Plex Mono', monospace;
+      --sans:      'IBM Plex Sans', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      font-weight: 400;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── APP SHELL ── */
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      grid-template-columns: 340px 1fr;
+      grid-template-areas:
+        "header header"
+        "sidebar main";
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 2px solid var(--black);
+      background: var(--black);
+      gap: 20px;
+      flex-wrap: wrap;
+      height: 58px;
+    }
+    .header-left { display: flex; align-items: center; gap: 18px; }
+    h1 {
+      font-family: var(--sans);
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: #ffffff;
+      user-select: none;
+    }
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      height: 100%;
+    }
+    .tabbtn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 0 20px;
+      cursor: pointer;
+      height: 100%;
+      transition: all .15s;
+      border-radius: 0;
+    }
+    .tabbtn:hover { color: var(--black); background: var(--yellow); border-bottom-color: var(--yellow); }
+    .tabbtn.active {
+      color: var(--black);
+      border-bottom-color: var(--yellow);
+      background: var(--yellow);
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 24px 22px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── MAIN ── */
+    .main-area {
+      grid-area: main;
+      background: var(--main);
+      padding: 28px 36px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── SECTION HEADING ── */
+    .section-head {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      padding: 20px 0 10px;
+      border-top: 1px solid var(--border);
+      margin-top: 18px;
+    }
+    .section-head:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+    /* ── LABELS ── */
+    label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* ── FORM ELEMENTS ── */
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-bottom: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 400;
+      padding: 10px 13px;
+      outline: none;
+      border-radius: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888480'/%3E%3C/svg%3E");
+      background-color: #fafafa;
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 26px;
+      cursor: pointer;
+    }
+    textarea {
+      resize: vertical;
+      line-height: 1.65;
+      font-size: 14px;
+      min-height: 260px;
+      flex: 1;
+      background: #ffffff;
+    }
+    input[type="text"]::placeholder,
+    textarea::placeholder { color: var(--muted2); font-style: italic; }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--yellow2);
+      box-shadow: 0 0 0 2px rgba(245,196,0,.15);
+      background: #fff;
+      outline: none;
+    }
+    input[type="checkbox"] {
+      width: 13px; height: 13px;
+      accent-color: var(--yellow2);
+      cursor: pointer;
+    }
+
+    /* ── IO AREA ── */
+    .io-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+    @media (max-width: 900px) { .io-grid { grid-template-columns: 1fr; } }
+    .io-pane { display: flex; flex-direction: column; }
+    .io-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .22em;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .io-label span {
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: var(--border2);
+      transform: rotate(45deg);
+    }
+    .io-label.active span { background: var(--yellow); }
+
+    /* ── OUTPUT TEXTAREA ── */
+    #output {
+      background: var(--yellow-bg);
+      border-color: var(--border);
+      color: var(--black2);
+    }
+    #output:focus { border-color: var(--yellow2); }
+
+    /* ── LAYOUT HELPERS ── */
+    .field { margin-bottom: 14px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── BUTTONS ── */
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      font-weight: 400;
+      color: var(--text2);
+      background: #fff;
+      border: 1px solid var(--border2);
+      padding: 11px 20px;
+      cursor: pointer;
+      border-radius: 0;
+      transition: all .14s;
+    }
+    button:hover { color: var(--black); border-color: var(--black); background: var(--bg); }
+    button:active { transform: translateY(1px); }
+    .primary {
+      color: var(--black);
+      background: var(--yellow);
+      border-color: var(--yellow2);
+      font-weight: 500;
+    }
+    .primary:hover { background: var(--yellow3); border-color: var(--yellow); }
+    .small { font-size: 10px; padding: 9px 14px; }
+
+    .tiny {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 7px;
+      line-height: 1.5;
+      font-family: var(--mono);
+      font-weight: 300;
+    }
+
+    /* ── DETAILS ── */
+    details {
+      border-left: 2px solid var(--yellow2);
+      padding: 0 0 0 12px;
+      margin-top: 10px;
+    }
+    details[open] { border-left-color: var(--yellow); }
+    summary {
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--yellow-dim);
+      outline: none;
+      user-select: none;
+      padding: 8px 0;
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: '▸ '; font-size: 9px; }
+    details[open] summary::before { content: '▾ '; }
+
+    /* ── CHECKROW ── */
+    .checkrow { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+    .checkrow label {
+      margin: 0; display: flex; gap: 6px; align-items: center;
+      color: var(--text2); font-size: 11px; text-transform: none;
+      letter-spacing: .02em; font-weight: 400; font-family: var(--sans);
+    }
+
+    /* ── STATUS ── */
+    .status-ok  { color: #2a8a4a; font-family: var(--mono); font-size: 10px; }
+    .status-err { color: #c04030; font-family: var(--mono); font-size: 10px; }
+
+    /* ── SLOT CARDS ── */
+    .slot-card {
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--yellow2);
+      padding: 12px;
+    }
+    .slot-card-title {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .25em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* ── GRID TABLE ── */
+    .cb-table { border-collapse: collapse; margin-top: 12px; }
+
+    /* ── DIVIDER ── */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ── CARD compat ── */
+    .card { background: transparent; border: none; padding: 0; }
+
+    /* ── MONO util ── */
+    .mono { font-family: var(--mono); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; grid-template-areas: "header" "sidebar" "main"; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 50vh; }
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── SIDEBAR: force single column for wide sub-layouts ── */
+    .sidebar .subgrid,
+    .sidebar .grid,
+    .sidebar .row3 {
+      grid-template-columns: 1fr;
+    }
+    /* but keep 2-col for compact pairs like Mode/Handling and Row/Column */
+    .sidebar .row {
+      grid-template-columns: 1fr 1fr;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-logo-block">
+        <h1 id="pageTitle">Encipherment Suite</h1>
+        </div>
+        <div class="header-title-text">
+          <span class="header-cipher-desc" id="cipherDesc">Polyalphabetic substitution</span>
+        </div>
+      </div>
+      <div class="tabs">
+        <button id="tabVig" class="tabbtn active" type="button">Vigenère</button>
+        <button id="tabCol" class="tabbtn" type="button">Columnar</button>
+        <button id="tabBook" class="tabbtn" type="button">Book</button>
+        <button id="tabCB" class="tabbtn" type="button">Checkerboard</button>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="section-head">Parameters</div>
+      <div class="field">
+        <label for="key">Key</label>
+        <input id="key" type="text" value="" placeholder="Enter key…" autocomplete="off" />
+      </div>
+      <div class="row">
+        <div>
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="encode" selected>Encode</option>
+            <option value="decode">Decode</option>
+          </select>
+        </div>
+        <div>
+          <label for="nonalpha">Handling</label>
+          <select id="nonalpha">
+            <option value="keep">Keep</option>
+            <option value="strip">Strip</option>
+            <option value="tokenize">Tokenize</option>
+            <option value="mapping" selected>Mapping</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Hidden unless unlocked -->
+      <details id="keyPanel" class="hidden">
+        <summary>Key options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="keyPattern">Pattern</label>
+            <select id="keyPattern">
+              <option value="base" selected>Base</option>
+              <option value="rev">Reverse</option>
+              <option value="base_rev">Base + Reverse</option>
+              <option value="rev_base">Reverse + Base</option>
+              <option value="base_rev_base">Base + Reverse + Base</option>
+              <option value="rev_base_rev">Reverse + Base + Reverse</option>
+              <option value="base_rev_rev_base">Base + Reverse + Reverse + Base</option>
+              <option value="alt_base">Alternate Base/Reverse (start Base)</option>
+              <option value="alt_rev">Alternate Base/Reverse (start Reverse)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="altParts">Alternate parts</label>
+            <input id="altParts" type="number" min="1" max="50" value="2" />
+          </div>
+        </div>
+
+        <div class="subgrid">
+          <div>
+            <label for="repeatBuilt">Repeat result</label>
+            <input id="repeatBuilt" type="number" min="1" max="50" value="1" />
+          </div>
+
+          <div>
+            <label for="targetLen">Cut to length (0 = off)</label>
+            <input id="targetLen" type="number" min="0" max="200000" value="0" />
+          </div>
+        </div>
+
+        <div class="checkrow">
+          <label><input id="overlapJoin" type="checkbox" /> Overlap join</label>
+          <label><input id="swapAdjacent" type="checkbox" /> Swap adjacent letters</label>
+          <label><input id="showBuiltKey" type="checkbox" checked /> Show built key</label>
+        </div>
+
+        <div id="builtKeyWrap" style="margin-top:10px;">
+          <label for="builtKey">Built key</label>
+          <input id="builtKey" class="mono" type="text" readonly placeholder="(BUILT KEY)" />
+        </div>
+      </details>
+
+      <details id="columnarPanel" class="hidden">
+        <summary>Columnar options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="colPad">Padding</label>
+            <select id="colPad">
+              <option value="none" selected>None</option>
+              <option value="pad">Pad to rectangle</option>
+            </select>
+          </div>
+          <div>
+            <label for="padChar">Pad char</label>
+            <input id="padChar" type="text" value="X" maxlength="1" placeholder="X" />
+          </div>
+        </div>
+
+        <div class="checkrow">
+          <label><input id="stripPadOnDecode" type="checkbox" checked /> Strip pad on decode</label>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label for="colMask">Output mask <span style="color:rgba(234,240,255,.4);font-weight:400">(# = ciphertext char, anything else is literal)</span></label>
+          <input id="colMask" type="text" value="" placeholder="e.g.  ###-##-## ###-##-##  or  ##### #####" autocomplete="off" />
+          <div class="tiny" id="colMaskStatus"></div>
+        </div>
+      </details>
+
+      <details id="bookPanel" class="hidden">
+        <summary>Book options</summary>
+
+        <div class="subgrid">
+          <div>
+            <label for="bookSelect">Selection</label>
+            <select id="bookSelect">
+              <option value="first" selected>FIRST</option>
+              <option value="random">RANDOM</option>
+            </select>
+          </div>
+          <div>
+            <label for="bookSeed">Seed</label>
+            <input id="bookSeed" type="text" value="" placeholder="OPTIONAL..." autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="subgrid">
+          <div>
+            <label for="bookFormat">Format</label>
+            <select id="bookFormat">
+              <option value="w-l" selected>W-L</option>
+              <option value="w:l">W:L</option>
+              <option value="w.l">W.L</option>
+            </select>
+          </div>
+          <div>
+            <label for="bookSep">Token separator</label>
+            <input id="bookSep" type="text" value=" " placeholder=" " />
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label for="bookText">Book text</label>
+          <textarea id="bookText" rows="10" placeholder="PASTE BOOK TEXT HERE..."></textarea>
+        </div>
+      </details>
+
+      <details id="cbPanel" class="hidden">
+        <summary>Checkerboard options</summary>
+
+        <div style="margin-top:10px;">
+          <label>Gap positions (must differ)</label>
+          <div style="display:flex;gap:10px;max-width:220px;">
+            <select id="cbGap1" style="flex:1"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select>
+            <select id="cbGap2" style="flex:1"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6" selected>6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select>
+          </div>
+          <div class="tiny">Gap columns are blank in row 0 and act as row-prefix digits for rows below.</div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>Extra slots (row 2)</label>
+          <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px;">
+            <div class="slot-card">
+              <div class="slot-card-title">Slot A</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <div>
+                  <label style="font-size:10px;margin-bottom:4px;">Row</label>
+                  <select id="cbSlot8Row"><option value="2" selected>2</option><option value="1">1</option></select>
+                </div>
+                <div>
+                  <label style="font-size:10px;margin-bottom:4px;">Column</label>
+                  <select id="cbSlot8Col"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8" selected>8</option><option value="9">9</option></select>
+                </div>
+              </div>
+              <div>
+                <label style="font-size:10px;margin-bottom:4px;">Character</label>
+                <select id="cbSlot8"><option value="">— none —</option><option value="." selected>. (period)</option><option value=",">, (comma)</option><option value="?">? (question)</option><option value="!">! (exclamation)</option><option value=":">: (colon)</option><option value=";">; (semicolon)</option><option value="-">- (dash)</option><option value="/">/ (slash)</option><option value="|">| (pipe)</option><option value=" ">␣ (space)</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select>
+              </div>
+            </div>
+            <div class="slot-card">
+              <div class="slot-card-title">Slot B</div>
+              <div style="display:flex;gap:8px;">
+                <div style="flex:1">
+                  <label style="font-size:11px;margin-bottom:4px;">Row</label>
+                  <select id="cbSlot9Row"><option value="2" selected>2</option><option value="1">1</option></select>
+                </div>
+                <div style="flex:1">
+                  <label style="font-size:11px;margin-bottom:4px;">Column</label>
+                  <select id="cbSlot9Col"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9" selected>9</option></select>
+                </div>
+                <div style="flex:1">
+                  <label style="font-size:11px;margin-bottom:4px;">Character</label>
+                  <select id="cbSlot9"><option value="">— none —</option><option value=".">. (period)</option><option value="," selected>, (comma)</option><option value="?">? (question)</option><option value="!">! (exclamation)</option><option value=":">: (colon)</option><option value=";">; (semicolon)</option><option value="-">- (dash)</option><option value="/">/ (slash)</option><option value="|">| (pipe)</option><option value=" ">␣ (space)</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tiny" id="cbSlotStatus" style="margin-top:6px;"></div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>Digraph rules <span style="color:#b8b4b0;font-weight:400">— two slot chars → single result char</span></label>
+          <div id="cbDigraphRows" style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>
+          <div class="btns" style="margin-top:8px;">
+            <button class="small" id="addDigraphBtn" type="button">+ Add rule</button>
+          </div>
+          <div class="tiny" style="margin-top:6px;">Each rule replaces a two-character sequence (using slot chars) with a result character after decoding.</div>
+        </div>
+
+      </details>
+
+      <div class="section-head">Output</div>
+      <div class="row">
+        <div>
+          <label for="stripSpaces">Spacing</label>
+          <select id="stripSpaces">
+            <option value="keepSpaces" selected>Keep spaces</option>
+            <option value="noSpaces">Remove spaces</option>
+          </select>
+        </div>
+        <div>
+          <label for="caseMode">Case</label>
+          <select id="caseMode">
+            <option value="preserve">Preserve</option>
+            <option value="upper" selected>Uppercase</option>
+            <option value="lower">Lowercase</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label for="autoRun">Auto-run</label>
+        <select id="autoRun">
+          <option value="on" selected>On</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+
+      <details id="mappingPanel">
+        <summary>Mapping list</summary>
+        <div style="height: 10px"></div>
+        <label for="codebook">Mappings</label>
+        <textarea id="codebook" rows="10" placeholder="ZAA=!&#10;ZAB=?&#10;..."></textarea>
+        <div class="btns">
+          <button class="small" id="resetCodebookBtn" type="button">Reset defaults</button>
+          <button class="small" id="validateCodebookBtn" type="button">Validate</button>
+        </div>
+        <div class="tiny" id="codebookStatus"></div>
+      </details>
+
+    </div><!-- /sidebar -->
+
+    <div class="main-area">
+      <div id="cbGridWrap" class="hidden" style="background:#fff;border:1px solid #e0dedd;border-top:2px solid #f5c400;padding:16px 18px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:#888480;margin-bottom:4px;">Checkerboard Grid</div>
+        <div id="cbGrid" style="overflow-x:auto;"></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#b8b4b0;margin-top:8px;">Single-digit codes appear in row 0. Two-digit codes use gap digit + column digit.</div>
+      </div>
+      <div class="io-grid">
+        <div class="io-pane">
+          <div class="io-label"><span></span>Plaintext</div>
+          <textarea id="input" placeholder="Enter plaintext…"></textarea>
+        </div>
+        <div class="io-pane">
+          <div class="io-label"><span></span>Ciphertext</div>
+          <textarea id="output" readonly placeholder="Output will appear here…"></textarea>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="runBtn" type="button">Encipher</button>
+        <button id="swapBtn" type="button">Swap</button>
+        <button class="small" id="copyBtn" type="button">Copy</button>
+        <button class="small" id="clearBtn" type="button">Clear</button>
+      </div>
+    </div><!-- /main-area -->
+  </div><!-- /app -->
+
+  <script>
+    // =========================
+    // Constants
+    // =========================
+    const DEFAULT_MAPPING_TEXT =
+`ZAA=!
+ZAB=?
+ZAC=.
+ZAD=,
+ZAE=:
+ZAF=;
+ZAG=-
+ZAH=@
+ZAI=#
+ZAJ=$
+ZAK=%
+ZAL=&
+ZAM=(
+ZAN=)
+ZAO=0
+ZAP=1
+ZAQ=2
+ZAR=3
+ZAS=4
+ZAT=5
+ZAU=6
+ZAV=7
+ZAW=8
+ZAX=9
+ZAY=SPACE
+ZZZ=Z`;
+
+    // =========================
+    // Hidden mode (session-only)
+    // =========================
+    let advKeyUnlocked = false; // always resets on refresh
+    let titleClicks = 0;
+    let titleTimer = null;
+
+    function resetClickState(){
+      titleClicks = 0;
+      if (titleTimer){
+        clearTimeout(titleTimer);
+        titleTimer = null;
+      }
+    }
+
+    // =========================
+    // Tabs
+    // =========================
+    let activeCipher = "vigenere";
+    const tabVig = document.getElementById("tabVig");
+    const tabCol = document.getElementById("tabCol");
+    const tabBook = document.getElementById("tabBook");
+    const tabCB = document.getElementById("tabCB");
+    const pageTitle = document.getElementById("pageTitle");
+    const columnarPanel = document.getElementById("columnarPanel");
+    const bookPanel = document.getElementById("bookPanel");
+    const cbPanel = document.getElementById("cbPanel");
+
+    function setActiveCipher(which){
+      activeCipher = which;
+      tabVig.classList.toggle("active", which === "vigenere");
+      tabCol.classList.toggle("active", which === "columnar");
+      tabBook.classList.toggle("active", which === "book");
+      tabCB.classList.toggle("active", which === "checkerboard");
+      const _names = {vigenere:"Vigenère", columnar:"Columnar", book:"Book Cipher", checkerboard:"Checkerboard"};
+      const _descs = {vigenere:"Polyalphabetic substitution", columnar:"Transposition cipher", book:"Positional encoding", checkerboard:"Straddling checkerboard"};
+      const descEl = document.getElementById("cipherDesc");
+      if (descEl) descEl.textContent = _descs[which] || "";
+      columnarPanel.classList.toggle("hidden", which !== "columnar");
+      bookPanel.classList.toggle("hidden", which !== "book");
+      cbPanel.classList.toggle("hidden", which !== "checkerboard");
+      document.getElementById("cbGridWrap").classList.toggle("hidden", which !== "checkerboard");
+      if (which === "checkerboard") updateCBGrid();
+      maybeRun();
+    }
+    tabVig.addEventListener("click", ()=> setActiveCipher("vigenere"));
+    tabCol.addEventListener("click", ()=> setActiveCipher("columnar"));
+    tabBook.addEventListener("click", ()=> setActiveCipher("book"));
+    tabCB.addEventListener("click", ()=> setActiveCipher("checkerboard"));
+
+    // =========================
+    // Key builder
+    // =========================
+    function lettersOnly(str){ return (str || "").replace(/[^A-Za-z]/g, ""); }
+    function reverseStr(s){ return s.split("").reverse().join(""); }
+
+    function concatWithOverlap(a, b, overlap){
+      if (!overlap) return a + b;
+      if (!a || !b) return a + b;
+      const la = a[a.length - 1].toLowerCase();
+      const fb = b[0].toLowerCase();
+      return (la === fb) ? (a + b.slice(1)) : (a + b);
+    }
+    function repeatJoin(base, times, overlap){
+      let out = "";
+      for (let i = 0; i < times; i++) out = concatWithOverlap(out, base, overlap);
+      return out;
+    }
+    function swapAdjacentPairs(s){
+      let out = "";
+      for (let i = 0; i < s.length; i += 2){
+        const a = s[i];
+        const b = s[i+1];
+        if (b === undefined) { out += a; break; }
+        out += b + a;
+      }
+      return out;
+    }
+
+    function buildKeyAdvanced(rawBase, pattern, altParts, repeatBuilt, targetLen, overlap, swapAdjacent){
+      const base = lettersOnly(rawBase);
+      const rev = reverseStr(base);
+      let segments = [];
+
+      switch (pattern){
+        case "base": segments = [base]; break;
+        case "rev": segments = [rev]; break;
+        case "base_rev": segments = [base, rev]; break;
+        case "rev_base": segments = [rev, base]; break;
+        case "base_rev_base": segments = [base, rev, base]; break;
+        case "rev_base_rev": segments = [rev, base, rev]; break;
+        case "base_rev_rev_base": segments = [base, rev, rev, base]; break;
+        case "alt_base": {
+          const n = Math.max(1, Math.min(50, Number(altParts) || 1));
+          segments = Array.from({length:n}, (_,i)=> (i % 2 === 0 ? base : rev));
+          break;
+        }
+        case "alt_rev": {
+          const n = Math.max(1, Math.min(50, Number(altParts) || 1));
+          segments = Array.from({length:n}, (_,i)=> (i % 2 === 0 ? rev : base));
+          break;
+        }
+        default: segments = [base];
+      }
+
+      let built = "";
+      for (const seg of segments) built = concatWithOverlap(built, seg, overlap);
+
+      const rep = Math.max(1, Math.min(50, Number(repeatBuilt) || 1));
+      built = repeatJoin(built, rep, overlap);
+
+      const L = Math.max(0, Math.floor(Number(targetLen) || 0));
+      if (L > 0){
+        if (built.length === 0) return "";
+        while (built.length < L) built = built + built;
+        built = built.slice(0, L);
+      }
+
+      if (swapAdjacent) built = swapAdjacentPairs(built);
+      return built;
+    }
+
+    function buildKeyNormal(rawBase){
+      return lettersOnly(rawBase);
+    }
+
+    // =========================
+    // Vigenère
+    // =========================
+    function isUpper(ch){const c=ch.charCodeAt(0);return c>=65&&c<=90}
+    function isLower(ch){const c=ch.charCodeAt(0);return c>=97&&c<=122}
+    function alphaIndex(ch){
+      const code=ch.charCodeAt(0);
+      if (isUpper(ch)) return code-65;
+      if (isLower(ch)) return code-97;
+      return -1;
+    }
+    function sanitizeKeyShifts(keyRaw){
+      const shifts=[];
+      for (const ch of keyRaw){
+        const idx=alphaIndex(ch);
+        if (idx!==-1) shifts.push(idx);
+      }
+      return shifts;
+    }
+    function shiftChar(ch, shift, direction){
+      const idx=alphaIndex(ch);
+      if (idx===-1) return ch;
+      const base=isUpper(ch)?65:97;
+      const moved=(idx + direction*shift) % 26;
+      const wrapped=(moved + 26) % 26;
+      return String.fromCharCode(base + wrapped);
+    }
+    function vigenere(text, keyRaw, mode){
+      const key = sanitizeKeyShifts(keyRaw);
+      if (key.length===0) return text;
+      const direction=(mode==="decode")?-1:1;
+
+      let ki=0, out="";
+      for (const ch of text){
+        const idx=alphaIndex(ch);
+        if (idx===-1){ out+=ch; continue; }
+        const shift=key[ki % key.length];
+        out+=shiftChar(ch, shift, direction);
+        ki++;
+      }
+      return out;
+    }
+
+    // =========================
+    // Columnar Transposition
+    // =========================
+    function getColumnOrder(keyLetters){
+      const arr = [...keyLetters].map((ch, i)=>({ch: ch.toUpperCase(), i}));
+      arr.sort((a,b)=> a.ch.localeCompare(b.ch) || (a.i - b.i));
+      return arr.map(x=>x.i);
+    }
+    function columnarEncode(plain, keyLetters, padMode, padChar){
+      const key = lettersOnly(keyLetters);
+      const cols = key.length;
+      if (cols === 0) return plain;
+
+      const order = getColumnOrder(key);
+      const pad = (padChar && padChar.length) ? padChar[0] : "X";
+      let text = plain;
+
+      if (padMode === "pad"){
+        const rem = text.length % cols;
+        if (rem !== 0) text = text + pad.repeat(cols - rem);
+      }
+
+      const L = text.length;
+      const rows = Math.ceil(L / cols);
+
+      let out = "";
+      for (const c of order){
+        for (let r = 0; r < rows; r++){
+          const idx = r * cols + c;
+          if (idx < L) out += text[idx];
+        }
+      }
+      return out;
+    }
+    function columnarDecode(cipher, keyLetters, padMode, padChar, stripPad){
+      const key = lettersOnly(keyLetters);
+      const cols = key.length;
+      if (cols === 0) return cipher;
+
+      const order = getColumnOrder(key);
+      const pad = (padChar && padChar.length) ? padChar[0] : "X";
+
+      const L = cipher.length;
+      const rows = Math.ceil(L / cols);
+      const rem = L % cols;
+
+      const colLen = new Array(cols).fill(rows);
+      if (padMode !== "pad" && rem !== 0){
+        for (let c = rem; c < cols; c++) colLen[c] = rows - 1;
+      }
+
+      const colsData = new Array(cols).fill("").map(()=>[]);
+      let pos = 0;
+      for (const colIndex of order){
+        const take = colLen[colIndex];
+        const slice = cipher.slice(pos, pos + take);
+        colsData[colIndex] = slice.split("");
+        pos += take;
+      }
+
+      let out = "";
+      for (let r = 0; r < rows; r++){
+        for (let c = 0; c < cols; c++){
+          const ch = colsData[c][r];
+          if (ch !== undefined) out += ch;
+        }
+      }
+
+      if (padMode === "pad" && stripPad){
+        const re = new RegExp(pad.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "+$");
+        out = out.replace(re, "");
+      }
+      return out;
+    }
+
+    // =========================
+    // Book cipher
+    // =========================
+    function xfnv1a(str){
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < str.length; i++){
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+    function mulberry32(seed){
+      let a = seed >>> 0;
+      return function(){
+        a |= 0;
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function parseBookWords(bookText){
+      const rawWords = (bookText || "").split(/\s+/).filter(Boolean);
+      const words = [];
+      for (const w of rawWords){
+        const cleaned = w.replace(/[^A-Za-z]/g, "").toUpperCase();
+        if (cleaned.length) words.push(cleaned);
+      }
+      return words;
+    }
+    function buildBookIndex(words){
+      const idx = new Map();
+      for (let wi = 0; wi < words.length; wi++){
+        const word = words[wi];
+        for (let li = 0; li < word.length; li++){
+          const ch = word[li];
+          if (ch < "A" || ch > "Z") continue;
+          if (!idx.has(ch)) idx.set(ch, []);
+          idx.get(ch).push({ w: wi + 1, l: li + 1 });
+        }
+      }
+      return idx;
+    }
+    function fmtToken(w, l, fmt){
+      if (fmt === "w:l") return `${w}:${l}`;
+      if (fmt === "w.l") return `${w}.${l}`;
+      return `${w}-${l}`;
+    }
+    function parseToken(tok, fmt){
+      let sep = "-";
+      if (fmt === "w:l") sep = ":";
+      if (fmt === "w.l") sep = ".";
+      const parts = tok.split(sep);
+      if (parts.length !== 2) return null;
+      const w = parseInt(parts[0], 10);
+      const l = parseInt(parts[1], 10);
+      if (!Number.isFinite(w) || !Number.isFinite(l) || w <= 0 || l <= 0) return null;
+      return { w, l };
+    }
+    function bookEncode(plainText, bookText, selection, seedStr, fmt, tokenSep){
+      const words = parseBookWords(bookText);
+      if (!words.length) return "";
+      const index = buildBookIndex(words);
+      const rng = mulberry32(xfnv1a(seedStr || ""));
+
+      const sep = (tokenSep === "") ? " " : tokenSep;
+      const out = [];
+      const upper = plainText.toUpperCase();
+
+      for (const ch of upper){
+        if (ch < "A" || ch > "Z") continue;
+        const list = index.get(ch);
+        if (!list || !list.length) return "";
+        const pick = (selection === "random") ? list[Math.floor(rng() * list.length)] : list[0];
+        out.push(fmtToken(pick.w, pick.l, fmt));
+      }
+      return out.join(sep);
+    }
+    function bookDecode(cipherText, bookText, fmt, tokenSep){
+      const words = parseBookWords(bookText);
+      if (!words.length) return "";
+      const sep = (tokenSep === "") ? " " : tokenSep;
+
+      let tokens = [];
+      if (sep.trim() === ""){
+        tokens = cipherText.trim().split(/\s+/).filter(Boolean);
+      } else {
+        tokens = cipherText.split(sep).map(s=>s.trim()).filter(Boolean);
+      }
+
+      let out = "";
+      for (const t of tokens){
+        const parsed = parseToken(t, fmt);
+        if (!parsed) return "";
+        const w = parsed.w, l = parsed.l;
+        if (w < 1 || w > words.length) return "";
+        const word = words[w - 1];
+        if (l < 1 || l > word.length) return "";
+        out += word[l - 1];
+      }
+      return out;
+    }
+
+    // =========================
+    // Tokenize mode (spell-out)
+    // =========================
+    const DIGIT_WORDS=["ZERO","ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE"];
+    const PUNCT_TOKENS=new Map([
+      [" ","SPACE"],[".","DOT"],[",","COMMA"],["!","EXCLAMATION"],["?","QUESTION"],
+      [":","COLON"],[";","SEMICOLON"],["-","DASH"],["_","UNDERSCORE"],
+      ["'","APOSTROPHE"],["\"","QUOTE"],["(","LPAREN"],[")","RPAREN"],
+      ["[","LBRACKET"],["]","RBRACKET"],["{","LBRACE"],["}","RBRACE"],
+      ["@","AT"],["#","HASH"],["$","DOLLAR"],["%","PERCENT"],["&","AMPERSAND"],
+      ["*","ASTERISK"],["/","SLASH"],["\\","BACKSLASH"],["+","PLUS"],["=","EQUALS"]
+    ]);
+    const TOKEN_TO_PUNCT=(()=>{
+      const rev=new Map();
+      for (const [k,v] of PUNCT_TOKENS.entries()) rev.set(v,k);
+      DIGIT_WORDS.forEach((w,i)=>rev.set(w,String(i)));
+      return rev;
+    })();
+
+    function normalizeStrip(text, keepSpaces){
+      let out="";
+      for (const ch of text){
+        const idx=alphaIndex(ch);
+        if (idx!==-1) out+=ch;
+        else if (keepSpaces && ch===" ") out+=" ";
+      }
+      return out;
+    }
+    function tokenizeSpell(text, keepSpaces){
+      const parts=[];
+      for (const ch of text){
+        const idx=alphaIndex(ch);
+        if (idx!==-1){ parts.push(ch); continue; }
+        if (ch>="0" && ch<="9"){ parts.push(DIGIT_WORDS[ch.charCodeAt(0)-48]); continue; }
+        if (PUNCT_TOKENS.has(ch)){
+          const tok=PUNCT_TOKENS.get(ch);
+          if (tok==="SPACE"){ if (keepSpaces) parts.push("SPACE"); }
+          else parts.push(tok);
+          continue;
+        }
+        const code=ch.codePointAt(0);
+        parts.push("CHAR"+code.toString(16).toUpperCase());
+      }
+      return parts.join(" ");
+    }
+    function detokenizeSpell(tokenText){
+      const tokens=tokenText.trim().split(/\s+/).filter(Boolean);
+      let out="";
+      for (const t of tokens){
+        const up=t.toUpperCase();
+        if (up.startsWith("CHAR")){
+          const hex=up.slice(4);
+          const code=parseInt(hex,16);
+          out += Number.isNaN(code) ? t : String.fromCodePoint(code);
+          continue;
+        }
+        if (up==="SPACE"){ out+=" "; continue; }
+        if (TOKEN_TO_PUNCT.has(up)){ out+=TOKEN_TO_PUNCT.get(up); continue; }
+        if (/^[A-Z]$/i.test(t)){ out+=t; continue; }
+        out+="["+t+"]";
+      }
+      return out;
+    }
+
+    // =========================
+    // Mapping mode
+    // =========================
+    function parseMapping(text){
+      const tokenToChar=new Map();
+      const charToToken=new Map();
+      const errors=[];
+      const lines=text.split(/\r?\n/);
+      for (let li=0; li<lines.length; li++){
+        const raw=lines[li].trim();
+        if (!raw || raw.startsWith("#")) continue;
+
+        const m=raw.match(/^([A-Za-z]{3})\s*=\s*(.+)$/);
+        if (!m){ errors.push(`LINE ${li+1}: INVALID FORMAT`); continue; }
+
+        const token=m[1].toUpperCase();
+        const rhs=m[2];
+        const ch = (rhs.toUpperCase()==="SPACE") ? " " : rhs[0];
+
+        if (!/^[A-Z]{3}$/.test(token)){ errors.push(`LINE ${li+1}: TOKEN MUST BE 3 LETTERS`); continue; }
+        if (tokenToChar.has(token)) errors.push(`LINE ${li+1}: DUPLICATE TOKEN ${token}`);
+        if (charToToken.has(ch)) errors.push(`LINE ${li+1}: DUPLICATE CHAR MAPPING ${JSON.stringify(ch)}`);
+
+        tokenToChar.set(token,ch);
+        charToToken.set(ch,token);
+      }
+      return { tokenToChar, charToToken, errors };
+    }
+
+    function mappingEncodePreprocess(plaintext, mp, keepSpaces){
+      let out="";
+      for (const ch of plaintext){
+        const idx=alphaIndex(ch);
+
+        if (idx!==-1){
+          if (ch==="Z" || ch==="z"){
+            const tok=mp.charToToken.get("Z");
+            if (tok) out+=tok;
+            else out+=ch;
+          } else out+=ch;
+          continue;
+        }
+
+        if (ch===" "){
+          if (!keepSpaces) continue;
+          const tok=mp.charToToken.get(" ");
+          if (tok) out+=tok;
+          continue;
+        }
+
+        const tok=mp.charToToken.get(ch);
+        if (tok) out+=tok;
+      }
+      return out;
+    }
+
+    function mappingDecodePostprocess(decodedLettersOnly, mp){
+      let out="";
+      const text=decodedLettersOnly;
+      for (let i=0; i<text.length;){
+        if (i+2<text.length){
+          const tok=text.substring(i,i+3).toUpperCase();
+          if (mp.tokenToChar.has(tok)){
+            out += mp.tokenToChar.get(tok);
+            i += 3;
+            continue;
+          }
+        }
+        out += text[i];
+        i++;
+      }
+      return out;
+    }
+
+    // =========================
+    // Shared pipeline
+    // =========================
+    function applyCaseMode(str, caseMode){
+      if (caseMode==="upper") return str.toUpperCase();
+      if (caseMode==="lower") return str.toLowerCase();
+      return str;
+    }
+
+    function preprocessForEncode(input, handling, keepSpaces, mappingText){
+      if (handling === "strip") return normalizeStrip(input, keepSpaces);
+      if (handling === "tokenize"){
+        let t = tokenizeSpell(input, keepSpaces);
+        if (!keepSpaces) t = t.replace(/\s+/g,"");
+        return t;
+      }
+      if (handling === "mapping"){
+        const mp = parseMapping(mappingText);
+        return mappingEncodePreprocess(input, mp, keepSpaces);
+      }
+      return input;
+    }
+
+    function postprocessAfterDecode(decoded, handling, keepSpaces, mappingText){
+      if (handling === "tokenize"){
+        if (keepSpaces) return detokenizeSpell(decoded);
+        return decoded;
+      }
+      if (handling === "mapping"){
+        const mp = parseMapping(mappingText);
+        return mappingDecodePostprocess(decoded, mp);
+      }
+      return decoded;
+    }
+
+    // =========================
+    // Straddling Checkerboard
+    // =========================
+    function buildCheckerboard(keyword, g1, g2, slot8, slot9, slotACol, slotBCol, slotARow, slotBRow){
+      g1 = parseInt(g1); g2 = parseInt(g2);
+      // empty string means "no slot"
+      const s8 = (slot8 != null && slot8 !== "") ? slot8[0] : null;
+      const s9 = (slot9 != null && slot9 !== "") ? slot9[0] : null;
+      const sARow = parseInt(slotARow) === 1 ? 1 : 2;
+      const sBRow = parseInt(slotBRow) === 1 ? 1 : 2;
+      const cA = Math.min(9, Math.max(0, parseInt(slotACol) || 8));
+      const cB = Math.min(9, Math.max(0, parseInt(slotBCol) || 9));
+
+      // Build ordered alphabet: keyword unique letters first, then rest
+      const seen = new Set();
+      const ordered = [];
+      for (const ch of (keyword || "").toUpperCase()){
+        if (ch >= "A" && ch <= "Z" && !seen.has(ch)){ seen.add(ch); ordered.push(ch); }
+      }
+      for (let i = 0; i < 26; i++){
+        const ch = String.fromCharCode(65+i);
+        if (!seen.has(ch)) ordered.push(ch);
+      }
+
+      // Top row columns (exclude gap positions)
+      const topCols = [];
+      for (let i = 0; i < 10; i++) if (i !== g1 && i !== g2) topCols.push(i);
+
+      const letterToCode = new Map();
+      const codeToLetter = new Map();
+
+      // Row 0: 8 letters → single digit
+      for (let i = 0; i < 8; i++){
+        const code = String(topCols[i]);
+        letterToCode.set(ordered[i], code);
+        codeToLetter.set(code, ordered[i]);
+      }
+
+      // Build slot map: { rowNum → { col → char } }
+      const slotMap = { 1: {}, 2: {} };
+      if (s8 !== null) slotMap[sARow][cA] = s8;
+      if (s9 !== null && !(s9 === s8 && sBRow === sARow && cB === cA)) slotMap[sBRow][cB] = s9;
+
+      // Fill rows 1 and 2 with letters, skipping slot cols
+      // Letters 8..17 go to row 1, 18..25 go to row 2 — but slots shift things
+      const row1ExtraCols = new Set(Object.keys(slotMap[1]).map(Number));
+      const row2ExtraCols = new Set(Object.keys(slotMap[2]).map(Number));
+      const row1LetterCols = [], row2LetterCols = [];
+      for (let i = 0; i < 10; i++){
+        if (!row1ExtraCols.has(i)) row1LetterCols.push(i);
+        if (!row2ExtraCols.has(i)) row2LetterCols.push(i);
+      }
+
+      // Assign letters: row1 gets first batch, row2 gets remaining
+      let li = 8;
+      for (let i = 0; i < row1LetterCols.length && li < ordered.length; i++, li++){
+        const code = String(g1) + String(row1LetterCols[i]);
+        letterToCode.set(ordered[li], code);
+        codeToLetter.set(code, ordered[li]);
+      }
+      for (let i = 0; i < row2LetterCols.length && li < ordered.length; i++, li++){
+        const code = String(g2) + String(row2LetterCols[i]);
+        letterToCode.set(ordered[li], code);
+        codeToLetter.set(code, ordered[li]);
+      }
+
+      // Assign slot chars
+      for (const [row, rowGap] of [[1, g1], [2, g2]]){
+        for (const [col, ch] of Object.entries(slotMap[row])){
+          const code = String(rowGap) + String(col);
+          letterToCode.set(ch, code);
+          codeToLetter.set(code, ch);
+        }
+      }
+
+      return { letterToCode, codeToLetter, g1, g2, ordered, topCols,
+               s8, s9, cA, cB, sARow, sBRow, slotMap, row1LetterCols, row2LetterCols };
+    }
+
+    // ALL_CHARS used for digraph dropdowns (mirrors server-side list)
+    const ALL_CHARS_LIST = [
+      ["", "— none —"],
+      [".", ". (period)"], [",", ", (comma)"], ["?", "? (question)"],
+      ["!", "! (exclamation)"], [":", ": (colon)"], [";", "; (semicolon)"],
+      ["-", "- (dash)"], ["/", "/ (slash)"], ["|", "| (pipe)"],
+      [" ", "␣ (space)"],
+      ...["0","1","2","3","4","5","6","7","8","9"].map(d=>[d,d])
+    ];
+
+    function getSlotChars(){
+      const a = (document.getElementById("cbSlot8") || {}).value || "";
+      const b = (document.getElementById("cbSlot9") || {}).value || "";
+      return [a, b].filter(c => c !== "");
+    }
+
+    function charLabel(ch){
+      const found = ALL_CHARS_LIST.find(([v]) => v === ch);
+      return found ? found[1] : ch;
+    }
+
+    // First and second: only the slot chars (chars that appear in the table as extras)
+    function buildFirstOpts(slots, selected){
+      if (slots.length === 0) return '<option value="">— no slots set —</option>';
+      return slots.map(ch =>
+        `<option value="${ch}"${ch===selected?" selected":""}>${charLabel(ch)}</option>`
+      ).join("");
+    }
+
+    function buildSecondOpts(slots, selected){
+      if (slots.length === 0) return '<option value="">— no slots set —</option>';
+      return slots.map(ch =>
+        `<option value="${ch}"${ch===selected?" selected":""}>${charLabel(ch)}</option>`
+      ).join("");
+    }
+
+    // Result: chars from the full list that are NOT in the table
+    // i.e. not A-Z (all encoded as letters) and not the slot chars
+    function buildResultOpts(slots, selected){
+      const excluded = new Set(slots);
+      return ALL_CHARS_LIST
+        .filter(([v]) => v !== "" && !excluded.has(v))
+        .map(([v, label]) => `<option value="${v}"${v===selected?" selected":""}>${label}</option>`)
+        .join("");
+    }
+
+    function addDigraphRow(first="", second="", result=" "){
+      const slots = getSlotChars();
+      const row = document.createElement("div");
+      row.className = "digraph-row";
+      row.style.cssText = "display:flex;gap:6px;align-items:center;flex-wrap:wrap;";
+      const f1 = first || (slots[0] || "");
+      const s1 = second || (slots[1] || slots[0] || "");
+      if (slots.length === 0){
+        row.innerHTML = `<span style="font-size:12px;color:rgba(234,240,255,.4);">Set Slot A or B characters first.</span>
+          <button type="button" style="padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,100,100,.1);color:rgba(255,180,180,.9);cursor:pointer;font-size:12px;" onclick="this.closest('.digraph-row').remove();">✕</button>`;
+      } else {
+        row.innerHTML = `
+          <select class="dg-first" style="flex:1">${buildFirstOpts(slots, f1)}</select>
+          <select class="dg-second" style="flex:1">${buildSecondOpts(slots, s1)}</select>
+          <span style="color:rgba(234,240,255,.4);padding:0 2px;">→</span>
+          <select class="dg-result" style="flex:1">${buildResultOpts(slots, result)}</select>
+          <button type="button" style="padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,100,100,.1);color:rgba(255,180,180,.9);cursor:pointer;font-size:12px;" onclick="this.closest('.digraph-row').remove(); maybeRun();">✕</button>
+        `;
+        row.querySelectorAll("select").forEach(s => s.addEventListener("change", maybeRun));
+      }
+      document.getElementById("cbDigraphRows").appendChild(row);
+    }
+
+    function refreshDigraphDropdowns(){
+      const slots = getSlotChars();
+      document.querySelectorAll(".digraph-row").forEach(row => {
+        const f = row.querySelector(".dg-first");
+        const s = row.querySelector(".dg-second");
+        const r = row.querySelector(".dg-result");
+        if (!f) return;
+        const curF = f.value, curS = s.value, curR = r ? r.value : "";
+        f.innerHTML = buildFirstOpts(slots, curF);
+        s.innerHTML = buildSecondOpts(slots, curS);
+        if (r) r.innerHTML = buildResultOpts(slots, curR);
+      });
+    }
+
+    function getDigraphRules(){
+      const rules = [];
+      document.querySelectorAll(".digraph-row").forEach(row => {
+        const first  = row.querySelector(".dg-first").value;
+        const second = row.querySelector(".dg-second").value;
+        const result = row.querySelector(".dg-result").value;
+        if (first && second && result) rules.push({ from: first+second, to: result });
+      });
+      return rules;
+    }
+
+    function parseDigraphs(digraphText){
+      // Legacy: parse text format — kept for encode/decode pipeline compatibility
+      // In dropdown mode we call getDigraphRules() directly instead
+      const rules = [];
+      for (const line of (digraphText || "").split(/\r?\n/)){
+        const eq = line.indexOf("=");
+        if (eq < 2) continue;
+        const from = line.slice(0, eq);
+        const to   = line.slice(eq + 1);
+        if (from.length === 2) rules.push({ from, to });
+      }
+      return rules;
+    }
+
+    function applyDigraphs(text, rules){
+      // encode: replace each "to" string with "from" sequence before encoding
+      // We do this on plaintext before encoding, replacing digraph targets with their two-char source
+      // Actually: digraphs are a decode-side transform. On encode we do the reverse:
+      // replace "to" chars in input with the two extra slot chars
+      let out = text;
+      for (const r of rules){
+        // replace literal "to" in plaintext with "from" so encoder sees slot chars
+        out = out.split(r.to).join(r.from);
+      }
+      return out;
+    }
+
+    function reverseDigraphs(text, rules){
+      // decode-side: replace two-char sequences with their target char, in order
+      let out = text;
+      for (const r of rules){
+        out = out.split(r.from).join(r.to);
+      }
+      return out;
+    }
+
+    function checkerboardEncode(text, keyword, g1, g2, slot8, slot9, digraphText, slotACol, slotBCol, slotARow, slotBRow){
+      if (parseInt(g1) === parseInt(g2)) return "(ERROR: gap positions must differ)";
+      const cb = buildCheckerboard(keyword, g1, g2, slot8, slot9, slotACol, slotBCol, slotARow, slotBRow);
+      const rules = (typeof getDigraphRules === "function") ? getDigraphRules() : parseDigraphs(digraphText);
+      const expanded = applyDigraphs(text, rules);
+      let out = "";
+      for (const ch of expanded){
+        const code = cb.letterToCode.get(ch) || cb.letterToCode.get(ch.toUpperCase());
+        if (code) out += code;
+      }
+      return out;
+    }
+
+    function checkerboardDecode(digits, keyword, g1, g2, slot8, slot9, digraphText, slotACol, slotBCol, slotARow, slotBRow){
+      if (parseInt(g1) === parseInt(g2)) return "(ERROR: gap positions must differ)";
+      const cb = buildCheckerboard(keyword, g1, g2, slot8, slot9, slotACol, slotBCol, slotARow, slotBRow);
+      const rules = (typeof getDigraphRules === "function") ? getDigraphRules() : parseDigraphs(digraphText);
+      const s1 = String(cb.g1), s2 = String(cb.g2);
+      const digOnly = digits.replace(/[^0-9]/g, "");
+      let out = "", i = 0;
+      while (i < digOnly.length){
+        const d = digOnly[i];
+        if (d === s1 || d === s2){
+          if (i+1 < digOnly.length){
+            const ch = cb.codeToLetter.get(d + digOnly[i+1]);
+            out += ch || "?";
+            i += 2;
+          } else { i++; }
+        } else {
+          out += cb.codeToLetter.get(d) || "?";
+          i++;
+        }
+      }
+      // Apply digraph replacements (e.g. ., → space)
+      return reverseDigraphs(out, rules);
+    }
+
+    function renderCheckerboardGrid(keyword, g1, g2, slot8, slot9, slotACol, slotBCol, slotARow, slotBRow){
+      g1 = parseInt(g1); g2 = parseInt(g2);
+      const valid = g1 !== g2;
+      const cb = valid ? buildCheckerboard(keyword, g1, g2, slot8, slot9, slotACol, slotBCol, slotARow, slotBRow) : null;
+
+      const cellStyle = `style="border:1px solid #252520;padding:7px 10px;text-align:center;min-width:42px;width:42px;font-family:'Share Tech Mono',monospace;font-size:14px;line-height:1;background:#0f0f0c;color:#c8a96a;"`;
+      const headStyle = `style="border:1px solid #252520;padding:7px 10px;text-align:center;min-width:42px;width:42px;background:#0d0d0a;color:#4a4a40;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:.1em;line-height:1;"`;
+      const gapStyle  = `style="border:1px solid #2a3d2a;padding:7px 10px;text-align:center;min-width:42px;width:42px;background:#0f1a0f;color:#5a9a6a;font-size:11px;font-family:'Share Tech Mono',monospace;font-weight:700;line-height:1;"`;
+      const extraStyle = `style="border:1px solid #4a3a10;padding:7px 10px;text-align:center;min-width:42px;width:42px;font-family:'Share Tech Mono',monospace;font-size:14px;color:#e8b84b;background:#141008;line-height:1;"`;
+
+      let html = `<table style="border-collapse:collapse;margin-top:14px;table-layout:fixed;border:1px solid #e0e0e0;">`;
+
+      // Header row: col numbers
+      html += `<tr><td ${headStyle}></td>`;
+      for (let c = 0; c < 10; c++){
+        const isGap = valid && (c === g1 || c === g2);
+        html += `<td ${isGap ? gapStyle : headStyle}>${c}</td>`;
+      }
+      html += `</tr>`;
+
+      if (valid){
+        const topCols = cb.topCols;
+        // Row 0
+        html += `<tr><td ${headStyle}>0</td>`;
+        for (let c = 0; c < 10; c++){
+          if (c === g1 || c === g2){
+            html += `<td ${gapStyle}>▾</td>`;
+          } else {
+            const idx = topCols.indexOf(c);
+            html += `<td ${cellStyle}>${cb.ordered[idx] || ""}</td>`;
+          }
+        }
+        html += `</tr>`;
+
+        // Row 1 (prefix g1)
+        html += `<tr><td ${gapStyle}>${g1}</td>`;
+        for (let c = 0; c < 10; c++){
+          const slotChar = cb.slotMap[1][c];
+          if (slotChar !== undefined){
+            const display = slotChar === " " ? "·" : slotChar;
+            html += `<td ${extraStyle}>${display}</td>`;
+          } else {
+            const li = cb.row1LetterCols.indexOf(c);
+            html += `<td ${cellStyle}>${li >= 0 && cb.ordered[8+li] ? cb.ordered[8+li] : ""}</td>`;
+          }
+        }
+        html += `</tr>`;
+
+        // Row 2 (prefix g2)
+        html += `<tr><td ${gapStyle}>${g2}</td>`;
+        // how many letters went to row1
+        const row1LetterCount = cb.row1LetterCols.length;
+        for (let c = 0; c < 10; c++){
+          const slotChar = cb.slotMap[2][c];
+          if (slotChar !== undefined){
+            const display = slotChar === " " ? "·" : slotChar;
+            html += `<td ${extraStyle}>${display}</td>`;
+          } else {
+            const li = cb.row2LetterCols.indexOf(c);
+            const letterIdx = 8 + row1LetterCount + li;
+            html += `<td ${cellStyle}>${li >= 0 && cb.ordered[letterIdx] ? cb.ordered[letterIdx] : ""}</td>`;
+          }
+        }
+        html += `</tr>`;
+      } else {
+        html += `<tr><td colspan="11" style="padding:8px;color:rgba(255,200,200,.9);font-size:13px;">Gap positions must differ.</td></tr>`;
+      }
+
+      html += `</table>`;
+      return html;
+    }
+
+    // =========================
+    // Output mask
+    // =========================
+    function applyMask(text, mask){
+      if (!mask) return text;
+      const slots = (mask.match(/#/g) || []).length;
+      if (slots === 0) return text;
+      // Cycle through mask repeatedly, pulling ciphertext chars on #, inserting literals otherwise
+      let out = "", ti = 0, mi = 0;
+      while (ti < text.length){
+        const m = mask[mi % mask.length];
+        mi++;
+        if (m === "#"){
+          out += text[ti++];
+        } else {
+          out += m;
+        }
+      }
+      return out;
+    }
+
+    function stripMask(text, mask){
+      if (!mask) return text;
+      const slots = (mask.match(/#/g) || []).length;
+      if (slots === 0) return text;
+      // Mirror applyMask: walk masked text, keep chars at # positions, skip literals
+      let out = "", mi = 0;
+      for (const ch of text){
+        const m = mask[mi % mask.length];
+        mi++;
+        if (m === "#") out += ch;
+        // literal position — discard
+      }
+      return out;
+    }
+
+    function updateMaskStatus(mask, cipherLen){
+      const el = document.getElementById("colMaskStatus");
+      if (!mask){ el.textContent = ""; return; }
+      const slots = (mask.match(/#/g) || []).length;
+      if (slots === 0){ el.textContent = "No # slots — mask has no placeholders."; return; }
+      el.textContent = `${slots} slots in mask`;
+    }
+
+    // =========================
+    // UI wiring
+    // =========================
+    const keyEl=document.getElementById("key");
+    const modeEl=document.getElementById("mode");
+    const handlingEl=document.getElementById("nonalpha");
+    const spacingEl=document.getElementById("stripSpaces");
+    const caseEl=document.getElementById("caseMode");
+    const autoRunEl=document.getElementById("autoRun");
+
+    const keyPanel=document.getElementById("keyPanel");
+    const keyPatternEl=document.getElementById("keyPattern");
+    const altPartsEl=document.getElementById("altParts");
+    const repeatBuiltEl=document.getElementById("repeatBuilt");
+    const targetLenEl=document.getElementById("targetLen");
+    const overlapJoinEl=document.getElementById("overlapJoin");
+    const swapAdjacentEl=document.getElementById("swapAdjacent");
+    const showBuiltKeyEl=document.getElementById("showBuiltKey");
+    const builtKeyWrap=document.getElementById("builtKeyWrap");
+    const builtKeyEl=document.getElementById("builtKey");
+
+    const colPadEl = document.getElementById("colPad");
+    const colMaskEl = document.getElementById("colMask");
+    const padCharEl = document.getElementById("padChar");
+    const stripPadOnDecodeEl = document.getElementById("stripPadOnDecode");
+
+    const bookSelectEl = document.getElementById("bookSelect");
+    const bookSeedEl = document.getElementById("bookSeed");
+    const bookFormatEl = document.getElementById("bookFormat");
+    const bookSepEl = document.getElementById("bookSep");
+    const bookTextEl = document.getElementById("bookText");
+
+    const mappingPanel=document.getElementById("mappingPanel");
+    const mappingEl=document.getElementById("codebook");
+    const mappingStatusEl=document.getElementById("codebookStatus");
+    const resetMappingBtn=document.getElementById("resetCodebookBtn");
+    const validateMappingBtn=document.getElementById("validateCodebookBtn");
+
+    const inputEl=document.getElementById("input");
+    const outputEl=document.getElementById("output");
+
+    const cbGap1El      = document.getElementById("cbGap1");
+    const cbGap2El      = document.getElementById("cbGap2");
+    const cbSlot8El     = document.getElementById("cbSlot8");
+    const cbSlot9El     = document.getElementById("cbSlot9");
+    const cbSlot8ColEl  = document.getElementById("cbSlot8Col");
+    const cbSlot9ColEl  = document.getElementById("cbSlot9Col");
+    const cbSlot8RowEl  = document.getElementById("cbSlot8Row");
+    const cbSlot9RowEl  = document.getElementById("cbSlot9Row");
+    const cbGridEl      = document.getElementById("cbGrid");
+    const cbSlotStatus  = document.getElementById("cbSlotStatus");
+
+    function updateCBGrid(){
+      const cA = parseInt(cbSlot8ColEl.value), cB = parseInt(cbSlot9ColEl.value);
+      const sameCol = (cA === cB) && cbSlot8El.value !== "" && cbSlot9El.value !== "";
+      cbSlotStatus.textContent = sameCol ? "⚠ Slot A and Slot B cannot share the same column." : "";
+      cbGridEl.innerHTML = renderCheckerboardGrid(keyEl.value, cbGap1El.value, cbGap2El.value, cbSlot8El.value, cbSlot9El.value, cbSlot8ColEl.value, cbSlot9ColEl.value, cbSlot8RowEl.value, cbSlot9RowEl.value);
+      refreshDigraphDropdowns();
+    }
+
+    const runBtn=document.getElementById("runBtn");
+    const swapBtn=document.getElementById("swapBtn");
+    const copyBtn=document.getElementById("copyBtn");
+    const clearBtn=document.getElementById("clearBtn");
+
+    function updateMappingVisibility(){
+      mappingPanel.style.display = (handlingEl.value==="mapping") ? "" : "none";
+    }
+
+    function validateMapping(){
+      const mp=parseMapping(mappingEl.value);
+      if (mp.errors.length){
+        mappingStatusEl.textContent = "ISSUES:\n- " + mp.errors.join("\n- ");
+        mappingStatusEl.style.whiteSpace="pre-wrap";
+        mappingStatusEl.className='status-err';
+      } else {
+        mappingStatusEl.textContent = "OK";
+        mappingStatusEl.style.whiteSpace="normal";
+        mappingStatusEl.className='status-ok';
+      }
+      return mp;
+    }
+
+    function applyAdvVisibility(){
+      keyPanel.classList.toggle("hidden", !advKeyUnlocked);
+      if (!advKeyUnlocked) keyPanel.open = false;
+    }
+
+    function lockAdv(){
+      if (!advKeyUnlocked) return;
+      advKeyUnlocked = false;
+      resetClickState();
+      applyAdvVisibility();
+      maybeRun(); // re-run with normal key immediately
+    }
+
+    function toggleAdv(){
+      advKeyUnlocked = !advKeyUnlocked;
+      resetClickState();
+      applyAdvVisibility();
+      maybeRun();
+    }
+
+    // Secret unlock: 9 title clicks
+    pageTitle.addEventListener("click", ()=>{
+      titleClicks++;
+      if (titleTimer) clearTimeout(titleTimer);
+      titleTimer = setTimeout(()=> { titleClicks = 0; }, 1600);
+      if (titleClicks >= 9){
+        toggleAdv();
+      }
+    });
+
+    // Secret unlock: Ctrl+Alt+K
+    window.addEventListener("keydown", (e)=>{
+      if (e.ctrlKey && e.altKey && (e.key === "k" || e.key === "K")){
+        e.preventDefault();
+        toggleAdv();
+      }
+    });
+
+    // Auto-lock when user leaves the tab/window
+    document.addEventListener("visibilitychange", ()=>{
+      if (document.hidden) lockAdv();
+    });
+    window.addEventListener("blur", ()=> lockAdv());
+
+    function computeBuiltKey(){
+      if (!advKeyUnlocked){
+        return buildKeyNormal(keyEl.value);
+      }
+      const built = buildKeyAdvanced(
+        keyEl.value,
+        keyPatternEl.value,
+        altPartsEl.value,
+        repeatBuiltEl.value,
+        targetLenEl.value,
+        overlapJoinEl.checked,
+        swapAdjacentEl.checked
+      );
+      builtKeyEl.value = built;
+      builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
+      return built;
+    }
+
+    function run(){
+      const builtKey = computeBuiltKey();
+      const keepSpaces = (spacingEl.value === "keepSpaces");
+      const handling = handlingEl.value;
+
+      if (modeEl.value === "encode"){
+        const pre = preprocessForEncode(inputEl.value, handling, keepSpaces, mappingEl.value);
+
+        let coreOut = pre;
+        if (activeCipher === "vigenere"){
+          coreOut = vigenere(pre, builtKey, "encode");
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+        } else if (activeCipher === "columnar"){
+          // Columnar is a pure transposition — operate on raw input, no pre/post processing
+          coreOut = columnarEncode(inputEl.value, builtKey, colPadEl.value, padCharEl.value);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          updateMaskStatus(colMaskEl.value, coreOut.length);
+          coreOut = applyMask(coreOut, colMaskEl.value);
+        } else if (activeCipher === "checkerboard"){
+          // Checkerboard handles its own punctuation (. and ,) — skip general preprocessing
+          coreOut = checkerboardEncode(inputEl.value, keyEl.value, cbGap1El.value, cbGap2El.value, cbSlot8El.value, cbSlot9El.value, null, cbSlot8ColEl.value, cbSlot9ColEl.value, cbSlot8RowEl.value, cbSlot9RowEl.value);
+        } else {
+          coreOut = bookEncode(
+            pre,
+            bookTextEl.value,
+            bookSelectEl.value,
+            bookSeedEl.value,
+            bookFormatEl.value,
+            bookSepEl.value
+          );
+        }
+        outputEl.value = coreOut;
+      } else {
+        let coreOut = inputEl.value;
+
+        if (activeCipher === "vigenere"){
+          coreOut = vigenere(coreOut, builtKey, "decode");
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        } else if (activeCipher === "columnar"){
+          // Columnar is a pure transposition — operate on raw input, no pre/post processing
+          coreOut = stripMask(coreOut, colMaskEl.value);
+          coreOut = columnarDecode(coreOut, builtKey, colPadEl.value, padCharEl.value, stripPadOnDecodeEl.checked);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = coreOut;
+        } else if (activeCipher === "checkerboard"){
+          coreOut = checkerboardDecode(coreOut, keyEl.value, cbGap1El.value, cbGap2El.value, cbSlot8El.value, cbSlot9El.value, null, cbSlot8ColEl.value, cbSlot9ColEl.value, cbSlot8RowEl.value, cbSlot9RowEl.value);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        } else {
+          coreOut = bookDecode(coreOut, bookTextEl.value, bookFormatEl.value, bookSepEl.value);
+          coreOut = applyCaseMode(coreOut, caseEl.value);
+          outputEl.value = postprocessAfterDecode(coreOut, handling, keepSpaces, mappingEl.value);
+        }
+      }
+
+      if (handlingEl.value==="mapping") validateMapping();
+    }
+
+    function maybeRun(){ if (autoRunEl.value==="on") run(); }
+
+    // misc events
+    resetMappingBtn.addEventListener("click", ()=>{
+      mappingEl.value = DEFAULT_MAPPING_TEXT;
+      validateMapping();
+      maybeRun();
+    });
+    validateMappingBtn.addEventListener("click", validateMapping);
+
+    runBtn.addEventListener("click", run);
+
+    [
+      keyEl, modeEl, handlingEl, spacingEl, caseEl, inputEl, autoRunEl, mappingEl,
+      keyPatternEl, altPartsEl, repeatBuiltEl, targetLenEl, overlapJoinEl, swapAdjacentEl, showBuiltKeyEl,
+      colPadEl, padCharEl, stripPadOnDecodeEl, colMaskEl,
+      bookSelectEl, bookSeedEl, bookFormatEl, bookSepEl, bookTextEl,
+      cbGap1El, cbGap2El, cbSlot8El, cbSlot9El, cbSlot8ColEl, cbSlot9ColEl, cbSlot8RowEl, cbSlot9RowEl
+    ].forEach(el => el.addEventListener("input", maybeRun));
+
+    // Also update grid when key or slot chars change
+    keyEl.addEventListener("input", updateCBGrid);
+    [cbGap1El, cbGap2El, cbSlot8El, cbSlot9El, cbSlot8ColEl, cbSlot9ColEl, cbSlot8RowEl, cbSlot9RowEl].forEach(el => {
+      el.addEventListener("input", updateCBGrid);
+      el.addEventListener("change", updateCBGrid);
+    });
+
+    modeEl.addEventListener("change", maybeRun);
+    handlingEl.addEventListener("change", ()=>{
+      updateMappingVisibility();
+      maybeRun();
+    });
+    spacingEl.addEventListener("change", maybeRun);
+    caseEl.addEventListener("change", maybeRun);
+    autoRunEl.addEventListener("change", ()=>{ if (autoRunEl.value==="on") run(); });
+
+    keyPatternEl.addEventListener("change", ()=>{
+      const isAlt = keyPatternEl.value === "alt_base" || keyPatternEl.value === "alt_rev";
+      altPartsEl.disabled = !isAlt;
+      maybeRun();
+    });
+
+    showBuiltKeyEl.addEventListener("change", ()=>{
+      builtKeyWrap.style.display = showBuiltKeyEl.checked ? "" : "none";
+    });
+
+    swapBtn.addEventListener("click", ()=>{
+      const tmp=inputEl.value;
+      inputEl.value=outputEl.value;
+      outputEl.value=tmp;
+      if (autoRunEl.value==="on") run();
+      inputEl.focus();
+    });
+
+    copyBtn.addEventListener("click", async ()=>{
+      try { await navigator.clipboard.writeText(outputEl.value); }
+      catch { outputEl.focus(); outputEl.select(); document.execCommand("copy"); }
+      copyBtn.textContent='Copied';
+      setTimeout(()=> (copyBtn.textContent='Copy'), 900);
+    });
+
+    clearBtn.addEventListener("click", ()=>{
+      inputEl.value="";
+      outputEl.value="";
+      inputEl.focus();
+    });
+
+    // init
+    mappingEl.value = DEFAULT_MAPPING_TEXT;
+    mappingPanel.open = false;
+    keyPanel.open = false;
+    columnarPanel.open = false;
+    bookPanel.open = false;
+    altPartsEl.disabled = true;
+
+    document.getElementById("addDigraphBtn").addEventListener("click", () => {
+      addDigraphRow();
+      maybeRun();
+    });
+
+    updateMappingVisibility();
+    applyAdvVisibility();
+    updateCBGrid();
+    setActiveCipher("vigenere");
+    run();
+  </script>
+</body>
+</html>
