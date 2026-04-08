@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Global Sync Pro</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%233b82f6'/%3E%3Ctext x='50' y='72' text-anchor='middle' font-size='64' fill='white'%3E%F0%9F%8C%90%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- =====================================================
+       SIDEBAR
+       ===================================================== -->
+  <aside id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">🌐</div>
+      <div>
+        <h1>Global Sync Pro</h1>
+        <p>Meeting Scheduler</p>
+      </div>
+    </div>
+
+    <div class="sb-scroll">
+
+      <!-- Host Timezone -->
+      <div class="sb-sec">
+        <div class="sec-hdr">Host View Timezone</div>
+        <select id="host-tz" class="sb-select"></select>
+      </div>
+
+      <!-- Participants -->
+      <div class="sb-sec">
+        <div class="sec-hdr">
+          Participants
+          <div style="display:flex;gap:4px">
+            <button class="sb-btn sb-ghost sb-sm" onclick="showBulkAddModal()" title="Add multiple at once">⊕ Bulk</button>
+            <button class="sb-btn sb-pri sb-sm"   onclick="showAddModal()">+ Add</button>
+          </div>
+        </div>
+        <div id="filter-banner" class="filter-banner hidden">
+          <span id="filter-label"></span>
+          <button class="sb-btn sb-ghost sb-sm" onclick="clearFilter()">Show All</button>
+        </div>
+        <div id="p-list" class="p-list">
+          <div class="no-res">No participants yet.<br>Click <strong>+ Add</strong> to begin.</div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="leg-swatch" style="background:#dcfce7;border:1px solid #bbf7d0"></div>Low</div>
+          <div class="legend-item"><div class="leg-swatch" style="background:#86efac"></div>Med</div>
+          <div class="legend-item"><div class="leg-swatch" style="background:#22c55e"></div>High</div>
+          <div class="legend-item"><div class="leg-swatch" style="background:#15803d"></div>All</div>
+          <div class="legend-item"><div class="leg-swatch" style="background:#fff;box-shadow:inset 0 0 0 2px #f59e0b"></div>All Req</div>
+        </div>
+      </div>
+
+      <!-- Quick Gap Finder -->
+      <div class="sb-sec">
+        <div class="sec-hdr">Quick Gap Finder</div>
+        <div class="gap-row">
+          <label for="gap-dur">Duration:</label>
+          <input type="number" id="gap-dur" class="sb-input" value="60" min="15" max="480" step="15" style="width:68px">
+          <span style="font-size:11px;color:var(--sb-muted)">min</span>
+        </div>
+        <button class="sb-btn sb-pri sb-full" onclick="runGapFinder()">🔍 Find Open Slots</button>
+        <button class="sb-btn sb-ghost sb-full" style="margin-top:3px" onclick="goOpenSlots()">View All Results →</button>
+        <div id="gap-results" class="gap-results"></div>
+      </div>
+
+      <!-- Data I/O -->
+      <div class="sb-sec">
+        <div class="sec-hdr">Data</div>
+        <div class="io-wrap">
+          <label class="sb-btn sb-ghost sb-full" style="cursor:pointer">
+            ⬆ Import CSV
+            <input type="file" id="csv-in" accept=".csv" style="display:none" onchange="handleImport(event)">
+          </label>
+          <button class="sb-btn sb-ghost sb-full" onclick="exportCSV()">⬇ Export Schedule</button>
+          <button class="sb-btn sb-danger sb-full" onclick="confirmReset()">↺ Reset Session</button>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- =====================================================
+       MAIN
+       ===================================================== -->
+  <main id="main">
+
+    <!-- Toolbar -->
+    <div id="toolbar">
+      <div class="tb-group">
+        <button class="tb-btn on" id="tab-cal"   onclick="setTab('cal')">📅 Calendar</button>
+        <button class="tb-btn"    id="tab-slots" onclick="setTab('slots')">🔍 Open Slots</button>
+      </div>
+      <div class="tb-div"></div>
+
+      <div class="tb-group" id="nav-grp">
+        <button class="tb-btn tb-nav" onclick="navigate(-1)" title="Previous">&#8249;</button>
+        <button class="tb-btn" onclick="goToday()">Today</button>
+        <button class="tb-btn tb-nav" onclick="navigate(1)"  title="Next">&#8250;</button>
+        <span class="tb-label" id="tb-label">Loading…</span>
+      </div>
+      <div class="tb-div" id="nav-div"></div>
+
+      <div class="tb-group" id="view-grp">
+        <button class="tb-btn" id="v-week"   onclick="setView('week')">Week</button>
+        <button class="tb-btn" id="v-ww"     onclick="setView('workweek')">Work Week</button>
+        <button class="tb-btn" id="v-cal-wk" onclick="setView('cal-wk')">Cal+Wknd</button>
+        <button class="tb-btn" id="v-cal-mf" onclick="setView('cal-mf')">Cal Mon–Fri</button>
+      </div>
+      <div class="tb-div" id="view-div"></div>
+
+      <div class="tb-group" id="inc-grp">
+        <span style="font-size:11px;color:var(--text-muted)">Grid:</span>
+        <button class="tb-btn"    id="inc-15" onclick="setInc(15)">15m</button>
+        <button class="tb-btn on" id="inc-30" onclick="setInc(30)">30m</button>
+        <button class="tb-btn"    id="inc-60" onclick="setInc(60)">60m</button>
+      </div>
+      <div class="tb-div" id="inc-div"></div>
+
+      <div class="tb-group" id="h24-grp">
+        <button class="tb-btn" id="btn-24h" onclick="toggle24h()">24h View</button>
+      </div>
+
+      <div class="tb-space"></div>
+
+      <div class="tb-group hidden" id="edit-mode-grp">
+        <span style="font-size:11px;color:var(--text-muted)">Paint:</span>
+        <button class="tb-btn on" id="eb-avail-btn" onclick="setEditMode('avail')">✓ Available</button>
+        <button class="tb-btn"    id="eb-block-btn" onclick="setEditMode('block')">⊘ Blocked</button>
+      </div>
+
+      <div class="tb-group hidden" id="exit-edit-grp">
+        <button class="tb-btn" onclick="exitEdit()" style="background:#ef4444;color:#fff;border-color:#ef4444">✕ Exit Edit</button>
+      </div>
+
+      <div class="tb-div"></div>
+
+      <!-- Dark mode toggle -->
+      <div class="tb-group">
+        <button class="tb-btn" id="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
+      </div>
+
+      <div class="tb-group">
+        <button class="tb-btn" onclick="showMeetingModal(null)" style="background:var(--success);color:#fff;border-color:var(--success)">＋ Meeting</button>
+      </div>
+    </div>
+
+    <!-- Edit banner -->
+    <div id="edit-banner">
+      <div class="eb-info" id="eb-info">✏️ Editing: <strong></strong></div>
+      <div class="eb-form">
+        <label>Date <span class="eb-note" id="eb-tz-note"></span>:</label>
+        <input type="date" id="f-date" class="fi">
+        <label>Start:</label>
+        <div class="time-wrap">
+          <input type="time" id="f-start" class="fi" value="09:00">
+          <button class="clock-btn" onclick="cpOpen('f-start')" title="Clock picker">🕐</button>
+        </div>
+        <label>End:</label>
+        <div class="time-wrap">
+          <input type="time" id="f-end" class="fi" value="17:00">
+          <button class="clock-btn" onclick="cpOpen('f-end')" title="Clock picker">🕐</button>
+        </div>
+        <button class="tb-btn" onclick="addFormBlock()" style="background:var(--success);color:#fff;border-color:var(--success)">Add Block</button>
+        <button class="tb-btn" onclick="clearDay()" style="color:var(--danger)">Clear Day</button>
+      </div>
+    </div>
+
+    <!-- Calendar / Open Slots -->
+    <div id="cal-container">
+      <div id="cal-wrapper">
+        <div id="cal-inner"></div>
+      </div>
+
+      <div id="slots-panel" class="hidden">
+        <div id="slots-filters">
+          <div class="sf-row">
+            <div class="sf-group">
+              <label>Duration</label>
+              <div style="display:flex;align-items:center;gap:4px">
+                <input type="number" id="os-dur" class="fi" value="60" min="15" step="15" style="width:62px"> min
+              </div>
+            </div>
+            <div class="sf-group">
+              <label>From</label>
+              <input type="date" id="os-from" class="fi">
+            </div>
+            <div class="sf-group">
+              <label>To</label>
+              <input type="date" id="os-to" class="fi">
+            </div>
+            <div class="sf-group">
+              <label>Days of Week</label>
+              <div class="dow-btns" id="dow-btns"></div>
+            </div>
+            <div class="sf-group">
+              <label>Min Quality</label>
+              <select id="os-minrank" class="fi">
+                <option value="4">Any (Some Req Free)</option>
+                <option value="3" selected>All Req Free</option>
+                <option value="2">All Req + Some Opt</option>
+                <option value="1">Everyone Free</option>
+              </select>
+            </div>
+            <div class="sf-group">
+              <label>Sort By</label>
+              <select id="os-sort" class="fi">
+                <option value="rank">Rank</option>
+                <option value="time">Date &amp; Time</option>
+                <option value="avail">Most Available</option>
+              </select>
+            </div>
+            <div class="sf-group" style="justify-content:flex-end">
+              <label>&nbsp;</label>
+              <div style="display:flex;gap:5px">
+                <button class="tb-btn on" onclick="runOpenSlots()">Find Slots</button>
+                <button class="tb-btn" onclick="exportOpenSlots()" id="os-export-btn" disabled style="opacity:.5">Export CSV</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="slots-table-wrap">
+          <div id="slots-placeholder" class="slots-ph">Configure filters above and click <strong>Find Slots</strong>.</div>
+          <table id="slots-table" class="hidden">
+            <thead>
+              <tr>
+                <th style="width:60px">Rank</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Req Free</th>
+                <th>Optional Free</th>
+                <th>Missing Req</th>
+                <th style="width:50px"></th>
+              </tr>
+            </thead>
+            <tbody id="slots-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<!-- Quick-Assign Popup -->
+<div id="assign-popup" class="hidden">
+  <div class="ap-head" id="ap-head"></div>
+  <div class="ap-sec-lbl">Assign to:</div>
+  <div id="ap-plist" class="ap-plist"></div>
+  <div class="ap-mode-row">
+    <label class="ap-mode-opt"><input type="radio" name="ap-mode" value="avail" checked> Mark Available</label>
+    <label class="ap-mode-opt"><input type="radio" name="ap-mode" value="block"> Mark Blocked</label>
+  </div>
+  <div class="ap-foot">
+    <button class="ap-btn ap-meeting" onclick="apCreateMeeting()">📅 New Meeting</button>
+    <button class="ap-btn ap-save"    onclick="apConfirm()">✓ Save</button>
+    <button class="ap-btn ap-cancel"  onclick="apCancel()">✕</button>
+  </div>
+</div>
+
+<!-- Clock Picker -->
+<div id="clock-picker" class="hidden">
+  <div class="cp-phase-lbl" id="cp-phase-lbl">Select Hour</div>
+  <div class="cp-display"   id="cp-display">12:00 AM</div>
+  <div class="cp-face"      id="cp-face"></div>
+  <div class="cp-ampm">
+    <button id="cp-am" class="cp-ap-btn" onclick="cpSetAP('AM')">AM</button>
+    <button id="cp-pm" class="cp-ap-btn" onclick="cpSetAP('PM')">PM</button>
+  </div>
+  <div class="cp-foot">
+    <button onclick="cpCancel()">Cancel</button>
+    <button class="cp-ok" onclick="cpConfirm()">Done</button>
+  </div>
+</div>
+
+<!-- Add Participant Modal -->
+<div id="modal-add" class="modal-ov hidden">
+  <div class="modal">
+    <h2>Add Participant</h2>
+    <div class="fg">
+      <label>Full Name</label>
+      <input type="text" id="m-name" class="fc" placeholder="e.g. Jane Smith">
+    </div>
+    <div class="fg">
+      <label>Organization <em class="opt-lbl">(optional)</em></label>
+      <input type="text" id="m-org" class="fc" placeholder="e.g. Engineering">
+    </div>
+    <div class="fg">
+      <label>Time Zone</label>
+      <select id="m-tz" class="fc"></select>
+    </div>
+    <div class="fg">
+      <label>Attendance Type</label>
+      <div class="req-toggle">
+        <div class="tog-opt tog-req" id="m-req-btn" onclick="selReq(true)">⭐ Required</div>
+        <div class="tog-opt"         id="m-opt-btn" onclick="selReq(false)">Optional</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sec" onclick="closeModal('modal-add')">Cancel</button>
+      <button class="btn btn-pri" onclick="submitAdd()">Add Participant</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Add Modal -->
+<div id="modal-bulk" class="modal-ov hidden">
+  <div class="modal" style="max-width:540px">
+    <h2>Bulk Add Participants</h2>
+    <div class="fg">
+      <label>Names <em class="opt-lbl">(one per line)</em></label>
+      <textarea id="bulk-names" class="fc" rows="7" placeholder="Jane Smith&#10;John Doe&#10;Alice Johnson&#10;Bob Williams" style="resize:vertical;font-family:var(--font)"></textarea>
+    </div>
+    <div class="fg-row">
+      <div class="fg" style="flex:1">
+        <label>Organization <em class="opt-lbl">(optional)</em></label>
+        <input type="text" id="bulk-org" class="fc" placeholder="e.g. Engineering">
+      </div>
+      <div class="fg" style="flex:2">
+        <label>Time Zone</label>
+        <select id="bulk-tz" class="fc"></select>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Attendance Type</label>
+      <div class="req-toggle">
+        <div class="tog-opt tog-req" id="bulk-req-btn" onclick="bulkSelReq(true)">⭐ Required</div>
+        <div class="tog-opt"         id="bulk-opt-btn" onclick="bulkSelReq(false)">Optional</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sec" onclick="closeModal('modal-bulk')">Cancel</button>
+      <button class="btn btn-pri" onclick="submitBulkAdd()">Add All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Participant Modal -->
+<div id="modal-edit-p" class="modal-ov hidden">
+  <div class="modal">
+    <h2>Edit Participant</h2>
+    <div class="fg">
+      <label>Full Name</label>
+      <input type="text" id="ep-name" class="fc">
+    </div>
+    <div class="fg">
+      <label>Organization <em class="opt-lbl">(optional)</em></label>
+      <input type="text" id="ep-org" class="fc" placeholder="e.g. Engineering">
+    </div>
+    <div class="fg">
+      <label>Time Zone</label>
+      <select id="ep-tz" class="fc"></select>
+    </div>
+    <div class="fg">
+      <label>Attendance Type</label>
+      <div class="req-toggle">
+        <div class="tog-opt" id="ep-req-btn" onclick="epSelReq(true)">⭐ Required</div>
+        <div class="tog-opt" id="ep-opt-btn" onclick="epSelReq(false)">Optional</div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between">
+      <button class="btn btn-danger" onclick="deleteParticipantFromModal()">Delete</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sec" onclick="closeModal('modal-edit-p')">Cancel</button>
+        <button class="btn btn-pri" onclick="submitEditParticipant()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Modal -->
+<div id="modal-meeting" class="modal-ov hidden">
+  <div class="modal">
+    <h2 id="mt-modal-title">Create Meeting</h2>
+    <div class="fg">
+      <label>Meeting Title</label>
+      <input type="text" id="mt-title" class="fc" placeholder="e.g. Q2 Planning">
+    </div>
+    <div class="fg-row">
+      <div class="fg" style="flex:1">
+        <label>Date</label>
+        <input type="date" id="mt-date" class="fc">
+      </div>
+      <div class="fg" style="flex:1">
+        <label>Start Time</label>
+        <div class="time-wrap">
+          <input type="time" id="mt-start" class="fc" value="09:00">
+          <button class="clock-btn" onclick="cpOpen('mt-start')" title="Clock picker">🕐</button>
+        </div>
+      </div>
+      <div class="fg" style="flex:1">
+        <label>Duration</label>
+        <select id="mt-dur" class="fc">
+          <option value="30">30 min</option>
+          <option value="60" selected>1 hour</option>
+          <option value="90">1.5 hours</option>
+          <option value="120">2 hours</option>
+          <option value="180">3 hours</option>
+          <option value="240">4 hours</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Invite Participants <em class="opt-lbl">(optional)</em></label>
+      <div id="mt-participants" class="mt-plist"></div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between">
+      <button class="btn btn-danger hidden" id="mt-delete-btn" onclick="deleteMeeting()">Delete Meeting</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sec" onclick="closeModal('modal-meeting')">Cancel</button>
+        <button class="btn btn-pri" onclick="submitMeeting()">Save Meeting</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
