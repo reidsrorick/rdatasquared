@@ -74,7 +74,7 @@
         <div class="io-wrap">
           <label class="sb-btn sb-ghost sb-full" style="cursor:pointer">
             ⬆ Import CSV
-            <input type="file" id="csv-in" accept=".csv" style="display:none" onchange="handleImport(event)">
+            <input type="file" id="csv-in" accept=".csv" multiple style="display:none" onchange="handleImport(event)">
           </label>
           <button class="sb-btn sb-ghost sb-full" onclick="exportCSV()">⬇ Export Schedule</button>
           <button class="sb-btn sb-danger sb-full" onclick="confirmReset()">↺ Reset Session</button>

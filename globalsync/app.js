@@ -582,10 +582,29 @@ function dlBlob(blob,name) {
 }
 
 function handleImport(evt) {
-  const f=evt.target.files[0]; if (!f) return;
-  const r=new FileReader();
-  r.onload=e=>{ try { importCSV(e.target.result); } catch(err) { alert('Import error: '+err.message); } };
-  r.readAsText(f); evt.target.value='';
+  const files=[...evt.target.files]; if (!files.length) return;
+  evt.target.value='';
+  let done=0, total=files.length, totalPeople=0, errors=[];
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try {
+        const before=S.participants.length;
+        importCSV(e.target.result, true);
+        totalPeople+=S.participants.length-before;
+      } catch(err) { errors.push(`${f.name}: ${err.message}`); }
+      done++;
+      if (done===total) {
+        renderAll();
+        saveState();
+        const msg=errors.length
+          ? `Imported from ${total} file(s).\nErrors:\n${errors.join('\n')}`
+          : `Imported ${totalPeople} new participant(s) from ${total} file(s).`;
+        alert(msg);
+      }
+    };
+    r.readAsText(f);
+  });
 }
 
 function parseLine(line) {
@@ -599,7 +618,7 @@ function parseLine(line) {
   out.push(cur.trim()); return out;
 }
 
-function importCSV(text) {
+function importCSV(text, silent=false) {
   const lines=text.split(/\r?\n/).filter(l=>l.trim());
   if (lines.length<2) throw new Error('No data rows found.');
   const hdr=parseLine(lines[0]).map(h=>h.toLowerCase().replace(/[\s_]+/g,'_'));
@@ -628,16 +647,29 @@ function importCSV(text) {
     else    { p.tz=data.tz; p.required=data.req; p.org=data.org; }
     p.mode=data.mode;
     for (const b of data.blocks) {
-      const [yr,mo,dy]=b.date.split('-').map(Number);
-      const [sh,sm]=b.start.split(':').map(Number);
-      const [eh,em]=b.end.split(':').map(Number);
-      const sM=sh*60+sm, eM=eh*60+em;
+      let yr,mo,dy;
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(b.date.trim())) {
+        [mo,dy,yr]=b.date.trim().split('/').map(Number);
+      } else {
+        [yr,mo,dy]=b.date.trim().split('-').map(Number);
+      }
+      const parseTime=t=>{
+        const m12=/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(t.trim());
+        if (m12) {
+          let h=+m12[1], mn=+m12[2];
+          if (/pm/i.test(m12[3])&&h!==12) h+=12;
+          if (/am/i.test(m12[3])&&h===12) h=0;
+          return h*60+mn;
+        }
+        const [sh,sm]=t.trim().split(':').map(Number);
+        return sh*60+sm;
+      };
+      const sM=parseTime(b.start), eM=parseTime(b.end);
       if (isNaN(sM)||isNaN(eM)||sM>=eM) continue;
       pSlots(yr,mo,dy,sM,eM,p.tz).forEach(s=>(p.mode==='block'?p.blocked:p.availability).add(s));
     }
   }
-  renderAll();
-  alert(`Imported ${map.size} participant(s).`);
+  if (!silent) { renderAll(); alert(`Imported ${map.size} participant(s).`); }
 }
 
 // ============================================================
