@@ -1,0 +1,413 @@
+/* ===================================================================
+   data.js — All data operations using localStorage
+   Replaces the Flask/SQLite backend entirely.
+   No server needed — data lives in the browser.
+   Depends on: utils.js, storage.js, ui.js (toast, setSaveStatus, showModal, hideModal, confirm$)
+   =================================================================== */
+
+"use strict";
+
+// ---------------------------------------------------------------------------
+// Internal localStorage helpers
+// ---------------------------------------------------------------------------
+
+const _DATA_KEY = "wt-rows";
+
+function getAllItems() {
+  try { return JSON.parse(localStorage.getItem(_DATA_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function _saveAllItems(items) {
+  localStorage.setItem(_DATA_KEY, JSON.stringify(items));
+}
+
+// Simple auto-incrementing ID seeded from max existing id
+let _idCounter = null;
+function _nextId() {
+  if (_idCounter === null) {
+    const all = getAllItems();
+    _idCounter = all.length > 0 ? Math.max(...all.map(r => Number(r.id) || 0)) + 1 : 1;
+  }
+  return _idCounter++;
+}
+
+// ---------------------------------------------------------------------------
+// Load rows into grid
+// ---------------------------------------------------------------------------
+
+async function loadRows() {
+  rowData = getAllItems().filter(r => !r.deleted);
+  if (gridApi) gridApi.setGridOption("rowData", rowData);
+  updateDeletedBadge();
+  updateCategoryDropdown();
+  restoreFiltersFromStorage();
+  updateRowCount();
+  checkDueNotifications();
+}
+
+// ---------------------------------------------------------------------------
+// Save / create a single row
+// ---------------------------------------------------------------------------
+
+async function saveRow(row) {
+  setSaveStatus("saving");
+  try {
+    const all = getAllItems();
+    const now = fmtDateTime(new Date());
+    row.last_modified = now;
+
+    if (!row.id) {
+      row.id         = _nextId();
+      row.created_at = now;
+      all.push(row);
+    } else {
+      const idx = all.findIndex(r => r.id === row.id);
+      if (idx >= 0) all[idx] = row;
+      else          all.push(row);
+    }
+
+    _saveAllItems(all);
+    setSaveStatus("saved");
+    return row;
+  } catch (err) {
+    setSaveStatus("error");
+    toast("Save failed: " + err.message, "error");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bulk actions
+// ---------------------------------------------------------------------------
+
+async function bulkAction(action) {
+  const selected = gridApi.getSelectedRows();
+  if (!selected.length) return;
+  const ids = selected.filter(r => r.id).map(r => r.id);
+  if (!ids.length) { toast("Select saved rows first", "info"); return; }
+
+  const all   = getAllItems();
+  const now   = fmtDateTime(new Date());
+  const today = fmtDate(new Date());
+  const idSet = new Set(ids);
+
+  all.forEach(r => {
+    if (!idSet.has(r.id)) return;
+    r.last_modified = now;
+    switch (action) {
+      case "complete":
+        r.completed = true;
+        if (!r.date_completed) r.date_completed = today;
+        break;
+      case "incomplete":
+        r.completed      = false;
+        r.date_completed = "";
+        break;
+      case "delete":
+        r.deleted = true;
+        break;
+      case "restore":
+        r.deleted = false;
+        break;
+    }
+  });
+
+  _saveAllItems(all);
+  toast(`${ids.length} row(s) updated`, "success");
+  gridApi.deselectAll();
+  await loadRows();
+}
+
+// ---------------------------------------------------------------------------
+// Trash / restore
+// ---------------------------------------------------------------------------
+
+async function showDeletedModal() {
+  const deleted = getAllItems().filter(r => r.deleted);
+  const list    = document.getElementById("deleted-items-list");
+
+  if (!deleted.length) {
+    list.innerHTML = `<div class="deleted-empty">No deleted items.</div>`;
+  } else {
+    list.innerHTML = deleted.map(r => `
+      <div class="deleted-item" data-id="${r.id}">
+        <div class="deleted-item-info">
+          <div class="deleted-item-name">${esc(r.item || "(no name)")}</div>
+          <div class="deleted-item-meta">${esc(r.category || "")} · ${esc(r.last_modified || "")}</div>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="restoreRow(${r.id})">Restore</button>
+      </div>
+    `).join("");
+  }
+  showModal("modal-deleted");
+  updateDeletedBadge();
+}
+
+async function emptyTrash() {
+  confirm$("Empty Trash", "Permanently delete all trashed items? This cannot be undone.", () => {
+    _saveAllItems(getAllItems().filter(r => !r.deleted));
+    toast("Trash emptied", "success");
+    showDeletedModal();
+    updateDeletedBadge();
+  });
+}
+
+async function restoreRow(id) {
+  const all  = getAllItems();
+  const item = all.find(r => r.id === id);
+  if (item) {
+    item.deleted       = false;
+    item.last_modified = fmtDateTime(new Date());
+    _saveAllItems(all);
+  }
+  toast("Row restored", "success");
+  showDeletedModal();
+  await loadRows();
+}
+
+function updateDeletedBadge() {
+  const cnt   = getAllItems().filter(r => r.deleted).length;
+  const badge = document.getElementById("deleted-badge");
+  if (badge) { badge.textContent = cnt; badge.style.display = cnt > 0 ? "" : "none"; }
+}
+
+// ---------------------------------------------------------------------------
+// Import
+// ---------------------------------------------------------------------------
+
+let importFile = null;
+
+function openImportModal() {
+  importFile = null;
+  document.getElementById("file-input").value = "";
+  document.getElementById("import-file-name").classList.add("hidden");
+  document.getElementById("btn-import-confirm").disabled = true;
+  showModal("modal-import");
+}
+
+function setImportFile(f) {
+  importFile = f;
+  const nm   = document.getElementById("import-file-name");
+  nm.textContent = `✓  ${f.name}  (${(f.size / 1024).toFixed(1)} KB)`;
+  nm.classList.remove("hidden");
+  document.getElementById("btn-import-confirm").disabled = false;
+}
+
+async function doImport() {
+  if (!importFile) return;
+  const mode = document.querySelector("input[name='import-mode']:checked")?.value || "append";
+  const btn  = document.getElementById("btn-import-confirm");
+  btn.disabled    = true;
+  btn.textContent = "Importing…";
+
+  try {
+    const text     = await importFile.text();
+    const filename = importFile.name.toLowerCase();
+    let items = [];
+
+    if (filename.endsWith(".json")) {
+      const data = JSON.parse(text);
+      if (!Array.isArray(data.items)) throw new Error("Invalid backup file — expected { items: [...] }");
+      items = data.items;
+    } else if (filename.endsWith(".csv")) {
+      items = _parseCSV(text);
+    } else {
+      throw new Error("Unsupported file type — use .json or .csv");
+    }
+
+    const now = fmtDateTime(new Date());
+
+    if (mode === "replace") {
+      // Reset the ID counter
+      _idCounter = null;
+      _saveAllItems(items.map(r => ({ ...r, id: r.id ?? _nextId(), created_at: r.created_at || now })));
+    } else {
+      const existing = getAllItems();
+      // Give each imported row a fresh id to avoid collisions
+      const base     = existing.length > 0 ? Math.max(...existing.map(r => Number(r.id) || 0)) + 1 : 1;
+      const newItems = items.map((r, i) => ({ ...r, id: base + i, created_at: r.created_at || now }));
+      _saveAllItems([...existing, ...newItems]);
+    }
+
+    _idCounter = null; // force re-seed on next save
+    hideModal("modal-import");
+    toast(`Imported ${items.length} row(s) (${mode})`, "success");
+    await loadRows();
+  } catch (err) {
+    toast("Import failed: " + err.message, "error");
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = "Import";
+  }
+}
+
+function _parseCSVLine(line) {
+  const vals = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === "," && !inQ) {
+      vals.push(cur); cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  vals.push(cur);
+  return vals;
+}
+
+function _parseCSV(text) {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  if (!lines.length) return [];
+  const headers = _parseCSVLine(lines[0]);
+  const COL_MAP = {
+    "item": "item", "category": "category", "date": "date", "time": "time",
+    "sort": "sort", "description": "description",
+    "completed?": "completed", "completed": "completed",
+    "date completed": "date_completed", "date_completed": "date_completed",
+  };
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const vals = _parseCSVLine(line);
+    const row  = {};
+    headers.forEach((h, i) => {
+      const mapped = COL_MAP[h.toLowerCase().trim()];
+      if (!mapped) return;
+      const v = (vals[i] || "").trim();
+      if (mapped === "completed") row[mapped] = ["1","true","yes","x","y","✓"].includes(v.toLowerCase());
+      else if (mapped === "sort") row[mapped] = parseFloat(v) || 0;
+      else row[mapped] = v;
+    });
+    return row;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Export
+// ---------------------------------------------------------------------------
+
+function exportData(format) {
+  const ts = new Date().toISOString().slice(0, 10);
+
+  if (format === "json") {
+    const payload = {
+      version:    "1.0",
+      exportedAt: fmtDateTime(new Date()),
+      items:      getAllItems(),
+    };
+    _triggerDownload(
+      new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+      `work-tracker-${ts}.json`
+    );
+    toast("Exported as JSON backup", "info");
+
+  } else if (format === "csv") {
+    const headers = ["ID","Item","Category","Date","Time","Sort","Description","Completed?","Date Completed","Last Modified"];
+    const csvRows = getAllItems().filter(r => !r.deleted).map(r => [
+      r.id, r.item, r.category, r.date, r.time, r.sort,
+      r.description, r.completed ? "Yes" : "No", r.date_completed, r.last_modified,
+    ]);
+    const csv = [headers, ...csvRows]
+      .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    _triggerDownload(new Blob([csv], { type: "text/csv" }), `work-tracker-${ts}.csv`);
+    toast("Exported as CSV", "info");
+  }
+}
+
+function _triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Recurring task — spawn next occurrence on completion
+// ---------------------------------------------------------------------------
+
+async function spawnRecurringOccurrence(sourceRow) {
+  const nextDate = nextRecurDate(sourceRow.date, sourceRow.recur_rule);
+  if (!nextDate) return;
+  const now    = fmtDateTime(new Date());
+  const newRow = {
+    item: sourceRow.item, category: sourceRow.category,
+    date: nextDate, time: sourceRow.time, sort: sourceRow.sort,
+    description: sourceRow.description, link: sourceRow.link || "",
+    recur_rule: sourceRow.recur_rule, follow_ups: "[]",
+    completed: false, date_completed: "", last_modified: now, deleted: false,
+  };
+  const saved = await saveRow(newRow);
+  if (saved) {
+    if (newRow.id) setNotifOff(newRow.id, true);
+    rowData.push(newRow);
+    gridApi?.applyTransaction({ add: [newRow] });
+    gridApi?.onFilterChanged();
+    updateRowCount();
+    toast(`Recurring task created for ${nextDate}.`, "success");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Duplicate row
+// ---------------------------------------------------------------------------
+
+async function duplicateRow(sourceRow) {
+  if (!sourceRow?.id) return;
+  const now    = fmtDateTime(new Date());
+  const newRow = {
+    item:           (sourceRow.item || "") + " (copy)",
+    category:       sourceRow.category,
+    date:           sourceRow.date,
+    time:           sourceRow.time,
+    sort:           sourceRow.sort,
+    description:    sourceRow.description,
+    link:           sourceRow.link || "",
+    recur_rule:     sourceRow.recur_rule || "",
+    follow_ups:     "[]",
+    completed:      false,
+    date_completed: "",
+    last_modified:  now,
+    deleted:        false,
+  };
+  const saved = await saveRow(newRow);
+  if (saved) {
+    if (newRow.id) setNotifOff(newRow.id, true);
+    rowData.push(newRow);
+    gridApi?.applyTransaction({ add: [newRow] });
+    gridApi?.onFilterChanged();
+    updateCategoryDropdown();
+    updateRowCount();
+    toast("Task duplicated.", "success");
+    openDetailPanel(newRow);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Create entry on a specific date (from calendar/week double-click)
+// ---------------------------------------------------------------------------
+
+async function createEntryOnDate(dateStr) {
+  const now    = fmtDateTime(new Date());
+  const newRow = {
+    item: "", category: "", date: dateStr || "", time: "", sort: 0,
+    description: "", completed: false, date_completed: "",
+    last_modified: now, deleted: false,
+  };
+  if (activeCategoryFilters.length === 1) newRow.category = activeCategoryFilters[0];
+
+  const saved = await saveRow(newRow);
+  if (!saved) return;
+  rowData.push(newRow);
+  if (gridApi) gridApi.applyTransaction({ add: [newRow] });
+  openDetailPanel(newRow);
+
+  const calActive  = document.getElementById("view-calendar")?.classList.contains("active");
+  const weekActive = document.getElementById("view-week")?.classList.contains("active");
+  if (calActive)  renderCalendar();
+  if (weekActive) renderWeekView();
+}

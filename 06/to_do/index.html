@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Work Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'%3E%3Crect x='3' y='3' width='7' height='7'/%3E%3Crect x='14' y='3' width='7' height='7'/%3E%3Crect x='3' y='14' width='7' height='7'/%3E%3Crect x='14' y='14' width='7' height='7'/%3E%3C/svg%3E" />
+
+  <!-- AG Grid Community (free) -->
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.4/styles/ag-grid.css" />
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.4/styles/ag-theme-alpine-dark.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.4/dist/ag-grid-community.min.js"></script>
+
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════ NAVBAR ═══════════════════════════════ -->
+<header class="navbar">
+  <div class="navbar-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+    </svg>
+    <span>Work Tracker</span>
+  </div>
+
+  <nav class="navbar-nav">
+    <button class="nav-btn active" data-view="grid">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+      Grid
+    </button>
+    <button class="nav-btn" data-view="calendar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </button>
+    <button class="nav-btn" data-view="week">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
+      Week
+    </button>
+    <button class="nav-btn" data-view="dashboard">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="13" width="6" height="9"/><rect x="9" y="9" width="6" height="13"/><rect x="16" y="5" width="6" height="17"/></svg>
+      Dashboard
+    </button>
+  </nav>
+
+  <div class="navbar-actions">
+    <button id="btn-new-row" class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Row
+    </button>
+    <button id="btn-refresh-grid" class="btn btn-ghost icon-btn" title="Refresh data">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    </button>
+
+    <div class="dropdown" id="import-dropdown">
+      <button class="btn btn-secondary dropdown-toggle">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import
+      </button>
+      <div class="dropdown-menu">
+        <button class="dropdown-item" id="btn-import-csv">CSV file</button>
+        <button class="dropdown-item" id="btn-import-json">JSON backup</button>
+      </div>
+    </div>
+
+    <div class="dropdown" id="export-dropdown">
+      <button class="btn btn-secondary dropdown-toggle">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+      <div class="dropdown-menu">
+        <button class="dropdown-item" id="btn-export-csv">Export as CSV</button>
+        <button class="dropdown-item" id="btn-export-json">Export as JSON (backup)</button>
+      </div>
+    </div>
+
+    <button id="btn-theme" class="btn btn-ghost icon-btn" title="Toggle light / dark mode">
+      <svg id="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ GRID VIEW ════════════════════════════ -->
+<div id="view-grid" class="view active">
+
+  <!-- Toolbar — two rows -->
+  <div class="toolbar toolbar-row-1">
+    <div class="toolbar-left">
+      <div class="preset-group" id="preset-group">
+        <button class="preset-btn active" data-preset="all">All</button>
+        <button class="preset-btn" data-preset="open">Open</button>
+        <button class="preset-btn" data-preset="completed">Completed</button>
+        <button class="preset-btn" data-preset="past_due">Past Due</button>
+        <button class="preset-btn" data-preset="due_today">Due Today</button>
+        <button class="preset-btn" data-preset="due_tomorrow">Due Tomorrow</button>
+        <button class="preset-btn" data-preset="recent">Recent</button>
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <!-- Column visibility picker -->
+      <div class="dropdown" id="columns-dropdown">
+        <button class="btn btn-ghost btn-sm dropdown-toggle" title="Show/hide columns">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Columns
+        </button>
+        <div class="dropdown-menu col-picker-menu" id="col-picker-menu">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Wrap text toggle -->
+      <button id="btn-wrap-text" class="btn btn-ghost btn-sm" title="Wrap text in Item and Description columns">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        Wrap
+      </button>
+
+      <button id="btn-show-hidden" class="btn btn-ghost btn-sm" title="Show/hide hidden rows">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        Hidden
+      </button>
+      <button id="btn-cond-fmt" class="btn btn-ghost btn-sm" title="Conditional formatting rules">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        Format
+      </button>
+      <button id="btn-show-snoozed" class="btn btn-ghost btn-sm" title="View snoozed items">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        Snoozed
+        <span id="snoozed-badge" class="badge" style="display:none">0</span>
+      </button>
+      <button id="btn-show-deleted" class="btn btn-ghost btn-sm" title="View deleted items">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Trash
+        <span id="deleted-badge" class="badge" style="display:none">0</span>
+      </button>
+      <button id="btn-undo" class="btn btn-ghost btn-sm icon-btn" title="Undo (Ctrl+Z)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
+      </button>
+      <button id="btn-redo" class="btn btn-ghost btn-sm icon-btn" title="Redo (Ctrl+Y)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>
+      </button>
+    </div>
+  </div><!-- /toolbar-row-1 -->
+
+  <!-- Toolbar row 2 — filters + search -->
+  <div class="toolbar toolbar-row-2">
+    <div class="toolbar-left">
+
+      <!-- Category multi-select dropdown -->
+      <div class="dropdown dropdown-persist" id="category-dropdown">
+        <button class="btn btn-ghost btn-sm dropdown-toggle cat-filter-btn" id="category-filter-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+          <span id="category-filter-label">All Categories</span>
+        </button>
+        <div class="dropdown-menu cat-filter-menu" id="cat-filter-menu">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Date range dropdown -->
+      <div class="filter-select-wrap">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <select id="date-filter" class="filter-select">
+          <option value="all">All Dates</option>
+          <option value="no_date">No Date Set</option>
+          <option disabled>──────────</option>
+          <option value="past_due">Past Due</option>
+          <option value="today">Today</option>
+          <option value="tomorrow">Tomorrow</option>
+          <option disabled>──────────</option>
+          <option value="this_week">This Week</option>
+          <option value="next_week">Next Week</option>
+          <option value="this_month">This Month</option>
+          <option disabled>──────────</option>
+          <option value="before">Before date…</option>
+          <option value="after">After date…</option>
+          <option value="between">Between dates…</option>
+        </select>
+      </div>
+      <!-- Custom date range inputs (shown for before/after/between) -->
+      <div id="date-custom-range" class="date-custom-range" style="display:none">
+        <input type="date" id="date-custom-from" class="filter-date-input" title="From date" />
+        <span id="date-custom-sep" class="date-range-sep" style="display:none">→</span>
+        <input type="date" id="date-custom-to"   class="filter-date-input" style="display:none" title="To date" />
+      </div>
+
+      <!-- Quick search -->
+      <div class="search-wrapper">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="quick-filter" placeholder="Quick search…" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <span id="active-filter-summary" class="filter-summary"></span>
+      <button id="btn-clear-filters" class="btn btn-ghost btn-sm clear-filters-btn" title="Clear all filters">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear Filters
+      </button>
+    </div>
+  </div><!-- /toolbar-row-2 -->
+
+  <!-- Selection / bulk-action bar -->
+  <div id="selection-bar" class="selection-bar hidden">
+    <span class="sel-info">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <strong id="selection-count">0</strong> selected
+    </span>
+    <div class="sel-actions">
+      <button id="btn-bulk-complete"   class="btn btn-sm btn-success">Mark Complete</button>
+      <button id="btn-bulk-incomplete" class="btn btn-sm btn-secondary">Mark Incomplete</button>
+      <button id="btn-bulk-hide"       class="btn btn-sm btn-ghost">Hide</button>
+      <button id="btn-bulk-unhide"     class="btn btn-sm btn-ghost">Unhide</button>
+      <button id="btn-bulk-snooze"     class="btn btn-sm btn-ghost">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        Snooze
+      </button>
+      <button id="btn-bulk-move-today" class="btn btn-sm btn-secondary">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Move to Today
+      </button>
+      <button id="btn-bulk-delete"     class="btn btn-sm btn-danger">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        Delete
+      </button>
+      <button id="btn-deselect" class="btn btn-sm btn-ghost">Clear</button>
+    </div>
+  </div>
+
+  <!-- Grid + Detail panel wrapper -->
+  <div class="grid-and-panel">
+    <div class="grid-main">
+      <div id="grid-container" class="ag-theme-alpine-dark"></div>
+      <button id="btn-grid-add-bottom" class="grid-add-bottom-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Row
+      </button>
+      <div class="status-bar">
+        <span id="row-count">Loading…</span>
+        <span id="save-status" class="save-saved">● Saved</span>
+      </div>
+    </div>
+
+  </div><!-- /grid-and-panel -->
+
+</div><!-- /view-grid -->
+
+<!-- ═══════════════════════════ CALENDAR VIEW ═══════════════════════ -->
+<div id="view-calendar" class="view" style="display:none">
+  <div class="cal-toolbar">
+    <div class="cal-nav">
+      <button id="btn-cal-prev" class="btn btn-ghost btn-sm icon-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 id="cal-title" class="cal-title">Month Year</h2>
+      <button id="btn-cal-next" class="btn btn-ghost btn-sm icon-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <button id="btn-cal-today" class="btn btn-secondary btn-sm">Today</button>
+    <button id="btn-cal-hide-done" class="btn btn-ghost btn-sm">Hide Completed</button>
+    <div class="cal-search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="cal-search" class="cal-search-input" placeholder="Search…" />
+    </div>
+    <div class="week-mode-toggle">
+      <button class="btn btn-ghost btn-sm cal-mode-btn active" data-mode="work">Work Week</button>
+      <button class="btn btn-ghost btn-sm cal-mode-btn" data-mode="full">Full Week</button>
+    </div>
+  </div>
+  <div id="cal-day-headers" class="cal-day-headers">
+    <!-- populated by JS via updateCalDayHeaders() -->
+  </div>
+  <div id="cal-grid" class="cal-grid"></div>
+</div>
+
+<!-- ════════════════════════════ WEEK VIEW ═══════════════════════════ -->
+<div id="view-week" class="view" style="display:none">
+  <div class="week-toolbar">
+    <div class="cal-nav">
+      <button id="btn-week-prev" class="btn btn-ghost btn-sm icon-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <h2 id="week-title" class="cal-title">Week of …</h2>
+      <button id="btn-week-next" class="btn btn-ghost btn-sm icon-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <button id="btn-week-today" class="btn btn-secondary btn-sm">This Week</button>
+    <button id="btn-week-hide-done" class="btn btn-ghost btn-sm">Hide Completed</button>
+    <div class="cal-search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="week-search" class="cal-search-input" placeholder="Search…" />
+    </div>
+    <div class="week-mode-toggle">
+      <button id="btn-week-work" class="btn btn-ghost btn-sm week-mode-btn active" data-mode="work">Work Week</button>
+      <button id="btn-week-full" class="btn btn-ghost btn-sm week-mode-btn" data-mode="full">Full Week</button>
+    </div>
+  </div>
+  <div id="week-grid" class="week-grid"></div>
+</div>
+
+<!-- ═══════════════════════════ DASHBOARD VIEW ═══════════════════════ -->
+<div id="view-dashboard" class="view" style="display:none">
+  <div class="dashboard-wrap">
+    <div class="dashboard-header">
+      <h1>Dashboard</h1>
+      <button id="btn-refresh-dashboard" class="btn btn-ghost btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- Due-date intelligence — all cards are clickable -->
+    <div class="stat-section-label" style="margin-top:20px">Due Dates
+      <span class="stat-section-hint">Click a card to filter the grid</span>
+    </div>
+    <div class="stat-cards stat-cards--4">
+      <div class="stat-card stat-card--danger stat-card--clickable" data-nav-preset="past_due" title="Show past-due items">
+        <div class="stat-value" id="dash-past-due">—</div>
+        <div class="stat-label">Past Due</div>
+        <div class="stat-card-arrow">→</div>
+      </div>
+      <div class="stat-card stat-card--warning stat-card--clickable" data-nav-preset="due_today" title="Show items due today">
+        <div class="stat-value" id="dash-due-today">—</div>
+        <div class="stat-label">Due Today</div>
+        <div class="stat-card-arrow">→</div>
+      </div>
+      <div class="stat-card stat-card--clickable" data-nav-preset="due_tomorrow" title="Show items due tomorrow">
+        <div class="stat-value" id="dash-due-tomorrow">—</div>
+        <div class="stat-label">Due Tomorrow</div>
+        <div class="stat-card-arrow">→</div>
+      </div>
+      <div class="stat-card stat-card--muted">
+        <div class="stat-value" id="dash-no-date">—</div>
+        <div class="stat-label">No Date Set</div>
+      </div>
+    </div>
+
+    <!-- Week KPIs -->
+    <div class="dash-weeks-row">
+      <div class="dash-week-card" id="dash-tw-card" style="cursor:pointer" title="Click for category breakdown">
+        <div class="dash-week-header">
+          <span class="dash-week-label">This Week</span>
+          <span id="dash-tw-range" class="dash-week-range"></span>
+        </div>
+        <div class="dash-week-stats">
+          <div class="dash-week-stat"><div class="dash-week-val" id="dash-tw-total">—</div><div class="dash-week-name">Total</div></div>
+          <div class="dash-week-stat dash-week-stat--success"><div class="dash-week-val" id="dash-tw-done">—</div><div class="dash-week-name">Done</div></div>
+          <div class="dash-week-stat dash-week-stat--warning"><div class="dash-week-val" id="dash-tw-open">—</div><div class="dash-week-name">Open</div></div>
+        </div>
+        <div class="dash-week-bar-wrap">
+          <div class="dash-week-bar-track"><div class="dash-week-bar-fill" id="dash-tw-bar" style="width:0%"></div></div>
+          <span id="dash-tw-pct" class="dash-week-pct">0%</span>
+        </div>
+      </div>
+      <div class="dash-week-card" id="dash-nw-card" style="cursor:pointer" title="Click for category breakdown">
+        <div class="dash-week-header">
+          <span class="dash-week-label">Next Week</span>
+          <span id="dash-nw-range" class="dash-week-range"></span>
+        </div>
+        <div class="dash-week-stats">
+          <div class="dash-week-stat"><div class="dash-week-val" id="dash-nw-total">—</div><div class="dash-week-name">Total</div></div>
+          <div class="dash-week-stat dash-week-stat--success"><div class="dash-week-val" id="dash-nw-done">—</div><div class="dash-week-name">Done</div></div>
+          <div class="dash-week-stat dash-week-stat--warning"><div class="dash-week-val" id="dash-nw-open">—</div><div class="dash-week-name">Open</div></div>
+        </div>
+        <div class="dash-week-bar-wrap">
+          <div class="dash-week-bar-track"><div class="dash-week-bar-fill" id="dash-nw-bar" style="width:0%"></div></div>
+          <span id="dash-nw-pct" class="dash-week-pct">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom columns -->
+    <div class="dashboard-cols">
+      <div class="dashboard-card">
+        <h2>Tasks by Category</h2>
+        <div id="category-chart" class="category-chart"></div>
+      </div>
+
+      <div class="dashboard-card">
+        <h2>Recently Modified <span class="card-hint">click to open</span></h2>
+        <div id="recent-list" class="recent-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ MODALS ════════════════════════════════ -->
+
+<!-- Conditional Formatting -->
+<div id="modal-cond-fmt" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>Conditional Formatting — Date Rules</h2>
+      <button class="modal-close" data-close="modal-cond-fmt">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-subtle);margin:0 0 14px">Highlight rows based on their date. Rules are applied in order; the first match wins.</p>
+      <div id="cond-fmt-rules-list"></div>
+      <button id="btn-add-cond-rule" class="btn btn-ghost btn-sm" style="margin-top:10px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Rule
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="modal-cond-fmt">Cancel</button>
+      <button id="btn-save-cond-fmt" class="btn btn-primary">Save Rules</button>
+    </div>
+  </div>
+</div>
+
+<!-- Week Breakdown -->
+<div id="modal-week-breakdown" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="modal-week-title">Week Breakdown</h2>
+      <button class="modal-close" data-close="modal-week-breakdown">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-week-range" class="modal-week-range"></div>
+      <div id="modal-week-body" class="modal-week-body"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="modal-week-breakdown">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import -->
+<div id="modal-import" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Import Data</h2>
+      <button class="modal-close" data-close="modal-import">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="import-mode-group">
+        <label class="radio-label">
+          <input type="radio" name="import-mode" value="append" checked />
+          <span class="radio-custom"></span>
+          Append — add rows to existing data
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="import-mode" value="replace" />
+          <span class="radio-custom"></span>
+          Replace — overwrite all existing data
+        </label>
+      </div>
+      <div class="drop-zone" id="drop-zone">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Drop a <strong>.json</strong> backup or <strong>.csv</strong> file here</p>
+        <label for="file-input" class="btn btn-secondary">Browse file</label>
+        <input type="file" id="file-input" accept=".csv,.json" />
+      </div>
+      <div id="import-file-name" class="import-file-name hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="modal-import">Cancel</button>
+      <button id="btn-import-confirm" class="btn btn-primary" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- Deleted items -->
+<div id="modal-deleted" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>Deleted Items</h2>
+      <button class="modal-close" data-close="modal-deleted">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="deleted-items-list" class="deleted-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-empty-trash" class="btn btn-danger btn-sm">Empty Trash</button>
+      <button class="btn btn-ghost" data-close="modal-deleted">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div id="modal-confirm" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 id="confirm-title">Confirm</h2>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message"></p>
+    </div>
+    <div class="modal-footer">
+      <button id="confirm-cancel" class="btn btn-ghost">Cancel</button>
+      <button id="confirm-ok" class="btn btn-danger">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Row context menu -->
+<div id="row-context-menu" style="display:none;position:fixed;z-index:800;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);min-width:160px;overflow:hidden;">
+  <button id="ctx-hide-row"    style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Hide Row</button>
+  <button id="ctx-snooze-row"  style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Snooze</button>
+  <button id="ctx-duplicate"   style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Duplicate</button>
+  <button id="ctx-open-detail" style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Open Detail Panel</button>
+</div>
+
+<script src="static/js/utils.js"></script>
+<script src="static/js/storage.js"></script>
+<script src="static/js/data.js"></script>
+<script src="static/js/grid.js"></script>
+<script src="static/js/views.js"></script>
+<script src="static/js/ui.js"></script>
+<script src="static/js/app.js"></script>
+
+<!-- ══════════════ DETAIL PANEL — global fixed drawer ══════════════ -->
+<div id="detail-panel" class="detail-panel">
+  <div class="detail-header">
+    <span class="detail-title">Item Details</span>
+    <div class="detail-header-actions">
+      <button id="btn-detail-delete" class="btn btn-sm btn-danger" title="Delete this item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      </button>
+      <button id="btn-detail-close" class="btn btn-ghost btn-sm icon-btn" title="Close panel">✕</button>
+    </div>
+  </div>
+
+  <div class="detail-body">
+
+    <!-- Completed toggle -->
+    <div class="detail-completed-row">
+      <label class="detail-done-label">
+        <input type="checkbox" id="detail-completed" class="detail-done-cb" />
+        <span class="detail-done-text">Completed</span>
+      </label>
+      <span id="detail-done-badge" class="detail-done-badge done" style="display:none">Done</span>
+      <span id="detail-open-badge" class="detail-done-badge open">Open</span>
+    </div>
+
+    <div class="detail-field">
+      <label class="detail-label">Item</label>
+      <textarea id="detail-item" class="detail-input detail-item-input" placeholder="Task name…" rows="1"></textarea>
+    </div>
+
+    <div class="detail-field">
+      <label class="detail-label">Category</label>
+      <input type="text" id="detail-category" class="detail-input" placeholder="Category…" />
+    </div>
+
+    <div class="detail-row-2">
+      <div class="detail-field">
+        <label class="detail-label">Date</label>
+        <div class="detail-date-row">
+          <input type="date" id="detail-date" class="detail-input" style="flex:1" />
+          <button type="button" id="btn-detail-date-today" class="btn btn-ghost btn-sm" title="Set to today" style="white-space:nowrap;padding:4px 8px;font-size:11px">Today</button>
+        </div>
+      </div>
+      <div class="detail-field">
+        <label class="detail-label">Time</label>
+        <input type="time" id="detail-time" class="detail-input" />
+      </div>
+    </div>
+
+    <div class="detail-field">
+      <label class="detail-label">Sort</label>
+      <input type="number" id="detail-sort" class="detail-input" placeholder="0" step="1" />
+    </div>
+
+    <div class="detail-field">
+      <label class="detail-label">Recurrence</label>
+      <div class="recur-row">
+        <label class="detail-done-label" style="flex:none;gap:6px">
+          <input type="checkbox" id="detail-recur-on" class="detail-done-cb" />
+          <span class="detail-done-text" style="font-weight:500">Repeat every</span>
+        </label>
+        <input type="number" id="detail-recur-count" class="snooze-count" value="1" min="1" max="999" style="width:58px" />
+        <select id="detail-recur-unit" class="snooze-unit">
+          <option value="days">day(s)</option>
+          <option value="weekdays">weekday(s)</option>
+          <option value="weeks">week(s)</option>
+          <option value="months">month(s)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="detail-field">
+      <label class="detail-label">Description</label>
+      <textarea id="detail-description" class="detail-input detail-textarea" placeholder="Notes, details…" rows="4"></textarea>
+    </div>
+
+    <!-- Follow-up log -->
+    <div class="detail-section" id="detail-followup-section">
+      <div class="detail-section-header">
+        <span class="detail-label">Follow-up Log</span>
+      </div>
+      <div class="followup-input-row">
+        <input type="text" id="followup-note-input" class="detail-input followup-note-input" placeholder="Add a note (optional)…" />
+        <button type="button" id="btn-log-followup" class="btn btn-ghost btn-sm">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Log
+        </button>
+      </div>
+      <div id="detail-followup-list" class="detail-followup-list"></div>
+    </div>
+
+    <div class="detail-field">
+      <label class="detail-label">Link / URL</label>
+      <div class="detail-link-row">
+        <input type="url" id="detail-link" class="detail-input" placeholder="https://…" />
+        <a id="detail-link-open" class="btn btn-ghost btn-sm icon-btn" target="_blank" rel="noopener noreferrer" title="Open link" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="detail-field">
+      <label class="detail-label">Date Completed</label>
+      <input type="date" id="detail-date-completed" class="detail-input" />
+    </div>
+
+    <!-- Notification settings -->
+    <div id="detail-notif-row" style="display:none">
+      <div class="detail-completed-row">
+        <label class="detail-done-label">
+          <input type="checkbox" id="detail-notif-enabled" class="detail-done-cb" />
+          <span class="detail-done-text">Notifications enabled</span>
+        </label>
+      </div>
+      <div class="detail-notif-time-row">
+        <label class="detail-label" style="font-size:11px;margin-bottom:0">Notify at</label>
+        <input type="time" id="detail-notif-time" class="detail-input detail-notif-time-input" value="09:00" />
+        <span class="detail-notif-hint">on due date</span>
+      </div>
+    </div>
+
+    <div class="detail-meta">
+      <div class="detail-meta-row">
+        <span class="detail-meta-label">Last Modified</span>
+        <span id="detail-last-modified" class="detail-meta-value">—</span>
+      </div>
+      <div class="detail-meta-row">
+        <span class="detail-meta-label">Created</span>
+        <span id="detail-created-at" class="detail-meta-value">—</span>
+      </div>
+      <div class="detail-meta-row">
+        <span class="detail-meta-label">ID</span>
+        <span id="detail-id" class="detail-meta-value">—</span>
+      </div>
+    </div>
+  </div><!-- /detail-body -->
+
+  <div class="detail-footer">
+    <button id="btn-detail-save" class="btn btn-primary" style="flex:1">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      Save Changes
+    </button>
+    <button id="btn-detail-duplicate" class="btn btn-ghost btn-sm" title="Duplicate this task">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Duplicate
+    </button>
+    <div class="snooze-wrap">
+      <button id="btn-detail-snooze" class="btn btn-warning" title="Snooze">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        Snooze
+      </button>
+      <div id="snooze-popover" class="snooze-popover" style="display:none">
+        <div class="snooze-row">
+          <input type="datetime-local" id="snooze-until-dt" class="detail-input" style="font-size:12px" />
+        </div>
+        <button id="btn-snooze-confirm" class="btn btn-sm btn-warning" style="width:100%">Snooze</button>
+      </div>
+    </div>
+  </div>
+</div><!-- /detail-panel -->
+
+</body>
+</html>
