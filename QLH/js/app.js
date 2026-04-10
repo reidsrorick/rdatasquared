@@ -269,8 +269,16 @@ var App = {
   handleInput: function (e) {
     var el = e.target;
     if (el.dataset.action === 'search') {
-      this.state.searchQuery = el.value;
+      var val   = el.value;
+      var start = el.selectionStart;
+      var end   = el.selectionEnd;
+      this.state.searchQuery = val;
       this.render();
+      var newEl = document.getElementById('search-input');
+      if (newEl) {
+        newEl.focus();
+        newEl.setSelectionRange(start, end);
+      }
     }
   },
 
