@@ -134,6 +134,30 @@ const Data = {
     return this.get().settings;
   },
 
+  addLinks(attrsArray) {
+    const d    = this.get();
+    const self = this;
+    const now  = new Date().toISOString();
+    attrsArray.forEach(function (attrs) {
+      d.links.push({
+        id:           self.uid(),
+        title:        attrs.title        || '',
+        url:          attrs.url          || '',
+        description:  attrs.description  || '',
+        notes:        attrs.notes        || '',
+        category:     attrs.category     || '',
+        tags:         Array.isArray(attrs.tags) ? attrs.tags : [],
+        favorite:     !!attrs.favorite,
+        openInNewTab: attrs.openInNewTab !== undefined ? !!attrs.openInNewTab : d.settings.defaultOpenInNewTab,
+        parentId:     attrs.parentId     || '',
+        createdAt:    now,
+        updatedAt:    now,
+        lastUsed:     '',
+      });
+    });
+    this.save();
+  },
+
   // ── Backup ─────────────────────────────────────────
   clearAll() {
     this._d = Storage.defaults();

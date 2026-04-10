@@ -4,8 +4,9 @@ var Pages = {
   nav(page) {
     var e = UI.esc;
     var links = [
-      { href: '#/', label: 'Dashboard', key: 'home' },
+      { href: '#/',         label: 'Dashboard', key: 'home' },
       { href: '#/manage',   label: 'Manage',    key: 'manage' },
+      { href: '#/bulk-add', label: 'Bulk Add',  key: 'bulk-add' },
       { href: '#/settings', label: 'Settings',  key: 'settings' },
     ];
     return '<a class="nav-brand" href="#/">⚡ Quick Links Hub</a>' +
@@ -475,6 +476,75 @@ var Pages = {
         '<button class="btn btn-secondary" data-action="close-modal">Cancel</button>' +
         '<button class="btn btn-primary" form="category-form" type="submit">' + (isEdit ? 'Save' : 'Add Category') + '</button>' +
       '</div></div>';
+  },
+
+  // ── BULK ADD ─────────────────────────────────────────────────────
+  bulkAdd(state) {
+    var e          = UI.esc;
+    var categories = state.categories || [];
+    var drafts     = state.bulkDrafts  || [];
+    var urlText    = state.bulkUrlText || '';
+
+    var catOptions = categories.map(function (c) {
+      return '<option value="' + e(c.name) + '">' + e(c.name) + '</option>';
+    }).join('');
+
+    var draftCards = '';
+    if (drafts.length > 0) {
+      draftCards = '<div class="bulk-grid">' +
+        drafts.map(function (d, i) {
+          return '<div class="bulk-card" data-index="' + i + '">' +
+            '<div class="bulk-card-header">' +
+              '<span class="bulk-card-num">#' + (i + 1) + '</span>' +
+              '<button type="button" class="bulk-card-remove" data-action="bulk-remove" data-index="' + i + '" title="Remove">×</button>' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label class="form-label">URL <span class="form-required">*</span></label>' +
+              '<input class="form-input" data-field="url" value="' + e(d.url) + '" placeholder="https://example.com">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label class="form-label">Title <span class="form-required">*</span></label>' +
+              '<input class="form-input" data-field="title" value="' + e(d.title) + '" placeholder="Link title">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label class="form-label">Category</label>' +
+              '<select class="form-select" data-field="category"><option value="">None</option>' + catOptions + '</select>' +
+            '</div>' +
+            '<div class="form-group" style="margin-bottom:0">' +
+              '<label class="form-label">Tags <span style="font-weight:400;color:var(--text-muted);">(comma-separated)</span></label>' +
+              '<input class="form-input" data-field="tags" value="' + e((d.tags || []).join(', ')) + '" placeholder="tag1, tag2">' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }
+
+    return '<div class="page-header">' +
+        '<div><h1 class="page-title plain">Bulk Add Links</h1><p class="page-subtitle">Add multiple links at once</p></div>' +
+        (drafts.length > 0
+          ? '<button class="btn btn-primary" data-action="bulk-save">Add ' + drafts.length + ' Link' + (drafts.length !== 1 ? 's' : '') + '</button>'
+          : '') +
+      '</div>' +
+
+      '<div class="settings-section">' +
+        '<h3>Paste URLs</h3>' +
+        '<p style="color:var(--text-muted);font-size:.875rem;margin-bottom:.75rem;">Enter one URL per line. Titles are auto-filled from the URL — edit them in the grid below.</p>' +
+        '<textarea class="form-textarea" id="bulk-url-input" rows="5" placeholder="https://github.com&#10;https://example.com&#10;https://docs.google.com">' + e(urlText) + '</textarea>' +
+        '<div style="margin-top:.75rem;display:flex;gap:.75rem;align-items:center;">' +
+          '<button class="btn btn-primary" data-action="bulk-parse">Parse URLs →</button>' +
+          (drafts.length > 0 ? '<span style="font-size:.875rem;color:var(--text-muted);">' + drafts.length + ' card' + (drafts.length !== 1 ? 's' : '') + ' ready to save</span>' : '') +
+        '</div>' +
+      '</div>' +
+
+      (drafts.length > 0
+        ? '<hr class="divider">' +
+          '<div class="section-header"><span class="section-title">Review &amp; Edit</span><span class="count-badge">' + drafts.length + '</span></div>' +
+          draftCards +
+          '<div style="margin-top:1.5rem;display:flex;gap:.75rem;justify-content:flex-end;">' +
+            '<a class="btn btn-secondary" href="#/manage">Cancel</a>' +
+            '<button class="btn btn-primary" data-action="bulk-save">Add ' + drafts.length + ' Link' + (drafts.length !== 1 ? 's' : '') + '</button>' +
+          '</div>'
+        : '<div style="margin-top:1rem;"><a class="btn btn-ghost btn-sm" href="#/">← Back to Dashboard</a></div>');
   },
 
   // ── CONFIRM MODAL ────────────────────────────────────────────────

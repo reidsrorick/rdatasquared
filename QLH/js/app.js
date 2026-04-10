@@ -6,6 +6,8 @@ var App = {
     activeView:       'all',
     selectedCategory: 'all',
     selectedTag:      '',
+    bulkDrafts:       [],
+    bulkUrlText:      '',
   },
 
   _pendingConfirm: null,
@@ -45,6 +47,8 @@ var App = {
       this.state.page = 'manage';
     } else if (hash === '#/settings') {
       this.state.page = 'settings';
+    } else if (hash === '#/bulk-add') {
+      this.state.page = 'bulk-add';
     } else {
       this.state.page = 'home';
     }
@@ -76,6 +80,9 @@ var App = {
         break;
       case 'link-detail':
         main.innerHTML = Pages.linkDetail(this.state.linkId);
+        break;
+      case 'bulk-add':
+        main.innerHTML = Pages.bulkAdd(Object.assign({ links: links, categories: categories }, this.state));
         break;
     }
 
@@ -220,6 +227,47 @@ var App = {
           UI.toast('Data cleared. Defaults restored.', 'success');
           App.render();
         });
+        break;
+
+      case 'bulk-parse': {
+        e.preventDefault();
+        var ta   = document.getElementById('bulk-url-input');
+        var text = ta ? ta.value : '';
+        this.state.bulkUrlText = text;
+        var lines = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+        this.state.bulkDrafts = lines.map(function (url) {
+          return { url: url, title: App._titleFromUrl(url), category: '', tags: [] };
+        });
+        this.render();
+        break;
+      }
+
+      case 'bulk-remove': {
+        e.preventDefault();
+        // Sync current DOM edits back to state so other card edits are preserved
+        var allCards = document.querySelectorAll('.bulk-card');
+        var synced   = [];
+        allCards.forEach(function (card) {
+          var urlEl   = card.querySelector('[data-field="url"]');
+          var titleEl = card.querySelector('[data-field="title"]');
+          var catEl   = card.querySelector('[data-field="category"]');
+          var tagsEl  = card.querySelector('[data-field="tags"]');
+          synced.push({
+            url:      urlEl   ? urlEl.value.trim()   : '',
+            title:    titleEl ? titleEl.value.trim()  : '',
+            category: catEl   ? catEl.value.trim()    : '',
+            tags:     tagsEl  ? tagsEl.value.trim().split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [],
+          });
+        });
+        synced.splice(parseInt(btn.dataset.index), 1);
+        this.state.bulkDrafts = synced;
+        this.render();
+        break;
+      }
+
+      case 'bulk-save':
+        e.preventDefault();
+        this.bulkSave();
         break;
 
       case 'close-modal':
@@ -389,6 +437,53 @@ var App = {
     chip.innerHTML = UI.esc(tag) + '<button type="button" class="tag-chip-rm" data-action="remove-tag">×</button>';
     wrap.insertBefore(chip, input);
     input.value = '';
+  },
+
+  // ── BULK ADD ─────────────────────────────────────────────────────
+  bulkSave: function () {
+    var cards = document.querySelectorAll('.bulk-card');
+    var links = [];
+    var firstError = null;
+
+    cards.forEach(function (card, i) {
+      var url      = (card.querySelector('[data-field="url"]').value    || '').trim();
+      var title    = (card.querySelector('[data-field="title"]').value  || '').trim();
+      var category = (card.querySelector('[data-field="category"]').value || '').trim();
+      var tagsRaw  = (card.querySelector('[data-field="tags"]').value   || '').trim();
+      var tags     = tagsRaw ? tagsRaw.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+
+      if (!url || !title) {
+        if (!firstError) firstError = 'Card #' + (i + 1) + ': Title and URL are required.';
+        return;
+      }
+      links.push({ url: url, title: title, category: category, tags: tags });
+    });
+
+    if (firstError) { UI.toast(firstError, 'error'); return; }
+    if (links.length === 0) { UI.toast('No links to add.', 'error'); return; }
+
+    Data.addLinks(links);
+    App.state.bulkDrafts  = [];
+    App.state.bulkUrlText = '';
+    UI.toast('Added ' + links.length + ' link' + (links.length !== 1 ? 's' : '') + '!', 'success');
+    window.location.hash = '#/manage';
+  },
+
+  _titleFromUrl: function (url) {
+    try {
+      var u     = new URL(url);
+      var host  = u.hostname.replace(/^www\./, '');
+      var parts = u.pathname.split('/').filter(Boolean);
+      if (parts.length > 0) {
+        var last = decodeURIComponent(parts[parts.length - 1])
+          .replace(/\.\w+$/, '')
+          .replace(/[-_]/g, ' ');
+        if (last.length > 2) return host + ' — ' + last;
+      }
+      return host;
+    } catch (x) {
+      return url;
+    }
   },
 
   // ── MODALS ───────────────────────────────────────────────────────
