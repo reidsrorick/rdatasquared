@@ -18,20 +18,22 @@ var Pages = {
   },
 
   // ── LINK CARD ────────────────────────────────────────────────────
-  linkCard(link, categories, kids) {
+  linkCard(link, categories, kids, opts) {
     kids = kids || 0;
-    var e      = UI.esc;
-    var fav    = UI.faviconUrl(link.url);
-    var color  = UI.catColor(link.category, categories);
-    var target = link.openInNewTab ? '_blank' : '_self';
-    var rel    = link.openInNewTab ? 'noopener noreferrer' : '';
+    opts = opts || {};
+    var e       = UI.esc;
+    var iconSrc = link.iconUrl ? link.iconUrl : UI.faviconUrl(link.url);
+    var color   = UI.catColor(link.category, categories);
+    var target  = link.openInNewTab ? '_blank' : '_self';
+    var rel     = link.openInNewTab ? 'noopener noreferrer' : '';
+    var showUrl = opts.showUrls !== false;
 
-    return '<div class="link-card" data-id="' + e(link.id) + '">' +
+    return '<div class="link-card" data-action="edit-link" data-id="' + e(link.id) + '">' +
       '<div class="link-card-top">' +
-        (fav ? '<img class="link-favicon" src="' + e(fav) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
+        (iconSrc ? '<img class="link-favicon" src="' + e(iconSrc) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
         '<div class="link-title-wrap">' +
           '<a class="link-title" href="' + e(link.url) + '" target="' + target + '" rel="' + rel + '" data-action="open-link" data-id="' + e(link.id) + '">' + e(link.title) + '</a>' +
-          '<span class="link-url">' + e(link.url) + '</span>' +
+          (showUrl ? '<span class="link-url">' + e(link.url) + '</span>' : '') +
         '</div>' +
       '</div>' +
       (link.description ? '<p class="link-desc">' + e(link.description) + '</p>' : '') +
@@ -48,7 +50,6 @@ var Pages = {
         '<div class="link-card-actions">' +
           '<button class="action-btn' + (link.favorite ? ' fav-on' : '') + '" data-action="toggle-favorite" data-id="' + e(link.id) + '" title="' + (link.favorite ? 'Unfavorite' : 'Favorite') + '">' + (link.favorite ? '★' : '☆') + '</button>' +
           '<a class="btn btn-primary btn-sm" href="' + e(link.url) + '" target="' + target + '" rel="' + rel + '" data-action="open-link" data-id="' + e(link.id) + '">Open ↗</a>' +
-          '<button class="action-btn" data-action="edit-link" data-id="' + e(link.id) + '" title="Edit">✏️</button>' +
           '<button class="action-btn danger" data-action="delete-link" data-id="' + e(link.id) + '" title="Delete">🗑</button>' +
         '</div>' +
       '</div>' +
@@ -64,6 +65,9 @@ var Pages = {
     var view       = state.activeView    || 'all';
     var selCat     = state.selectedCategory || 'all';
     var selTag     = state.selectedTag   || '';
+    var settings   = Data.getSettings();
+    var showUrls   = settings.showUrls !== false;
+    var opts       = { showUrls: showUrls };
 
     // child counts
     var kids = {};
@@ -115,17 +119,7 @@ var Pages = {
     allTags.sort();
 
     // group by category when showing "all" with no other filters
-    var grouped   = null;
     var showGroup = view === 'all' && !q && selCat === 'all' && !selTag;
-    if (showGroup) {
-      grouped = {};
-      filtered.forEach(function (l) {
-        var key = l.category || 'Uncategorized';
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(l);
-      });
-    }
-
     var self = this;
 
     // ── content ──
@@ -138,8 +132,22 @@ var Pages = {
         (!q ? '<button class="btn btn-primary" data-action="add-link">+ Add Link</button>' : '') +
         '</div>';
     } else if (showGroup) {
+      // Build category order from the categories array
       var catOrder = categories.map(function (c) { return c.name; });
-      var groups   = Object.keys(grouped).sort(function (a, b) {
+
+      // Separate favorites from non-favorites for the pinned section
+      var favLinks    = filtered.filter(function (l) { return l.favorite; });
+      var nonFavLinks = filtered.filter(function (l) { return !l.favorite; });
+
+      // Group non-favorites by category
+      var grouped = {};
+      nonFavLinks.forEach(function (l) {
+        var key = l.category || 'Uncategorized';
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(l);
+      });
+
+      var groups = Object.keys(grouped).sort(function (a, b) {
         if (a === 'Uncategorized') return 1;
         if (b === 'Uncategorized') return -1;
         var ai = catOrder.indexOf(a), bi = catOrder.indexOf(b);
@@ -148,14 +156,50 @@ var Pages = {
         if (bi === -1) return -1;
         return ai - bi;
       });
-      content = groups.map(function (cat) {
-        var items = grouped[cat];
-        return '<div class="section-header"><span class="section-title">' + e(cat) + '</span><span class="count-badge">' + items.length + '</span></div>' +
-          '<div class="links-grid">' + items.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>';
+
+      // Build a map of category id by name for collapse lookup
+      var catById = {};
+      categories.forEach(function (c) { catById[c.name] = c; });
+
+      // Favorites pinned section at top
+      var favCollapsed = !!state.favCollapsed;
+      var favSection = '';
+      if (favLinks.length > 0) {
+        favSection =
+          '<div class="section-header">' +
+            '<span class="section-title fav-section-title">★ Favorites</span>' +
+            '<button class="collapse-btn" data-action="toggle-fav-collapse" title="' + (favCollapsed ? 'Expand' : 'Collapse') + '">' +
+              (favCollapsed ? '&#9654;' : '&#9660;') +
+            '</button>' +
+            '<span class="count-badge">' + favLinks.length + '</span>' +
+          '</div>' +
+          (favCollapsed ? '' :
+            '<div class="links-grid fav-section-grid">' +
+              favLinks.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0, opts); }).join('') +
+            '</div>');
+      }
+
+      var categoryGroups = groups.map(function (cat) {
+        var items  = grouped[cat];
+        var catObj = catById[cat];
+        var isCollapsed = catObj && catObj.collapsed;
+        var catId  = catObj ? e(catObj.id) : '';
+        return '<div class="section-header">' +
+            '<span class="section-title">' + e(cat) + '</span>' +
+            (catId
+              ? '<button class="collapse-btn" data-action="toggle-cat-collapse" data-id="' + catId + '" title="' + (isCollapsed ? 'Expand' : 'Collapse') + '">' +
+                  (isCollapsed ? '&#9654;' : '&#9660;') +
+                '</button>'
+              : '') +
+            '<span class="count-badge">' + items.length + '</span>' +
+          '</div>' +
+          (isCollapsed ? '' : '<div class="links-grid">' + items.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0, opts); }).join('') + '</div>');
       }).join('');
+
+      content = favSection + categoryGroups;
     } else {
       content = '<div class="links-grid">' +
-        filtered.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') +
+        filtered.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0, opts); }).join('') +
         '</div>';
     }
 
@@ -238,14 +282,20 @@ var Pages = {
     }
 
     // Categories grid
-    var catCards = categories.map(function (c) {
-      var cnt = links.filter(function (l) { return l.category === c.name; }).length;
+    var catCards = categories.map(function (c, idx) {
+      var cnt    = links.filter(function (l) { return l.category === c.name; }).length;
+      var isFirst = idx === 0;
+      var isLast  = idx === categories.length - 1;
       return '<div class="cat-card">' +
         '<div class="cat-card-left">' +
           '<span class="cat-color-dot" style="background:' + c.color + '"></span>' +
           '<div><div class="cat-name-text">' + e(c.name) + '</div><div class="cat-link-count">' + cnt + ' link' + (cnt !== 1 ? 's' : '') + '</div></div>' +
         '</div>' +
-        '<div style="display:flex;gap:.2rem;">' +
+        '<div style="display:flex;gap:.2rem;align-items:center;">' +
+          '<div class="cat-reorder-btns">' +
+            '<button class="reorder-btn" data-action="move-cat-up" data-id="' + e(c.id) + '" title="Move up"' + (isFirst ? ' disabled' : '') + '>▲</button>' +
+            '<button class="reorder-btn" data-action="move-cat-down" data-id="' + e(c.id) + '" title="Move down"' + (isLast ? ' disabled' : '') + '>▼</button>' +
+          '</div>' +
           '<button class="action-btn" data-action="edit-category" data-id="' + e(c.id) + '" title="Edit">✏️</button>' +
           '<button class="action-btn danger" data-action="delete-category" data-id="' + e(c.id) + '" title="Delete">🗑</button>' +
         '</div>' +
@@ -323,6 +373,13 @@ var Pages = {
         '</div>' +
       '</div>' +
 
+      '<div class="settings-section"><h3>Dashboard</h3>' +
+        '<div class="setting-row">' +
+          '<div><div class="setting-label">Show link URLs on cards</div><div class="setting-desc">Display the full URL below each link title on the dashboard</div></div>' +
+          '<label class="toggle"><input type="checkbox" data-action="toggle-show-urls"' + (s.showUrls !== false ? ' checked' : '') + '><span class="toggle-track"></span></label>' +
+        '</div>' +
+      '</div>' +
+
       '<div class="settings-section"><h3>Link Behavior</h3>' +
         '<div class="setting-row">' +
           '<div><div class="setting-label">Open links in new tab by default</div><div class="setting-desc">New links will default to opening in a new browser tab</div></div>' +
@@ -336,8 +393,8 @@ var Pages = {
           '<button class="btn btn-secondary" data-action="export-json">⬇ Export JSON</button>' +
         '</div>' +
         '<div class="setting-row">' +
-          '<div><div class="setting-label">Import Backup</div><div class="setting-desc">Restore data from a previously exported JSON backup file</div></div>' +
-          '<button class="btn btn-secondary" data-action="import-json">⬆ Import JSON</button>' +
+          '<div><div class="setting-label">Import Backup</div><div class="setting-desc">Restore from a JSON backup — choose to replace all data or merge with existing links</div></div>' +
+          '<button class="btn btn-secondary" data-action="import-json-choose">⬆ Import JSON</button>' +
         '</div>' +
         '<div class="setting-row">' +
           '<div><div class="setting-label">Clear All Data</div><div class="setting-desc">Permanently delete all links and categories and reset to defaults</div></div>' +
@@ -348,7 +405,7 @@ var Pages = {
       '<div class="settings-section"><h3>About</h3>' +
         '<div class="setting-row">' +
           '<div>' +
-            '<div class="setting-label">Quick Links Hub v1.0</div>' +
+            '<div class="setting-label">Quick Links Hub v1.1</div>' +
             '<div class="setting-desc">A personal bookmark manager. Data is stored in your browser\'s localStorage. Export a backup regularly to prevent data loss. Works offline and can be hosted on GitHub Pages.</div>' +
           '</div>' +
         '</div>' +
@@ -362,6 +419,8 @@ var Pages = {
     var categories = Data.getCategories();
     var children   = Data.getChildren(id);
     var self       = this;
+    var settings   = Data.getSettings();
+    var opts       = { showUrls: settings.showUrls !== false };
 
     if (!link) {
       return '<div class="empty-state"><div class="empty-icon">🔍</div><h3>Link not found</h3><p>This link may have been deleted.</p><a class="btn btn-primary" href="#/">← Back to Dashboard</a></div>';
@@ -369,7 +428,6 @@ var Pages = {
 
     var target = link.openInNewTab ? '_blank' : '_self';
     var rel    = link.openInNewTab ? 'noopener noreferrer' : '';
-    var color  = UI.catColor(link.category, categories);
 
     return '<div style="margin-bottom:1rem;"><a class="btn btn-ghost btn-sm" href="#/">← Back</a></div>' +
 
@@ -396,7 +454,7 @@ var Pages = {
 
       (children.length === 0
         ? '<div class="empty-state" style="padding:2rem;"><p>No nested links yet.</p><button class="btn btn-primary mt-xs" data-action="add-nested-link" data-parent-id="' + e(id) + '">+ Add Nested Link</button></div>'
-        : '<div class="links-grid">' + children.map(function (c) { return self.linkCard(c, categories, 0); }).join('') + '</div>');
+        : '<div class="links-grid">' + children.map(function (c) { return self.linkCard(c, categories, 0, opts); }).join('') + '</div>');
   },
 
   // ── LINK MODAL ───────────────────────────────────────────────────
@@ -404,7 +462,7 @@ var Pages = {
     parentId      = parentId || '';
     var e         = UI.esc;
     var isEdit    = !!link;
-    var f         = link || { title: '', url: '', description: '', notes: '', category: '', tags: [], favorite: false, openInNewTab: settings.defaultOpenInNewTab, parentId: parentId };
+    var f         = link || { title: '', url: '', description: '', notes: '', category: '', tags: [], favorite: false, openInNewTab: settings.defaultOpenInNewTab, parentId: parentId, iconUrl: '' };
     var parents   = links.filter(function (l) { return !l.parentId && l.id !== (link && link.id); });
 
     var tagChips = (f.tags || []).map(function (t) {
@@ -427,6 +485,8 @@ var Pages = {
           '<input class="form-input" name="title" value="' + e(f.title) + '" placeholder="My Link" required></div>' +
         '<div class="form-group"><label class="form-label">URL <span class="form-required">*</span></label>' +
           '<input class="form-input" name="url" type="url" value="' + e(f.url) + '" placeholder="https://example.com" required></div>' +
+        '<div class="form-group"><label class="form-label">Icon URL <span style="font-weight:400;color:var(--text-muted);">(optional — overrides auto favicon)</span></label>' +
+          '<input class="form-input" name="iconUrl" type="url" value="' + e(f.iconUrl || '') + '" placeholder="https://example.com/icon.png"></div>' +
         '<div class="form-group"><label class="form-label">Description</label>' +
           '<input class="form-input" name="description" value="' + e(f.description) + '" placeholder="Short description"></div>' +
         '<div class="form-group"><label class="form-label">Notes</label>' +
@@ -475,6 +535,34 @@ var Pages = {
       '<div class="modal-footer">' +
         '<button class="btn btn-secondary" data-action="close-modal">Cancel</button>' +
         '<button class="btn btn-primary" form="category-form" type="submit">' + (isEdit ? 'Save' : 'Add Category') + '</button>' +
+      '</div></div>';
+  },
+
+  // ── IMPORT CHOOSE MODAL ──────────────────────────────────────────
+  importChooseModal() {
+    return '<div class="modal modal-sm">' +
+      '<div class="modal-header"><span class="modal-title">Import Backup</span><button class="modal-close" data-action="close-modal">×</button></div>' +
+      '<div class="modal-body">' +
+        '<p style="color:var(--text-muted);font-size:.9rem;margin-bottom:1.25rem;">How would you like to import your backup?</p>' +
+        '<div style="display:flex;flex-direction:column;gap:.75rem;">' +
+          '<button class="import-choice-btn" data-action="import-json-replace">' +
+            '<div class="import-choice-icon">🔄</div>' +
+            '<div>' +
+              '<div class="import-choice-title">Replace All</div>' +
+              '<div class="import-choice-desc">Overwrite all existing links, categories, and settings with the backup</div>' +
+            '</div>' +
+          '</button>' +
+          '<button class="import-choice-btn" data-action="import-json-merge">' +
+            '<div class="import-choice-icon">➕</div>' +
+            '<div>' +
+              '<div class="import-choice-title">Merge</div>' +
+              '<div class="import-choice-desc">Add new links and categories from the backup, keeping your existing data</div>' +
+            '</div>' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-footer">' +
+        '<button class="btn btn-secondary" data-action="close-modal">Cancel</button>' +
       '</div></div>';
   },
 

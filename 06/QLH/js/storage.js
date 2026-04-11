@@ -24,18 +24,19 @@ const Storage = {
       settings: {
         defaultOpenInNewTab: true,
         theme: 'system',
+        showUrls: true,
       },
       categories: [
-        { id: 'c1', name: 'Work',      color: '#3b82f6' },
-        { id: 'c2', name: 'Personal',  color: '#10b981' },
-        { id: 'c3', name: 'Tools',     color: '#f59e0b' },
-        { id: 'c4', name: 'Reference', color: '#8b5cf6' },
+        { id: 'c1', name: 'Work',      color: '#3b82f6', collapsed: false },
+        { id: 'c2', name: 'Personal',  color: '#10b981', collapsed: false },
+        { id: 'c3', name: 'Tools',     color: '#f59e0b', collapsed: false },
+        { id: 'c4', name: 'Reference', color: '#8b5cf6', collapsed: false },
       ],
       links: [
-        { id: 'l1', title: 'Gmail',   url: 'https://mail.google.com', description: 'Email inbox',              notes: '', category: 'Work',     tags: ['email', 'google'], favorite: true,  openInNewTab: true, parentId: '', createdAt: now, updatedAt: now, lastUsed: '' },
-        { id: 'l2', title: 'GitHub',  url: 'https://github.com',      description: 'Code repositories',       notes: '', category: 'Work',     tags: ['dev', 'code'],     favorite: true,  openInNewTab: true, parentId: '', createdAt: now, updatedAt: now, lastUsed: '' },
-        { id: 'l3', title: 'Figma',   url: 'https://figma.com',       description: 'Design & prototyping',    notes: '', category: 'Tools',    tags: ['design'],          favorite: false, openInNewTab: true, parentId: '', createdAt: now, updatedAt: now, lastUsed: '' },
-        { id: 'l4', title: 'YouTube', url: 'https://youtube.com',     description: 'Video platform',          notes: '', category: 'Personal', tags: ['video', 'media'],  favorite: false, openInNewTab: true, parentId: '', createdAt: now, updatedAt: now, lastUsed: '' },
+        { id: 'l1', title: 'Gmail',   url: 'https://mail.google.com', description: 'Email inbox',           notes: '', category: 'Work',     tags: ['email', 'google'], favorite: true,  openInNewTab: true, parentId: '', iconUrl: '', createdAt: now, updatedAt: now, lastUsed: '' },
+        { id: 'l2', title: 'GitHub',  url: 'https://github.com',      description: 'Code repositories',    notes: '', category: 'Work',     tags: ['dev', 'code'],     favorite: true,  openInNewTab: true, parentId: '', iconUrl: '', createdAt: now, updatedAt: now, lastUsed: '' },
+        { id: 'l3', title: 'Figma',   url: 'https://figma.com',       description: 'Design & prototyping', notes: '', category: 'Tools',    tags: ['design'],          favorite: false, openInNewTab: true, parentId: '', iconUrl: '', createdAt: now, updatedAt: now, lastUsed: '' },
+        { id: 'l4', title: 'YouTube', url: 'https://youtube.com',     description: 'Video platform',       notes: '', category: 'Personal', tags: ['video', 'media'],  favorite: false, openInNewTab: true, parentId: '', iconUrl: '', createdAt: now, updatedAt: now, lastUsed: '' },
       ],
     };
   },
@@ -64,7 +65,6 @@ const Storage = {
             reject(new Error('Invalid backup format — expected links, categories, and settings arrays.'));
             return;
           }
-          Storage.set(data);
           resolve(data);
         } catch (err) {
           reject(new Error('Could not parse file: ' + err.message));
