@@ -238,7 +238,7 @@ html, body {
 #export-dropdown { display: flex; }
 #export-dropdown #btn-export-default {
   border-radius: var(--radius) 0 0 var(--radius);
-  border-right: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-right: 1px solid var(--border);
 }
 #export-dropdown .export-caret {
   border-radius: 0 var(--radius) var(--radius) 0;

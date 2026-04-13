@@ -240,6 +240,9 @@ function bulkDelete() {
 // ---------------------------------------------------------------------------
 
 async function openExportSettingsModal() {
+  // Open modal immediately (synchronously) so it can't be blocked by async work below
+  showModal("modal-export-settings");
+
   const settings = getExportSettings();
 
   // Populate format radio
@@ -254,22 +257,19 @@ async function openExportSettingsModal() {
   const extEl = document.getElementById("exp-filename-ext");
   if (extEl) extEl.textContent = fmt === "csv" ? ".csv" : ".json";
 
-  // Folder name — try to read from stored handle first, fall back to saved settings
-  let folderName = null;
+  // Show/hide FSA-specific controls
+  const warn      = document.getElementById("exp-no-fsa-warning");
+  const chooseBtn = document.getElementById("btn-choose-export-folder");
+  if (warn)      warn.style.display      = window.showDirectoryPicker ? "none" : "block";
+  if (chooseBtn) chooseBtn.style.display = window.showDirectoryPicker ? ""     : "none";
+
+  // Folder name — try stored handle first (async), fall back to saved settings
+  let folderName = settings.folderName || null;
+  _updateExportFolderDisplay(folderName); // show what we know immediately
   try {
     const h = await getExportDirHandle();
-    if (h) folderName = h.name;
+    if (h) { folderName = h.name; _updateExportFolderDisplay(folderName); }
   } catch (_) {}
-  if (!folderName) folderName = settings.folderName || null;
-  _updateExportFolderDisplay(folderName);
-
-  // Show warning if File System Access API is unavailable
-  const warn = document.getElementById("exp-no-fsa-warning");
-  if (warn) warn.style.display = window.showDirectoryPicker ? "none" : "block";
-  const chooseBtn = document.getElementById("btn-choose-export-folder");
-  if (chooseBtn) chooseBtn.style.display = window.showDirectoryPicker ? "" : "none";
-
-  showModal("modal-export-settings");
 }
 
 function _updateExportFolderDisplay(folderName) {
@@ -437,14 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Export caret — always opens the dropdown
-  document.querySelector("#export-dropdown .export-caret")?.addEventListener("click", e => {
-    e.stopPropagation();
-    document.querySelectorAll(".dropdown.open").forEach(o => {
-      if (o.id !== "export-dropdown") o.classList.remove("open");
-    });
-    document.getElementById("export-dropdown")?.classList.toggle("open");
-  });
+  // Export caret — handled by the generic .dropdown-toggle handler above
 
   // ── Export Settings modal ─────────────────────────────────────────────────
   document.getElementById("btn-open-export-settings")?.addEventListener("click", openExportSettingsModal);
