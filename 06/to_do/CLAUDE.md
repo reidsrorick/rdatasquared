@@ -155,6 +155,10 @@ Wired to `#week-search` and `#cal-search` inputs in their respective toolbars. R
 | `wt-notif-off` | JSON array of row IDs with notifications disabled |
 | `wt-notif-times` | `{ [id]: "HH:MM" }` per-item notification time (default `"09:00"`) |
 | `wt-cond-fmt` | JSON array of conditional formatting rules |
+| `wt-export-settings` | `{ format, filename, folderName }` — default export config |
+
+### IndexedDB
+`wt-fs` (version 1) — object store `handles` — key `"export-dir"` stores a `FileSystemDirectoryHandle` for the default export folder. Handles cannot be serialized to JSON so they live in IndexedDB instead of localStorage.
 
 ## Things to avoid
 - Do **not** add any `fetch()` calls or server-side dependencies — this is a zero-infrastructure static app; all data lives in `localStorage`.

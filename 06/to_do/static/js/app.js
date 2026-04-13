@@ -236,6 +236,65 @@ function bulkDelete() {
 }
 
 // ---------------------------------------------------------------------------
+// Export settings modal
+// ---------------------------------------------------------------------------
+
+async function openExportSettingsModal() {
+  const settings = getExportSettings();
+
+  // Populate format radio
+  const fmt = settings.format || "json";
+  document.querySelectorAll("input[name='exp-fmt']").forEach(r => { r.checked = (r.value === fmt); });
+
+  // Filename
+  const fnEl = document.getElementById("exp-filename");
+  if (fnEl) fnEl.value = settings.filename || "work-tracker-export";
+
+  // Extension label
+  const extEl = document.getElementById("exp-filename-ext");
+  if (extEl) extEl.textContent = fmt === "csv" ? ".csv" : ".json";
+
+  // Folder name — try to read from stored handle first, fall back to saved settings
+  let folderName = null;
+  try {
+    const h = await getExportDirHandle();
+    if (h) folderName = h.name;
+  } catch (_) {}
+  if (!folderName) folderName = settings.folderName || null;
+  _updateExportFolderDisplay(folderName);
+
+  // Show warning if File System Access API is unavailable
+  const warn = document.getElementById("exp-no-fsa-warning");
+  if (warn) warn.style.display = window.showDirectoryPicker ? "none" : "block";
+  const chooseBtn = document.getElementById("btn-choose-export-folder");
+  if (chooseBtn) chooseBtn.style.display = window.showDirectoryPicker ? "" : "none";
+
+  showModal("modal-export-settings");
+}
+
+function _updateExportFolderDisplay(folderName) {
+  const display  = document.getElementById("exp-folder-display");
+  const clearBtn = document.getElementById("btn-clear-export-folder");
+  if (display) display.textContent = folderName || "Not set";
+  if (clearBtn) clearBtn.style.display = folderName ? "" : "none";
+}
+
+function _updateExportButtonLabel() {
+  const settings = getExportSettings();
+  const btn = document.getElementById("btn-export-default");
+  if (!btn) return;
+  if (settings.folderName) {
+    const ext  = (settings.format || "json") === "csv" ? ".csv" : ".json";
+    const name = (settings.filename || "work-tracker-export") + ext;
+    btn.title = `Export to ${settings.folderName}/${name}`;
+    btn.classList.add("btn-export-configured");
+  } else {
+    btn.title = "";
+    btn.classList.remove("btn-export-configured");
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Bootstrap — wire all UI events after DOM is ready
 // ---------------------------------------------------------------------------
 
@@ -256,6 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initGrid();
   initNotifications();
+  _updateExportButtonLabel();
 
   // ── Navbar ──────────────────────────────────────────────────────────────
   document.querySelectorAll(".nav-btn").forEach(btn =>
@@ -361,6 +421,78 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-export-csv")?.addEventListener("click",   () => exportData("csv"));
   document.getElementById("btn-export-excel")?.addEventListener("click", () => exportData("excel"));
   document.getElementById("btn-export-json")?.addEventListener("click",  () => exportData("json"));
+
+  // Export main button — use default path if configured, else open the dropdown
+  document.getElementById("btn-export-default")?.addEventListener("click", e => {
+    e.stopPropagation();
+    const settings = getExportSettings();
+    if (settings.folderName) {
+      document.getElementById("export-dropdown")?.classList.remove("open");
+      exportToDefault();
+    } else {
+      document.querySelectorAll(".dropdown.open").forEach(o => {
+        if (o.id !== "export-dropdown") o.classList.remove("open");
+      });
+      document.getElementById("export-dropdown")?.classList.toggle("open");
+    }
+  });
+
+  // Export caret — always opens the dropdown
+  document.querySelector("#export-dropdown .export-caret")?.addEventListener("click", e => {
+    e.stopPropagation();
+    document.querySelectorAll(".dropdown.open").forEach(o => {
+      if (o.id !== "export-dropdown") o.classList.remove("open");
+    });
+    document.getElementById("export-dropdown")?.classList.toggle("open");
+  });
+
+  // ── Export Settings modal ─────────────────────────────────────────────────
+  document.getElementById("btn-open-export-settings")?.addEventListener("click", openExportSettingsModal);
+
+  document.querySelectorAll("input[name='exp-fmt']").forEach(r =>
+    r.addEventListener("change", () => {
+      document.getElementById("exp-filename-ext").textContent =
+        r.value === "json" ? ".json" : ".csv";
+    })
+  );
+
+  document.getElementById("btn-choose-export-folder")?.addEventListener("click", async () => {
+    if (!window.showDirectoryPicker) return;
+    try {
+      const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+      await saveExportDirHandle(handle);
+      _updateExportFolderDisplay(handle.name);
+    } catch (err) {
+      if (err.name !== "AbortError") toast("Could not select folder: " + err.message, "error");
+    }
+  });
+
+  document.getElementById("btn-clear-export-folder")?.addEventListener("click", async () => {
+    await clearExportDirHandle();
+    const settings = getExportSettings();
+    delete settings.folderName;
+    saveExportSettings(settings);
+    _updateExportFolderDisplay(null);
+    _updateExportButtonLabel();
+  });
+
+  document.getElementById("btn-save-export-settings")?.addEventListener("click", async () => {
+    const fmt      = document.querySelector("input[name='exp-fmt']:checked")?.value || "json";
+    const filename = (document.getElementById("exp-filename")?.value || "work-tracker-export").trim();
+    let   folderName = null;
+    try {
+      const h = await getExportDirHandle();
+      if (h) folderName = h.name;
+    } catch (_) {}
+    // folderName from the display in case handle was just chosen
+    const displayed = document.getElementById("exp-folder-display")?.textContent;
+    if (displayed && displayed !== "Not set") folderName = displayed;
+
+    saveExportSettings({ format: fmt, filename: filename || "work-tracker-export", folderName });
+    hideModal("modal-export-settings");
+    _updateExportButtonLabel();
+    toast("Export settings saved", "success");
+  });
 
   // ── Detail panel ─────────────────────────────────────────────────────────
   document.getElementById("btn-detail-close").addEventListener("click", closeDetailPanel);

@@ -326,6 +326,77 @@ function _triggerDownload(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
+async function exportToDefault() {
+  const settings = getExportSettings();
+
+  // No File System Access API support → fall back to regular download
+  if (!window.showDirectoryPicker) {
+    const format = settings.format || "json";
+    exportData(format);
+    return;
+  }
+
+  let dirHandle;
+  try {
+    dirHandle = await getExportDirHandle();
+  } catch (err) {
+    console.error("Could not read export dir handle:", err);
+  }
+
+  if (!dirHandle) {
+    toast("No default export folder set — use Export Settings to configure one.", "warn");
+    return;
+  }
+
+  // Verify / request permission (requires user gesture — satisfied since we're in a click handler)
+  let perm;
+  try {
+    perm = await dirHandle.queryPermission({ mode: "readwrite" });
+    if (perm !== "granted") perm = await dirHandle.requestPermission({ mode: "readwrite" });
+  } catch (err) {
+    perm = "denied";
+  }
+  if (perm !== "granted") {
+    toast("Export permission denied for that folder.", "warn");
+    return;
+  }
+
+  const format   = settings.format || "json";
+  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|csv)$/i, "");
+  const filename = baseName + (format === "json" ? ".json" : ".csv");
+
+  let content;
+  if (format === "json") {
+    const payload = {
+      version:    "1.0",
+      exportedAt: fmtDateTime(new Date()),
+      items:      getAllItems(),
+    };
+    content = JSON.stringify(payload, null, 2);
+  } else {
+    const headers = ["ID","Item","Category","Date","Time","Sort","Description","Completed?","Date Completed","Last Modified"];
+    const csvRows = getAllItems().filter(r => !r.deleted).map(r => [
+      r.id, r.item, r.category, r.date, r.time, r.sort,
+      r.description, r.completed ? "Yes" : "No", r.date_completed, r.last_modified,
+    ]);
+    content = [headers, ...csvRows]
+      .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+  }
+
+  try {
+    const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+    const writable   = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+    const folder = settings.folderName || "selected folder";
+    toast(`Exported to ${folder}/${filename}`, "success");
+  } catch (err) {
+    console.error("Default export failed:", err);
+    toast("Export failed: " + err.message, "error");
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Recurring task — spawn next occurrence on completion
 // ---------------------------------------------------------------------------

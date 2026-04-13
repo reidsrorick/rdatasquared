@@ -65,13 +65,16 @@
     </div>
 
     <div class="dropdown" id="export-dropdown">
-      <button class="btn btn-secondary dropdown-toggle">
+      <button id="btn-export-default" class="btn btn-secondary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export
       </button>
+      <button class="btn btn-secondary dropdown-toggle export-caret" title="More export options" aria-label="More export options">▾</button>
       <div class="dropdown-menu">
         <button class="dropdown-item" id="btn-export-csv">Export as CSV</button>
         <button class="dropdown-item" id="btn-export-json">Export as JSON (backup)</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" id="btn-open-export-settings">Export Settings…</button>
       </div>
     </div>
 
@@ -388,6 +391,53 @@
 </div>
 
 <!-- ═══════════════════════════ MODALS ════════════════════════════════ -->
+
+<!-- Export Settings -->
+<div id="modal-export-settings" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Export Settings</h2>
+      <button class="modal-close" data-close="modal-export-settings">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-subtle);margin:0 0 16px">
+        Configure a default export location. Clicking <strong>Export</strong> in the toolbar will overwrite this file directly — no save dialog.
+      </p>
+
+      <div class="settings-row">
+        <label class="settings-label">Format</label>
+        <div style="display:flex;gap:16px">
+          <label class="radio-label"><input type="radio" name="exp-fmt" value="json"> JSON backup</label>
+          <label class="radio-label"><input type="radio" name="exp-fmt" value="csv"> CSV</label>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <label class="settings-label" for="exp-filename">Filename</label>
+        <input type="text" id="exp-filename" class="detail-input" placeholder="work-tracker-export"
+               style="max-width:280px" />
+        <span id="exp-filename-ext" style="font-size:12px;color:var(--text-subtle);margin-left:4px">.json</span>
+      </div>
+
+      <div class="settings-row">
+        <label class="settings-label">Folder</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span id="exp-folder-display" style="font-size:13px;color:var(--text-subtle);min-width:120px">Not set</span>
+          <button id="btn-choose-export-folder" class="btn btn-ghost btn-sm">Choose Folder…</button>
+          <button id="btn-clear-export-folder" class="btn btn-ghost btn-sm" style="display:none;color:var(--danger)">Clear</button>
+        </div>
+      </div>
+
+      <div id="exp-no-fsa-warning" style="display:none;margin-top:12px;padding:10px 12px;background:var(--bg-surface-2);border-radius:6px;font-size:12px;color:var(--text-subtle)">
+        Your browser does not support the File System Access API. The Export button will use the standard browser download dialog with the filename pre-filled.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="modal-export-settings">Cancel</button>
+      <button id="btn-save-export-settings" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- Conditional Formatting -->
 <div id="modal-cond-fmt" class="modal-overlay hidden">

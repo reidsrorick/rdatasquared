@@ -159,3 +159,61 @@ function markNotified(id) {
   d.ids[id] = true;
   localStorage.setItem(NOTIF_KEY, JSON.stringify(d));
 }
+
+// ---------------------------------------------------------------------------
+// Export settings
+// ---------------------------------------------------------------------------
+
+const EXPORT_SETTINGS_KEY = "wt-export-settings";
+
+function getExportSettings() {
+  try { return JSON.parse(localStorage.getItem(EXPORT_SETTINGS_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function saveExportSettings(settings) {
+  localStorage.setItem(EXPORT_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+// ---------------------------------------------------------------------------
+// IndexedDB — File System Access API directory handle persistence
+// ---------------------------------------------------------------------------
+
+function _openExportDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("wt-fs", 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore("handles");
+    req.onsuccess  = e => resolve(e.target.result);
+    req.onerror    = e => reject(e.target.error);
+  });
+}
+
+async function saveExportDirHandle(handle) {
+  const db = await _openExportDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("handles", "readwrite");
+    tx.objectStore("handles").put(handle, "export-dir");
+    tx.oncomplete = () => resolve();
+    tx.onerror    = e => reject(e.target.error);
+  });
+}
+
+async function getExportDirHandle() {
+  const db = await _openExportDB();
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction("handles", "readonly");
+    const req = tx.objectStore("handles").get("export-dir");
+    req.onsuccess = e => resolve(e.target.result ?? null);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function clearExportDirHandle() {
+  const db = await _openExportDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("handles", "readwrite");
+    tx.objectStore("handles").delete("export-dir");
+    tx.oncomplete = () => resolve();
+    tx.onerror    = e => reject(e.target.error);
+  });
+}

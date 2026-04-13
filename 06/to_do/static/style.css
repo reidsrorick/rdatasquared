@@ -228,6 +228,50 @@ html, body {
 }
 .dropdown-item:hover { background: var(--bg-surface-2); }
 
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Split export button */
+#export-dropdown { display: flex; }
+#export-dropdown #btn-export-default {
+  border-radius: var(--radius) 0 0 var(--radius);
+  border-right: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+#export-dropdown .export-caret {
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 0 8px;
+  font-size: 11px;
+  background: var(--bg-surface-2);
+  color: var(--text-subtle);
+  min-width: 0;
+}
+#export-dropdown .export-caret:hover { background: var(--bg-hover); color: var(--text); }
+#btn-export-default.btn-export-configured {
+  border-color: var(--primary);
+  color: var(--primary-h);
+}
+
+/* Export / general settings form rows */
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-subtle);
+  min-width: 76px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    VIEWS
    ═══════════════════════════════════════════════════════════════════ */
