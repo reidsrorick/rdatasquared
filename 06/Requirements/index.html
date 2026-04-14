@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Requirements & Bug Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-logo">&#9654;</span>
+        <span class="sidebar-title">Req Tracker</span>
+        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" title="Collapse sidebar">&#8249;</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-page="items">
+          <span class="nav-icon">&#9776;</span>
+          <span class="nav-label">Items</span>
+        </a>
+        <a href="#" class="nav-item" data-page="dashboard">
+          <span class="nav-icon">&#9632;</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings">
+          <span class="nav-icon">&#9881;</span>
+          <span class="nav-label">Settings</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="sidebar-version">v1.0.0</span>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" id="main-content">
+
+      <!-- Items page -->
+      <section class="page active" id="page-items">
+        <div class="page-header">
+          <div class="page-title-row">
+            <h1 class="page-title">Items</h1>
+            <button class="btn btn-primary" id="btn-new-item">+ New Item</button>
+          </div>
+        </div>
+
+        <!-- Form panel -->
+        <div class="form-panel hidden" id="form-panel">
+          <div class="form-panel-header">
+            <h2 class="form-panel-title" id="form-panel-title">New Item</h2>
+            <button class="btn-icon" id="btn-close-form" title="Close">&#10005;</button>
+          </div>
+          <form id="item-form" class="item-form" novalidate>
+            <input type="hidden" id="form-id" />
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="form-title">Title <span class="required">*</span></label>
+                <input type="text" id="form-title" placeholder="Short descriptive title" required />
+              </div>
+              <div class="form-group form-group-half">
+                <label for="form-type">Type <span class="required">*</span></label>
+                <select id="form-type" required>
+                  <option value="">-- Select --</option>
+                  <option value="Bug">Bug</option>
+                  <option value="Feature">Feature</option>
+                  <option value="Enhancement">Enhancement</option>
+                  <option value="Task">Task</option>
+                  <option value="Question">Question</option>
+                </select>
+              </div>
+              <div class="form-group form-group-half">
+                <label for="form-status">Status <span class="required">*</span></label>
+                <select id="form-status" required>
+                  <option value="">-- Select --</option>
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Review">Review</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Won't Fix">Won't Fix</option>
+                </select>
+              </div>
+              <div class="form-group form-group-half">
+                <label for="form-priority">Priority</label>
+                <select id="form-priority">
+                  <option value="">-- None --</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <div class="form-group form-group-half">
+                <label for="form-assignee">Assignee</label>
+                <input type="text" id="form-assignee" placeholder="Person responsible" />
+              </div>
+              <div class="form-group form-group-half">
+                <label for="form-project">Project</label>
+                <input type="text" id="form-project" placeholder="e.g. Website, Mobile App" list="project-datalist" />
+                <datalist id="project-datalist"></datalist>
+              </div>
+              <div class="form-group">
+                <label for="form-description">Description</label>
+                <textarea id="form-description" rows="4" placeholder="Detailed description, steps to reproduce, acceptance criteria..."></textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost" id="btn-cancel-form">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="btn-save-form">Save Item</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Table controls -->
+        <div class="table-controls">
+          <div class="search-wrap">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="search-input" class="search-input" placeholder="Search items..." />
+            <button class="btn-icon search-clear hidden" id="btn-search-clear" title="Clear search">&#10005;</button>
+          </div>
+          <div class="filter-wrap">
+            <select id="filter-type" class="filter-select">
+              <option value="">All Types</option>
+            </select>
+            <select id="filter-status" class="filter-select">
+              <option value="">All Statuses</option>
+            </select>
+            <select id="filter-priority" class="filter-select">
+              <option value="">All Priorities</option>
+            </select>
+            <select id="filter-project" class="filter-select">
+              <option value="">All Projects</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
+          </div>
+          <div class="table-stats">
+            <span id="item-count-label">0 items</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+          <table class="data-table" id="items-table">
+            <thead id="items-thead">
+              <tr id="items-thead-row"></tr>
+            </thead>
+            <tbody id="items-tbody">
+            </tbody>
+          </table>
+          <div class="empty-state hidden" id="empty-state">
+            <div class="empty-state-icon">&#128196;</div>
+            <div class="empty-state-title">No items found</div>
+            <div class="empty-state-msg" id="empty-state-msg">Create your first item to get started.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard page -->
+      <section class="page" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-title-row">
+            <h1 class="page-title">Dashboard</h1>
+          </div>
+        </div>
+        <div class="dashboard-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Items</div>
+            <div class="stat-value" id="dash-total">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Open</div>
+            <div class="stat-value accent" id="dash-open">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value" id="dash-inprogress">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Closed</div>
+            <div class="stat-value muted" id="dash-closed">0</div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">By Status</h3>
+            <div class="chart-body" id="chart-status"></div>
+            <div class="chart-legend" id="legend-status"></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">By Type</h3>
+            <div class="chart-body" id="chart-type"></div>
+            <div class="chart-legend" id="legend-type"></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">By Priority</h3>
+            <div class="chart-body" id="chart-priority"></div>
+            <div class="chart-legend" id="legend-priority"></div>
+          </div>
+          <div class="chart-card chart-card-wide">
+            <h3 class="chart-title">Items Created Over Time</h3>
+            <div class="chart-body" id="chart-timeline"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings page -->
+      <section class="page" id="page-settings">
+        <div class="page-header">
+          <div class="page-title-row">
+            <h1 class="page-title">Settings</h1>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3 class="settings-section-title">Appearance</h3>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span>Theme</span>
+                <span class="settings-hint">Color scheme preference</span>
+              </div>
+              <div class="theme-toggle-group" id="theme-toggle-group">
+                <button class="theme-btn" data-theme="light">Light</button>
+                <button class="theme-btn active" data-theme="system">System</button>
+                <button class="theme-btn" data-theme="dark">Dark</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3 class="settings-section-title">Data</h3>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span>Export Data</span>
+                <span class="settings-hint">Download all items as JSON</span>
+              </div>
+              <button class="btn btn-ghost" id="btn-export">Export JSON</button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span>Import Data</span>
+                <span class="settings-hint">Load items from a JSON file</span>
+              </div>
+              <button class="btn btn-ghost" id="btn-import">Import JSON</button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span>Clear All Data</span>
+                <span class="settings-hint danger-hint">Permanently delete all items</span>
+              </div>
+              <button class="btn btn-danger" id="btn-clear-all">Clear All Data</button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3 class="settings-section-title">Demo Data</h3>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span>Load Demo Items</span>
+                <span class="settings-hint">Populate with sample bugs and features</span>
+              </div>
+              <button class="btn btn-ghost" id="btn-load-demo">Load Demo Data</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Confirm modal -->
+  <div class="modal-overlay hidden" id="modal-confirm">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-confirm-title">Confirm</h3>
+      </div>
+      <div class="modal-body">
+        <p id="modal-confirm-msg"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="modal-confirm-cancel">Cancel</button>
+        <button class="btn btn-danger" id="modal-confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import options modal -->
+  <div class="modal-overlay hidden" id="modal-import">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Import JSON</h3>
+      </div>
+      <div class="modal-body">
+        <p>How should the imported data be handled?</p>
+        <div class="import-options">
+          <label class="import-option">
+            <input type="radio" name="import-mode" value="merge" checked />
+            <div>
+              <strong>Merge</strong>
+              <span>Add new items; update existing items by ID</span>
+            </div>
+          </label>
+          <label class="import-option">
+            <input type="radio" name="import-mode" value="replace" />
+            <div>
+              <strong>Replace</strong>
+              <span>Delete all current data and load the file</span>
+            </div>
+          </label>
+        </div>
+        <div id="import-validation-msg" class="import-validation hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="modal-import-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-import-ok">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update log modal -->
+  <div class="modal-overlay hidden" id="modal-log">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-log-title">Update Log</h3>
+          <div class="modal-log-subtitle" id="modal-log-subtitle"></div>
+        </div>
+        <button class="btn-icon" id="modal-log-close" title="Close">&#10005;</button>
+      </div>
+      <div class="modal-body modal-log-body">
+        <div class="log-entries" id="log-entries">
+          <div class="log-empty hidden" id="log-empty">No log entries yet.</div>
+        </div>
+        <div class="log-add">
+          <label class="log-add-label">Add Note</label>
+          <textarea id="log-note-input" class="log-note-input" rows="3" placeholder="What happened? What changed? Any context..."></textarea>
+          <div class="log-add-actions">
+            <button class="btn btn-primary" id="btn-add-log-entry">Add Note</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk action bar -->
+  <div class="bulk-bar hidden" id="bulk-bar">
+    <span class="bulk-bar-count" id="bulk-bar-count"></span>
+    <div class="bulk-bar-actions">
+      <button class="btn btn-ghost btn-sm" id="btn-deselect-all">Deselect All</button>
+      <button class="btn btn-primary btn-sm" id="btn-export-selected">Export Selected</button>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast hidden" id="toast"></div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="file-import-input" accept=".json" style="display:none" />
+
+  <script src="app.js"></script>
+</body>
+</html>
