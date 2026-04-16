@@ -43,7 +43,12 @@
         <div class="page-header">
           <div class="page-title-row">
             <h1 class="page-title">Items</h1>
-            <button class="btn btn-primary" id="btn-new-item">+ New Item</button>
+            <div class="page-title-btns">
+              <button class="btn btn-ghost" id="btn-refresh" title="Reload items from database">&#8635; Refresh</button>
+              <button class="btn btn-ghost" id="btn-quick-export" title="Export JSON to saved location">&#8659; Export</button>
+              <button class="btn btn-ghost" id="btn-bulk-add">Bulk Add</button>
+              <button class="btn btn-primary" id="btn-new-item">+ New Item</button>
+            </div>
           </div>
         </div>
 
@@ -98,8 +103,7 @@
               </div>
               <div class="form-group form-group-half">
                 <label for="form-project">Project</label>
-                <input type="text" id="form-project" placeholder="e.g. Website, Mobile App" list="project-datalist" />
-                <datalist id="project-datalist"></datalist>
+                <input type="text" id="form-project" placeholder="e.g. Website, Mobile App" />
               </div>
               <div class="form-group">
                 <label for="form-description">Description</label>
@@ -121,24 +125,17 @@
             <button class="btn-icon search-clear hidden" id="btn-search-clear" title="Clear search">&#10005;</button>
           </div>
           <div class="filter-wrap">
-            <select id="filter-type" class="filter-select">
-              <option value="">All Types</option>
-            </select>
-            <select id="filter-status" class="filter-select">
-              <option value="">All Statuses</option>
-            </select>
-            <select id="filter-priority" class="filter-select">
-              <option value="">All Priorities</option>
-            </select>
-            <select id="filter-project" class="filter-select">
-              <option value="">All Projects</option>
-            </select>
+            <div id="col-config-dd"></div>
+            <button class="btn btn-ghost btn-sm" id="btn-text-wrap">Wrap</button>
             <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
           </div>
           <div class="table-stats">
             <span id="item-count-label">0 items</span>
           </div>
         </div>
+
+        <!-- Saved views bar -->
+        <div class="views-bar" id="views-bar"></div>
 
         <!-- Table -->
         <div class="table-wrap">
@@ -200,8 +197,20 @@
             <div class="chart-legend" id="legend-priority"></div>
           </div>
           <div class="chart-card chart-card-wide">
-            <h3 class="chart-title">Items Created Over Time</h3>
-            <div class="chart-body" id="chart-timeline"></div>
+            <div class="chart-title-row">
+              <h3 class="chart-title">Items Created Over Time</h3>
+              <div class="timeline-toggle-group">
+                <button class="timeline-btn" data-tl-view="day">Day</button>
+                <button class="timeline-btn" data-tl-view="week">Week</button>
+                <button class="timeline-btn active" data-tl-view="month">Month</button>
+                <button class="timeline-btn" data-tl-view="year">Year</button>
+              </div>
+            </div>
+            <div class="chart-body timeline-chart-body" id="chart-timeline"></div>
+          </div>
+          <div class="chart-card chart-card-wide">
+            <h3 class="chart-title">Longest Running Open Items</h3>
+            <div class="chart-body" id="lifetime-list"></div>
           </div>
         </div>
       </section>
@@ -235,9 +244,12 @@
             <div class="settings-row">
               <div class="settings-label">
                 <span>Export Data</span>
-                <span class="settings-hint">Download all items as JSON</span>
+                <span class="settings-hint hidden" id="export-path-hint"></span>
               </div>
-              <button class="btn btn-ghost" id="btn-export">Export JSON</button>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="btn btn-ghost" id="btn-export">Export JSON</button>
+                <button class="btn btn-ghost hidden" id="btn-export-change" title="Save to a different file">Change&hellip;</button>
+              </div>
             </div>
             <div class="settings-row">
               <div class="settings-label">
@@ -253,6 +265,12 @@
               </div>
               <button class="btn btn-danger" id="btn-clear-all">Clear All Data</button>
             </div>
+          </div>
+
+          <div class="settings-card">
+            <h3 class="settings-section-title">Custom Options</h3>
+            <p class="settings-hint" style="margin-bottom:12px">Manage available values for Type, Status, and Priority. Click &times; to remove, type and press Enter or Add to create.</p>
+            <div id="custom-options-container"></div>
           </div>
 
           <div class="settings-card">
@@ -320,6 +338,28 @@
     </div>
   </div>
 
+  <!-- Bulk Add modal -->
+  <div class="modal-overlay hidden" id="modal-bulk-add">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3>Bulk Add Items</h3>
+          <div class="modal-log-subtitle">One item per line, values separated by <code>-</code></div>
+        </div>
+        <button class="btn-icon" id="modal-bulk-add-close" title="Close">&#10005;</button>
+      </div>
+      <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+        <div id="bulk-add-config"></div>
+        <textarea id="bulk-add-input" class="log-note-input" rows="10" placeholder="Paste your items here, one per line..."></textarea>
+        <div id="bulk-add-preview" class="bulk-add-preview hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="modal-bulk-add-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-bulk-add-ok">Add Items</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Update log modal -->
   <div class="modal-overlay hidden" id="modal-log">
     <div class="modal modal-lg">
@@ -331,9 +371,7 @@
         <button class="btn-icon" id="modal-log-close" title="Close">&#10005;</button>
       </div>
       <div class="modal-body modal-log-body">
-        <div class="log-entries" id="log-entries">
-          <div class="log-empty hidden" id="log-empty">No log entries yet.</div>
-        </div>
+        <div class="log-entries" id="log-entries"></div>
         <div class="log-add">
           <label class="log-add-label">Add Note</label>
           <textarea id="log-note-input" class="log-note-input" rows="3" placeholder="What happened? What changed? Any context..."></textarea>
@@ -350,7 +388,24 @@
     <span class="bulk-bar-count" id="bulk-bar-count"></span>
     <div class="bulk-bar-actions">
       <button class="btn btn-ghost btn-sm" id="btn-deselect-all">Deselect All</button>
-      <button class="btn btn-primary btn-sm" id="btn-export-selected">Export Selected</button>
+      <button class="btn btn-primary btn-sm" id="btn-export-selected">Copy to Clipboard</button>
+    </div>
+  </div>
+
+  <!-- Save view modal -->
+  <div class="modal-overlay hidden" id="modal-save-view">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Save Current View</h3>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:10px;color:var(--text-muted);font-size:13px">Saves current filters, search, and sort as a quick-access button.</p>
+        <input type="text" id="save-view-name" placeholder="View name (e.g. High Priority Open)…" style="width:100%;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;outline:none" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="modal-save-view-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-save-view-ok">Save View</button>
+      </div>
     </div>
   </div>
 
@@ -359,6 +414,9 @@
 
   <!-- Hidden file input for import -->
   <input type="file" id="file-import-input" accept=".json" style="display:none" />
+
+  <!-- Datalist for project autocomplete — must be at body level so it works even when form panel is hidden -->
+  <datalist id="project-datalist"></datalist>
 
   <script src="app.js"></script>
 </body>

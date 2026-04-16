@@ -33,6 +33,30 @@ const CHART_COLORS = [
   '#F5C800','#4a9fd4','#4caf79','#e05555','#a070d6','#e08a30','#56b8b8','#c8745a'
 ];
 
+const BULK_FIELD_META = {
+  title:    { label: 'Title',    required: true },
+  type:     { label: 'Type' },
+  status:   { label: 'Status' },
+  priority: { label: 'Priority' },
+  project:  { label: 'Project' },
+  assignee: { label: 'Assignee' },
+};
+
+const DEFAULT_CUSTOM_OPTIONS = {
+  type:     ['Bug','Feature','Enhancement','Task','Question'],
+  status:   ['Open','In Progress','Review','Closed',"Won't Fix"],
+  priority: ['Critical','High','Medium','Low'],
+};
+
+const DEFAULT_BULK_ADD_FIELDS = [
+  { key: 'title',    active: true },
+  { key: 'type',     active: true },
+  { key: 'status',   active: true },
+  { key: 'priority', active: true },
+  { key: 'project',  active: true },
+  { key: 'assignee', active: false },
+];
+
 const DEMO_DATA = [
   { title:'Login page crashes on Safari',    project:'Website',    type:'Bug',         status:'Open',       priority:'Critical', assignee:'Alice', description:'Clicking the login button on Safari 16 throws a TypeError. Reproducible on iOS and macOS.' },
   { title:'Add dark mode toggle',            project:'Website',    type:'Feature',     status:'In Progress',priority:'High',     assignee:'Bob',   description:'Users have requested a dark mode. Should persist to localStorage.' },
@@ -51,15 +75,33 @@ let db = null;
 let state = {
   items: [],
   filteredItems: [],
-  sortKey: 'id',
-  sortDir: 'desc',
+  sortKeys: [{ key: 'id', dir: 'desc' }],
   searchQuery: '',
-  filterType: '',
-  filterStatus: '',
-  filterPriority: '',
-  filterProject: '',
+  // Each Set holds values to EXCLUDE. Empty set = show all.
+  filterExcl: {
+    type:     new Set(),
+    status:   new Set(),
+    priority: new Set(),
+    project:  new Set(),
+  },
   selected: new Set(),
+  customOptions: {
+    type:     [...DEFAULT_CUSTOM_OPTIONS.type],
+    status:   [...DEFAULT_CUSTOM_OPTIONS.status],
+    priority: [...DEFAULT_CUSTOM_OPTIONS.priority],
+  },
+  colFrozen: {}, // { [colKey]: true }
+  bulkAddFields: DEFAULT_BULK_ADD_FIELDS.map(f => ({ ...f })),
+  colOrder: COLUMN_DEFS.map(c => c.key), // display order of all columns
+  colHidden: new Set(),                   // keys of hidden columns
+  colWidths: {},                          // { [key]: px width override }
+  textWrap: false,
+  exportHandle: null,                     // FileSystemFileHandle for quick re-export
+  timelineView: 'month',                  // 'day' | 'week' | 'month' | 'year'
+  savedViews: [],                         // [{ id, name, filterExcl, searchQuery, sortKeys }]
 };
+let openColPanel = false;
+let openHeaderPanel = null; // { key, el }
 let settings = { theme: 'system' };
 let nextId = 1;
 let pendingImportData = null;
@@ -144,6 +186,39 @@ function fmtDateTime(iso) {
   return d.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function getTimelineKey(isoDate, view) {
+  if (!isoDate) return '';
+  const d = new Date(isoDate); // local timezone (Central for user)
+  if (view === 'day') {
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+  if (view === 'week') {
+    const sun = new Date(d);
+    sun.setHours(0, 0, 0, 0);
+    sun.setDate(sun.getDate() - sun.getDay()); // back to Sunday
+    return `${sun.getFullYear()}-${pad2(sun.getMonth()+1)}-${pad2(sun.getDate())}`;
+  }
+  if (view === 'month') {
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+  }
+  if (view === 'year') {
+    return `${d.getFullYear()}`;
+  }
+  return '';
+}
+
+function fmtTimelineLabel(key, view) {
+  if (view === 'year') return key;
+  const parts = key.split('-').map(Number);
+  if (view === 'month') {
+    return new Date(parts[0], parts[1]-1, 1).toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
+  }
+  // day or week — show month + day
+  return new Date(parts[0], parts[1]-1, parts[2]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function escHtml(str) {
   if (str == null) return '';
   return String(str)
@@ -172,11 +247,108 @@ async function loadData() {
 async function loadSettings() {
   const rows = await dbGetAll(STORE_SETTINGS);
   rows.forEach(r => { settings[r.key] = r.value; });
+  if (settings.colFrozen) state.colFrozen = settings.colFrozen;
+  if (settings.colOrder) {
+    const validKeys = new Set(COLUMN_DEFS.map(c => c.key));
+    const saved = settings.colOrder.filter(k => validKeys.has(k));
+    const savedSet = new Set(saved);
+    const missing = COLUMN_DEFS.filter(c => !savedSet.has(c.key)).map(c => c.key);
+    state.colOrder = [...saved, ...missing];
+  }
+  if (settings.colHidden) state.colHidden = new Set(settings.colHidden.filter(k => k !== 'title'));
+  if (settings.colWidths) state.colWidths = settings.colWidths;
+  if (settings.textWrap !== undefined) state.textWrap = settings.textWrap;
+  if (settings.exportFileHandle) state.exportHandle = settings.exportFileHandle;
+  if (settings.timelineView) state.timelineView = settings.timelineView;
+  if (Array.isArray(settings.savedViews)) state.savedViews = settings.savedViews;
+  if (settings.bulkAddFields) {
+    // Merge saved fields with DEFAULT to pick up any new fields added later
+    const saved = settings.bulkAddFields;
+    const savedKeys = new Set(saved.map(f => f.key));
+    const merged = [...saved];
+    DEFAULT_BULK_ADD_FIELDS.forEach(df => {
+      if (!savedKeys.has(df.key)) merged.push({ ...df });
+    });
+    state.bulkAddFields = merged.filter(f => BULK_FIELD_META[f.key]);
+  }
+  if (settings.customOptions) {
+    for (const k of ['type', 'status', 'priority']) {
+      if (Array.isArray(settings.customOptions[k]) && settings.customOptions[k].length > 0) {
+        state.customOptions[k] = settings.customOptions[k];
+      }
+    }
+  }
+  if (settings.viewState) {
+    const vs = settings.viewState;
+    if (vs.searchQuery !== undefined) state.searchQuery = vs.searchQuery;
+    if (Array.isArray(vs.sortKeys) && vs.sortKeys.length) {
+      state.sortKeys = vs.sortKeys;
+    } else if (vs.sortKey) {
+      // backward-compat with old format
+      state.sortKeys = [{ key: vs.sortKey, dir: vs.sortDir || 'desc' }];
+    }
+    if (vs.filterExcl) {
+      for (const [k, arr] of Object.entries(vs.filterExcl)) {
+        if (state.filterExcl[k]) state.filterExcl[k] = new Set(arr);
+      }
+    }
+  }
 }
 
 async function saveSetting(key, value) {
   settings[key] = value;
   await dbPut(STORE_SETTINGS, { key, value });
+}
+
+// ── Column helpers ────────────────────────────────────────────
+function getVisibleCols() {
+  return state.colOrder
+    .map(key => COLUMN_DEFS.find(c => c.key === key))
+    .filter(col => col && !state.colHidden.has(col.key));
+}
+
+function getColWidth(col) {
+  return state.colWidths[col.key] ?? col.width;
+}
+
+function getColOptions(key) {
+  if (key === 'type')     return ['', ...state.customOptions.type];
+  if (key === 'status')   return state.customOptions.status;
+  if (key === 'priority') return ['', ...state.customOptions.priority];
+  return COLUMN_DEFS.find(c => c.key === key)?.options || [];
+}
+
+function populateFormSelects() {
+  const typeEl     = document.getElementById('form-type');
+  const statusEl   = document.getElementById('form-status');
+  const priorityEl = document.getElementById('form-priority');
+  if (!typeEl) return;
+
+  const typeVal     = typeEl.value;
+  const statusVal   = statusEl.value;
+  const priorityVal = priorityEl.value;
+
+  typeEl.innerHTML = '<option value="">-- Select --</option>' +
+    state.customOptions.type.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+  statusEl.innerHTML = '<option value="">-- Select --</option>' +
+    state.customOptions.status.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+  priorityEl.innerHTML = '<option value="">-- None --</option>' +
+    state.customOptions.priority.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+
+  if (typeVal)     typeEl.value     = typeVal;
+  if (statusVal)   statusEl.value   = statusVal;
+  if (priorityVal) priorityEl.value = priorityVal;
+}
+
+function saveViewState() {
+  // Fire-and-forget; don't await
+  saveSetting('viewState', {
+    searchQuery: state.searchQuery,
+    sortKeys:    state.sortKeys,
+    filterExcl:  Object.fromEntries(
+      Object.entries(state.filterExcl).map(([k, v]) => [k, [...v]])
+    ),
+  });
 }
 
 // ── Theme ─────────────────────────────────────────────────────
@@ -297,6 +469,68 @@ async function handleDelete(id) {
   });
 }
 
+// ── Project autocomplete dropdown ─────────────────────────────
+function attachProjectDropdown(input) {
+  let dropdown = null;
+
+  function getProjects(filter) {
+    const all = [...new Set(state.items.map(i => i.project || '').filter(Boolean))].sort();
+    if (!filter) return all;
+    const q = filter.toLowerCase();
+    return all.filter(p => p.toLowerCase().includes(q));
+  }
+
+  function removeDropdown() {
+    if (dropdown) { dropdown.remove(); dropdown = null; }
+  }
+
+  function showDropdown() {
+    removeDropdown();
+    const opts = getProjects(input.value.trim());
+    if (!opts.length) return;
+
+    dropdown = document.createElement('div');
+    dropdown.className = 'project-dropdown';
+
+    opts.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'project-dropdown-item';
+      item.textContent = p;
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // keep focus on input so blur doesn't fire first
+        input.value = p;
+        removeDropdown();
+        input.dispatchEvent(new Event('input', { bubbles: true })); // trigger any live previews
+      });
+      dropdown.appendChild(item);
+    });
+
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top    = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left   = (rect.left   + window.scrollX) + 'px';
+    dropdown.style.width  = rect.width + 'px';
+    document.body.appendChild(dropdown);
+  }
+
+  input.addEventListener('focus', showDropdown);
+  input.addEventListener('input', showDropdown);
+  input.addEventListener('blur', () => setTimeout(removeDropdown, 150));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && dropdown) {
+      const first = dropdown.querySelector('.project-dropdown-item');
+      if (first) {
+        input.value = first.textContent;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      removeDropdown();
+      // let Tab continue so focus moves to next field naturally
+    }
+  });
+
+  // Return cleanup so callers can tear it down if needed
+  return removeDropdown;
+}
+
 // ── Inline editing ────────────────────────────────────────────
 function startInlineEdit(td, item, colDef) {
   if (td.querySelector('.cell-input, .cell-select')) return; // already editing
@@ -311,7 +545,7 @@ function startInlineEdit(td, item, colDef) {
   if (colDef.editable === 'select') {
     const sel = document.createElement('select');
     sel.className = 'cell-select';
-    colDef.options.forEach(opt => {
+    getColOptions(colDef.key).forEach(opt => {
       const el = document.createElement('option');
       el.value = opt;
       el.textContent = opt || '— None —';
@@ -330,7 +564,7 @@ function startInlineEdit(td, item, colDef) {
     inp.type = 'text';
     inp.className = 'cell-input';
     inp.value = currentVal;
-    if (colDef.key === 'project') inp.setAttribute('list', 'project-datalist');
+    if (colDef.key === 'project') attachProjectDropdown(inp);
     td.appendChild(inp);
     inp.focus();
     inp.select();
@@ -407,29 +641,36 @@ function updateBulkBar() {
   }
 }
 
-async function exportSelected() {
+async function copySelected() {
   const selectedItems = state.items.filter(i => state.selected.has(i.id));
   if (!selectedItems.length) return;
-  const data = { version: 2, exportedAt: now(), items: selectedItems };
-  const json = JSON.stringify(data, null, 2);
-  const filename = `req-export-selected-${new Date().toISOString().slice(0,10)}.json`;
+
+  const lines = selectedItems.map(item => {
+    const parts = [
+      `#${item.id} — ${item.title}`,
+      [
+        item.project  ? `Project: ${item.project}`   : '',
+        item.type     ? `Type: ${item.type}`          : '',
+        item.status   ? `Status: ${item.status}`      : '',
+        item.priority ? `Priority: ${item.priority}`  : '',
+        item.assignee ? `Assignee: ${item.assignee}`  : '',
+      ].filter(Boolean).join('  |  '),
+    ];
+    if (item.description) parts.push(item.description);
+    if (item.log && item.log.length) {
+      parts.push('Log:');
+      [...item.log].reverse().forEach(e => parts.push(`  [${fmtDateTime(e.ts)}] ${e.note}`));
+    }
+    return parts.join('\n');
+  });
+
+  const text = lines.join('\n\n');
+
   try {
-    const handle = await window.showSaveFilePicker({
-      suggestedName: filename,
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-    });
-    const writable = await handle.createWritable();
-    await writable.write(json);
-    await writable.close();
-    showToast(`Exported ${selectedItems.length} item(s).`, 'success');
-  } catch (err) {
-    if (err.name === 'AbortError') return;
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-    showToast(`Exported ${selectedItems.length} item(s).`, 'success');
+    await navigator.clipboard.writeText(text);
+    showToast(`${selectedItems.length} item${selectedItems.length !== 1 ? 's' : ''} copied to clipboard.`, 'success');
+  } catch {
+    showToast('Clipboard access denied. Try copying from a user gesture.', 'error');
   }
 }
 
@@ -454,18 +695,13 @@ function closeLogModal() {
 
 function renderLogEntries(item) {
   const container = document.getElementById('log-entries');
-  const empty = document.getElementById('log-empty');
   const log = item.log || [];
 
   if (!log.length) {
-    container.innerHTML = '';
-    container.appendChild(empty);
-    empty.classList.remove('hidden');
+    container.innerHTML = '<div class="log-empty">No log entries yet.</div>';
     return;
   }
 
-  empty.classList.add('hidden');
-  // Newest first
   container.innerHTML = [...log].reverse().map(entry => `
     <div class="log-entry">
       <div class="log-entry-ts">${fmtDateTime(entry.ts)}</div>
@@ -509,56 +745,133 @@ async function addLogEntry() {
   showToast('Note added.', 'success');
 }
 
-// ── Filter dropdowns (all dynamic from data) ──────────────────
-function refreshFilters() {
-  // Helper: rebuild one select from unique non-empty values, preserving current selection
-  function rebuild(id, allLabel, values) {
-    const sel = document.getElementById(id);
-    const current = sel.value;
-    sel.innerHTML = `<option value="">${allLabel}</option>` +
-      values.map(v => `<option value="${escHtml(v)}"${v === current ? ' selected' : ''}>${escHtml(v)}</option>`).join('');
-    // If the previously selected value no longer exists in the data, reset the state
-    if (current && !values.includes(current)) sel.value = '';
-  }
+// ── Column header filter panels (Excel-style) ─────────────────
+function closeAllFilterPanels() {
+  closeHeaderPanel();
+  if (openColPanel) { openColPanel = false; buildColsPanel(); }
+}
 
+function closeHeaderPanel() {
+  if (openHeaderPanel) { openHeaderPanel.el.remove(); openHeaderPanel = null; }
+}
+
+function getHeaderFilterValues(key) {
   const items = state.items;
+  if (key === 'type') {
+    const order = state.customOptions.type;
+    return [...order.filter(v => items.some(i => i.type === v)),
+            ...[...new Set(items.map(i => i.type).filter(Boolean))].filter(v => !order.includes(v)).sort()];
+  }
+  if (key === 'status') {
+    const order = state.customOptions.status;
+    return [...order.filter(v => items.some(i => i.status === v)),
+            ...[...new Set(items.map(i => i.status).filter(Boolean))].filter(v => !order.includes(v)).sort()];
+  }
+  if (key === 'priority') {
+    const order = state.customOptions.priority;
+    return [...order.filter(v => items.some(i => i.priority === v)),
+            ...[...new Set(items.map(i => i.priority).filter(Boolean))].filter(v => !order.includes(v)).sort()];
+  }
+  if (key === 'project') {
+    return [...new Set(items.map(i => i.project || '').filter(Boolean))].sort();
+  }
+  return [];
+}
 
-  // Types — preserve logical order where possible, append unknown values
-  const TYPE_ORDER = ['Bug','Feature','Enhancement','Task','Question'];
-  const types = [
-    ...TYPE_ORDER.filter(t => items.some(i => i.type === t)),
-    ...[...new Set(items.map(i => i.type).filter(Boolean))].filter(t => !TYPE_ORDER.includes(t)).sort(),
-  ];
+function showHeaderPanel(col, th) {
+  if (openHeaderPanel?.key === col.key) { closeHeaderPanel(); return; }
+  closeHeaderPanel();
+  if (openColPanel) { openColPanel = false; buildColsPanel(); }
 
-  // Statuses — preserve workflow order
-  const STATUS_ORDER_FILTER = ['Open','In Progress','Review','Closed',"Won't Fix"];
-  const statuses = [
-    ...STATUS_ORDER_FILTER.filter(s => items.some(i => i.status === s)),
-    ...[...new Set(items.map(i => i.status).filter(Boolean))].filter(s => !STATUS_ORDER_FILTER.includes(s)).sort(),
-  ];
+  const values  = getHeaderFilterValues(col.key);
+  const excl    = state.filterExcl[col.key]; // undefined for non-filterable cols
+  const allChecked = !excl || excl.size === 0;
+  const someExcl = excl && excl.size > 0 && excl.size < values.length;
+  const primarySort = state.sortKeys[0];
 
-  // Priorities — preserve severity order
-  const PRI_ORDER = ['Critical','High','Medium','Low'];
-  const priorities = [
-    ...PRI_ORDER.filter(p => items.some(i => i.priority === p)),
-    ...[...new Set(items.map(i => i.priority).filter(Boolean))].filter(p => !PRI_ORDER.includes(p)).sort(),
-  ];
+  const panel = document.createElement('div');
+  panel.className = 'col-header-panel';
 
-  // Projects — alphabetical
-  const projects = [...new Set(items.map(i => i.project || '').filter(Boolean))].sort();
+  panel.innerHTML = `
+    <button class="chp-sort-btn${primarySort?.key === col.key && primarySort.dir === 'asc' ? ' chp-sort-active' : ''}" data-dir="asc">↑ Sort Ascending</button>
+    <button class="chp-sort-btn${primarySort?.key === col.key && primarySort.dir === 'desc' ? ' chp-sort-active' : ''}" data-dir="desc">↓ Sort Descending</button>
+    ${values.length ? `
+      <div class="chp-divider"></div>
+      <div class="chp-filter-rows">
+        <label class="chp-row chp-row-all">
+          <input type="checkbox" class="chp-check-all" ${allChecked ? 'checked' : ''} />
+          <span>Select All</span>
+        </label>
+        ${values.map(v => `
+          <label class="chp-row">
+            <input type="checkbox" class="chp-check" value="${escHtml(v)}" ${!excl || !excl.has(v) ? 'checked' : ''} />
+            <span>${v ? escHtml(v) : '<em>(none)</em>'}</span>
+          </label>`).join('')}
+      </div>` : ''}`;
 
-  rebuild('filter-type',     'All Types',     types);
-  rebuild('filter-status',   'All Statuses',  statuses);
-  rebuild('filter-priority', 'All Priorities', priorities);
-  rebuild('filter-project',  'All Projects',  projects);
+  const rect = th.getBoundingClientRect();
+  panel.style.top  = (rect.bottom + 2) + 'px';
+  panel.style.left = Math.min(rect.left, window.innerWidth - 210) + 'px';
+  document.body.appendChild(panel);
+  openHeaderPanel = { key: col.key, el: panel };
 
-  // Also update the form datalist for project autocomplete
-  const dl = document.getElementById('project-datalist');
-  if (dl) dl.innerHTML = projects.map(p => `<option value="${escHtml(p)}">`).join('');
+  // Set indeterminate on Select All
+  const allBox = panel.querySelector('.chp-check-all');
+  if (allBox && someExcl) allBox.indeterminate = true;
+
+  // Sort buttons
+  panel.querySelectorAll('.chp-sort-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.sortKeys = [{ key: col.key, dir: btn.dataset.dir }];
+      closeHeaderPanel();
+      applyFiltersAndRender();
+    });
+  });
+
+  // Filter checkboxes
+  if (excl) {
+    allBox?.addEventListener('change', (e) => {
+      e.stopPropagation();
+      if (allBox.checked) excl.clear(); else values.forEach(v => excl.add(v));
+      syncHeaderPanelAllBox(panel, values, excl);
+      applyFiltersAndRender();
+    });
+    panel.querySelectorAll('.chp-check').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        e.stopPropagation();
+        if (cb.checked) excl.delete(cb.value); else excl.add(cb.value);
+        syncHeaderPanelAllBox(panel, values, excl);
+        applyFiltersAndRender();
+      });
+    });
+  }
+}
+
+function syncHeaderPanelAllBox(panel, values, excl) {
+  const allBox = panel.querySelector('.chp-check-all');
+  if (!allBox) return;
+  allBox.checked = excl.size === 0;
+  allBox.indeterminate = excl.size > 0 && excl.size < values.length;
+}
+
+function refreshFilters() {
+  // Clean up stale exclusions (values no longer present in data)
+  const items = state.items;
+  const allVals = {
+    type:     [...new Set(items.map(i => i.type).filter(Boolean))],
+    status:   [...new Set(items.map(i => i.status).filter(Boolean))],
+    priority: [...new Set(items.map(i => i.priority).filter(Boolean))],
+    project:  [...new Set(items.map(i => i.project || '').filter(Boolean))],
+  };
+  for (const [field, excl] of Object.entries(state.filterExcl)) {
+    for (const v of [...excl]) { if (!allVals[field]?.includes(v)) excl.delete(v); }
+  }
 }
 
 // ── Filters & Sort ────────────────────────────────────────────
 function applyFiltersAndRender() {
+  saveViewState();
   let items = state.items.slice();
 
   const q = state.searchQuery.toLowerCase();
@@ -572,29 +885,34 @@ function applyFiltersAndRender() {
     );
   }
 
-  if (state.filterType) items = items.filter(i => i.type === state.filterType);
-  if (state.filterStatus) items = items.filter(i => i.status === state.filterStatus);
-  if (state.filterPriority) items = items.filter(i => i.priority === state.filterPriority);
-  if (state.filterProject) items = items.filter(i => (i.project || '') === state.filterProject);
-
-  const key = state.sortKey;
-  const dir = state.sortDir === 'asc' ? 1 : -1;
+  // Exclude any values in the filterExcl sets
+  for (const [field, excl] of Object.entries(state.filterExcl)) {
+    if (excl.size > 0) items = items.filter(i => !excl.has(i[field] || ''));
+  }
 
   items.sort((a, b) => {
-    let av = a[key] ?? '', bv = b[key] ?? '';
-    if (key === 'id') return (a.id - b.id) * dir;
-    if (key === 'status') {
-      const ai = STATUS_ORDER.indexOf(av), bi = STATUS_ORDER.indexOf(bv);
-      return (ai - bi) * dir;
+    for (const { key, dir } of state.sortKeys) {
+      const d = dir === 'asc' ? 1 : -1;
+      let av = a[key] ?? '', bv = b[key] ?? '';
+      let cmp = 0;
+      if (key === 'id') {
+        cmp = a.id - b.id;
+      } else if (key === 'status') {
+        const order = state.customOptions.status;
+        const ai = order.indexOf(av), bi = order.indexOf(bv);
+        cmp = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      } else if (key === 'priority') {
+        const order = [...state.customOptions.priority, ''];
+        const ai = order.indexOf(av === '' ? '' : av), bi = order.indexOf(bv === '' ? '' : bv);
+        cmp = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      } else if (key === 'createdAt' || key === 'updatedAt') {
+        cmp = new Date(av) - new Date(bv);
+      } else {
+        cmp = av.toString().localeCompare(bv.toString());
+      }
+      if (cmp !== 0) return cmp * d;
     }
-    if (key === 'priority') {
-      const ai = PRIORITY_ORDER.indexOf(av === '' ? '' : av), bi = PRIORITY_ORDER.indexOf(bv === '' ? '' : bv);
-      return (ai - bi) * dir;
-    }
-    if (key === 'createdAt' || key === 'updatedAt') {
-      return (new Date(av) - new Date(bv)) * dir;
-    }
-    return av.toString().localeCompare(bv.toString()) * dir;
+    return 0;
   });
 
   state.filteredItems = items;
@@ -603,20 +921,102 @@ function applyFiltersAndRender() {
   renderDashboard();
 }
 
+// ── Freeze columns ────────────────────────────────────────────
+function calcFrozenLeft() {
+  const base = 36 + 80;
+  const offsets = {};
+  let offset = base;
+  for (const col of getVisibleCols()) {
+    if (state.colFrozen[col.key]) {
+      offsets[col.key] = offset;
+      offset += getColWidth(col);
+    }
+  }
+  return offsets;
+}
+
+function isLastFrozen(key) {
+  const frozenKeys = getVisibleCols().filter(c => state.colFrozen[c.key]).map(c => c.key);
+  return frozenKeys.length > 0 && frozenKeys[frozenKeys.length - 1] === key;
+}
+
+function applyFrozenOffsets() {
+  requestAnimationFrame(() => {
+    const table = document.getElementById('items-table');
+    if (!table) return;
+    const checkTh = table.querySelector('thead th.col-check');
+    const actionsTh = table.querySelector('thead th.col-actions');
+    const base = (checkTh ? checkTh.getBoundingClientRect().width : 36) +
+                 (actionsTh ? actionsTh.getBoundingClientRect().width : 80);
+    let offset = base;
+    const frozenCols = getVisibleCols().filter(c => state.colFrozen[c.key]);
+    frozenCols.forEach((col, i) => {
+      const isLast = i === frozenCols.length - 1;
+      const th = table.querySelector(`thead th[data-col="${col.key}"]`);
+      if (!th) return;
+      th.style.left = offset + 'px';
+      th.classList.toggle('col-frozen-last', isLast);
+      table.querySelectorAll(`tbody td[data-col="${col.key}"]`).forEach(td => {
+        td.style.left = offset + 'px';
+        td.classList.toggle('col-frozen-last', isLast);
+      });
+      offset += th.getBoundingClientRect().width;
+    });
+  });
+}
+
+async function toggleFreeze(key) {
+  const vis = getVisibleCols();
+  const idx = vis.findIndex(c => c.key === key);
+  if (idx === -1) return;
+
+  if (!state.colFrozen[key]) {
+    for (let i = 0; i <= idx; i++) state.colFrozen[vis[i].key] = true;
+  } else {
+    for (let i = idx; i < vis.length; i++) delete state.colFrozen[vis[i].key];
+  }
+
+  await saveSetting('colFrozen', state.colFrozen);
+  renderTable();
+}
+
 // ── Table render ──────────────────────────────────────────────
 function renderTableHeader() {
   const tr = document.getElementById('items-thead-row');
   const visibleIds = state.filteredItems.map(i => i.id);
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => state.selected.has(id));
   const someChecked = !allChecked && visibleIds.some(id => state.selected.has(id));
+  const frozenOffsets = calcFrozenLeft();
+
+  // Build sort rank map: colKey → { rank, dir }
+  const sortRank = {};
+  state.sortKeys.forEach((sk, i) => { sortRank[sk.key] = { rank: i + 1, dir: sk.dir }; });
+  const multiSort = state.sortKeys.length > 1;
+
+  // Filterable columns (have filter checkboxes in header panel)
+  const FILTERABLE = new Set(['type', 'status', 'priority', 'project']);
+
   tr.innerHTML = `<th class="col-check">
     <input type="checkbox" class="row-check" id="select-all-check" ${allChecked ? 'checked' : ''} title="Select all" />
   </th><th class="col-actions">Actions</th>` +
-    COLUMN_DEFS.map(col => {
-      const isSort = state.sortKey === col.key;
-      const cls = ['sortable', isSort ? (state.sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : ''].filter(Boolean).join(' ');
-      return `<th class="${cls}" data-col="${col.key}" style="min-width:${col.width}px">
+    getVisibleCols().map(col => {
+      const sr = sortRank[col.key];
+      const isFrozen = !!state.colFrozen[col.key];
+      const frozenLeft = isFrozen ? `left:${frozenOffsets[col.key] ?? 0}px;` : '';
+      const width = getColWidth(col);
+      const hasFilter = FILTERABLE.has(col.key) && state.filterExcl[col.key]?.size > 0;
+      const cls = [
+        'sortable',
+        sr ? (sr.dir === 'asc' ? 'sort-asc' : 'sort-desc') : '',
+        isFrozen ? 'col-data-frozen' : '',
+        isFrozen && isLastFrozen(col.key) ? 'col-frozen-last' : '',
+      ].filter(Boolean).join(' ');
+      return `<th class="${cls}" data-col="${col.key}" style="min-width:${width}px;${frozenLeft}">
         ${escHtml(col.label)}${col.sortable ? '<span class="sort-icon"></span>' : ''}
+        ${sr && multiSort ? `<span class="sort-rank">${sr.rank}</span>` : ''}
+        <button class="col-filter-btn${hasFilter ? ' col-filter-active' : ''}" data-col-filter="${col.key}" title="Sort &amp; Filter">▾</button>
+        <button class="freeze-btn${isFrozen ? ' is-frozen' : ''}" data-freeze="${col.key}" title="${isFrozen ? 'Unfreeze' : 'Freeze'} column">&#128204;</button>
+        <div class="col-resize-handle" data-resize="${col.key}"></div>
       </th>`;
     }).join('');
 
@@ -624,16 +1024,36 @@ function renderTableHeader() {
   const selectAllBox = document.getElementById('select-all-check');
   if (selectAllBox) selectAllBox.indeterminate = someChecked;
 
+  // Column header click — sort (single) or Shift+click (multi-sort)
   tr.querySelectorAll('th[data-col]').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = th.dataset.col;
-      if (state.sortKey === col) {
-        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+    th.addEventListener('click', (e) => {
+      if (e.target.closest('.col-filter-btn, .freeze-btn, .col-resize-handle')) return;
+      const colKey = th.dataset.col;
+      if (e.shiftKey) {
+        const existing = state.sortKeys.find(sk => sk.key === colKey);
+        if (existing) {
+          existing.dir = existing.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sortKeys.push({ key: colKey, dir: 'asc' });
+        }
       } else {
-        state.sortKey = col;
-        state.sortDir = 'asc';
+        if (state.sortKeys.length === 1 && state.sortKeys[0].key === colKey) {
+          state.sortKeys[0].dir = state.sortKeys[0].dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sortKeys = [{ key: colKey, dir: 'asc' }];
+        }
       }
       applyFiltersAndRender();
+    });
+  });
+
+  // Excel-style filter/sort panel per column
+  tr.querySelectorAll('.col-filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const colKey = btn.dataset.colFilter;
+      const col = COLUMN_DEFS.find(c => c.key === colKey);
+      if (col) showHeaderPanel(col, btn.closest('th'));
     });
   });
 
@@ -646,7 +1066,6 @@ function renderTableHeader() {
       } else {
         visibleIds.forEach(id => state.selected.delete(id));
       }
-      // Re-sync row checkboxes without full re-render
       document.querySelectorAll('#items-tbody .row-check').forEach(cb => {
         const id = parseInt(cb.closest('tr').dataset.id, 10);
         cb.checked = state.selected.has(id);
@@ -654,10 +1073,30 @@ function renderTableHeader() {
       updateBulkBar();
     });
   }
+
+  // Freeze toggle buttons
+  tr.querySelectorAll('.freeze-btn[data-freeze]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFreeze(btn.dataset.freeze);
+    });
+  });
+
+  // Resize handles
+  tr.querySelectorAll('.col-resize-handle[data-resize]').forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startColResize(handle.closest('th'), handle.dataset.resize, e.clientX);
+    });
+  });
+
+  applyFrozenOffsets();
 }
 
 function renderTable() {
   renderTableHeader();
+  document.getElementById('items-table')?.classList.toggle('wrap-text', state.textWrap);
   const tbody = document.getElementById('items-tbody');
   const empty = document.getElementById('empty-state');
   const emptyMsg = document.getElementById('empty-state-msg');
@@ -669,7 +1108,7 @@ function renderTable() {
   if (!items.length) {
     tbody.innerHTML = '';
     empty.classList.remove('hidden');
-    const hasFilters = state.searchQuery || state.filterType || state.filterStatus || state.filterPriority || state.filterProject;
+    const hasFilters = state.searchQuery || Object.values(state.filterExcl).some(s => s.size > 0);
     emptyMsg.textContent = hasFilters
       ? 'No items match the current filters.'
       : 'Create your first item to get started.';
@@ -742,10 +1181,18 @@ function buildRow(item) {
   const logCount = (item.log || []).length;
   const logBadge = logCount ? `<span class="log-badge">${logCount}</span>` : '';
   const isSelected = state.selected.has(item.id);
+  const frozenOffsets = calcFrozenLeft();
 
-  const cells = COLUMN_DEFS.map(col => {
-    const editable = col.editable ? ' class="cell-editable"' : '';
-    return `<td data-col="${col.key}"${editable}>${buildCellContent(item, col)}</td>`;
+  const cells = getVisibleCols().map(col => {
+    const isFrozen = !!state.colFrozen[col.key];
+    const isLast = isFrozen && isLastFrozen(col.key);
+    const classes = [
+      col.editable ? 'cell-editable' : '',
+      isFrozen ? 'col-data-frozen' : '',
+      isLast ? 'col-frozen-last' : '',
+    ].filter(Boolean).join(' ');
+    const style = isFrozen ? ` style="left:${frozenOffsets[col.key] ?? 0}px"` : '';
+    return `<td data-col="${col.key}"${classes ? ` class="${classes}"` : ''}${style}>${buildCellContent(item, col)}</td>`;
   }).join('');
 
   return `<tr data-id="${item.id}"${isSelected ? ' class="row-selected"' : ''}>
@@ -768,15 +1215,14 @@ function renderDashboard() {
   const items = state.items;
   const total = items.length;
 
-  const byStatus = {}, byType = {}, byPriority = {}, byMonth = {};
+  const byStatus = {}, byType = {}, byPriority = {}, byTime = {};
 
   items.forEach(item => {
     byStatus[item.status] = (byStatus[item.status] || 0) + 1;
     byType[item.type] = (byType[item.type] || 0) + 1;
     if (item.priority) byPriority[item.priority] = (byPriority[item.priority] || 0) + 1;
-    const d = new Date(item.createdAt);
-    const mk = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    byMonth[mk] = (byMonth[mk] || 0) + 1;
+    const mk = getTimelineKey(item.createdAt, state.timelineView);
+    if (mk) byTime[mk] = (byTime[mk] || 0) + 1;
   });
 
   document.getElementById('dash-total').textContent = total;
@@ -786,8 +1232,10 @@ function renderDashboard() {
 
   renderDonut('chart-status', 'legend-status', byStatus, CHART_COLORS);
   renderDonut('chart-type', 'legend-type', byType, CHART_COLORS);
-  renderBarChart('chart-priority', byPriority, PRIORITY_ORDER.filter(p => p), CHART_COLORS);
-  renderTimeline('chart-timeline', byMonth);
+  renderBarChart('chart-priority', byPriority, state.customOptions.priority, CHART_COLORS);
+  renderTimeline('chart-timeline', byTime, state.timelineView);
+  updateTimelineToggles();
+  renderLifetimeList();
 }
 
 function renderDonut(chartId, legendId, data, colors) {
@@ -843,18 +1291,17 @@ function renderBarChart(chartId, data, order, colors) {
   }).join('')}</div>`;
 }
 
-function renderTimeline(chartId, byMonth) {
+function renderTimeline(chartId, byTime, view) {
   const el = document.getElementById(chartId);
   if (!el) return;
 
-  const keys = Object.keys(byMonth).sort();
+  const keys = Object.keys(byTime).sort();
   if (!keys.length) { el.innerHTML = '<span style="color:var(--text-dim);font-size:12px">No data</span>'; return; }
 
-  const max = Math.max(...Object.values(byMonth), 1);
+  const max = Math.max(...Object.values(byTime), 1);
   el.innerHTML = `<div class="timeline-chart">${keys.map(mk => {
-    const [yr, mo] = mk.split('-');
-    const label = new Date(parseInt(yr), parseInt(mo) - 1, 1).toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
-    const val = byMonth[mk];
+    const label = fmtTimelineLabel(mk, view);
+    const val = byTime[mk];
     const pct = Math.round((val / max) * 100);
     return `<div class="timeline-row">
       <div class="timeline-label">${escHtml(label)}</div>
@@ -864,29 +1311,111 @@ function renderTimeline(chartId, byMonth) {
   }).join('')}</div>`;
 }
 
+function updateTimelineToggles() {
+  document.querySelectorAll('.timeline-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tlView === state.timelineView);
+  });
+}
+
+function renderLifetimeList() {
+  const el = document.getElementById('lifetime-list');
+  if (!el) return;
+
+  const closedStatuses = new Set(['Closed', "Won't Fix"]);
+  const now = Date.now();
+  const open = state.items
+    .filter(i => !closedStatuses.has(i.status))
+    .map(i => ({ ...i, ageDays: Math.floor((now - new Date(i.createdAt)) / 86400000) }))
+    .sort((a, b) => b.ageDays - a.ageDays)
+    .slice(0, 15);
+
+  if (!open.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0">No open items.</div>';
+    return;
+  }
+
+  const maxAge = open[0].ageDays || 1;
+  el.innerHTML = `<div class="lifetime-chart">${open.map(item => {
+    const pct = Math.round((item.ageDays / maxAge) * 100);
+    const age = item.ageDays === 0 ? 'today' : `${item.ageDays}d`;
+    return `<div class="lifetime-row">
+      <div class="lifetime-info">
+        <span class="lifetime-title" title="${escHtml(item.title)}">${escHtml(item.title)}</span>
+        <span class="${badgeClass('status', item.status)} lifetime-badge">${escHtml(item.status)}</span>
+      </div>
+      <div class="lifetime-bar-wrap">
+        <div class="lifetime-bar-track"><div class="lifetime-bar-fill" style="width:${pct}%"></div></div>
+        <span class="lifetime-age">${age}</span>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
 // ── Import / Export ───────────────────────────────────────────
-async function exportJSON() {
+function updateExportPathDisplay() {
+  const hint = document.getElementById('export-path-hint');
+  const changeBtn = document.getElementById('btn-export-change');
+  if (hint) {
+    if (state.exportHandle) {
+      hint.textContent = state.exportHandle.name;
+      hint.classList.remove('hidden');
+    } else {
+      hint.textContent = '';
+      hint.classList.add('hidden');
+    }
+  }
+  if (changeBtn) changeBtn.classList.toggle('hidden', !state.exportHandle);
+}
+
+async function exportJSON(pickNew = false) {
   const data = { version: 2, exportedAt: now(), items: state.items };
   const json = JSON.stringify(data, null, 2);
+
+  // Try reusing saved handle
+  if (!pickNew && state.exportHandle) {
+    try {
+      let perm = await state.exportHandle.queryPermission({ mode: 'readwrite' });
+      if (perm === 'prompt') perm = await state.exportHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        const writable = await state.exportHandle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        showToast(`Saved to ${state.exportHandle.name}`, 'success');
+        return;
+      }
+    } catch {
+      // Handle stale — fall through to picker
+    }
+  }
+
+  // Show save picker
+  if (!window.showSaveFilePicker) {
+    // Browser doesn't support File System Access API — plain download
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `req-tracker.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Exported (download).', 'success');
+    return;
+  }
+
   try {
     const handle = await window.showSaveFilePicker({
-      suggestedName: `req-tracker-export-${new Date().toISOString().slice(0,10)}.json`,
+      suggestedName: state.exportHandle?.name ?? `req-tracker.json`,
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
     });
     const writable = await handle.createWritable();
     await writable.write(json);
     await writable.close();
-    showToast('Exported successfully.', 'success');
+    state.exportHandle = handle;
+    await saveSetting('exportFileHandle', handle);
+    updateExportPathDisplay();
+    showToast(`Saved to ${handle.name}`, 'success');
   } catch (err) {
-    if (err.name === 'AbortError') return;
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `req-tracker-export-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Exported (download fallback).', 'success');
+    if (err.name !== 'AbortError') showToast('Export failed.', 'error');
   }
 }
 
@@ -1007,6 +1536,424 @@ async function loadDemoData() {
   showToast(`Loaded ${added.length} demo items.`, 'success');
 }
 
+// ── Bulk Add ──────────────────────────────────────────────────
+function parseBulkLine(line) {
+  line = line.trim();
+  if (!line) return null;
+  const activeFields = state.bulkAddFields.filter(f => f.active);
+  const parts = line.split(/\s*-\s*/);
+  const item = { title: '', type: '', status: 'Open', priority: '', project: '', assignee: '' };
+  activeFields.forEach((field, i) => {
+    item[field.key] = (parts[i] || '').trim();
+  });
+  if (!item.title.trim()) return null;
+  return item;
+}
+
+function renderBulkAddConfig() {
+  const container = document.getElementById('bulk-add-config');
+  if (!container) return;
+
+  const fields = state.bulkAddFields;
+  const activeFields = fields.filter(f => f.active);
+  const formatStr = activeFields.map(f => BULK_FIELD_META[f.key].label).join(' - ');
+
+  // Build chip HTML with separators between active chips
+  const chips = fields.map((f, i) => {
+    const meta = BULK_FIELD_META[f.key];
+    const cls = ['bulk-chip', f.active ? 'bulk-chip-active' : ''].filter(Boolean).join(' ');
+    return `<div class="${cls}" draggable="true" data-idx="${i}"${meta.required ? ' data-required="true"' : ''} title="${meta.required ? 'Title is required' : (f.active ? 'Click to deactivate' : 'Click to activate')}">${meta.label}</div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="bulk-add-config-wrap">
+      <div class="bulk-config-label">Field order <span class="bulk-config-hint">— drag to reorder, click to toggle on/off</span></div>
+      <div class="bulk-config-chips" id="bulk-config-chips">${chips}</div>
+      <div class="bulk-format-preview">Format: <strong>${formatStr || '(no active fields)'}</strong></div>
+    </div>`;
+
+  const chipsEl = document.getElementById('bulk-config-chips');
+  let dragSrcIdx = null;
+
+  chipsEl.querySelectorAll('.bulk-chip').forEach(chip => {
+    // Click to toggle active/inactive (not for required fields)
+    chip.addEventListener('click', async () => {
+      if (chip.dataset.required) return;
+      const idx = parseInt(chip.dataset.idx, 10);
+      state.bulkAddFields[idx].active = !state.bulkAddFields[idx].active;
+      await saveSetting('bulkAddFields', state.bulkAddFields);
+      renderBulkAddConfig();
+      updateBulkAddPreview();
+    });
+
+    // Drag to reorder
+    chip.addEventListener('dragstart', (e) => {
+      dragSrcIdx = parseInt(chip.dataset.idx, 10);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => chip.classList.add('dragging'), 0);
+    });
+
+    chip.addEventListener('dragend', () => {
+      chip.classList.remove('dragging');
+      chipsEl.querySelectorAll('.bulk-chip').forEach(c => c.classList.remove('drag-over'));
+    });
+
+    chip.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      chipsEl.querySelectorAll('.bulk-chip').forEach(c => c.classList.remove('drag-over'));
+      if (parseInt(chip.dataset.idx, 10) !== dragSrcIdx) chip.classList.add('drag-over');
+    });
+
+    chip.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const destIdx = parseInt(chip.dataset.idx, 10);
+      if (dragSrcIdx === null || dragSrcIdx === destIdx) return;
+      const moved = state.bulkAddFields.splice(dragSrcIdx, 1)[0];
+      state.bulkAddFields.splice(destIdx, 0, moved);
+      dragSrcIdx = null;
+      await saveSetting('bulkAddFields', state.bulkAddFields);
+      renderBulkAddConfig();
+      updateBulkAddPreview();
+    });
+  });
+}
+
+function openBulkAdd() {
+  document.getElementById('bulk-add-input').value = '';
+  document.getElementById('bulk-add-preview').classList.add('hidden');
+  renderBulkAddConfig();
+  document.getElementById('modal-bulk-add').classList.remove('hidden');
+  document.getElementById('bulk-add-input').focus();
+}
+
+function closeBulkAdd() {
+  document.getElementById('modal-bulk-add').classList.add('hidden');
+}
+
+function updateBulkAddPreview() {
+  const lines = document.getElementById('bulk-add-input').value.split('\n');
+  const parsed = lines.map(parseBulkLine).filter(Boolean);
+  const preview = document.getElementById('bulk-add-preview');
+  if (!parsed.length) { preview.classList.add('hidden'); return; }
+  preview.classList.remove('hidden');
+  preview.innerHTML = `<strong>${parsed.length}</strong> item${parsed.length !== 1 ? 's' : ''} will be added.`;
+}
+
+async function executeBulkAdd() {
+  const lines = document.getElementById('bulk-add-input').value.split('\n');
+  const parsed = lines.map(parseBulkLine).filter(Boolean);
+  if (!parsed.length) { showToast('No valid items to add.', 'error'); return; }
+
+  const n = now();
+  for (const raw of parsed) {
+    const item = {
+      id: makeId(),
+      title: raw.title,
+      type: raw.type,
+      status: raw.status || 'Open',
+      priority: raw.priority,
+      assignee: raw.assignee || '',
+      project: raw.project,
+      description: '',
+      log: [],
+      createdAt: n,
+      updatedAt: n,
+    };
+    state.items.push(item);
+    await dbPut(STORE_ITEMS, item);
+  }
+
+  recalcNextId();
+  closeBulkAdd();
+  applyFiltersAndRender();
+  showToast(`Added ${parsed.length} item${parsed.length !== 1 ? 's' : ''}.`, 'success');
+}
+
+// ── Column resize ─────────────────────────────────────────────
+function startColResize(th, key, startX) {
+  const startWidth = th.getBoundingClientRect().width;
+  document.body.classList.add('col-resizing');
+
+  function onMove(e) {
+    const w = Math.max(50, Math.round(startWidth + e.clientX - startX));
+    state.colWidths[key] = w;
+    // Update all cells for this column live
+    document.querySelectorAll(`[data-col="${key}"]`).forEach(el => {
+      el.style.minWidth = w + 'px';
+    });
+  }
+
+  async function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.body.classList.remove('col-resizing');
+    await saveSetting('colWidths', state.colWidths);
+    applyFrozenOffsets();
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+// ── Column config panel ───────────────────────────────────────
+function buildColsPanel() {
+  const container = document.getElementById('col-config-dd');
+  if (!container) return;
+
+  const hiddenCount = state.colHidden.size;
+  container.innerHTML = `
+    <button class="fd-btn${hiddenCount ? ' fd-active' : ''}" id="col-panel-btn">
+      Columns${hiddenCount ? ` <span class="fd-badge">${hiddenCount}</span>` : ''}
+      <span class="fd-chevron">▾</span>
+    </button>
+    <div class="col-panel${openColPanel ? '' : ' hidden'}">
+      <div class="col-panel-header">
+        <span>Show / Reorder</span>
+        <button class="btn btn-ghost btn-sm" id="col-panel-reset">Reset</button>
+      </div>
+      ${state.colOrder.map((key, idx) => {
+        const col = COLUMN_DEFS.find(c => c.key === key);
+        if (!col) return '';
+        const isHidden = state.colHidden.has(key);
+        const isRequired = key === 'title';
+        return `<label class="col-panel-row${isHidden ? ' col-panel-row-dim' : ''}" draggable="true" data-key="${key}" data-pos="${idx}">
+          <span class="col-panel-handle">⠿</span>
+          <span class="col-panel-name">${escHtml(col.label)}</span>
+          <input type="checkbox" class="col-panel-check" data-key="${key}" ${isHidden ? '' : 'checked'} ${isRequired ? 'disabled' : ''} />
+        </label>`;
+      }).join('')}
+    </div>`;
+
+  if (openColPanel) container.classList.add('fd-open');
+  else container.classList.remove('fd-open');
+
+  const panel = container.querySelector('.col-panel');
+
+  container.querySelector('#col-panel-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openColPanel = !openColPanel;
+    if (openColPanel) {
+      closeHeaderPanel();
+    }
+    buildColsPanel();
+  });
+
+  container.querySelector('#col-panel-reset')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    state.colOrder = COLUMN_DEFS.map(c => c.key);
+    state.colHidden = new Set();
+    state.colWidths = {};
+    await saveSetting('colOrder', state.colOrder);
+    await saveSetting('colHidden', []);
+    await saveSetting('colWidths', {});
+    buildColsPanel();
+    renderTable();
+  });
+
+  container.querySelectorAll('.col-panel-check').forEach(cb => {
+    cb.addEventListener('change', async (e) => {
+      e.stopPropagation();
+      const key = cb.dataset.key;
+      if (cb.checked) {
+        state.colHidden.delete(key);
+      } else {
+        state.colHidden.add(key);
+        delete state.colFrozen[key];
+        await saveSetting('colFrozen', state.colFrozen);
+      }
+      await saveSetting('colHidden', [...state.colHidden]);
+      buildColsPanel();
+      renderTable();
+    });
+  });
+
+  if (!panel) return;
+  let dragSrc = null;
+
+  panel.querySelectorAll('.col-panel-row').forEach(row => {
+    row.addEventListener('dragstart', (e) => {
+      dragSrc = parseInt(row.dataset.pos, 10);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => row.classList.add('dragging'), 0);
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      panel.querySelectorAll('.col-panel-row').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      panel.querySelectorAll('.col-panel-row').forEach(r => r.classList.remove('drag-over'));
+      if (parseInt(row.dataset.pos, 10) !== dragSrc) row.classList.add('drag-over');
+    });
+    row.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const dest = parseInt(row.dataset.pos, 10);
+      if (dragSrc === null || dragSrc === dest) return;
+      const moved = state.colOrder.splice(dragSrc, 1)[0];
+      state.colOrder.splice(dest, 0, moved);
+      dragSrc = null;
+      await saveSetting('colOrder', state.colOrder);
+      buildColsPanel();
+      renderTable();
+    });
+  });
+}
+
+// ── Text wrap ─────────────────────────────────────────────────
+async function toggleTextWrap() {
+  state.textWrap = !state.textWrap;
+  await saveSetting('textWrap', state.textWrap);
+  document.getElementById('items-table')?.classList.toggle('wrap-text', state.textWrap);
+  document.getElementById('btn-text-wrap')?.classList.toggle('active', state.textWrap);
+}
+
+// ── Custom Options (Settings) ─────────────────────────────────
+function renderCustomOptions() {
+  const container = document.getElementById('custom-options-container');
+  if (!container) return;
+
+  const fields = [
+    { key: 'type',     label: 'Type' },
+    { key: 'status',   label: 'Status' },
+    { key: 'priority', label: 'Priority' },
+  ];
+
+  container.innerHTML = fields.map(f => `
+    <div class="opt-field-group">
+      <div class="opt-field-label">${escHtml(f.label)}</div>
+      <div class="opt-chips" id="opt-chips-${f.key}">
+        ${state.customOptions[f.key].map((v, i) => `
+          <span class="opt-chip">
+            ${escHtml(v)}
+            <button class="opt-chip-del" data-field="${f.key}" data-idx="${i}" title="Remove">&times;</button>
+          </span>`).join('')}
+      </div>
+      <div class="opt-add-row">
+        <input type="text" class="opt-add-input" id="opt-add-input-${f.key}" placeholder="New ${escHtml(f.label.toLowerCase())} value…" />
+        <button class="btn btn-ghost btn-sm opt-add-btn" data-field="${f.key}">Add</button>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.opt-chip-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const field = btn.dataset.field;
+      const idx = parseInt(btn.dataset.idx, 10);
+      if (state.customOptions[field].length <= 1) {
+        showToast('Must have at least one option.', 'error');
+        return;
+      }
+      state.customOptions[field].splice(idx, 1);
+      await saveSetting('customOptions', state.customOptions);
+      renderCustomOptions();
+      populateFormSelects();
+    });
+  });
+
+  container.querySelectorAll('.opt-add-btn').forEach(btn => {
+    const field = btn.dataset.field;
+    const input = document.getElementById(`opt-add-input-${field}`);
+    const doAdd = async () => {
+      const val = input.value.trim();
+      if (!val) return;
+      if (state.customOptions[field].includes(val)) {
+        showToast(`"${val}" already exists.`, 'error');
+        return;
+      }
+      state.customOptions[field].push(val);
+      await saveSetting('customOptions', state.customOptions);
+      input.value = '';
+      renderCustomOptions();
+      populateFormSelects();
+      showToast(`Added "${val}".`, 'success');
+    };
+    btn.addEventListener('click', doAdd);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { doAdd(); e.preventDefault(); } });
+  });
+}
+
+// ── Refresh data ──────────────────────────────────────────────
+async function refreshData() {
+  await loadData();
+  applyFiltersAndRender();
+  showToast('Refreshed.', 'success');
+}
+
+// ── Saved Views ───────────────────────────────────────────────
+function renderSavedViews() {
+  const bar = document.getElementById('views-bar');
+  if (!bar) return;
+
+  const chips = state.savedViews.map(v => `
+    <button class="view-chip" data-view-id="${escHtml(v.id)}" title="Apply view: ${escHtml(v.name)}">
+      ${escHtml(v.name)}
+      <span class="view-chip-del" data-del-id="${escHtml(v.id)}" title="Delete">&times;</span>
+    </button>`).join('');
+
+  bar.innerHTML = `
+    <span class="views-bar-label">Views</span>
+    <div class="views-chips">${chips}</div>
+    <button class="btn btn-ghost btn-sm" id="btn-save-view">+ Save View</button>`;
+
+  bar.querySelectorAll('.view-chip').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (e.target.closest('.view-chip-del')) return;
+      const view = state.savedViews.find(v => v.id === btn.dataset.viewId);
+      if (view) applyView(view);
+    });
+  });
+
+  bar.querySelectorAll('.view-chip-del').forEach(span => {
+    span.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      state.savedViews = state.savedViews.filter(v => v.id !== span.dataset.delId);
+      await saveSetting('savedViews', state.savedViews);
+      renderSavedViews();
+      showToast('View deleted.', 'success');
+    });
+  });
+
+  document.getElementById('btn-save-view')?.addEventListener('click', () => {
+    document.getElementById('save-view-name').value = '';
+    document.getElementById('modal-save-view').classList.remove('hidden');
+    document.getElementById('save-view-name').focus();
+  });
+}
+
+async function saveCurrentView(name) {
+  const view = {
+    id: 'view-' + Date.now(),
+    name: name.trim(),
+    filterExcl: Object.fromEntries(
+      Object.entries(state.filterExcl).map(([k, v]) => [k, [...v]])
+    ),
+    searchQuery: state.searchQuery,
+    sortKeys: [...state.sortKeys],
+  };
+  state.savedViews.push(view);
+  await saveSetting('savedViews', state.savedViews);
+  renderSavedViews();
+  showToast(`View "${name}" saved.`, 'success');
+}
+
+function applyView(view) {
+  for (const [k, arr] of Object.entries(view.filterExcl || {})) {
+    if (state.filterExcl[k]) state.filterExcl[k] = new Set(arr);
+  }
+  state.searchQuery = view.searchQuery || '';
+  if (Array.isArray(view.sortKeys) && view.sortKeys.length) {
+    state.sortKeys = view.sortKeys;
+  }
+  const searchInput = document.getElementById('search-input');
+  const searchClear = document.getElementById('btn-search-clear');
+  if (searchInput) {
+    searchInput.value = state.searchQuery;
+    searchClear?.classList.toggle('hidden', !state.searchQuery);
+  }
+  applyFiltersAndRender();
+}
+
 // ── Page navigation ───────────────────────────────────────────
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1031,8 +1978,17 @@ function initEventListeners() {
     document.getElementById('sidebar').classList.toggle('collapsed');
   });
 
-  // New item
+  // Refresh
+  document.getElementById('btn-refresh')?.addEventListener('click', refreshData);
+
+  // New item + Bulk Add
   document.getElementById('btn-new-item').addEventListener('click', () => openForm(null));
+  document.getElementById('btn-bulk-add').addEventListener('click', openBulkAdd);
+  document.getElementById('modal-bulk-add-close').addEventListener('click', closeBulkAdd);
+  document.getElementById('modal-bulk-add-cancel').addEventListener('click', closeBulkAdd);
+  document.getElementById('modal-bulk-add-ok').addEventListener('click', executeBulkAdd);
+  document.getElementById('modal-bulk-add').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeBulkAdd(); });
+  document.getElementById('bulk-add-input').addEventListener('input', updateBulkAddPreview);
 
   // Close / cancel form
   document.getElementById('btn-close-form').addEventListener('click', closeForm);
@@ -1056,25 +2012,23 @@ function initEventListeners() {
     applyFiltersAndRender();
   });
 
-  // Filters
-  document.getElementById('filter-type').addEventListener('change', (e) => { state.filterType = e.target.value; applyFiltersAndRender(); });
-  document.getElementById('filter-status').addEventListener('change', (e) => { state.filterStatus = e.target.value; applyFiltersAndRender(); });
-  document.getElementById('filter-priority').addEventListener('change', (e) => { state.filterPriority = e.target.value; applyFiltersAndRender(); });
-  document.getElementById('filter-project').addEventListener('change', (e) => { state.filterProject = e.target.value; applyFiltersAndRender(); });
-
+  // Filters — panels are built by refreshFilters(); just wire up "Clear" and click-outside
   document.getElementById('btn-clear-filters').addEventListener('click', () => {
-    document.getElementById('filter-type').value = '';
-    document.getElementById('filter-status').value = '';
-    document.getElementById('filter-priority').value = '';
-    document.getElementById('filter-project').value = '';
+    Object.values(state.filterExcl).forEach(s => s.clear());
     searchInput.value = '';
-    state.filterType = '';
-    state.filterStatus = '';
-    state.filterPriority = '';
-    state.filterProject = '';
     state.searchQuery = '';
     searchClear.classList.add('hidden');
+    closeAllFilterPanels();
     applyFiltersAndRender();
+  });
+
+  // Close panels when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#col-config-dd') &&
+        !e.target.closest('.col-header-panel') &&
+        !e.target.closest('.col-filter-btn')) {
+      closeAllFilterPanels();
+    }
   });
 
   // Theme
@@ -1087,7 +2041,9 @@ function initEventListeners() {
   });
 
   // Export
-  document.getElementById('btn-export').addEventListener('click', exportJSON);
+  document.getElementById('btn-quick-export')?.addEventListener('click', () => exportJSON());
+  document.getElementById('btn-export').addEventListener('click', () => exportJSON());
+  document.getElementById('btn-export-change')?.addEventListener('click', () => exportJSON(true));
 
   // Import
   document.getElementById('btn-import').addEventListener('click', () => {
@@ -1128,7 +2084,7 @@ function initEventListeners() {
   document.getElementById('btn-clear-all').addEventListener('click', clearAllData);
 
   // Bulk bar
-  document.getElementById('btn-export-selected').addEventListener('click', exportSelected);
+  document.getElementById('btn-export-selected').addEventListener('click', copySelected);
   document.getElementById('btn-deselect-all').addEventListener('click', () => {
     state.selected.clear();
     document.querySelectorAll('#items-tbody .row-check').forEach(cb => { cb.checked = false; });
@@ -1136,6 +2092,36 @@ function initEventListeners() {
     const selectAllBox = document.getElementById('select-all-check');
     if (selectAllBox) { selectAllBox.checked = false; selectAllBox.indeterminate = false; }
     updateBulkBar();
+  });
+
+  // Text wrap toggle
+  document.getElementById('btn-text-wrap')?.addEventListener('click', toggleTextWrap);
+
+  // Timeline view toggles (Day / Week / Month / Year)
+  document.querySelectorAll('.timeline-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      state.timelineView = btn.dataset.tlView;
+      await saveSetting('timelineView', state.timelineView);
+      renderDashboard();
+    });
+  });
+
+  // Save view modal
+  document.getElementById('modal-save-view-cancel')?.addEventListener('click', () => {
+    document.getElementById('modal-save-view').classList.add('hidden');
+  });
+  document.getElementById('modal-save-view-ok')?.addEventListener('click', () => {
+    const name = document.getElementById('save-view-name').value.trim();
+    if (!name) { showToast('Please enter a view name.', 'error'); return; }
+    document.getElementById('modal-save-view').classList.add('hidden');
+    saveCurrentView(name);
+  });
+  document.getElementById('save-view-name')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { document.getElementById('modal-save-view-ok').click(); e.preventDefault(); }
+    if (e.key === 'Escape') { document.getElementById('modal-save-view').classList.add('hidden'); }
+  });
+  document.getElementById('modal-save-view')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
   });
 
   // Demo data
@@ -1179,6 +2165,7 @@ function initEventListeners() {
   // ESC key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (!document.getElementById('modal-bulk-add').classList.contains('hidden')) { closeBulkAdd(); return; }
       if (!document.getElementById('modal-log').classList.contains('hidden')) { closeLogModal(); return; }
       if (!document.getElementById('modal-confirm').classList.contains('hidden')) { closeConfirm(); return; }
       if (!document.getElementById('modal-import').classList.contains('hidden')) {
@@ -1186,6 +2173,7 @@ function initEventListeners() {
         pendingImportData = null;
         return;
       }
+      if (!document.getElementById('modal-save-view').classList.contains('hidden')) { document.getElementById('modal-save-view').classList.add('hidden'); return; }
       if (!document.getElementById('form-panel').classList.contains('hidden')) { closeForm(); return; }
     }
   });
@@ -1199,7 +2187,21 @@ async function init() {
     await loadData();
     applyTheme(settings.theme || 'system');
     initEventListeners();
+    // Restore search input value from persisted view state
+    const searchInput = document.getElementById('search-input');
+    if (searchInput && state.searchQuery) {
+      searchInput.value = state.searchQuery;
+      document.getElementById('btn-search-clear')?.classList.toggle('hidden', !state.searchQuery);
+    }
+    populateFormSelects();
+    renderCustomOptions();
+    renderSavedViews();
+    updateTimelineToggles();
+    attachProjectDropdown(document.getElementById('form-project'));
     applyFiltersAndRender();
+    buildColsPanel();
+    document.getElementById('btn-text-wrap')?.classList.toggle('active', state.textWrap);
+    updateExportPathDisplay();
   } catch (err) {
     console.error('Init error:', err);
     document.getElementById('items-tbody').innerHTML =
