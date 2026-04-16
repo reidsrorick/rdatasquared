@@ -48,6 +48,12 @@ const DEFAULT_CUSTOM_OPTIONS = {
   priority: ['Critical','High','Medium','Low'],
 };
 
+const DEFAULT_OPTION_COLORS = {
+  type:     { Bug: '#e05555', Feature: '#4a9fd4', Enhancement: '#4caf79', Task: '#d4ac00', Question: '#a070d6' },
+  status:   { Open: '#4a9fd4', 'In Progress': '#d4ac00', Review: '#a070d6', Closed: '#888888', "Won't Fix": '#c05050' },
+  priority: { Critical: '#e05555', High: '#e08a30', Medium: '#d4ac00', Low: '#4caf79' },
+};
+
 const DEFAULT_BULK_ADD_FIELDS = [
   { key: 'title',    active: true },
   { key: 'type',     active: true },
@@ -90,6 +96,11 @@ let state = {
     status:   [...DEFAULT_CUSTOM_OPTIONS.status],
     priority: [...DEFAULT_CUSTOM_OPTIONS.priority],
   },
+  optionColors: {
+    type:     { ...DEFAULT_OPTION_COLORS.type },
+    status:   { ...DEFAULT_OPTION_COLORS.status },
+    priority: { ...DEFAULT_OPTION_COLORS.priority },
+  },
   colFrozen: {}, // { [colKey]: true }
   bulkAddFields: DEFAULT_BULK_ADD_FIELDS.map(f => ({ ...f })),
   colOrder: COLUMN_DEFS.map(c => c.key), // display order of all columns
@@ -98,7 +109,9 @@ let state = {
   textWrap: false,
   exportHandle: null,                     // FileSystemFileHandle for quick re-export
   timelineView: 'month',                  // 'day' | 'week' | 'month' | 'year'
+  projectView: 'type',                    // 'type' | 'status'
   savedViews: [],                         // [{ id, name, filterExcl, searchQuery, sortKeys }]
+  activeViewId: null,                     // id of the currently active saved view, or null
 };
 let openColPanel = false;
 let openHeaderPanel = null; // { key, el }
@@ -195,10 +208,10 @@ function getTimelineKey(isoDate, view) {
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   }
   if (view === 'week') {
-    const sun = new Date(d);
-    sun.setHours(0, 0, 0, 0);
-    sun.setDate(sun.getDate() - sun.getDay()); // back to Sunday
-    return `${sun.getFullYear()}-${pad2(sun.getMonth()+1)}-${pad2(sun.getDate())}`;
+    const mon = new Date(d);
+    mon.setHours(0, 0, 0, 0);
+    mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7)); // back to Monday
+    return `${mon.getFullYear()}-${pad2(mon.getMonth()+1)}-${pad2(mon.getDate())}`;
   }
   if (view === 'month') {
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
@@ -232,6 +245,23 @@ function badgeClass(prefix, value) {
   return 'badge badge-' + prefix + '-' + String(value).replace(/[^a-zA-Z0-9]/g, '-');
 }
 
+function injectBadgeStyles() {
+  let style = document.getElementById('badge-styles-dynamic');
+  if (!style) { style = document.createElement('style'); style.id = 'badge-styles-dynamic'; document.head.appendChild(style); }
+  const rules = [];
+  for (const [field, opts] of Object.entries(state.optionColors)) {
+    for (const [val, hex] of Object.entries(opts)) {
+      if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) continue;
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      const cls = 'badge-' + field + '-' + val.replace(/[^a-zA-Z0-9]/g, '-');
+      rules.push(`.${cls} { background: rgba(${r},${g},${b},0.15); color: ${hex}; }`);
+    }
+  }
+  style.textContent = rules.join('\n');
+}
+
 // ── Load / Save ───────────────────────────────────────────────
 async function loadData() {
   const raw = await dbGetAll(STORE_ITEMS);
@@ -260,6 +290,7 @@ async function loadSettings() {
   if (settings.textWrap !== undefined) state.textWrap = settings.textWrap;
   if (settings.exportFileHandle) state.exportHandle = settings.exportFileHandle;
   if (settings.timelineView) state.timelineView = settings.timelineView;
+  if (settings.projectView) state.projectView = settings.projectView;
   if (Array.isArray(settings.savedViews)) state.savedViews = settings.savedViews;
   if (settings.bulkAddFields) {
     // Merge saved fields with DEFAULT to pick up any new fields added later
@@ -275,6 +306,13 @@ async function loadSettings() {
     for (const k of ['type', 'status', 'priority']) {
       if (Array.isArray(settings.customOptions[k]) && settings.customOptions[k].length > 0) {
         state.customOptions[k] = settings.customOptions[k];
+      }
+    }
+  }
+  if (settings.optionColors) {
+    for (const k of ['type', 'status', 'priority']) {
+      if (settings.optionColors[k]) {
+        state.optionColors[k] = { ...state.optionColors[k], ...settings.optionColors[k] };
       }
     }
   }
@@ -392,9 +430,9 @@ function openForm(item) {
   document.getElementById('form-panel-title').textContent = item ? 'Edit Item' : 'New Item';
   document.getElementById('form-id').value = item ? item.id : '';
   document.getElementById('form-title').value = item ? item.title : '';
-  document.getElementById('form-type').value = item ? item.type : '';
-  document.getElementById('form-status').value = item ? item.status : '';
-  document.getElementById('form-priority').value = item ? (item.priority || '') : '';
+  document.getElementById('form-type').value = item ? item.type : 'Task';
+  document.getElementById('form-status').value = item ? item.status : 'Open';
+  document.getElementById('form-priority').value = item ? (item.priority || '') : 'Medium';
   document.getElementById('form-assignee').value = item ? (item.assignee || '') : '';
   document.getElementById('form-project').value = item ? (item.project || '') : '';
   document.getElementById('form-description').value = item ? (item.description || '') : '';
@@ -833,7 +871,13 @@ function showHeaderPanel(col, th) {
   if (excl) {
     allBox?.addEventListener('change', (e) => {
       e.stopPropagation();
-      if (allBox.checked) excl.clear(); else values.forEach(v => excl.add(v));
+      if (allBox.checked) {
+        excl.clear();
+        panel.querySelectorAll('.chp-check').forEach(cb => { cb.checked = true; });
+      } else {
+        values.forEach(v => excl.add(v));
+        panel.querySelectorAll('.chp-check').forEach(cb => { cb.checked = false; });
+      }
       syncHeaderPanelAllBox(panel, values, excl);
       applyFiltersAndRender();
     });
@@ -1235,6 +1279,7 @@ function renderDashboard() {
   renderBarChart('chart-priority', byPriority, state.customOptions.priority, CHART_COLORS);
   renderTimeline('chart-timeline', byTime, state.timelineView);
   updateTimelineToggles();
+  renderByProject();
   renderLifetimeList();
 }
 
@@ -1312,8 +1357,65 @@ function renderTimeline(chartId, byTime, view) {
 }
 
 function updateTimelineToggles() {
-  document.querySelectorAll('.timeline-btn').forEach(btn => {
+  document.querySelectorAll('[data-tl-view]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tlView === state.timelineView);
+  });
+}
+
+function renderByProject() {
+  const el = document.getElementById('chart-by-project');
+  if (!el) return;
+
+  const items = state.items;
+  if (!items.length) { el.innerHTML = '<span style="color:var(--text-dim);font-size:12px">No data</span>'; return; }
+
+  const groupBy = state.projectView; // 'type' | 'status'
+  const keyOrder = groupBy === 'type' ? state.customOptions.type : state.customOptions.status;
+  const keysPresent = keyOrder.filter(k => items.some(i => i[groupBy] === k));
+  const colorMap = Object.fromEntries(keysPresent.map((k, i) => [k, CHART_COLORS[i % CHART_COLORS.length]]));
+
+  const projectMap = {};
+  items.forEach(item => {
+    const proj = item.project?.trim() || '(No Project)';
+    const key = item[groupBy];
+    if (!projectMap[proj]) projectMap[proj] = {};
+    if (key) projectMap[proj][key] = (projectMap[proj][key] || 0) + 1;
+  });
+
+  const projects = Object.entries(projectMap)
+    .map(([name, counts]) => ({ name, counts, total: Object.values(counts).reduce((a, b) => a + b, 0) }))
+    .sort((a, b) => b.total - a.total);
+
+  const maxTotal = projects[0]?.total || 1;
+
+  const legend = keysPresent.map(k =>
+    `<span class="tbp-legend-item"><span class="tbp-dot" style="background:${colorMap[k]}"></span>${escHtml(k)}</span>`
+  ).join('');
+
+  const rows = projects.map(({ name, counts, total }) => {
+    const barPct = (total / maxTotal * 100).toFixed(1);
+    const segs = keysPresent
+      .filter(k => counts[k])
+      .map(k => {
+        const pct = (counts[k] / total * 100).toFixed(1);
+        return `<div class="tbp-seg" style="width:${pct}%;background:${colorMap[k]}" title="${escHtml(k)}: ${counts[k]}"></div>`;
+      }).join('');
+    return `<div class="tbp-row">
+      <div class="tbp-label" title="${escHtml(name)}">${escHtml(name)}</div>
+      <div class="tbp-track-wrap">
+        <div class="tbp-track" style="width:${barPct}%">${segs}</div>
+      </div>
+      <div class="tbp-total">${total}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="tbp-legend">${legend}</div><div class="tbp-rows">${rows}</div>`;
+  updateProjectViewToggles();
+}
+
+function updateProjectViewToggles() {
+  document.querySelectorAll('[data-pbp-view]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.pbpView === state.projectView);
   });
 }
 
@@ -1823,11 +1925,17 @@ function renderCustomOptions() {
     <div class="opt-field-group">
       <div class="opt-field-label">${escHtml(f.label)}</div>
       <div class="opt-chips" id="opt-chips-${f.key}">
-        ${state.customOptions[f.key].map((v, i) => `
-          <span class="opt-chip">
+        ${state.customOptions[f.key].map((v, i) => {
+          const color = state.optionColors[f.key][v] || CHART_COLORS[i % CHART_COLORS.length];
+          return `<span class="opt-chip">
+            <label class="opt-chip-color-wrap" title="Change color">
+              <span class="opt-chip-dot" style="background:${color}"></span>
+              <input type="color" class="opt-chip-color" data-field="${f.key}" data-val="${escHtml(v)}" value="${color}" />
+            </label>
             ${escHtml(v)}
             <button class="opt-chip-del" data-field="${f.key}" data-idx="${i}" title="Remove">&times;</button>
-          </span>`).join('')}
+          </span>`;
+        }).join('')}
       </div>
       <div class="opt-add-row">
         <input type="text" class="opt-add-input" id="opt-add-input-${f.key}" placeholder="New ${escHtml(f.label.toLowerCase())} value…" />
@@ -1835,6 +1943,17 @@ function renderCustomOptions() {
       </div>
     </div>
   `).join('');
+
+  container.querySelectorAll('.opt-chip-color').forEach(input => {
+    input.addEventListener('input', () => {
+      input.previousElementSibling.style.background = input.value;
+      state.optionColors[input.dataset.field][input.dataset.val] = input.value;
+      injectBadgeStyles();
+    });
+    input.addEventListener('change', async () => {
+      await saveSetting('optionColors', state.optionColors);
+    });
+  });
 
   container.querySelectorAll('.opt-chip-del').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -1861,8 +1980,13 @@ function renderCustomOptions() {
         showToast(`"${val}" already exists.`, 'error');
         return;
       }
+      const idx = state.customOptions[field].length;
+      const defaultColor = CHART_COLORS[idx % CHART_COLORS.length];
       state.customOptions[field].push(val);
+      state.optionColors[field][val] = defaultColor;
       await saveSetting('customOptions', state.customOptions);
+      await saveSetting('optionColors', state.optionColors);
+      injectBadgeStyles();
       input.value = '';
       renderCustomOptions();
       populateFormSelects();
@@ -1886,7 +2010,7 @@ function renderSavedViews() {
   if (!bar) return;
 
   const chips = state.savedViews.map(v => `
-    <button class="view-chip" data-view-id="${escHtml(v.id)}" title="Apply view: ${escHtml(v.name)}">
+    <button class="view-chip${state.activeViewId === v.id ? ' active' : ''}" data-view-id="${escHtml(v.id)}" title="${state.activeViewId === v.id ? 'Clear view' : 'Apply view'}: ${escHtml(v.name)}">
       ${escHtml(v.name)}
       <span class="view-chip-del" data-del-id="${escHtml(v.id)}" title="Delete">&times;</span>
     </button>`).join('');
@@ -1899,8 +2023,13 @@ function renderSavedViews() {
   bar.querySelectorAll('.view-chip').forEach(btn => {
     btn.addEventListener('click', (e) => {
       if (e.target.closest('.view-chip-del')) return;
-      const view = state.savedViews.find(v => v.id === btn.dataset.viewId);
-      if (view) applyView(view);
+      const viewId = btn.dataset.viewId;
+      if (state.activeViewId === viewId) {
+        clearView();
+      } else {
+        const view = state.savedViews.find(v => v.id === viewId);
+        if (view) applyView(view);
+      }
     });
   });
 
@@ -1945,12 +2074,29 @@ function applyView(view) {
   if (Array.isArray(view.sortKeys) && view.sortKeys.length) {
     state.sortKeys = view.sortKeys;
   }
+  state.activeViewId = view.id;
   const searchInput = document.getElementById('search-input');
   const searchClear = document.getElementById('btn-search-clear');
   if (searchInput) {
     searchInput.value = state.searchQuery;
     searchClear?.classList.toggle('hidden', !state.searchQuery);
   }
+  renderSavedViews();
+  applyFiltersAndRender();
+}
+
+function clearView() {
+  for (const excl of Object.values(state.filterExcl)) excl.clear();
+  state.searchQuery = '';
+  state.sortKeys = [{ key: 'id', dir: 'desc' }];
+  state.activeViewId = null;
+  const searchInput = document.getElementById('search-input');
+  const searchClear = document.getElementById('btn-search-clear');
+  if (searchInput) {
+    searchInput.value = '';
+    searchClear?.classList.add('hidden');
+  }
+  renderSavedViews();
   applyFiltersAndRender();
 }
 
@@ -1996,6 +2142,12 @@ function initEventListeners() {
 
   // Form submit
   document.getElementById('item-form').addEventListener('submit', handleFormSubmit);
+  document.getElementById('form-panel').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      document.getElementById('item-form').requestSubmit();
+    }
+  });
 
   // Search
   const searchInput = document.getElementById('search-input');
@@ -2098,11 +2250,20 @@ function initEventListeners() {
   document.getElementById('btn-text-wrap')?.addEventListener('click', toggleTextWrap);
 
   // Timeline view toggles (Day / Week / Month / Year)
-  document.querySelectorAll('.timeline-btn').forEach(btn => {
+  document.querySelectorAll('[data-tl-view]').forEach(btn => {
     btn.addEventListener('click', async () => {
       state.timelineView = btn.dataset.tlView;
       await saveSetting('timelineView', state.timelineView);
       renderDashboard();
+    });
+  });
+
+  // By Project view toggles (Type / Status)
+  document.querySelectorAll('[data-pbp-view]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      state.projectView = btn.dataset.pbpView;
+      await saveSetting('projectView', state.projectView);
+      renderByProject();
     });
   });
 
@@ -2193,6 +2354,7 @@ async function init() {
       searchInput.value = state.searchQuery;
       document.getElementById('btn-search-clear')?.classList.toggle('hidden', !state.searchQuery);
     }
+    injectBadgeStyles();
     populateFormSelects();
     renderCustomOptions();
     renderSavedViews();

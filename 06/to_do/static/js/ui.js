@@ -386,8 +386,9 @@ function renderFollowupList(row) {
     });
   });
   el.querySelectorAll(".followup-note-edit").forEach(inp => {
-    const resize = () => { inp.rows = (inp.value.match(/\n/g) || []).length + 1; };
-    resize();
+    // rows gives a safe initial height before paint; scrollHeight takes over on input
+    inp.rows = (inp.value.match(/\n/g) || []).length + 1;
+    const resize = () => { inp.style.height = "auto"; inp.style.height = inp.scrollHeight + "px"; };
     inp.addEventListener("input", resize);
     inp.addEventListener("blur", () => {
       if (!detailRowData) return;
@@ -401,6 +402,22 @@ function renderFollowupList(row) {
       saveRow(detailRowData);
     });
   });
+
+  // Apply scrollHeight sizing once layout is ready (handles long text without explicit newlines)
+  const panel = document.getElementById("detail-panel");
+  const applyScrollHeights = () => {
+    el.querySelectorAll(".followup-note-edit").forEach(inp => {
+      inp.style.height = "auto";
+      inp.style.height = inp.scrollHeight + "px";
+    });
+  };
+  if (panel.classList.contains("open")) {
+    requestAnimationFrame(applyScrollHeights);
+  } else {
+    panel.addEventListener("transitionend", e => {
+      if (e.propertyName === "width") applyScrollHeights();
+    }, { once: true });
+  }
 }
 
 async function logFollowUp() {

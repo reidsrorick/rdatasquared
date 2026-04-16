@@ -62,13 +62,9 @@ function updateCategoryDropdown() {
 
   // "All" checkbox: checked = implicit show-all; unchecked = explicit-all (so user can uncheck cats)
   menu.querySelector(".cat-filter-all-cb").addEventListener("change", e => {
-    if (e.target.checked) {
-      activeCategoryFilters = [];
-      menu.querySelectorAll(".cat-filter-cb:not(.cat-filter-all-cb)").forEach(cb => { cb.checked = true; });
-    } else {
-      activeCategoryFilters = [...cats];
-      menu.querySelectorAll(".cat-filter-cb:not(.cat-filter-all-cb)").forEach(cb => { cb.checked = true; });
-    }
+    activeCategoryFilters = e.target.checked ? [] : [...cats];
+    // Rebuild the dropdown from authoritative state — safer than manually toggling each cb.checked
+    updateCategoryDropdown();
     updateCategoryFilterLabel();
     gridApi?.onFilterChanged();
     saveFiltersToStorage();

@@ -8,11 +8,9 @@ var App = {
     selectedTag:      '',
     bulkDrafts:       [],
     bulkUrlText:      '',
-    favCollapsed:     false,
   },
 
   _pendingConfirm: null,
-  _importMode:     'replace',
 
   // ── INIT ─────────────────────────────────────────────────────────
   init: function () {
@@ -184,30 +182,6 @@ var App = {
         break;
       }
 
-      case 'move-cat-up':
-        e.preventDefault();
-        Data.moveCategoryUp(id);
-        this.render();
-        break;
-
-      case 'move-cat-down':
-        e.preventDefault();
-        Data.moveCategoryDown(id);
-        this.render();
-        break;
-
-      case 'toggle-cat-collapse':
-        e.preventDefault();
-        Data.toggleCategoryCollapsed(id);
-        this.render();
-        break;
-
-      case 'toggle-fav-collapse':
-        e.preventDefault();
-        this.state.favCollapsed = !this.state.favCollapsed;
-        this.render();
-        break;
-
       case 'set-view':
         e.preventDefault();
         this.state.activeView       = value;
@@ -237,26 +211,23 @@ var App = {
 
       case 'export-json':
         e.preventDefault();
-        Storage.exportJSON();
-        UI.toast('Backup downloaded!', 'success');
+        Storage.exportJSON().then(function (saved) {
+          if (saved) { UI.toast('Backup saved!', 'success'); App.render(); }
+        }).catch(function (err) {
+          UI.toast('Export failed: ' + err.message, 'error');
+        });
         break;
 
-      case 'import-json-choose':
+      case 'clear-export-location':
         e.preventDefault();
-        UI.showModal(Pages.importChooseModal());
+        Storage.clearExportHandle().then(function () {
+          App.render();
+          UI.toast('Export location cleared.', 'success');
+        });
         break;
 
-      case 'import-json-replace':
+      case 'import-json':
         e.preventDefault();
-        this._importMode = 'replace';
-        UI.hideModal();
-        document.getElementById('import-file-input').click();
-        break;
-
-      case 'import-json-merge':
-        e.preventDefault();
-        this._importMode = 'merge';
-        UI.hideModal();
         document.getElementById('import-file-input').click();
         break;
 
@@ -284,6 +255,7 @@ var App = {
 
       case 'bulk-remove': {
         e.preventDefault();
+        // Sync current DOM edits back to state so other card edits are preserved
         var allCards = document.querySelectorAll('.bulk-card');
         var synced   = [];
         allCards.forEach(function (card) {
@@ -343,15 +315,11 @@ var App = {
     }
   },
 
-  // ── CHANGE HANDLER ──────────────────────────────────────────────
+  // ── CHANGE HANDLER (checkboxes) ──────────────────────────────────
   handleChange: function (e) {
     var el = e.target;
     if (el.dataset.action === 'toggle-new-tab') {
       Data.updateSettings({ defaultOpenInNewTab: el.checked });
-      UI.toast('Setting saved.', 'success');
-    }
-    if (el.dataset.action === 'toggle-show-urls') {
-      Data.updateSettings({ showUrls: el.checked });
       UI.toast('Setting saved.', 'success');
     }
   },
@@ -416,7 +384,6 @@ var App = {
       notes:        (fd.get('notes')       || '').trim(),
       category:     fd.get('category')     || '',
       parentId:     fd.get('parentId')     || '',
-      iconUrl:      (fd.get('iconUrl')     || '').trim(),
       tags:         tags,
       favorite:     !!fd.get('favorite'),
       openInNewTab: !!fd.get('openInNewTab'),
@@ -444,6 +411,7 @@ var App = {
 
     if (!name) { UI.toast('Category name is required.', 'error'); return; }
 
+    // Check for duplicate name
     var existing = Data.getCategories().filter(function (c) { return c.id !== id; });
     if (existing.some(function (c) { return c.name.toLowerCase() === name.toLowerCase(); })) {
       UI.toast('A category with that name already exists.', 'error'); return;
@@ -469,6 +437,7 @@ var App = {
     var tag = input.value.trim();
     if (!tag) return;
 
+    // Prevent duplicates
     var existing = [];
     wrap.querySelectorAll('.tag-chip').forEach(function (c) { if (c.dataset.tag) existing.push(c.dataset.tag); });
     if (existing.indexOf(tag) !== -1) { input.value = ''; return; }
@@ -532,6 +501,7 @@ var App = {
   openLinkModal: function (link, parentId) {
     var html = Pages.linkModal(link, Data.getCategories(), Data.getLinks(), Data.getSettings(), parentId || '');
     UI.showModal(html);
+    // Focus title input
     setTimeout(function () {
       var ti = document.querySelector('#link-form input[name="title"]');
       if (ti) ti.focus();
@@ -555,47 +525,14 @@ var App = {
   handleImportFile: function (e) {
     var file = e.target.files[0];
     if (!file) return;
-    var mode = App._importMode;
-
-    Storage.importJSON(file).then(function (imported) {
-      if (mode === 'merge') {
-        App._mergeImport(imported);
-        UI.toast('Backup merged successfully!', 'success');
-      } else {
-        Storage.set(imported);
-        Data.reload();
-        UI.toast('Backup imported successfully!', 'success');
-      }
+    Storage.importJSON(file).then(function () {
+      Data.reload();
+      UI.toast('Backup imported successfully!', 'success');
       App.render();
     }).catch(function (err) {
       UI.toast('Import failed: ' + err.message, 'error');
     });
-
     e.target.value = '';
-  },
-
-  _mergeImport: function (imported) {
-    var d = Data.get();
-
-    // Merge categories — add by name if not already present
-    var existingCatNames = d.categories.map(function (c) { return c.name.toLowerCase(); });
-    (imported.categories || []).forEach(function (ic) {
-      if (existingCatNames.indexOf(ic.name.toLowerCase()) === -1) {
-        d.categories.push(Object.assign({}, ic, { id: Data.uid() }));
-        existingCatNames.push(ic.name.toLowerCase());
-      }
-    });
-
-    // Merge links — add by URL if not already present
-    var existingUrls = d.links.map(function (l) { return l.url.toLowerCase(); });
-    (imported.links || []).forEach(function (il) {
-      if (existingUrls.indexOf(il.url.toLowerCase()) === -1) {
-        d.links.push(Object.assign({}, il, { id: Data.uid() }));
-        existingUrls.push(il.url.toLowerCase());
-      }
-    });
-
-    Data.save();
   },
 };
 

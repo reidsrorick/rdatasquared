@@ -46,7 +46,6 @@ const Data = {
       favorite:    !!attrs.favorite,
       openInNewTab: attrs.openInNewTab !== undefined ? !!attrs.openInNewTab : d.settings.defaultOpenInNewTab,
       parentId:    attrs.parentId    || '',
-      iconUrl:     attrs.iconUrl     || '',
       createdAt:   new Date().toISOString(),
       updatedAt:   new Date().toISOString(),
       lastUsed:    '',
@@ -98,7 +97,7 @@ const Data = {
   getCategories() { return this.get().categories; },
 
   addCategory(attrs) {
-    const cat = { id: this.uid(), name: attrs.name || '', color: attrs.color || '#6366f1', collapsed: false };
+    const cat = { id: this.uid(), name: attrs.name || '', color: attrs.color || '#6366f1' };
     this.get().categories.push(cat);
     this.save();
     return cat;
@@ -126,36 +125,6 @@ const Data = {
     this.save();
   },
 
-  moveCategoryUp(id) {
-    const d   = this.get();
-    const idx = d.categories.findIndex(function (c) { return c.id === id; });
-    if (idx <= 0) return;
-    const tmp = d.categories[idx - 1];
-    d.categories[idx - 1] = d.categories[idx];
-    d.categories[idx]     = tmp;
-    this.save();
-  },
-
-  moveCategoryDown(id) {
-    const d   = this.get();
-    const idx = d.categories.findIndex(function (c) { return c.id === id; });
-    if (idx === -1 || idx >= d.categories.length - 1) return;
-    const tmp = d.categories[idx + 1];
-    d.categories[idx + 1] = d.categories[idx];
-    d.categories[idx]     = tmp;
-    this.save();
-  },
-
-  toggleCategoryCollapsed(id) {
-    const d   = this.get();
-    const cat = d.categories.find(function (c) { return c.id === id; });
-    if (cat) {
-      cat.collapsed = !cat.collapsed;
-      this.save();
-    }
-    return cat;
-  },
-
   // ── Settings ───────────────────────────────────────
   getSettings()       { return this.get().settings; },
 
@@ -181,7 +150,6 @@ const Data = {
         favorite:     !!attrs.favorite,
         openInNewTab: attrs.openInNewTab !== undefined ? !!attrs.openInNewTab : d.settings.defaultOpenInNewTab,
         parentId:     attrs.parentId     || '',
-        iconUrl:      attrs.iconUrl      || '',
         createdAt:    now,
         updatedAt:    now,
         lastUsed:     '',

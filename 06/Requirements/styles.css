@@ -1443,6 +1443,10 @@ td.cell-editing { padding: 3px 5px !important; }
   transition: border-color var(--transition), background var(--transition);
 }
 .view-chip:hover { border-color: var(--primary); background: var(--surface-3); }
+.view-chip.active { border-color: var(--primary); background: var(--primary); color: #1a1400; font-weight: 600; }
+.view-chip.active:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.view-chip.active .view-chip-del { color: rgba(0,0,0,0.4); }
+.view-chip.active .view-chip-del:hover { color: rgba(0,0,0,0.8); }
 
 .view-chip-del {
   font-size: 14px;
@@ -1608,6 +1612,64 @@ th:hover .col-filter-btn,
   text-align: right;
 }
 
+/* ── Type by Project chart (#27) ────────────────────────────── */
+.tbp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.tbp-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.tbp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.tbp-rows { width: 100%; }
+.tbp-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+.tbp-label {
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tbp-track-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.tbp-track {
+  display: flex;
+  height: 18px;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 4px;
+}
+.tbp-seg {
+  height: 100%;
+  transition: opacity 0.15s;
+  min-width: 2px;
+}
+.tbp-seg:hover { opacity: 0.75; cursor: default; }
+.tbp-total {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
 /* ── Project autocomplete dropdown ─────────────────────────── */
 .project-dropdown {
   position: absolute;
@@ -1667,6 +1729,33 @@ th:hover .col-filter-btn,
   border-radius: 20px;
   font-size: 12px;
   color: var(--text);
+}
+
+.opt-chip-color-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.opt-chip-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  display: block;
+  transition: transform 0.1s;
+}
+.opt-chip-color-wrap:hover .opt-chip-dot { transform: scale(1.2); }
+.opt-chip-color {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  padding: 0;
+  border: none;
 }
 
 .opt-chip-del {
