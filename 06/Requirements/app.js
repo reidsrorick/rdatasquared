@@ -1526,8 +1526,6 @@ function validateImportData(data) {
   if (!Array.isArray(data.items)) return 'Missing "items" array in JSON.';
   for (const item of data.items) {
     if (typeof item.title !== 'string' || !item.title.trim()) return `Item missing required "title" field.`;
-    if (typeof item.type !== 'string' || !item.type.trim()) return `Item "${item.title}" missing required "type" field.`;
-    if (typeof item.status !== 'string' || !item.status.trim()) return `Item "${item.title}" missing required "status" field.`;
   }
   return null;
 }
