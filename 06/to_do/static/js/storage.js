@@ -164,7 +164,26 @@ function markNotified(id) {
 // Export settings
 // ---------------------------------------------------------------------------
 
-const EXPORT_SETTINGS_KEY = "wt-export-settings";
+const DETAIL_FIELDS_KEY    = "wt-detail-fields";
+const EXPORT_SETTINGS_KEY  = "wt-export-settings";
+const LAST_EXPORT_KEY      = "wt-last-export";
+
+function getLastExportTime() {
+  return localStorage.getItem(LAST_EXPORT_KEY) || null;
+}
+
+function saveLastExportTime() {
+  localStorage.setItem(LAST_EXPORT_KEY, fmtDateTime(new Date()));
+}
+
+function getDetailHiddenFields() {
+  try { return JSON.parse(localStorage.getItem(DETAIL_FIELDS_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function saveDetailHiddenFields(hidden) {
+  localStorage.setItem(DETAIL_FIELDS_KEY, JSON.stringify(hidden));
+}
 
 function getExportSettings() {
   try { return JSON.parse(localStorage.getItem(EXPORT_SETTINGS_KEY) || "{}"); }

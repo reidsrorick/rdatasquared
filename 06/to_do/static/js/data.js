@@ -209,6 +209,13 @@ async function doImport() {
       const data = JSON.parse(text);
       if (!Array.isArray(data.items)) throw new Error("Invalid backup file — expected { items: [...] }");
       items = data.items;
+      if (data.snoozed && typeof data.snoozed === "object") {
+        if (mode === "replace") {
+          snoozedItems = {};
+        }
+        Object.assign(snoozedItems, data.snoozed);
+        saveSnoozedItems();
+      }
     } else if (filename.endsWith(".csv")) {
       items = _parseCSV(text);
     } else {
@@ -295,12 +302,15 @@ function exportData(format) {
     const payload = {
       version:    "1.0",
       exportedAt: fmtDateTime(new Date()),
+      snoozed:    {...snoozedItems},
       items:      getAllItems(),
     };
     _triggerDownload(
       new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
       `work-tracker-${ts}.json`
     );
+    saveLastExportTime();
+    updateLastExportLabel();
     toast("Exported as JSON backup", "info");
 
   } else if (format === "csv") {
@@ -313,6 +323,8 @@ function exportData(format) {
       .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
       .join("\n");
     _triggerDownload(new Blob([csv], { type: "text/csv" }), `work-tracker-${ts}.csv`);
+    saveLastExportTime();
+    updateLastExportLabel();
     toast("Exported as CSV", "info");
   }
 }
@@ -370,6 +382,7 @@ async function exportToDefault() {
     const payload = {
       version:    "1.0",
       exportedAt: fmtDateTime(new Date()),
+      snoozed:    {...snoozedItems},
       items:      getAllItems(),
     };
     content = JSON.stringify(payload, null, 2);
@@ -390,6 +403,8 @@ async function exportToDefault() {
     await writable.write(content);
     await writable.close();
     const folder = settings.folderName || "selected folder";
+    saveLastExportTime();
+    updateLastExportLabel();
     toast(`Exported to ${folder}/${filename}`, "success");
   } catch (err) {
     console.error("Default export failed:", err);
@@ -469,7 +484,7 @@ async function createEntryOnDate(dateStr) {
     description: "", completed: false, date_completed: "",
     last_modified: now, deleted: false,
   };
-  if (activeCategoryFilters.length === 1) newRow.category = activeCategoryFilters[0];
+  if (activeCategoryFilters !== null && activeCategoryFilters.length === 1) newRow.category = activeCategoryFilters[0];
 
   const saved = await saveRow(newRow);
   if (!saved) return;

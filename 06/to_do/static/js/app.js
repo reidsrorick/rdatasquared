@@ -13,7 +13,7 @@
 let gridApi               = null;
 let rowData               = [];
 let activePreset          = "all";
-let activeCategoryFilters = [];    // [] = implicit show-all
+let activeCategoryFilters = null;  // null = show all; [] = show none; [...] = filter to these
 let activeDateFilter      = "all";
 let dateCustomFrom        = "";
 let dateCustomTo          = "";
@@ -34,7 +34,8 @@ let condFmtRules          = [];
 function updateCategoryFilterLabel() {
   const label = document.getElementById("category-filter-label");
   if (!label) return;
-  if (activeCategoryFilters.length === 0) label.textContent = "All Categories";
+  if (activeCategoryFilters === null) label.textContent = "All Categories";
+  else if (activeCategoryFilters.length === 0) label.textContent = "No Category";
   else if (activeCategoryFilters.length === 1) label.textContent = activeCategoryFilters[0];
   else label.textContent = `${activeCategoryFilters.length} Categories`;
 }
@@ -44,7 +45,7 @@ function updateCategoryDropdown() {
   if (!menu) return;
   const cats = [...new Set(rowData.map(r => r.category || "").filter(Boolean))].sort();
 
-  const allChecked = activeCategoryFilters.length === 0;
+  const allChecked = activeCategoryFilters === null;
   menu.innerHTML = `
     <label class="col-picker-item cat-filter-item cat-filter-all">
       <input type="checkbox" class="col-picker-cb cat-filter-cb cat-filter-all-cb"
@@ -55,15 +56,14 @@ function updateCategoryDropdown() {
   ` + cats.map(c => `
     <label class="col-picker-item cat-filter-item">
       <input type="checkbox" class="col-picker-cb cat-filter-cb" data-cat="${esc(c)}"
-             ${(activeCategoryFilters.length === 0 || activeCategoryFilters.includes(c)) ? "checked" : ""} />
+             ${(activeCategoryFilters === null || activeCategoryFilters.includes(c)) ? "checked" : ""} />
       <span>${esc(c)}</span>
     </label>
   `).join("");
 
-  // "All" checkbox: checked = implicit show-all; unchecked = explicit-all (so user can uncheck cats)
+  // "All" checked = null (show everything); unchecked = [] (show nothing, user picks cats)
   menu.querySelector(".cat-filter-all-cb").addEventListener("change", e => {
-    activeCategoryFilters = e.target.checked ? [] : [...cats];
-    // Rebuild the dropdown from authoritative state — safer than manually toggling each cb.checked
+    activeCategoryFilters = e.target.checked ? null : [];
     updateCategoryDropdown();
     updateCategoryFilterLabel();
     gridApi?.onFilterChanged();
@@ -74,15 +74,16 @@ function updateCategoryDropdown() {
   menu.querySelectorAll(".cat-filter-cb:not(.cat-filter-all-cb)").forEach(cb => {
     cb.addEventListener("change", () => {
       const cat = cb.dataset.cat;
-      if (activeCategoryFilters.length === 0) {
+      if (activeCategoryFilters === null) {
+        // Was showing all — unchecking one cat means "all except this"
         activeCategoryFilters = cats.filter(c => c !== cat);
       } else if (cb.checked) {
-        if (!activeCategoryFilters.includes(cat)) activeCategoryFilters.push(cat);
+        if (!activeCategoryFilters.includes(cat)) activeCategoryFilters = [...activeCategoryFilters, cat];
       } else {
         activeCategoryFilters = activeCategoryFilters.filter(c => c !== cat);
       }
-      // "All" is checked only when back in implicit show-all state
-      menu.querySelector(".cat-filter-all-cb").checked = activeCategoryFilters.length === 0;
+      // "All" is checked only in null (show-all) state
+      menu.querySelector(".cat-filter-all-cb").checked = activeCategoryFilters === null;
       updateCategoryFilterLabel();
       gridApi?.onFilterChanged();
       saveFiltersToStorage();
@@ -111,7 +112,7 @@ function activatePreset(preset) {
 }
 
 function clearAllFilters() {
-  activeCategoryFilters = [];
+  activeCategoryFilters = null;
   activeDateFilter      = "all";
   dateCustomFrom        = "";
   dateCustomTo          = "";
@@ -124,7 +125,7 @@ function clearAllFilters() {
   const toEl    = document.getElementById("date-custom-to");
   if (fromEl) fromEl.value = "";
   if (toEl)   toEl.value   = "";
-  document.querySelectorAll(".cat-filter-cb").forEach(cb => { cb.checked = false; });
+  updateCategoryDropdown();
 }
 
 function clearAllFiltersUI() {
@@ -152,9 +153,13 @@ function restoreFiltersFromStorage() {
     gridApi?.setGridOption("quickFilterText", state.quick);
   }
 
-  if (Array.isArray(state.categories) && state.categories.length > 0) {
-    const validCats = new Set(rowData.map(r => r.category || "").filter(Boolean));
-    activeCategoryFilters = state.categories.filter(c => validCats.has(c));
+  if ("categories" in state) {
+    if (state.categories === null) {
+      activeCategoryFilters = null;
+    } else if (Array.isArray(state.categories)) {
+      const validCats = new Set(rowData.map(r => r.category || "").filter(Boolean));
+      activeCategoryFilters = state.categories.filter(c => validCats.has(c));
+    }
     updateCategoryDropdown();
     updateCategoryFilterLabel();
   }
@@ -190,7 +195,7 @@ function seedRowFromFilters() {
     if (activeDateFilter === "today")    seed.date = today;
     if (activeDateFilter === "tomorrow") seed.date = tomorrow;
   }
-  if (activeCategoryFilters.length >= 1) seed.category = activeCategoryFilters[0];
+  if (activeCategoryFilters !== null && activeCategoryFilters.length >= 1) seed.category = activeCategoryFilters[0];
   return seed;
 }
 
@@ -290,6 +295,14 @@ function _updateExportButtonLabel() {
   }
 }
 
+function updateLastExportLabel() {
+  const el = document.getElementById("last-export-label");
+  if (!el) return;
+  const ts = getLastExportTime();
+  el.textContent = ts ? `Last exported: ${ts}` : "";
+  el.style.display = ts ? "" : "none";
+}
+
 // ---------------------------------------------------------------------------
 // Bootstrap — wire all UI events after DOM is ready
 // ---------------------------------------------------------------------------
@@ -312,6 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initGrid();
   initNotifications();
   _updateExportButtonLabel();
+  updateLastExportLabel();
 
   // ── Navbar ──────────────────────────────────────────────────────────────
   document.querySelectorAll(".nav-btn").forEach(btn =>
@@ -389,7 +403,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-bulk-incomplete").addEventListener("click",  () => bulkAction("incomplete"));
   document.getElementById("btn-bulk-hide").addEventListener("click",        () => bulkToggleHide(true));
   document.getElementById("btn-bulk-unhide").addEventListener("click",      () => bulkToggleHide(false));
-  document.getElementById("btn-bulk-snooze")?.addEventListener("click",    bulkSnooze);
+  document.getElementById("btn-bulk-snooze")?.addEventListener("click",         bulkSnooze);
+  document.getElementById("btn-bulk-snooze-confirm")?.addEventListener("click", bulkSnoozeConfirm);
   document.getElementById("btn-bulk-move-today")?.addEventListener("click", bulkMoveToToday);
   document.getElementById("btn-bulk-delete").addEventListener("click",      bulkDelete);
   document.getElementById("btn-deselect").addEventListener("click",         () => gridApi?.deselectAll());
@@ -487,6 +502,62 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-detail-close").addEventListener("click", closeDetailPanel);
   document.getElementById("btn-detail-save").addEventListener("click",  saveDetailPanel);
   document.getElementById("btn-detail-duplicate")?.addEventListener("click", () => { if (detailRowData) duplicateRow(detailRowData); });
+
+  // Detail field picker
+  const DETAIL_FIELD_DEFS = [
+    { id: "category",       label: "Category" },
+    { id: "datetime",       label: "Date & Time" },
+    { id: "sort",           label: "Sort" },
+    { id: "recurrence",     label: "Recurrence" },
+    { id: "description",    label: "Description" },
+    { id: "followup",       label: "Follow-up Log" },
+    { id: "link",           label: "Link / URL" },
+    { id: "date-completed", label: "Date Completed" },
+    { id: "notifications",  label: "Notifications" },
+  ];
+
+  document.getElementById("btn-detail-customize")?.addEventListener("click", e => {
+    e.stopPropagation();
+    const picker = document.getElementById("detail-field-picker");
+    if (!picker) return;
+    if (picker.style.display !== "none") { picker.style.display = "none"; return; }
+
+    const hidden = getDetailHiddenFields();
+    picker.innerHTML = DETAIL_FIELD_DEFS.map(f => `
+      <label class="col-picker-item" style="padding:6px 14px;font-size:13px">
+        <input type="checkbox" class="col-picker-cb" data-field="${esc(f.id)}"
+               ${!hidden[f.id] ? "checked" : ""} style="accent-color:var(--accent);width:14px;height:14px"/>
+        <span>${esc(f.label)}</span>
+      </label>`).join("");
+
+    picker.querySelectorAll("input[data-field]").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const h = getDetailHiddenFields();
+        if (cb.checked) delete h[cb.dataset.field];
+        else h[cb.dataset.field] = true;
+        saveDetailHiddenFields(h);
+        applyDetailFieldVisibility();
+        // Re-apply notification special case if toggled
+        if (cb.dataset.field === "notifications" && detailRowData) {
+          const notifRow = document.getElementById("detail-notif-row");
+          if (cb.checked && "Notification" in window && detailRowData.id) {
+            notifRow.style.display = "";
+          } else {
+            notifRow.style.display = "none";
+          }
+        }
+      });
+    });
+
+    picker.style.display = "";
+  });
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest("#btn-detail-customize") && !e.target.closest("#detail-field-picker")) {
+      const picker = document.getElementById("detail-field-picker");
+      if (picker) picker.style.display = "none";
+    }
+  });
   document.getElementById("btn-detail-date-today")?.addEventListener("click", () => {
     const inp = document.getElementById("detail-date");
     if (inp) inp.value = fmtDate(new Date());
@@ -498,7 +569,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-detail-delete").addEventListener("click", () => {
     if (!detailRowData?.id) return;
     confirm$("Delete item?", `Move "${detailRowData.item || "this item"}" to trash?`, async () => {
-      await fetch(`/api/rows/${detailRowData.id}/delete`, { method: "POST" });
+      const rowToDelete = detailRowData;
+      rowToDelete.deleted = true;
+      await saveRow(rowToDelete);
       toast("Item moved to trash", "info");
       closeDetailPanel();
       await loadRows();

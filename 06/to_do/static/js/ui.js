@@ -52,8 +52,9 @@ function updateRowCount() {
 function updateFilterSummary() {
   const parts = [];
   if (activePreset !== "all") parts.push(document.querySelector(`.preset-btn[data-preset="${activePreset}"]`)?.textContent?.trim() || activePreset);
-  if (activeCategoryFilters.length === 1) parts.push(activeCategoryFilters[0]);
-  else if (activeCategoryFilters.length > 1) parts.push(`${activeCategoryFilters.length} categories`);
+  if (activeCategoryFilters !== null && activeCategoryFilters.length === 0) parts.push("No Category");
+  else if (activeCategoryFilters !== null && activeCategoryFilters.length === 1) parts.push(activeCategoryFilters[0]);
+  else if (activeCategoryFilters !== null && activeCategoryFilters.length > 1) parts.push(`${activeCategoryFilters.length} categories`);
   if (activeDateFilter !== "all") parts.push(document.querySelector(`#date-filter option[value="${activeDateFilter}"]`)?.textContent || activeDateFilter);
   const quick = document.getElementById("quick-filter")?.value;
   if (quick) parts.push(`"${quick}"`);
@@ -152,6 +153,14 @@ function navigateToRow(id) {
 // Detail panel
 // ---------------------------------------------------------------------------
 
+function applyDetailFieldVisibility() {
+  const hidden = getDetailHiddenFields();
+  document.querySelectorAll("[data-detail-field]").forEach(el => {
+    const field = el.dataset.detailField;
+    el.style.display = hidden[field] ? "none" : "";
+  });
+}
+
 function openDetailPanel(row) {
   if (!row) return;
   detailRowData = row;
@@ -178,7 +187,8 @@ function closeDetailPanel() {
     const savedDesc = (detailRowData.description || "").trim();
     if (!savedItem && !savedDesc) {
       const deadRow = detailRowData;
-      fetch(`/api/rows/${deadRow.id}/delete`, { method: "POST" }).catch(() => {});
+      deadRow.deleted = true;
+      saveRow(deadRow);
       rowData = rowData.filter(r => r !== deadRow);
       gridApi?.applyTransaction({ remove: [deadRow] });
       gridApi?.onFilterChanged();
@@ -196,6 +206,7 @@ function autoResizeTextarea(el) {
 
 function populateDetailPanel(row) {
   const itemEl = document.getElementById("detail-item");
+  applyDetailFieldVisibility();
   itemEl.value = row.item || "";
   document.getElementById("detail-category").value       = row.category       || "";
   document.getElementById("detail-date").value           = row.date           || "";
@@ -246,7 +257,8 @@ function populateDetailPanel(row) {
   const notifRow     = document.getElementById("detail-notif-row");
   const notifCb      = document.getElementById("detail-notif-enabled");
   const notifTimeInp = document.getElementById("detail-notif-time");
-  if ("Notification" in window && row.id) {
+  const notifFieldHidden = getDetailHiddenFields()["notifications"];
+  if ("Notification" in window && row.id && !notifFieldHidden) {
     notifRow.style.display = "";
     const enabled = !isNotifDisabled(row.id);
     notifCb.checked = enabled;
@@ -258,12 +270,21 @@ function populateDetailPanel(row) {
     notifRow.style.display = "none";
   }
 
-  const snoozeBtn = document.getElementById("btn-detail-snooze");
+  const snoozeBtn      = document.getElementById("btn-detail-snooze");
+  const snoozeUntilEl  = document.getElementById("detail-snooze-until");
   if (snoozeBtn && row.id) {
     const snoozed = isSnoozeActive(row.id);
     snoozeBtn.textContent = snoozed ? "Unsnooze" : "Snooze";
     snoozeBtn.classList.toggle("btn-warning", !snoozed);
     snoozeBtn.classList.toggle("btn-ghost",    snoozed);
+    if (snoozeUntilEl) {
+      if (snoozed && snoozedItems[row.id]) {
+        snoozeUntilEl.textContent = `Until ${snoozedItems[row.id]}`;
+        snoozeUntilEl.style.display = "";
+      } else {
+        snoozeUntilEl.style.display = "none";
+      }
+    }
   }
 
   const panel = document.getElementById("detail-panel");
@@ -498,10 +519,21 @@ function bulkToggleHide(hide) {
 function bulkSnooze() {
   const selected = gridApi?.getSelectedRows() || [];
   if (!selected.length) return;
-  const until    = new Date(); until.setDate(until.getDate() + 1);
-  const untilStr = fmtDate(until) + " 23:59";
+  const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(8, 0, 0, 0);
+  const dt = document.getElementById("bulk-snooze-until-dt");
+  if (dt) dt.value = fmtDate(tmr) + "T08:00";
+  showModal("modal-bulk-snooze");
+}
+
+function bulkSnoozeConfirm() {
+  const selected = gridApi?.getSelectedRows() || [];
+  if (!selected.length) { hideModal("modal-bulk-snooze"); return; }
+  const dtVal = document.getElementById("bulk-snooze-until-dt")?.value;
+  if (!dtVal) { toast("Please pick a date/time.", "error"); return; }
+  const untilStr = dtVal.replace("T", " ");
   selected.forEach(r => { if (r.id) snoozedItems[r.id] = untilStr; });
   saveSnoozedItems();
+  hideModal("modal-bulk-snooze");
   gridApi?.deselectAll();
   gridApi?.onFilterChanged();
   gridApi?.redrawRows();
@@ -512,7 +544,7 @@ function bulkSnooze() {
     badge.textContent = cnt;
     badge.style.display = cnt > 0 ? "" : "none";
   }
-  toast(`${selected.length} row${selected.length > 1 ? "s" : ""} snoozed until tomorrow.`, "success");
+  toast(`${selected.length} row${selected.length > 1 ? "s" : ""} snoozed until ${untilStr}.`, "success");
 }
 
 async function bulkMoveToToday() {

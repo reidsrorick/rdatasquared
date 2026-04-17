@@ -287,7 +287,7 @@ function passesDateFilter(row) {
 }
 
 function isExternalFilterPresent() {
-  return activePreset !== "all" || activeCategoryFilters.length > 0 || activeDateFilter !== "all"
+  return activePreset !== "all" || activeCategoryFilters !== null || activeDateFilter !== "all"
     || hiddenRowIds.size > 0 || Object.keys(snoozedItems).length > 0 || showSnoozed;
 }
 
@@ -315,7 +315,7 @@ function doesExternalFilterPass(node) {
     case "due_tomorrow": if (row.completed || row.date !== tomorrow) return false; break;
   }
 
-  if (activeCategoryFilters.length > 0 && !activeCategoryFilters.includes(row.category || "")) return false;
+  if (activeCategoryFilters !== null && !activeCategoryFilters.includes(row.category || "")) return false;
   if (!passesDateFilter(row)) return false;
   return true;
 }
@@ -465,15 +465,8 @@ function initGrid() {
       return evalCondFmt(p.data);
     },
 
-    onRowClicked: p => {
-      if (!p.data?.id) return;
-      const colId = p.column?.getColId?.();
-      if (colId === "completed" || colId === "0") return;
-      openDetailPanel(p.data);
-    },
     onCellValueChanged:  onCellValueChanged,
     onSelectionChanged:  onSelectionChanged,
-    onRowDoubleClicked:  p => openDetailPanel(p.data),
     onSortChanged:       () => saveSortToStorage(),
     onGridReady: () => { loadRows(); applyColumnVisibility(); restoreSortFromStorage(); },
 
