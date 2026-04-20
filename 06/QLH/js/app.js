@@ -105,6 +105,13 @@ var App = {
 
     switch (action) {
 
+      case 'toggle-section': {
+        e.preventDefault();
+        var group = btn.closest('.section-group');
+        if (group) group.classList.toggle('collapsed');
+        break;
+      }
+
       case 'open-link':
         if (id) Data.recordUsage(id);
         // Let the href/anchor do its thing

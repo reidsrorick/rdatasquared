@@ -193,14 +193,22 @@ body {
 .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 /* ── SECTION HEADER ── */
-.section-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; margin-top: 1.75rem; }
-.section-header:first-child { margin-top: 0; }
+.section-group { margin-top: 1.75rem; }
+.section-group:first-child { margin-top: 0; }
+.section-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; cursor: pointer; user-select: none; }
 .section-title { font-size: 1.05rem; font-weight: 700; }
 .count-badge {
   background: var(--bg); border: 1px solid var(--border);
   color: var(--text-muted); font-size: 0.725rem; font-weight: 600;
   padding: 0.15rem 0.5rem; border-radius: 999px;
 }
+.section-toggle {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--text-muted); font-size: 0.85rem; line-height: 1;
+  transition: transform 0.15s ease; display: flex; align-items: center;
+}
+.section-group.collapsed .section-toggle { transform: rotate(-90deg); }
+.section-group.collapsed .links-grid { display: none; }
 
 /* ── LINKS GRID ── */
 .links-grid {

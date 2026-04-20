@@ -156,10 +156,27 @@ var Pages = {
         if (bi === -1) return -1;
         return ai - bi;
       });
-      content = groups.map(function (cat) {
+      var favItems = filtered.filter(function (l) { return l.favorite; });
+      var favSection = favItems.length > 0
+        ? '<div class="section-group">' +
+            '<div class="section-header" data-action="toggle-section">' +
+              '<button class="section-toggle" data-action="toggle-section" tabindex="-1" aria-label="Toggle section">▾</button>' +
+              '<span class="section-title">★ Favorites</span>' +
+              '<span class="count-badge">' + favItems.length + '</span>' +
+            '</div>' +
+            '<div class="links-grid">' + favItems.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>' +
+          '</div>'
+        : '';
+      content = favSection + groups.map(function (cat) {
         var items = grouped[cat];
-        return '<div class="section-header"><span class="section-title">' + e(cat) + '</span><span class="count-badge">' + items.length + '</span></div>' +
-          '<div class="links-grid">' + items.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>';
+        return '<div class="section-group">' +
+          '<div class="section-header" data-action="toggle-section">' +
+            '<button class="section-toggle" data-action="toggle-section" tabindex="-1" aria-label="Toggle section">▾</button>' +
+            '<span class="section-title">' + e(cat) + '</span>' +
+            '<span class="count-badge">' + items.length + '</span>' +
+          '</div>' +
+          '<div class="links-grid">' + items.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>' +
+          '</div>';
       }).join('');
     } else {
       content = '<div class="links-grid">' +
