@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rolodex One — RDX1</title>
+  <link rel="icon" type="image/png" href="RDX1_Logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<header class="topbar">
+  <div class="topbar-brand"><img src="RDX1_Logo.png" alt="RDX1" class="topbar-logo"></div>
+  <div class="search-wrap">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+    <input id="searchInput" type="text" placeholder="Search contacts…" autocomplete="off">
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="dark-mode-btn" onclick="toggleDarkMode()" title="Toggle dark mode">
+      <svg id="dark-mode-icon" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+    </button>
+    <button class="btn btn-secondary" onclick="openModal('ie-modal')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+      </svg>
+      Import / Export
+    </button>
+    <button class="btn btn-primary" onclick="openAdd()">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add Contact
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="sidebar-section">Contacts</div>
+
+    <button class="nav-item active" data-status="all" onclick="showContacts(); setFilter('all')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      All Contacts <span class="badge">0</span>
+    </button>
+
+    <!-- Dynamic status nav items injected here -->
+    <div id="status-nav-items"></div>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Data Quality</div>
+
+    <button class="nav-item" data-status="missing:phone" onclick="showContacts(); setFilter('missing:phone')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      No Phone <span class="badge" id="badge-missing-phone">0</span>
+    </button>
+
+    <button class="nav-item" data-status="missing:email" onclick="showContacts(); setFilter('missing:email')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      No Email <span class="badge" id="badge-missing-email">0</span>
+    </button>
+
+    <button class="nav-item" data-status="missing:location" onclick="showContacts(); setFilter('missing:location')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      No Location <span class="badge" id="badge-missing-location">0</span>
+    </button>
+
+    <button class="nav-item" data-status="missing:company" onclick="showContacts(); setFilter('missing:company')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      No Company <span class="badge" id="badge-missing-company">0</span>
+    </button>
+
+    <button class="nav-item" data-status="missing:lastContacted" onclick="showContacts(); setFilter('missing:lastContacted')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Never Contacted <span class="badge" id="badge-missing-lastContacted">0</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Views</div>
+
+    <button class="nav-item" data-view="followups" onclick="showFollowups()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      Follow-ups <span class="badge" id="followups-badge">0</span>
+    </button>
+
+    <button class="nav-item" data-view="map" onclick="showMap()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+      </svg>
+      Map View
+    </button>
+
+    <button class="nav-item" data-view="duplicates" onclick="showDuplicates()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+      </svg>
+      Duplicates <span class="badge" id="dup-badge">0</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">App</div>
+
+    <button class="nav-item" data-view="settings" onclick="showSettings()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- ── Main ── -->
+  <main class="main" id="main-content">
+
+    <!-- Contacts View -->
+    <div id="contacts-view" class="contacts-view">
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Contacts</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <!-- Dynamic status stats (first 2) -->
+        <div id="dynamic-stats" style="display:contents"></div>
+        <div class="stat-card stat-card-clickable" id="stat-overdue-card" onclick="setFilter(filterStatus === 'overdue' ? 'all' : 'overdue')">
+          <div class="stat-label" style="color:var(--danger)">Overdue Follow-ups</div>
+          <div class="stat-value" id="stat-overdue" style="color:var(--danger)">0</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <span class="toolbar-title" id="toolbar-title">0 Contacts</span>
+        <select class="filter-select" id="sort-select">
+          <option value="name">Sort: Name</option>
+          <option value="company">Sort: Company</option>
+          <option value="lastContacted">Sort: Last Contacted</option>
+          <option value="created">Sort: Recently Added</option>
+        </select>
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" id="btn-view-cards" title="Card view" onclick="setListView('cards')">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+          </button>
+          <button class="view-toggle-btn" id="btn-view-table" title="Table view" onclick="setListView('table')">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M10 3v18M3 6a1 1 0 011-1h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contacts list -->
+      <div class="contacts-grid" id="contacts-grid"></div>
+      <div class="contacts-table-wrap" id="contacts-table-wrap" style="display:none">
+        <table class="contacts-table" id="contacts-table">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Follow-ups View -->
+    <div id="followups-view" style="display:none">
+      <div class="settings-header">
+        <h2>Follow-ups</h2>
+        <p>All planned interactions across your contacts, sorted by date.</p>
+      </div>
+      <div id="followups-content"></div>
+    </div>
+
+    <!-- Duplicates View -->
+    <div id="duplicates-view" style="display:none">
+      <div class="settings-header">
+        <h2>Duplicate Contacts</h2>
+        <p>Contacts sharing the same first and last name. Merge to combine their data, or delete the extra.</p>
+      </div>
+      <div id="duplicates-content"></div>
+    </div>
+
+    <!-- Settings View -->
+    <div id="settings-page" class="settings-page">
+      <div class="settings-header">
+        <h2>Settings</h2>
+        <p>Customize contact statuses.</p>
+      </div>
+
+      <!-- Statuses -->
+      <div class="settings-card">
+        <div class="settings-card-title">Contact Statuses</div>
+        <div class="settings-card-desc">Add or remove statuses and choose a color for each.</div>
+        <div class="item-list" id="status-settings-list"></div>
+        <div class="add-item-row">
+          <input id="new-status-input" type="text" placeholder="New status name…" maxlength="30">
+          <button class="btn btn-primary btn-sm" onclick="addStatus()">Add</button>
+        </div>
+      </div>
+
+      <!-- Export filename -->
+      <div class="settings-card">
+        <div class="settings-card-title">Export Filename</div>
+        <div class="settings-card-desc">Prefix used when saving JSON backups. A date is appended automatically.</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <input type="text" id="export-name-input" maxlength="40" style="width:160px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:14px;font-family:inherit;outline:none" oninput="updateExportName(this.value)" placeholder="RDX1">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer;user-select:none">
+            <input type="checkbox" id="export-append-date" onchange="updateExportAppendDate(this.checked)">
+            Append date
+          </label>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted)" id="export-name-preview"></div>
+      </div>
+
+      <!-- Overdue threshold -->
+      <div class="settings-card">
+        <div class="settings-card-title">Overdue Threshold</div>
+        <div class="settings-card-desc">A contact is marked overdue when you haven't reached out in this many days.</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="number" id="overdue-threshold-input" min="1" max="365" style="width:80px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:14px;font-family:inherit;outline:none" oninput="updateOverdueThreshold(this.value)">
+          <span style="font-size:14px;color:var(--text-muted)">days since last contact</span>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="settings-card settings-card-danger">
+        <div class="settings-card-title">Danger Zone</div>
+        <div class="settings-card-desc">Permanently delete all contacts and reset the app. This cannot be undone.</div>
+        <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ── Map View ── -->
+  <div id="map-view" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+    <div id="map-container" style="flex:1"></div>
+    <div id="map-status-bar" class="map-status-bar" style="display:none">
+      <div class="map-status-text" id="map-status-text"></div>
+    </div>
+    <div id="map-no-location" class="map-no-location" style="display:none">
+      <div class="map-no-location-title">No location set</div>
+      <div id="map-no-location-list" class="map-no-location-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail Panel ── -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header" id="detail-header">
+    <div class="detail-avatar" id="dp-avatar"></div>
+    <div>
+      <div class="detail-name"    id="dp-name"></div>
+      <div class="detail-company" id="dp-company"></div>
+    </div>
+    <button class="icon-btn detail-close" onclick="closeDetail()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="detail-body" id="dp-body"></div>
+  <div class="detail-footer" id="dp-footer"></div>
+</div>
+
+<!-- ── Add Contact Modal ── -->
+<div class="modal-overlay" id="contact-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">New Contact</div>
+      <button class="icon-btn" onclick="closeModal('contact-modal')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="contact-form" onsubmit="event.preventDefault(); saveContact()">
+        <div class="form-grid">
+          <div class="field">
+            <label for="field-name">Name <span style="color:var(--danger)">*</span></label>
+            <input id="field-name" type="text" placeholder="Jane Smith" required>
+          </div>
+          <div class="field">
+            <label for="field-company">Company</label>
+            <input id="field-company" type="text" placeholder="Acme Corp">
+          </div>
+          <div class="field">
+            <label for="field-email">Email</label>
+            <input id="field-email" type="email" placeholder="jane@example.com">
+          </div>
+          <div class="field">
+            <label for="field-phone">Phone</label>
+            <input id="field-phone" type="tel" placeholder="+1 555 000 0000">
+          </div>
+          <div class="field">
+            <label for="field-title">Title</label>
+            <input id="field-title" type="text" placeholder="VP of Sales">
+          </div>
+          <div class="field">
+            <label for="field-industry">Industry</label>
+            <input id="field-industry" type="text" placeholder="SaaS, Finance…">
+          </div>
+          <div class="field">
+            <label for="field-location">Location</label>
+            <input id="field-location" type="text" placeholder="Austin, TX">
+          </div>
+          <div class="field form-full">
+            <label for="field-linkedin">LinkedIn / Social</label>
+            <input id="field-linkedin" type="url" placeholder="https://linkedin.com/in/…">
+          </div>
+          <div class="field">
+            <label for="field-status">Status</label>
+            <select id="field-status"></select>
+          </div>
+
+          <div class="field form-full">
+            <label>Tags</label>
+            <div class="tag-input-wrap" id="field-tags-wrap">
+              <input type="text" class="tag-input-text" id="field-tags-text" placeholder="Add tag…" onkeydown="tagInputKeydown(event,this)" oninput="this.placeholder=''">
+            </div>
+          </div>
+          <div class="field">
+            <label for="field-lastContacted">Last Contacted</label>
+            <input id="field-lastContacted" type="date">
+          </div>
+          <div class="field form-full">
+            <label for="field-nextSteps">Next Steps</label>
+            <textarea id="field-nextSteps" placeholder="Follow up re: proposal…"></textarea>
+          </div>
+          <div class="field form-full">
+            <label for="field-notes">Notes</label>
+            <textarea id="field-notes" placeholder="Notes about this contact…"></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('contact-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Merge Modal ── -->
+<div class="modal-overlay" id="merge-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2 class="modal-title">Merge Contacts</h2>
+      <button class="modal-close" onclick="closeModal('merge-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Select which record to keep. Missing fields will be filled from the others, and all activity logs will be combined.</p>
+      <div id="merge-pick-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('merge-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmMerge()">Merge</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Import / Export Modal ── -->
+<div class="modal-overlay" id="ie-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Import / Export</div>
+      <button class="icon-btn" onclick="closeModal('ie-modal')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Export -->
+      <div class="ie-section">
+        <div class="ie-section-title">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Export JSON Backup
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+          Save all contacts, statuses, and sources as a JSON file. Pick a location once — it's remembered for quick exports later.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="exportNew()">Export to new file…</button>
+          <button class="btn btn-secondary" id="btn-export-saved" disabled onclick="exportSaved()">Export to saved path</button>
+        </div>
+        <div class="saved-path" id="export-saved-path" style="display:none"></div>
+      </div>
+
+      <!-- Import -->
+      <div class="ie-section">
+        <div class="ie-section-title">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/>
+          </svg>
+          Import
+        </div>
+
+        <!-- Type toggle -->
+        <div class="type-toggle" style="margin-bottom:14px">
+          <button class="type-toggle-btn active" id="toggle-json"    onclick="setImportType('json')">JSON Backup</button>
+          <button class="type-toggle-btn"         id="toggle-sheet"  onclick="setImportType('sheet')">CSV / XLSX</button>
+          <button class="type-toggle-btn"         id="toggle-li"     onclick="setImportType('li')">LinkedIn</button>
+        </div>
+
+        <!-- Shared: import mode -->
+        <div class="field" style="margin-bottom:12px;max-width:260px">
+          <label for="import-mode">Import mode</label>
+          <select id="import-mode">
+            <option value="merge">Merge (add new, keep existing)</option>
+            <option value="replace">Replace all (wipe &amp; reload)</option>
+          </select>
+        </div>
+
+        <!-- JSON panel -->
+        <div id="import-panel-json">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+            Load contacts from a previously exported JSON backup.
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="importNew()">Choose JSON file…</button>
+            <button class="btn btn-secondary" id="btn-import-saved" disabled onclick="importSaved()">Re-import from saved path</button>
+          </div>
+          <div class="saved-path" id="import-saved-path" style="display:none"></div>
+        </div>
+
+        <!-- LinkedIn panel -->
+        <div id="import-panel-li" style="display:none">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+            Export your connections from LinkedIn: <strong>Settings → Data Privacy → Get a copy of your data → Connections</strong>. Upload the <strong>Connections.csv</strong> file.
+          </p>
+          <details style="margin-bottom:12px;font-size:12px;color:var(--text-muted)">
+            <summary style="cursor:pointer;font-weight:600;color:var(--text)">View column mapping</summary>
+            <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:3px 16px;line-height:1.9">
+              <span>First Name + Last Name → <strong>Name</strong></span>
+              <span>URL → <strong>LinkedIn</strong></span>
+              <span>Email Address → <strong>Email</strong></span>
+              <span>Company → <strong>Company</strong></span>
+              <span>Position → <strong>Title</strong></span>
+              <span>Connected On → <strong>Last Contacted</strong></span>
+              <span style="opacity:.6">Source auto-set to <strong>LinkedIn</strong></span>
+            </div>
+          </details>
+          <button class="btn btn-primary" onclick="importSpreadsheet()">Choose Connections.csv…</button>
+        </div>
+
+        <!-- CSV / XLSX panel -->
+        <div id="import-panel-sheet" style="display:none">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+            Columns are matched automatically. Both <strong>.csv</strong> and <strong>.xlsx</strong> are supported.
+          </p>
+          <details style="margin-bottom:12px;font-size:12px;color:var(--text-muted)">
+            <summary style="cursor:pointer;font-weight:600;color:var(--text)">View column mapping</summary>
+            <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:3px 16px;line-height:1.9">
+              <span>Contact Name → <strong>Name</strong></span>
+              <span>Title → <strong>Title</strong></span>
+              <span>Organization → <strong>Company</strong></span>
+              <span>Industry → <strong>Industry</strong></span>
+              <span>Email → <strong>Email</strong></span>
+              <span>Phone → <strong>Phone</strong></span>
+              <span>Location → <strong>Location</strong></span>
+              <span>Last Contact Date → <strong>Last Contacted</strong></span>
+              <span>Next Steps → <strong>Next Steps</strong></span>
+              <span>Notes → <strong>Notes</strong></span>
+              <span style="opacity:.6">ID, Months since… → <em>skipped</em></span>
+            </div>
+          </details>
+          <button class="btn btn-primary" onclick="importSpreadsheet()">Choose CSV or XLSX file…</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('ie-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden spreadsheet file input -->
+<input type="file" id="spreadsheet-file-input" accept=".csv,.xlsx" style="display:none" onchange="handleSpreadsheetFile(this)">
+
+<!-- ── Toast ── -->
+<div id="toast-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
