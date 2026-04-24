@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Game Hub — your personal arcade-style game library. Browse, launch, organize, and discover browser games.">
+  <title>Game Hub</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles/themes.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/components.css">
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header id="app-header" role="banner">
+  <div class="header-inner">
+
+    <!-- Brand -->
+    <div class="brand" aria-label="Game Hub home">
+      <span class="brand-icon" aria-hidden="true">🕹️</span>
+      <span class="brand-text">Game Hub</span>
+    </div>
+
+    <!-- Desktop navigation -->
+    <nav class="main-nav" role="navigation" aria-label="Main navigation">
+      <button class="nav-btn active" data-view="hub"      aria-current="page">Hub</button>
+      <button class="nav-btn"        data-view="manage"   aria-current="false">Manage</button>
+      <button class="nav-btn"        data-view="archived" aria-current="false">Archived</button>
+      <button class="nav-btn"        data-view="settings" aria-current="false">Settings</button>
+    </nav>
+
+    <!-- Header end -->
+    <div class="header-end">
+      <button id="theme-toggle-btn" class="icon-btn" title="Switch to light mode" aria-label="Toggle theme">
+        <span class="theme-icon" aria-hidden="true">☀️</span>
+      </button>
+      <!-- Hamburger (mobile only) -->
+      <button id="hamburger-btn" class="hamburger" aria-label="Open navigation menu" aria-expanded="false">
+        ☰
+      </button>
+    </div>
+
+  </div>
+</header>
+
+<!-- Mobile nav drawer -->
+<nav id="mobile-nav-drawer" class="mobile-nav-drawer" role="navigation" aria-label="Mobile navigation">
+  <button class="nav-btn" data-view="hub">🕹️ Hub</button>
+  <button class="nav-btn" data-view="manage">📋 Manage</button>
+  <button class="nav-btn" data-view="archived">📦 Archived</button>
+  <button class="nav-btn" data-view="settings">⚙️ Settings</button>
+</nav>
+
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main id="app-main" role="main">
+
+  <!-- ========================================================
+       HUB VIEW
+       ======================================================== -->
+  <div id="view-hub" class="view active" data-view="hub">
+
+    <!-- Controls bar -->
+    <div class="controls-bar">
+      <div class="search-wrap">
+        <label for="search-input" class="sr-only">Search games</label>
+        <input
+          type="search"
+          id="search-input"
+          placeholder="Search games…"
+          autocomplete="off"
+          aria-label="Search games"
+        >
+      </div>
+      <div class="controls-right">
+        <label for="sort-select" class="sr-only">Sort games</label>
+        <select id="sort-select" aria-label="Sort games">
+          <option value="title">A → Z</option>
+          <option value="title-desc">Z → A</option>
+          <option value="recent">Recently Added</option>
+          <option value="updated">Recently Updated</option>
+        </select>
+        <button id="add-game-btn" class="btn btn-primary" aria-label="Add a new game">
+          + Add Game
+        </button>
+      </div>
+    </div>
+
+    <!-- Tag filter bar -->
+    <div
+      id="tag-filter-bar"
+      class="tag-filter-bar"
+      role="group"
+      aria-label="Filter by tag"
+    ></div>
+
+    <!-- Favorites section -->
+    <section id="favorites-section" class="catalog-section" aria-label="Favorite games">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="section-icon" aria-hidden="true">⭐</span>
+          Favorites
+        </h2>
+        <span class="section-hint" id="favorites-hint" aria-live="polite"></span>
+      </div>
+      <div id="favorites-grid" class="games-grid favorites-grid" role="list" aria-label="Favorites — drag to reorder"></div>
+      <p id="favorites-empty" class="empty-state hidden">
+        No favorites yet — click ★ on any game card to add it here.
+      </p>
+    </section>
+
+    <!-- All active games section -->
+    <section id="active-section" class="catalog-section" aria-label="All games">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="section-icon" aria-hidden="true">🎮</span>
+          All Games
+        </h2>
+        <span id="game-count" class="game-count" aria-live="polite"></span>
+      </div>
+      <div id="active-grid" class="games-grid" role="list"></div>
+      <p id="active-empty" class="empty-state hidden">
+        No games found — try adjusting your search or filters.
+      </p>
+    </section>
+
+    <!-- Archived section on hub (hidden unless enabled in Settings) -->
+    <section id="archived-hub-section" class="catalog-section hidden" aria-label="Archived games">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="section-icon" aria-hidden="true">📦</span>
+          Archived
+        </h2>
+      </div>
+      <div class="games-grid" role="list"></div>
+      <p class="empty-state hidden">No archived games.</p>
+    </section>
+
+  </div><!-- /view-hub -->
+
+
+  <!-- ========================================================
+       MANAGE VIEW
+       ======================================================== -->
+  <div id="view-manage" class="view" data-view="manage">
+
+    <div class="view-header">
+      <h1>Manage Library</h1>
+      <div class="view-actions">
+        <button id="manage-add-btn"    class="btn btn-primary">+ Add Game</button>
+        <button id="manage-import-btn" class="btn btn-secondary">Import</button>
+        <button id="manage-export-btn" class="btn btn-secondary">Export</button>
+      </div>
+    </div>
+
+    <div class="manage-filters">
+      <label for="manage-search" class="sr-only">Search library</label>
+      <input type="search" id="manage-search" placeholder="Search…" aria-label="Search library">
+      <div class="filter-tabs" role="tablist" aria-label="Filter games">
+        <button class="filter-tab active" data-filter="all"        role="tab" aria-selected="true">All</button>
+        <button class="filter-tab"        data-filter="active"     role="tab" aria-selected="false">Active</button>
+        <button class="filter-tab"        data-filter="user-added" role="tab" aria-selected="false">Custom</button>
+        <button class="filter-tab"        data-filter="archived"   role="tab" aria-selected="false">Archived</button>
+      </div>
+    </div>
+
+    <div id="manage-list" class="manage-list" role="list" aria-label="Game library"></div>
+    <p id="manage-empty" class="empty-state hidden">No games match this filter.</p>
+
+  </div><!-- /view-manage -->
+
+
+  <!-- ========================================================
+       ARCHIVED VIEW
+       ======================================================== -->
+  <div id="view-archived" class="view" data-view="archived">
+
+    <div class="view-header">
+      <h1>Archived Games</h1>
+    </div>
+
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:var(--space-6);">
+      Archived games are hidden from the Hub. Restore them to add them back.
+    </p>
+
+    <div id="archived-grid" class="games-grid" role="list"></div>
+    <p id="archived-empty" class="empty-state hidden">No archived games yet.</p>
+
+  </div><!-- /view-archived -->
+
+
+  <!-- ========================================================
+       SETTINGS VIEW
+       ======================================================== -->
+  <div id="view-settings" class="view" data-view="settings">
+
+    <div class="view-header">
+      <h1>Settings</h1>
+    </div>
+
+    <div class="settings-panels">
+
+      <!-- Appearance -->
+      <section class="settings-panel" aria-label="Appearance">
+        <h2>Appearance</h2>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="theme-select">Theme</label>
+            <p class="setting-desc">Choose between dark (default) and light mode.</p>
+          </div>
+          <select id="theme-select" aria-label="Select theme">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="show-archived-toggle">Show Archived on Hub</label>
+            <p class="setting-desc">Display an Archived section at the bottom of the Hub page.</p>
+          </div>
+          <label class="toggle-switch" for="show-archived-toggle" aria-label="Show archived section on hub">
+            <input type="checkbox" id="show-archived-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Launch behavior -->
+      <section class="settings-panel" aria-label="Launch behavior">
+        <h2>Launch Behavior</h2>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label>Game Launch Mode</label>
+            <p class="setting-desc">How games open when you click Play.</p>
+          </div>
+          <div class="radio-group" role="radiogroup" aria-label="Launch mode">
+            <label class="radio-label">
+              <input type="radio" name="launch-mode" value="newTab" checked>
+              <span><strong>New Tab</strong> — opens the game in a new browser tab (default)</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="launch-mode" value="sameTab">
+              <span><strong>Same Tab</strong> — navigates this tab to the game URL</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="launch-mode" value="iframe">
+              <span><strong>Embedded</strong> — plays the game inside Game Hub (some sites block this)</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data management -->
+      <section class="settings-panel" aria-label="Data management">
+        <h2>Data Management</h2>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label>Export Catalog</label>
+            <p class="setting-desc">
+              Download your full current catalog as a JSON file. This file can be used as a new
+              <code>data/games.json</code> on GitHub Pages.
+            </p>
+          </div>
+          <button id="settings-export-btn" class="btn btn-secondary">Export JSON</button>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label>Import Catalog</label>
+            <p class="setting-desc">Import a Game Hub JSON file. Choose Merge (add new games) or Replace (overwrite).</p>
+          </div>
+          <button id="settings-import-btn" class="btn btn-secondary">Import JSON</button>
+        </div>
+
+        <div class="setting-item danger-zone">
+          <div class="setting-info">
+            <label>Reset to Default Catalog</label>
+            <p class="setting-desc">
+              Removes <strong>all</strong> local changes — custom games, edits, favorites, and settings.
+              The app reverts to the shipped <code>data/games.json</code>. Cannot be undone.
+            </p>
+          </div>
+          <button id="settings-reset-btn" class="btn btn-danger">Reset to Default</button>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section class="settings-panel" aria-label="About">
+        <h2>About</h2>
+        <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:var(--space-2);">
+          <p style="font-size:.85rem;color:var(--text-secondary);line-height:1.7;">
+            <strong style="color:var(--text-primary)">Game Hub v1.0.0</strong><br>
+            A local-first browser game library. All data is stored in your browser's IndexedDB —
+            nothing is sent to a server. Export your catalog regularly to keep a backup.
+          </p>
+          <p style="font-size:.8rem;color:var(--text-muted);">
+            Schema version: 1.0.0 &nbsp;·&nbsp; Storage: IndexedDB
+          </p>
+        </div>
+      </section>
+
+    </div><!-- /settings-panels -->
+  </div><!-- /view-settings -->
+
+</main><!-- /app-main -->
+
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+<div id="modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+
+  <!-- ---- Game Form Modal ---- -->
+  <div id="modal-game-form" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-form-title">
+    <div class="modal-header">
+      <h2 id="modal-form-title">Add Game</h2>
+      <button class="modal-close" data-modal="game-form" aria-label="Close dialog">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="game-form" novalidate autocomplete="off">
+        <input type="hidden" id="form-game-id">
+
+        <div class="form-group">
+          <label for="form-title">Title <span class="required" aria-label="required">*</span></label>
+          <input type="text" id="form-title" required placeholder="e.g. 2048" maxlength="120"
+            aria-required="true" aria-describedby="form-title-error">
+          <span class="field-error" id="form-title-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="form-url">URL <span class="required" aria-label="required">*</span></label>
+          <input type="url" id="form-url" required placeholder="https://example.com/game"
+            aria-required="true" aria-describedby="form-url-error">
+          <span class="field-error" id="form-url-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="form-description">Description</label>
+          <textarea id="form-description" rows="3" placeholder="Short description of the game" maxlength="600"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="form-category">Category</label>
+          <input type="text" id="form-category" placeholder="e.g. Puzzle, Arcade, Strategy" maxlength="60">
+        </div>
+
+        <div class="form-group">
+          <label for="form-tags">Tags</label>
+          <input type="text" id="form-tags" placeholder="puzzle, arcade, multiplayer (comma-separated)" maxlength="200">
+          <span class="field-hint">Separate multiple tags with commas.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="form-thumbnail">Thumbnail URL</label>
+          <input type="url" id="form-thumbnail" placeholder="https://example.com/image.jpg"
+            aria-describedby="form-thumbnail-hint">
+          <span class="field-hint" id="form-thumbnail-hint">Optional. Leave blank to use a color placeholder.</span>
+        </div>
+
+        <div class="form-check">
+          <label>
+            <input type="checkbox" id="form-favorite">
+            <span>Add to Favorites</span>
+          </label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="game-form">Cancel</button>
+      <button class="btn btn-primary" id="save-game-btn">Add Game</button>
+    </div>
+  </div>
+
+  <!-- ---- Confirm Modal ---- -->
+  <div id="modal-confirm" class="modal hidden" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-header">
+      <h2 id="confirm-title">Confirm</h2>
+      <button class="modal-close" data-modal="confirm" aria-label="Close dialog">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message"></p>
+    </div>
+    <div class="modal-footer">
+      <button id="confirm-cancel-btn" class="btn btn-ghost" data-modal="confirm">Cancel</button>
+      <button id="confirm-ok-btn"     class="btn btn-danger">Confirm</button>
+    </div>
+  </div>
+
+  <!-- ---- Import Modal ---- -->
+  <div id="modal-import" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="import-title">
+    <div class="modal-header">
+      <h2 id="import-title">Import Catalog</h2>
+      <button class="modal-close" data-modal="import" aria-label="Close dialog">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-group">
+        <label for="import-file">Select JSON file</label>
+        <input type="file" id="import-file" accept=".json" aria-describedby="import-file-hint">
+        <span class="field-hint" id="import-file-hint">Select a Game Hub JSON export file (.json).</span>
+      </div>
+
+      <div id="import-preview" class="import-preview hidden" aria-live="polite"></div>
+      <div id="import-error"   class="alert alert-error hidden" role="alert"></div>
+
+      <fieldset class="import-mode-group">
+        <legend>Import Mode</legend>
+        <label class="radio-label">
+          <input type="radio" name="import-mode" value="merge" checked>
+          <span>
+            <strong>Merge</strong> — Add imported games to your existing catalog.
+            If a game URL already exists, it is skipped.
+          </span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="import-mode" value="replace">
+          <span>
+            <strong>Replace</strong> — Replace your local catalog entirely.
+            A backup is saved in browser storage first.
+          </span>
+        </label>
+      </fieldset>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost"    data-modal="import">Cancel</button>
+      <button class="btn btn-primary"  id="import-confirm-btn" disabled>Import</button>
+    </div>
+  </div>
+
+  <!-- ---- Launch Modal (iframe) ---- -->
+  <div id="modal-launch" class="modal modal-fullscreen hidden" role="dialog" aria-modal="true" aria-labelledby="launch-title">
+    <div class="modal-header">
+      <h2 id="launch-title">Playing</h2>
+      <div class="launch-actions">
+        <a id="launch-external-link" href="#" target="_blank" rel="noopener noreferrer"
+           class="btn btn-ghost btn-sm" aria-label="Open in new tab">
+          ↗ New Tab
+        </a>
+        <button class="modal-close" data-modal="launch" aria-label="Close game">✕</button>
+      </div>
+    </div>
+    <div class="modal-body modal-body-iframe">
+      <div id="iframe-loading" class="iframe-loading">
+        <span class="spinner"></span> Loading game…
+      </div>
+      <div id="iframe-blocked" class="iframe-blocked hidden" role="status">
+        <p>⚠️ This game cannot be embedded — the site may block iframes (X-Frame-Options).</p>
+        <a id="iframe-blocked-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+          Open in New Tab
+        </a>
+      </div>
+      <iframe
+        id="game-iframe"
+        title="Game"
+        allow="fullscreen"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-fullscreen"
+      ></iframe>
+    </div>
+  </div>
+
+</div><!-- /modal-overlay -->
+
+
+<!-- Toast container -->
+<div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+
+<!-- ============================================================
+     SCRIPTS  (order matters — dependencies first)
+     ============================================================ -->
+<script src="data/games-default.js"></script>
+<script src="scripts/utils.js"></script>
+<script src="scripts/storage.js"></script>
+<script src="scripts/validation.js"></script>
+<script src="scripts/catalog.js"></script>
+<script src="scripts/dragdrop.js"></script>
+<script src="scripts/importExport.js"></script>
+<script src="scripts/settings.js"></script>
+<script src="scripts/ui.js"></script>
+<script src="scripts/app.js"></script>
+
+</body>
+</html>

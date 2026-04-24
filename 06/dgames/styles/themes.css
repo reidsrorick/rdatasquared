@@ -1,0 +1,149 @@
+/* ============================================================
+   THEMES — CSS custom property definitions for dark and light
+   Dark mode is the default (defined on :root).
+   Light mode overrides live on .theme-light applied to <body>.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  --bg-page:        #08080f;
+  --bg-surface:     #11111e;
+  --bg-card:        #181828;
+  --bg-card-hover:  #1e1e34;
+  --bg-input:       #12121f;
+  --bg-overlay:     rgba(0, 0, 0, 0.82);
+  --bg-modal:       #14142a;
+  --bg-header:      rgba(8, 8, 15, 0.92);
+
+  /* Accent colors — neon arcade palette */
+  --accent-cyan:    #00d4ff;
+  --accent-purple:  #9b4dff;
+  --accent-pink:    #ff2d78;
+  --accent-green:   #00e87a;
+  --accent-yellow:  #ffd600;
+  --accent-orange:  #ff7c00;
+
+  /* Primary = cyan, secondary = purple */
+  --color-primary:        var(--accent-cyan);
+  --color-primary-dim:    rgba(0, 212, 255, 0.15);
+  --color-primary-border: rgba(0, 212, 255, 0.35);
+  --color-secondary:      var(--accent-purple);
+  --color-danger:         var(--accent-pink);
+  --color-danger-dim:     rgba(255, 45, 120, 0.15);
+  --color-success:        var(--accent-green);
+  --color-warning:        var(--accent-yellow);
+
+  /* Text */
+  --text-primary:   #eeeeff;
+  --text-secondary: #9090b8;
+  --text-muted:     #4a4a70;
+  --text-inverse:   #0a0a14;
+  --text-accent:    var(--accent-cyan);
+  --text-link:      var(--accent-cyan);
+
+  /* Borders */
+  --border-subtle:  #1e1e36;
+  --border-mid:     #2a2a48;
+  --border-strong:  #383860;
+  --border-accent:  var(--color-primary-border);
+
+  /* Shadows */
+  --shadow-sm:   0 2px 8px  rgba(0, 0, 0, 0.5);
+  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.7);
+  --shadow-lg:   0 8px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 18px   rgba(0, 212, 255, 0.18);
+  --shadow-glow-strong: 0 0 32px rgba(0, 212, 255, 0.35);
+
+  /* Scrollbar */
+  --scrollbar-thumb: #2a2a48;
+  --scrollbar-track: var(--bg-page);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Layout */
+  --header-height: 64px;
+  --content-max-w: 1440px;
+  --sidebar-w: 260px;
+
+  /* Transitions */
+  --ease-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Typography */
+  --font-body: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --font-display: 'Segoe UI', system-ui, sans-serif;
+
+  /* Card thumbnail placeholder gradients — indexed by title hash */
+  --grad-0: linear-gradient(135deg, #0070ff 0%, #9b4dff 100%);
+  --grad-1: linear-gradient(135deg, #ff2d78 0%, #ff7c00 100%);
+  --grad-2: linear-gradient(135deg, #00d4ff 0%, #00e87a 100%);
+  --grad-3: linear-gradient(135deg, #9b4dff 0%, #ff2d78 100%);
+  --grad-4: linear-gradient(135deg, #ffd600 0%, #ff7c00 100%);
+  --grad-5: linear-gradient(135deg, #00e87a 0%, #00d4ff 100%);
+}
+
+/* ---- Light theme overrides ---- */
+.theme-light {
+  color-scheme: light;
+
+  --bg-page:       #f0f0f9;
+  --bg-surface:    #e4e4f0;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #f4f4ff;
+  --bg-input:      #f8f8ff;
+  --bg-overlay:    rgba(0, 0, 20, 0.55);
+  --bg-modal:      #ffffff;
+  --bg-header:     rgba(240, 240, 249, 0.92);
+
+  --color-primary:        #0070d4;
+  --color-primary-dim:    rgba(0, 112, 212, 0.1);
+  --color-primary-border: rgba(0, 112, 212, 0.3);
+  --color-secondary:      #6b2ecc;
+  --color-danger:         #d4154a;
+  --color-danger-dim:     rgba(212, 21, 74, 0.1);
+  --color-success:        #00a855;
+  --color-warning:        #c49a00;
+
+  --text-primary:   #1a1a2e;
+  --text-secondary: #4a4a6e;
+  --text-muted:     #8888a8;
+  --text-inverse:   #ffffff;
+  --text-accent:    #0070d4;
+  --text-link:      #0070d4;
+
+  --border-subtle: #dde0ef;
+  --border-mid:    #c8cce0;
+  --border-strong: #a8acd0;
+  --border-accent: rgba(0, 112, 212, 0.3);
+
+  --shadow-sm: 0 2px 8px  rgba(0, 0, 40, 0.08);
+  --shadow-md: 0 4px 20px rgba(0, 0, 40, 0.12);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 40, 0.16);
+  --shadow-glow: 0 0 18px rgba(0, 112, 212, 0.12);
+  --shadow-glow-strong: 0 0 32px rgba(0, 112, 212, 0.2);
+
+  --scrollbar-thumb: #c0c0d8;
+  --scrollbar-track: var(--bg-page);
+}
