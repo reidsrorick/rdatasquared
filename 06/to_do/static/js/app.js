@@ -6,7 +6,7 @@
 
 "use strict";
 
-const APP_VERSION = "v3.0.0";
+const APP_VERSION = "v4.0.0";
 
 // ---------------------------------------------------------------------------
 // Shared state — globals read by every other module
@@ -386,6 +386,26 @@ function _updateExportButtonLabel() {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// Create a new parent task (used by both parent pickers)
+// ---------------------------------------------------------------------------
+
+async function createParentTask(name) {
+  const now = fmtDateTime(new Date());
+  const newRow = {
+    item: name, category: "", date: "", time: "", sort: 0,
+    description: "", completed: false, date_completed: "",
+    last_modified: now, created_at: now, deleted: false,
+    link: "", recur_rule: "", follow_ups: "[]",
+  };
+  const saved = await saveRow(newRow);
+  if (saved) {
+    rowData.push(newRow);
+    gridApi?.applyTransaction({ add: [newRow] });
+  }
+  return saved || null;
+}
+
+// ---------------------------------------------------------------------------
 // Bulk set parent
 // ---------------------------------------------------------------------------
 
@@ -722,7 +742,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Parent task picker ────────────────────────────────────────────────────
   document.getElementById("detail-parent-search")?.addEventListener("input", e => {
-    const q        = e.target.value.toLowerCase().trim();
+    const raw      = e.target.value.trim();
+    const q        = raw.toLowerCase();
     const dropdown = document.getElementById("detail-parent-dropdown");
     if (!dropdown) return;
     if (!q) { dropdown.style.display = "none"; return; }
@@ -734,14 +755,18 @@ document.addEventListener("DOMContentLoaded", () => {
       && (r.item || "").toLowerCase().includes(q)
     ).slice(0, 10);
 
-    if (!matches.length) { dropdown.style.display = "none"; return; }
+    const createHtml = `<div class="parent-dropdown-item parent-dropdown-create" data-create="1" data-name="${esc(raw)}">
+      <span class="parent-dropdown-id" style="color:var(--primary)">＋</span>
+      <span class="parent-dropdown-name">Create "<strong>${esc(raw)}</strong>"</span>
+    </div>`;
 
     dropdown.innerHTML = matches.map(r =>
       `<div class="parent-dropdown-item" data-id="${r.id}" data-name="${esc(r.item || "")}">
         <span class="parent-dropdown-id">#${r.id}</span>
         <span class="parent-dropdown-name">${esc(r.item || "(no name)")}</span>
       </div>`
-    ).join("");
+    ).join("") + createHtml;
+
     dropdown.style.display = "";
     // Position fixed to escape overflow:hidden/auto on detail-panel body
     requestAnimationFrame(() => {
@@ -755,15 +780,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     dropdown.querySelectorAll(".parent-dropdown-item").forEach(item => {
-      item.addEventListener("mousedown", e => {
-        e.preventDefault();
-        const parentId   = parseInt(item.dataset.id);
-        const parentName = item.dataset.name;
-        document.getElementById("detail-parent-id").value        = parentId;
-        document.getElementById("detail-parent-name").textContent = parentName || `#${parentId}`;
-        document.getElementById("detail-parent-selected").style.display  = "";
+      item.addEventListener("mousedown", async ev => {
+        ev.preventDefault();
+        if (item.dataset.create) {
+          const created = await createParentTask(item.dataset.name);
+          if (!created) return;
+          document.getElementById("detail-parent-id").value         = created.id;
+          document.getElementById("detail-parent-name").textContent = created.item;
+        } else {
+          const parentId   = parseInt(item.dataset.id);
+          const parentName = item.dataset.name;
+          document.getElementById("detail-parent-id").value         = parentId;
+          document.getElementById("detail-parent-name").textContent = parentName || `#${parentId}`;
+        }
+        document.getElementById("detail-parent-selected").style.display   = "";
         document.getElementById("detail-parent-search-wrap").style.display = "none";
-        document.getElementById("detail-parent-search").value   = "";
+        document.getElementById("detail-parent-search").value = "";
         dropdown.style.display = "none";
       });
     });
@@ -795,7 +827,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Bulk set parent modal search ─────────────────────────────────────────
   document.getElementById("set-parent-search")?.addEventListener("input", e => {
-    const q        = e.target.value.toLowerCase().trim();
+    const raw      = e.target.value.trim();
+    const q        = raw.toLowerCase();
     const dropdown = document.getElementById("set-parent-dropdown");
     if (!dropdown) return;
     if (!q) { dropdown.style.display = "none"; return; }
@@ -806,14 +839,18 @@ document.addEventListener("DOMContentLoaded", () => {
       && (r.item || "").toLowerCase().includes(q)
     ).slice(0, 10);
 
-    if (!matches.length) { dropdown.style.display = "none"; return; }
+    const createHtml = `<div class="parent-dropdown-item parent-dropdown-create" data-create="1" data-name="${esc(raw)}">
+      <span class="parent-dropdown-id" style="color:var(--primary)">＋</span>
+      <span class="parent-dropdown-name">Create "<strong>${esc(raw)}</strong>"</span>
+    </div>`;
 
     dropdown.innerHTML = matches.map(r =>
       `<div class="parent-dropdown-item" data-id="${r.id}" data-name="${esc(r.item || "")}">
         <span class="parent-dropdown-id">#${r.id}</span>
         <span class="parent-dropdown-name">${esc(r.item || "(no name)")}</span>
       </div>`
-    ).join("");
+    ).join("") + createHtml;
+
     dropdown.style.display = "";
     requestAnimationFrame(() => {
       const inp  = document.getElementById("set-parent-search");
@@ -826,11 +863,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     dropdown.querySelectorAll(".parent-dropdown-item").forEach(item => {
-      item.addEventListener("mousedown", e => {
-        e.preventDefault();
-        _bulkSetParentId = parseInt(item.dataset.id);
-        const name = item.dataset.name;
-        document.getElementById("set-parent-chosen-name").textContent = name || `#${_bulkSetParentId}`;
+      item.addEventListener("mousedown", async ev => {
+        ev.preventDefault();
+        if (item.dataset.create) {
+          const created = await createParentTask(item.dataset.name);
+          if (!created) return;
+          _bulkSetParentId = created.id;
+          document.getElementById("set-parent-chosen-name").textContent = created.item;
+        } else {
+          _bulkSetParentId = parseInt(item.dataset.id);
+          document.getElementById("set-parent-chosen-name").textContent = item.dataset.name || `#${_bulkSetParentId}`;
+        }
         document.getElementById("set-parent-selected").style.display  = "";
         document.getElementById("set-parent-search").value = "";
         document.getElementById("set-parent-dropdown").style.display = "none";

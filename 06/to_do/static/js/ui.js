@@ -353,6 +353,9 @@ async function saveDetailPanel() {
     if (nowCompleted && !wasCompleted && detailRowData.recur_rule) {
       spawnRecurringOccurrence(detailRowData);
     }
+
+    document.getElementById("detail-panel").classList.remove("open");
+    detailRowData = null;
   }
 }
 

@@ -570,14 +570,42 @@ async function spawnRecurringOccurrence(sourceRow) {
     completed: false, date_completed: "", last_modified: now, deleted: false,
   };
   const saved = await saveRow(newRow);
-  if (saved) {
-    if (newRow.id) setNotifOff(newRow.id, true);
-    rowData.push(newRow);
-    gridApi?.applyTransaction({ add: [newRow] });
-    gridApi?.onFilterChanged();
-    updateRowCount();
-    toast(`Recurring task created for ${nextDate}.`, "success");
+  if (!saved) return;
+
+  if (newRow.id) setNotifOff(newRow.id, true);
+  rowData.push(newRow);
+  gridApi?.applyTransaction({ add: [newRow] });
+
+  // Spawn fresh copies of any children, parented to the new occurrence
+  const children = rowData.filter(r => r.parent_id === sourceRow.id && !r.deleted);
+  for (const child of children) {
+    // Preserve the child's date offset relative to the parent, if both had dates
+    let childDate = child.date ? nextDate : "";
+    if (child.date && sourceRow.date) {
+      const offsetMs = new Date(child.date).getTime() - new Date(sourceRow.date).getTime();
+      if (offsetMs !== 0) childDate = fmtDate(new Date(new Date(nextDate).getTime() + offsetMs));
+    }
+    const newChild = {
+      item: child.item, category: child.category,
+      date: childDate, time: child.time, sort: child.sort,
+      description: child.description, link: child.link || "",
+      recur_rule: "", follow_ups: "[]",            // children don't carry recurrence
+      completed: false, date_completed: "",
+      last_modified: now, deleted: false,
+      parent_id: newRow.id,
+    };
+    const savedChild = await saveRow(newChild);
+    if (savedChild) {
+      if (newChild.id) setNotifOff(newChild.id, true);
+      rowData.push(newChild);
+      gridApi?.applyTransaction({ add: [newChild] });
+    }
   }
+
+  gridApi?.onFilterChanged();
+  updateRowCount();
+  const n = children.length;
+  toast(`Recurring task${n ? ` + ${n} subtask${n !== 1 ? "s" : ""}` : ""} created for ${nextDate}.`, "success");
 }
 
 // ---------------------------------------------------------------------------

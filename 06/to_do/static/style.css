@@ -39,12 +39,13 @@
   --font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-  --radius:       8px;
-  --radius-sm:    4px;
-  --radius-lg:    12px;
+  --radius:       14px;
+  --radius-sm:    10px;
+  --radius-lg:    22px;
+  --radius-pill:  999px;
 
-  --shadow:       0 4px 12px rgba(0,0,0,.4);
-  --shadow-lg:    0 12px 32px rgba(0,0,0,.6);
+  --shadow:       0 4px 16px rgba(0,0,0,.35);
+  --shadow-lg:    0 16px 40px rgba(0,0,0,.55);
 
   --navbar-h:     52px;
   --toolbar-h:    48px;
@@ -54,19 +55,19 @@
 
 /* ── Design tokens – light ───────────────────────────────────────── */
 [data-theme="light"] {
-  --bg:           #f8fafc;
+  --bg:           #e8eaf6;       /* indigo-tinted canvas — surfaces pop against this */
   --bg-surface:   #ffffff;
-  --bg-surface-2: #f1f5f9;
-  --bg-surface-3: #e2e8f0;
-  --bg-hover:     #eef2ff;
-  --border:       #e2e8f0;
-  --border-subtle:#f1f5f9;
-  --text:         #1e293b;
-  --text-muted:   #64748b;
-  --text-subtle:  #94a3b8;
+  --bg-surface-2: #f3f4fd;       /* slight indigo wash */
+  --bg-surface-3: #e4e6f5;
+  --bg-hover:     #dde2ff;       /* visible indigo hover */
+  --border:       #d4d7ec;       /* clear but not harsh */
+  --border-subtle:#e8eaf6;
+  --text:         #1a1d36;       /* slightly indigo-tinted dark */
+  --text-muted:   #5a6080;
+  --text-subtle:  #9398b8;
   --text-inv:     #ffffff;
-  --shadow:       0 2px 8px rgba(0,0,0,.08);
-  --shadow-lg:    0 8px 24px rgba(0,0,0,.14);
+  --shadow:       0 3px 14px rgba(99,102,241,.13);   /* indigo-tinted depth */
+  --shadow-lg:    0 10px 32px rgba(99,102,241,.20);
 }
 
 /* ── Reset / base ─────────────────────────────────────────────────── */
@@ -91,7 +92,8 @@ html, body {
   height: var(--navbar-h);
   padding: 0 16px;
   background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
   gap: 12px;
   flex-shrink: 0;
   position: relative;
@@ -115,7 +117,7 @@ html, body {
   align-items: center;
   gap: 2px;
   background: var(--bg-surface-2);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   padding: 3px;
   margin-left: 8px;
 }
@@ -124,13 +126,13 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 5px 14px;
   font-size: 12.5px;
   font-weight: 500;
   color: var(--text-muted);
   background: none;
   border: none;
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: background .15s, color .15s;
   white-space: nowrap;
@@ -152,17 +154,18 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 16px;
   font-size: 12.5px;
   font-weight: 500;
   font-family: var(--font);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: background .15s, opacity .15s, box-shadow .15s;
+  transition: background .15s, opacity .15s, box-shadow .15s, transform .1s;
   white-space: nowrap;
   line-height: 1;
 }
+.btn:active:not(:disabled) { transform: scale(.97); }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
 
 .btn-primary   { background: var(--primary);  color: #fff; }
@@ -322,9 +325,9 @@ body {
   align-items: center;
   justify-content: space-between;
   height: var(--toolbar-h);
-  padding: 0 12px;
+  padding: 0 16px;
   background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
   gap: 10px;
   flex-shrink: 0;
 }
@@ -340,24 +343,24 @@ body {
   display: flex;
   align-items: center;
   background: var(--bg-surface-2);
-  border-radius: var(--radius-sm);
-  padding: 2px;
+  border-radius: var(--radius-pill);
+  padding: 3px;
   gap: 1px;
 }
 .preset-btn {
-  padding: 4px 11px;
+  padding: 4px 13px;
   font-size: 12px;
   font-weight: 500;
   background: none;
   border: none;
-  border-radius: calc(var(--radius-sm) - 1px);
+  border-radius: var(--radius-pill);
   color: var(--text-muted);
   cursor: pointer;
   transition: background .12s, color .12s;
   white-space: nowrap;
 }
 .preset-btn:hover  { color: var(--text); }
-.preset-btn.active { background: var(--bg-surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.preset-btn.active { background: var(--bg-surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
 .past-due-badge {
   display: inline-flex;
   align-items: center;
@@ -389,10 +392,10 @@ body {
 }
 #quick-filter,
 #snoozed-search {
-  padding: 5px 10px 5px 29px;
+  padding: 5px 12px 5px 30px;
   background: var(--bg-surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   font-family: var(--font);
   font-size: 12.5px;
   color: var(--text);
@@ -432,7 +435,7 @@ body {
   align-items: center;
   gap: 12px;
   height: var(--selbar-h);
-  padding: 0 12px;
+  padding: 0 16px;
   background: var(--primary-muted);
   border-bottom: 1px solid var(--primary);
   flex-shrink: 0;
@@ -487,7 +490,7 @@ body {
   padding: 4px 24px 4px 26px;
   background: var(--bg-surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   font-family: var(--font);
   font-size: 12.5px;
   color: var(--text);
@@ -537,8 +540,8 @@ input.date-format-input.filter-select {
 .filter-date-input:focus { border-color: var(--primary); }
 .date-range-sep { font-size: 11px; color: var(--text-subtle); }
 [data-theme="light"] .filter-select {
-  background-color: #f8fafc;
-  color: #1e293b;
+  background-color: #f3f4fd;
+  color: #1a1d36;
 }
 
 /* Wrap text button active state */
@@ -566,53 +569,96 @@ input.date-format-input.filter-select {
   flex: 1;
   min-height: 0;
   width: 100%;
+  overflow: hidden;
 }
 
 /* Override AG Grid theme colors */
 .ag-theme-alpine-dark {
-  --ag-background-color:            var(--bg-surface);
-  --ag-header-background-color:     var(--bg-surface-2);
-  --ag-odd-row-background-color:    var(--bg-surface);
-  --ag-row-hover-color:             var(--bg-hover);
-  --ag-selected-row-background-color: var(--primary-muted);
-  --ag-border-color:                var(--border);
-  --ag-header-foreground-color:     var(--text);
-  --ag-foreground-color:            var(--text);
-  --ag-secondary-foreground-color:  var(--text-muted);
-  --ag-input-focus-border-color:    var(--primary);
-  --ag-font-family:                 var(--font);
-  --ag-font-size:                   13px;
-  --ag-cell-horizontal-padding:     10px;
-  --ag-row-height:                  38px;
-  --ag-header-height:               42px;
-  --ag-list-item-height:            30px;
-  --ag-header-column-resize-handle-color: var(--border);
-  --ag-range-selection-background-color: var(--primary-muted);
-  --ag-range-selection-border-color: var(--primary);
-  --ag-checkbox-checked-color:       var(--primary);
-  --ag-checkbox-unchecked-color:     var(--text-subtle);
-  --ag-checkbox-background-color:    var(--bg-surface-2);
-  --ag-menu-background-color:        var(--bg-surface);
-  --ag-menu-border-color:            var(--border);
-  --ag-popup-shadow:                 var(--shadow-lg);
-  --ag-tooltip-background-color:     var(--bg-surface-2);
-  --ag-input-background-color:       var(--bg-surface-2);
+  --ag-background-color:              var(--bg);               /* page bg behind rows */
+  --ag-header-background-color:       var(--primary);          /* bold colored header */
+  --ag-odd-row-background-color:      rgba(255,255,255,.025);  /* subtle stripe */
+  --ag-row-hover-color:               rgba(99,102,241,.18);    /* vivid hover */
+  --ag-selected-row-background-color: rgba(99,102,241,.22);
+  --ag-border-color:                  rgba(255,255,255,.07);
+  --ag-row-border-color:              rgba(255,255,255,.05);
+  --ag-header-foreground-color:       rgba(255,255,255,.92);
+  --ag-foreground-color:              var(--text);
+  --ag-secondary-foreground-color:    var(--text-muted);
+  --ag-input-focus-border-color:      var(--primary);
+  --ag-font-family:                   var(--font);
+  --ag-font-size:                     13px;
+  --ag-cell-horizontal-padding:       12px;
+  --ag-row-height:                    36px;                    /* compact */
+  --ag-header-height:                 40px;
+  --ag-list-item-height:              30px;
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-color: rgba(255,255,255,.2);
+  --ag-header-column-separator-height: 50%;
+  --ag-header-column-resize-handle-color: rgba(255,255,255,.3);
+  --ag-range-selection-background-color: rgba(99,102,241,.2);
+  --ag-range-selection-border-color:  #fff;
+  --ag-checkbox-checked-color:        #fff;
+  --ag-checkbox-unchecked-color:      rgba(255,255,255,.5);
+  --ag-checkbox-background-color:     transparent;
+  --ag-menu-background-color:         var(--bg-surface);
+  --ag-menu-border-color:             var(--border);
+  --ag-popup-shadow:                  var(--shadow-lg);
+  --ag-tooltip-background-color:      var(--bg-surface-2);
+  --ag-input-background-color:        var(--bg-surface-2);
 }
 
-/* Light-theme AG Grid overrides */
+/* Header: gradient fade, bold label style */
+.ag-theme-alpine-dark .ag-header {
+  background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%) !important;
+  border-bottom: none !important;
+}
+.ag-theme-alpine-dark .ag-header-cell-text {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: rgba(255,255,255,.9);
+}
+.ag-theme-alpine-dark .ag-header-icon { color: rgba(255,255,255,.7) !important; }
+
+/* Rows sit on the darker bg — give each a surface bg */
+.ag-theme-alpine-dark .ag-row {
+  background-color: var(--bg-surface);
+}
+.ag-theme-alpine-dark .ag-row-odd {
+  background-color: color-mix(in srgb, var(--bg-surface) 92%, var(--primary));
+}
+.ag-theme-alpine-dark .ag-row:hover {
+  background-color: rgba(99,102,241,.16) !important;
+}
+.ag-theme-alpine-dark .ag-row-selected {
+  background-color: rgba(99,102,241,.2) !important;
+}
+
+/* Light-theme overrides */
 [data-theme="light"] .ag-theme-alpine-dark {
-  --ag-background-color:            #ffffff;
-  --ag-header-background-color:     #f8fafc;
-  --ag-odd-row-background-color:    #ffffff;
-  --ag-row-hover-color:             #eef2ff;
-  --ag-selected-row-background-color: rgba(99,102,241,.08);
-  --ag-border-color:                #e2e8f0;
-  --ag-header-foreground-color:     #1e293b;
-  --ag-foreground-color:            #1e293b;
-  --ag-secondary-foreground-color:  #64748b;
-  --ag-input-background-color:      #f1f5f9;
-  --ag-menu-background-color:       #ffffff;
-  --ag-menu-border-color:           #e2e8f0;
+  --ag-background-color:              #e8eaf6;   /* indigo-tinted canvas */
+  --ag-odd-row-background-color:      #f5f5ff;
+  --ag-row-hover-color:               #dde2ff;
+  --ag-selected-row-background-color: rgba(99,102,241,.12);
+  --ag-border-color:                  #d4d7ec;
+  --ag-row-border-color:              #e4e6f5;
+  --ag-header-foreground-color:       rgba(255,255,255,.95);
+  --ag-foreground-color:              #1a1d36;
+  --ag-secondary-foreground-color:    #5a6080;
+  --ag-input-background-color:        #f3f4fd;
+  --ag-menu-background-color:         #ffffff;
+  --ag-menu-border-color:             #d4d7ec;
+  --ag-checkbox-checked-color:        #fff;
+}
+[data-theme="light"] .ag-theme-alpine-dark .ag-row {
+  background-color: #ffffff;
+}
+[data-theme="light"] .ag-theme-alpine-dark .ag-row-odd {
+  background-color: #f5f5ff;
+}
+[data-theme="light"] .ag-theme-alpine-dark .ag-row:hover {
+  background-color: #dde2ff !important;
 }
 
 /* Center-aligned column headers */
@@ -622,16 +668,16 @@ input.date-format-input.filter-select {
 
 /* Row state classes */
 .ag-theme-alpine-dark .ag-row.row-completed {
-  background-color: var(--success-muted) !important;
+  background-color: rgba(34,197,94,.10) !important;
 }
 [data-theme="light"] .ag-theme-alpine-dark .ag-row.row-completed {
-  background-color: rgba(34,197,94,.06) !important;
+  background-color: rgba(34,197,94,.09) !important;
 }
 .ag-theme-alpine-dark .ag-row.row-completed .ag-cell {
   color: var(--text-muted) !important;
 }
 .ag-theme-alpine-dark .ag-row.row-deleted {
-  background-color: var(--danger-muted) !important;
+  background-color: rgba(239,68,68,.10) !important;
   opacity: .7;
 }
 .ag-theme-alpine-dark .ag-row.row-deleted .ag-cell {
@@ -652,14 +698,8 @@ input.date-format-input.filter-select {
 }
 
 .ag-theme-alpine-dark .ag-row.row-snoozed {
-  opacity: .6;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 6px,
-    rgba(217, 119, 6, .08) 6px,
-    rgba(217, 119, 6, .08) 12px
-  ) !important;
+  opacity: .55;
+  background: rgba(245,158,11,.09) !important;
   color: var(--warning) !important;
 }
 
@@ -692,8 +732,8 @@ input.date-format-input.filter-select {
 }
 [data-theme="light"] .cell-date-editor,
 [data-theme="light"] .cell-time-editor {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: #f3f4fd;
+  color: #1a1d36;
 }
 
 /* Date picker button inside grid cell */
@@ -743,10 +783,10 @@ input.date-format-input.filter-select {
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 6px 12px;
+  padding: 8px 14px;
   background: var(--bg-surface);
   border: none;
-  border-top: 1px dashed var(--border);
+  border-top: 1px dashed rgba(255,255,255,.08);
   color: var(--text-subtle);
   font: inherit;
   font-size: 12px;
@@ -754,9 +794,13 @@ input.date-format-input.filter-select {
   text-align: left;
   transition: background 0.15s, color 0.15s;
 }
+[data-theme="light"] .grid-add-bottom-btn {
+  border-top-color: #e2e8f0;
+}
 .grid-add-bottom-btn:hover {
-  background: var(--bg-surface-2);
-  color: var(--primary);
+  background: var(--primary-muted);
+  color: var(--primary-h);
+  padding-left: 18px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -767,9 +811,10 @@ input.date-format-input.filter-select {
   align-items: center;
   justify-content: space-between;
   height: var(--statusbar-h);
-  padding: 0 12px;
+  padding: 0 16px;
   background: var(--bg-surface);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -1px 8px rgba(0,0,0,.15);
   font-size: 11.5px;
   color: var(--text-subtle);
   flex-shrink: 0;
@@ -1126,10 +1171,10 @@ input.date-format-input.filter-select {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 16px;
+  padding: 12px 18px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   box-shadow: var(--shadow-lg);
   font-size: 13px;
   color: var(--text);
@@ -1183,7 +1228,7 @@ input.date-format-input.filter-select {
   height: 26px;
   background: none;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   color: var(--text-subtle);
   cursor: pointer;
   transition: background .12s, color .12s, border-color .12s;
@@ -1371,10 +1416,10 @@ input.date-format-input.filter-select {
 }
 .detail-input {
   width: 100%;
-  padding: 7px 10px;
+  padding: 7px 12px;
   background: var(--bg-surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   font-family: var(--font);
   font-size: 13px;
   color: var(--text);
@@ -1770,9 +1815,9 @@ input.date-format-input.filter-select {
 
 /* Light theme overrides for detail panel */
 [data-theme="light"] .detail-input {
-  background: #f8fafc;
-  color: #1e293b;
-  border-color: #e2e8f0;
+  background: #f3f4fd;
+  color: #1a1d36;
+  border-color: #d4d7ec;
 }
 [data-theme="light"] .detail-input:focus { border-color: var(--primary); }
 
@@ -2032,8 +2077,8 @@ input.date-format-input.filter-select {
   gap: 5px;
   background: var(--bg-surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
   color: var(--text-subtle);
 }
 .cal-search-input {
@@ -2074,7 +2119,7 @@ input.date-format-input.filter-select {
 .cal-cell {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   padding: 6px;
   min-height: 80px;
   overflow-y: auto;   /* scrollable when items exceed cell height */
@@ -2112,8 +2157,8 @@ input.date-format-input.filter-select {
 .cal-chip {
   display: block;
   font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 2px;
   background: var(--bg-surface-2);
   color: var(--text-primary);
@@ -2181,7 +2226,7 @@ input.date-format-input.filter-select {
 .week-col {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2216,7 +2261,7 @@ input.date-format-input.filter-select {
   gap: 6px;
   align-items: flex-start;
   padding: 6px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: var(--bg-surface-2);
   cursor: pointer;
   transition: background .12s;
@@ -2259,12 +2304,12 @@ input.date-format-input.filter-select {
   display: flex;
   gap: 2px;
   background: var(--bg-surface-2);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   padding: 2px;
 }
 .week-mode-btn,
 .cal-mode-btn {
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: var(--radius-pill);
   font-size: 12px;
 }
 .week-mode-btn.active,
@@ -2501,6 +2546,13 @@ input.date-format-input.filter-select {
   transition: background .1s;
 }
 .parent-dropdown-item:hover { background: var(--bg-hover); }
+.parent-dropdown-create {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 2px;
+  color: var(--primary);
+}
+.parent-dropdown-create:hover { background: var(--primary-muted); }
+.parent-dropdown-create .parent-dropdown-name { color: var(--text); }
 .parent-dropdown-id {
   font-family: var(--font-mono);
   font-size: 11px;
