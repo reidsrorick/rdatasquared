@@ -499,6 +499,13 @@ body {
   color: var(--primary-h);
   background-color: var(--primary-muted);
 }
+input.date-format-input.filter-select {
+  background-image: none;
+  padding-right: 8px;
+  min-width: 110px;
+  width: 148px;
+  cursor: text;
+}
 .date-custom-range {
   display: flex;
   align-items: center;

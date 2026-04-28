@@ -24,21 +24,39 @@ function fmtDateTime(d) {
 
 // Display-only date formatter — converts stored ISO "YYYY-MM-DD" to chosen display format.
 // The underlying stored value is always ISO; this only affects what users see.
+// Token reference: YYYY YY | MMMM MMM MM M | DDDD DDD DD D
+// DDDD=Tuesday  DDD=Tue  DD=28  D=28(unpadded)
+// MMMM=April    MMM=Apr  MM=04  M=4
+// YYYY=2026      YY=26
 function fmtDisplayDate(isoStr, fmt) {
-  if (!isoStr) return "";
+  if (!isoStr || !fmt) return isoStr || "";
   const parts = isoStr.split("-");
   if (parts.length !== 3) return isoStr;
   const [y, m, d] = parts;
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const mi = parseInt(m, 10) - 1;
-  switch (fmt) {
-    case "MM/DD/YYYY":  return `${m}/${d}/${y}`;
-    case "DD/MM/YYYY":  return `${d}/${m}/${y}`;
-    case "M/D/YY":      return `${parseInt(m)}/${parseInt(d)}/${y.slice(2)}`;
-    case "MMM D, YYYY": return `${months[mi]} ${parseInt(d)}, ${y}`;
-    case "D MMM YYYY":  return `${parseInt(d)} ${months[mi]} ${y}`;
-    default:            return isoStr; // YYYY-MM-DD
-  }
+  const months     = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fullMonths = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const shortDays  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const fullDays   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const mi  = parseInt(m, 10) - 1;
+  const di  = parseInt(d, 10);
+  // Compute day-of-week lazily — only if format uses DDDD/DDD tokens
+  let dow = null;
+  const getDow = () => { if (dow === null) dow = new Date(`${y}-${m}-${d}T00:00:00`).getDay(); return dow; };
+  // Regex matches longest token first at each position (no re-scan of replacements)
+  return fmt.replace(/DDDD|DDD|DD|D|MMMM|MMM|MM|M|YYYY|YY/g, tok => {
+    switch (tok) {
+      case "DDDD": return fullDays[getDow()];
+      case "DDD":  return shortDays[getDow()];
+      case "DD":   return d;
+      case "D":    return String(di);
+      case "MMMM": return fullMonths[mi];
+      case "MMM":  return months[mi];
+      case "MM":   return m;
+      case "M":    return String(mi + 1);
+      case "YYYY": return y;
+      case "YY":   return y.slice(2);
+    }
+  });
 }
 
 function fmtTime12h(timeStr) {

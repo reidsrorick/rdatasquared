@@ -106,19 +106,6 @@
       </div>
     </div>
     <div class="toolbar-right">
-      <!-- Date display format -->
-      <div class="filter-select-wrap" title="Date display format">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <select id="date-format-select" class="filter-select">
-          <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-          <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-          <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-          <option value="M/D/YY">M/D/YY</option>
-          <option value="MMM D, YYYY">Apr 27, 2026</option>
-          <option value="D MMM YYYY">27 Apr 2026</option>
-        </select>
-      </div>
-
       <!-- Column visibility picker -->
       <div class="dropdown" id="columns-dropdown">
         <button class="btn btn-ghost btn-sm dropdown-toggle" title="Show/hide columns">
@@ -204,6 +191,14 @@
         <input type="date" id="date-custom-from" class="filter-date-input" title="From date" />
         <span id="date-custom-sep" class="date-range-sep" style="display:none">→</span>
         <input type="date" id="date-custom-to"   class="filter-date-input" style="display:none" title="To date" />
+      </div>
+
+      <!-- Date display format -->
+      <div class="filter-select-wrap">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <input type="text" id="date-format-select" class="filter-select date-format-input"
+               placeholder="YYYY-MM-DD"
+               title="Date display format&#10;Tokens: YYYY YY | MMMM MMM MM M | DDDD DDD DD D&#10;Examples: YYYY-MM-DD · MM/DD/YYYY · MMM D, YYYY · DDD, MMMM DD" />
       </div>
 
       <!-- Status filter -->
@@ -540,9 +535,9 @@
       </div>
       <div class="drop-zone" id="drop-zone">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <p>Drop a <strong>.json</strong> backup or <strong>.csv</strong> file here</p>
+        <p>Drop a <strong>.json</strong> backup, <strong>.ndjson</strong> auto-save, or <strong>.csv</strong> file here</p>
         <label for="file-input" class="btn btn-secondary">Browse file</label>
-        <input type="file" id="file-input" accept=".csv,.json" />
+        <input type="file" id="file-input" accept=".csv,.json,.ndjson" />
       </div>
       <div id="import-file-name" class="import-file-name hidden"></div>
     </div>

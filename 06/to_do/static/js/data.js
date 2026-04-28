@@ -67,6 +67,7 @@ async function saveRow(row) {
     }
 
     _saveAllItems(all);
+    _scheduleNDJsonSave(row);
     setSaveStatus("saved");
     return row;
   } catch (err) {
@@ -112,6 +113,7 @@ async function bulkAction(action) {
   });
 
   _saveAllItems(all);
+  _scheduleNDJsonSave(all.filter(r => idSet.has(r.id)));
   toast(`${ids.length} row(s) updated`, "success");
   gridApi.deselectAll();
   await loadRows();
@@ -145,6 +147,7 @@ async function showDeletedModal() {
 async function emptyTrash() {
   confirm$("Empty Trash", "Permanently delete all trashed items? This cannot be undone.", () => {
     _saveAllItems(getAllItems().filter(r => !r.deleted));
+    compactNDJsonExport();
     toast("Trash emptied", "success");
     showDeletedModal();
     updateDeletedBadge();
@@ -208,10 +211,19 @@ async function doImport() {
       const data = JSON.parse(text);
       if (!Array.isArray(data.items)) throw new Error("Invalid backup file — expected { items: [...] }");
       items = data.items;
+    } else if (filename.endsWith(".ndjson")) {
+      // Deduplicate by id — last occurrence wins (newest write)
+      const rowMap = new Map();
+      text.split("\n").forEach(line => {
+        const l = line.trim();
+        if (!l) return;
+        try { const r = JSON.parse(l); if (r.id != null) rowMap.set(r.id, r); } catch {}
+      });
+      items = [...rowMap.values()];
     } else if (filename.endsWith(".csv")) {
       items = _parseCSV(text);
     } else {
-      throw new Error("Unsupported file type — use .json or .csv");
+      throw new Error("Unsupported file type — use .json, .ndjson, or .csv");
     }
 
     const now = fmtDateTime(new Date());
@@ -300,6 +312,111 @@ function _parseCSV(text) {
     });
     return row;
   });
+}
+
+// ---------------------------------------------------------------------------
+// NDJSON auto-save — append-only, compacts after threshold
+// ---------------------------------------------------------------------------
+
+let _ndJsonBuffer       = [];   // rows queued for next write
+let _ndJsonTimer        = null; // debounce handle
+let _ndJsonAppendCount  = 0;    // lines written since last compact
+const _NDJSON_COMPACT_AT = 500; // compact (deduplicate) after this many appended lines
+
+function _ndJsonLine(r) {
+  return JSON.stringify({ id: r.id, ...r });
+}
+
+function _scheduleNDJsonSave(rows) {
+  if (!Array.isArray(rows)) rows = [rows];
+  _ndJsonBuffer.push(...rows);
+  clearTimeout(_ndJsonTimer);
+  _ndJsonTimer = setTimeout(_flushNDJson, 2000);
+}
+
+async function _flushNDJson() {
+  if (!_ndJsonBuffer.length) return;
+  const rows = _ndJsonBuffer.splice(0);
+
+  let dirHandle;
+  try { dirHandle = await getExportDirHandle(); } catch { return; }
+  if (!dirHandle) return;
+
+  // Only auto-save if permission already granted — no user gesture available here
+  let perm;
+  try { perm = await dirHandle.queryPermission({ mode: "readwrite" }); } catch { return; }
+  if (perm !== "granted") return;
+
+  const settings = getExportSettings();
+  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|ndjson)$/i, "");
+  const filename = baseName + ".ndjson";
+
+  try {
+    _ndJsonAppendCount += rows.length;
+    if (_ndJsonAppendCount >= _NDJSON_COMPACT_AT) {
+      await _compactNDJson(dirHandle, filename);
+      _ndJsonAppendCount = 0;
+    } else {
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+      const file       = await fileHandle.getFile();
+      const writable   = await fileHandle.createWritable({ keepExistingData: true });
+      await writable.seek(file.size);
+
+      let content;
+      if (file.size === 0) {
+        // First write — seed with full dataset so the file is a complete backup
+        const allRows = getAllItems();
+        const rowMap  = new Map(allRows.map(r => [r.id, r]));
+        rows.forEach(r => { if (r.id != null) rowMap.set(r.id, r); });
+        content = [...rowMap.values()].map(_ndJsonLine).join("\n");
+        _ndJsonAppendCount = rowMap.size;
+      } else {
+        content = "\n" + rows.map(_ndJsonLine).join("\n");
+      }
+
+      await writable.write(content);
+      await writable.close();
+    }
+  } catch (err) {
+    console.warn("NDJSON auto-save failed:", err.message);
+  }
+}
+
+async function _compactNDJson(dirHandle, filename) {
+  let fileHandle;
+  try { fileHandle = await dirHandle.getFileHandle(filename, { create: true }); } catch { return; }
+  const file = await fileHandle.getFile();
+  const text = await file.text();
+
+  // Drain any pending buffer rows — they're newer than what's on disk
+  const pending = _ndJsonBuffer.splice(0);
+
+  const rowMap = new Map();
+  text.split("\n").forEach(line => {
+    const l = line.trim();
+    if (!l) return;
+    try { const r = JSON.parse(l); if (r.id != null) rowMap.set(r.id, r); } catch {}
+  });
+  pending.forEach(r => { if (r.id != null) rowMap.set(r.id, r); });
+
+  const compacted = [...rowMap.values()].map(_ndJsonLine).join("\n");
+  const writable  = await fileHandle.createWritable();
+  await writable.write(compacted);
+  await writable.close();
+}
+
+// Exposed for manual compaction (e.g. after empty trash)
+async function compactNDJsonExport() {
+  let dirHandle;
+  try { dirHandle = await getExportDirHandle(); } catch { return; }
+  if (!dirHandle) return;
+  let perm;
+  try { perm = await dirHandle.queryPermission({ mode: "readwrite" }); } catch { return; }
+  if (perm !== "granted") return;
+  const settings = getExportSettings();
+  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|ndjson)$/i, "");
+  await _compactNDJson(dirHandle, baseName + ".ndjson");
+  _ndJsonAppendCount = 0;
 }
 
 // ---------------------------------------------------------------------------

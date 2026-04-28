@@ -544,8 +544,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ── Date display format ──────────────────────────────────────────────────
-  document.getElementById("date-format-select")?.addEventListener("change", e => {
-    displayDateFormat = e.target.value;
+  document.getElementById("date-format-select")?.addEventListener("input", e => {
+    displayDateFormat = e.target.value || "YYYY-MM-DD";
     saveDateFormat();
     gridApi?.refreshCells({ columns: ["date", "date_completed"], force: true });
   });
