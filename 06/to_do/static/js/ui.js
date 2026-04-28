@@ -47,15 +47,16 @@ function updateRowCount() {
   gridApi.forEachNodeAfterFilter(() => n++);
   document.getElementById("row-count").textContent = `${n} row${n !== 1 ? "s" : ""}`;
   updateFilterSummary();
+  updatePastDueBadge();
 }
 
 function updateFilterSummary() {
   const parts = [];
   if (activePreset !== "all") parts.push(document.querySelector(`.preset-btn[data-preset="${activePreset}"]`)?.textContent?.trim() || activePreset);
-  if (activeCategoryFilters !== null && activeCategoryFilters.length === 0) parts.push("No Category");
-  else if (activeCategoryFilters !== null && activeCategoryFilters.length === 1) parts.push(activeCategoryFilters[0]);
-  else if (activeCategoryFilters !== null && activeCategoryFilters.length > 1) parts.push(`${activeCategoryFilters.length} categories`);
+  if (activeCategoryFilters.length === 1) parts.push(activeCategoryFilters[0]);
+  else if (activeCategoryFilters.length > 1) parts.push(`${activeCategoryFilters.length} categories`);
   if (activeDateFilter !== "all") parts.push(document.querySelector(`#date-filter option[value="${activeDateFilter}"]`)?.textContent || activeDateFilter);
+  if (activeStatusFilter) parts.push(getStatusOption(activeStatusFilter).label);
   const quick = document.getElementById("quick-filter")?.value;
   if (quick) parts.push(`"${quick}"`);
 
@@ -153,31 +154,15 @@ function navigateToRow(id) {
 // Detail panel
 // ---------------------------------------------------------------------------
 
-function applyDetailFieldVisibility() {
-  const hidden = getDetailHiddenFields();
-  document.querySelectorAll("[data-detail-field]").forEach(el => {
-    const field = el.dataset.detailField;
-    el.style.display = hidden[field] ? "none" : "";
-  });
-}
-
 function openDetailPanel(row) {
   if (!row) return;
   detailRowData = row;
   populateDetailPanel(row);
 
-  const panel  = document.getElementById("detail-panel");
-  const isOpen = panel.classList.contains("open");
+  const panel = document.getElementById("detail-panel");
+  applyDetailFieldVisibility();
   panel.classList.add("open");
-
-  const itemEl = document.getElementById("detail-item");
-  if (isOpen) {
-    requestAnimationFrame(() => autoResizeTextarea(itemEl));
-  } else {
-    panel.addEventListener("transitionend", e => {
-      if (e.propertyName === "width") autoResizeTextarea(itemEl);
-    }, { once: true });
-  }
+  requestAnimationFrame(() => autoResizeTextarea(document.getElementById("detail-item")));
 }
 
 function closeDetailPanel() {
@@ -187,8 +172,10 @@ function closeDetailPanel() {
     const savedDesc = (detailRowData.description || "").trim();
     if (!savedItem && !savedDesc) {
       const deadRow = detailRowData;
-      deadRow.deleted = true;
-      saveRow(deadRow);
+      // Permanently remove from localStorage (blank rows have no value)
+      const all = getAllItems();
+      const idx = all.findIndex(r => r.id === deadRow.id);
+      if (idx >= 0) { all.splice(idx, 1); _saveAllItems(all); }
       rowData = rowData.filter(r => r !== deadRow);
       gridApi?.applyTransaction({ remove: [deadRow] });
       gridApi?.onFilterChanged();
@@ -206,7 +193,6 @@ function autoResizeTextarea(el) {
 
 function populateDetailPanel(row) {
   const itemEl = document.getElementById("detail-item");
-  applyDetailFieldVisibility();
   itemEl.value = row.item || "";
   document.getElementById("detail-category").value       = row.category       || "";
   document.getElementById("detail-date").value           = row.date           || "";
@@ -215,6 +201,7 @@ function populateDetailPanel(row) {
   document.getElementById("detail-description").value    = row.description    || "";
   document.getElementById("detail-completed").checked    = !!row.completed;
   document.getElementById("detail-date-completed").value = row.date_completed || "";
+  document.getElementById("detail-status").value         = row.status         || "";
 
   const linkVal = row.link || "";
   document.getElementById("detail-link").value = linkVal;
@@ -227,6 +214,7 @@ function populateDetailPanel(row) {
   const recurUnit  = document.getElementById("detail-recur-unit");
   if (recurOn && recurCount && recurUnit) {
     const rule = row.recur_rule || "";
+    const recurInputs = document.querySelector(".recur-inputs");
     if (rule) {
       const [n, unit]     = rule.split(":");
       recurOn.checked     = true;
@@ -234,12 +222,14 @@ function populateDetailPanel(row) {
       recurUnit.value     = unit || "days";
       recurCount.disabled = false;
       recurUnit.disabled  = false;
+      recurInputs?.classList.add("recur-inputs--on");
     } else {
       recurOn.checked     = false;
       recurCount.value    = "1";
       recurUnit.value     = "days";
       recurCount.disabled = true;
       recurUnit.disabled  = true;
+      recurInputs?.classList.remove("recur-inputs--on");
     }
   }
 
@@ -247,6 +237,28 @@ function populateDetailPanel(row) {
   document.getElementById("detail-created-at").textContent    = row.created_at    || "—";
   document.getElementById("detail-id").textContent            = row.id            || "—";
 
+  // Parent task
+  const parentId         = row.parent_id || null;
+  const parentIdInput    = document.getElementById("detail-parent-id");
+  const parentSelectedEl = document.getElementById("detail-parent-selected");
+  const parentNameEl     = document.getElementById("detail-parent-name");
+  const parentSearchWrap = document.getElementById("detail-parent-search-wrap");
+  const parentSearchEl   = document.getElementById("detail-parent-search");
+  if (parentIdInput) parentIdInput.value = parentId || "";
+  if (parentId) {
+    const parentRow = rowData.find(r => r.id === parentId && !r.deleted);
+    if (parentNameEl) parentNameEl.textContent = parentRow ? (parentRow.item || `#${parentId}`) : `#${parentId}`;
+    if (parentSelectedEl) parentSelectedEl.style.display = "";
+    if (parentSearchWrap) parentSearchWrap.style.display = "none";
+  } else {
+    if (parentSelectedEl) parentSelectedEl.style.display = "none";
+    if (parentSearchWrap) parentSearchWrap.style.display = "";
+    if (parentSearchEl)   parentSearchEl.value = "";
+    const dd = document.getElementById("detail-parent-dropdown");
+    if (dd) dd.style.display = "none";
+  }
+
+  renderSubtasksList(row);
   renderFollowupList(row);
 
   const doneBadge = document.getElementById("detail-done-badge");
@@ -254,32 +266,18 @@ function populateDetailPanel(row) {
   doneBadge.style.display = row.completed ? "" : "none";
   openBadge.style.display = row.completed ? "none" : "";
 
-  const notifRow     = document.getElementById("detail-notif-row");
-  const notifCb      = document.getElementById("detail-notif-enabled");
-  const notifTimeInp = document.getElementById("detail-notif-time");
-  const notifFieldHidden = getDetailHiddenFields()["notifications"];
-  if ("Notification" in window && row.id && !notifFieldHidden) {
-    notifRow.style.display = "";
-    const enabled = !isNotifDisabled(row.id);
-    notifCb.checked = enabled;
-    if (notifTimeInp) {
-      notifTimeInp.value    = getNotifTime(row.id);
-      notifTimeInp.disabled = !enabled;
-    }
-  } else {
-    notifRow.style.display = "none";
-  }
-
-  const snoozeBtn      = document.getElementById("btn-detail-snooze");
-  const snoozeUntilEl  = document.getElementById("detail-snooze-until");
+  const snoozeBtn     = document.getElementById("btn-detail-snooze");
+  const snoozeUntilEl = document.getElementById("detail-snooze-until");
   if (snoozeBtn && row.id) {
     const snoozed = isSnoozeActive(row.id);
-    snoozeBtn.textContent = snoozed ? "Unsnooze" : "Snooze";
+    snoozeBtn.innerHTML = snoozed
+      ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> Unsnooze`
+      : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> Snooze`;
     snoozeBtn.classList.toggle("btn-warning", !snoozed);
     snoozeBtn.classList.toggle("btn-ghost",    snoozed);
     if (snoozeUntilEl) {
       if (snoozed && snoozedItems[row.id]) {
-        snoozeUntilEl.textContent = `Until ${snoozedItems[row.id]}`;
+        snoozeUntilEl.textContent = `Until: ${snoozedItems[row.id]}`;
         snoozeUntilEl.style.display = "";
       } else {
         snoozeUntilEl.style.display = "none";
@@ -323,6 +321,8 @@ async function saveDetailPanel() {
       const unit  = document.getElementById("detail-recur-unit")?.value  || "days";
       return on ? `${count}:${unit}` : "";
     })(),
+    status:         document.getElementById("detail-status").value,
+    parent_id:      parseInt(document.getElementById("detail-parent-id")?.value) || null,
     follow_ups:     detailRowData.follow_ups || "[]",
     completed:      nowCompleted,
     date_completed: (() => {
@@ -432,13 +432,63 @@ function renderFollowupList(row) {
       inp.style.height = inp.scrollHeight + "px";
     });
   };
-  if (panel.classList.contains("open")) {
-    requestAnimationFrame(applyScrollHeights);
-  } else {
-    panel.addEventListener("transitionend", e => {
-      if (e.propertyName === "width") applyScrollHeights();
-    }, { once: true });
+  requestAnimationFrame(applyScrollHeights);
+}
+
+// ---------------------------------------------------------------------------
+// Subtasks list
+// ---------------------------------------------------------------------------
+
+function renderSubtasksList(row) {
+  const listEl     = document.getElementById("detail-subtasks-list");
+  const progressEl = document.getElementById("detail-subtasks-progress");
+  if (!listEl) return;
+
+  const children  = rowData.filter(r => r.parent_id === row.id && !r.deleted);
+  const doneCount = children.filter(r => r.completed).length;
+
+  if (progressEl) progressEl.textContent = children.length ? `${doneCount}/${children.length}` : "";
+
+  if (!children.length) {
+    listEl.innerHTML = `<div class="subtasks-empty">No subtasks yet.</div>`;
+    return;
   }
+
+  listEl.innerHTML = children.map(c => `
+    <div class="subtask-item">
+      <input type="checkbox" class="subtask-cb cell-checkbox" ${c.completed ? "checked" : ""} data-id="${c.id}" />
+      <button class="subtask-link${c.completed ? " subtask-done" : ""}" data-id="${c.id}">${esc(c.item || "(no name)")}</button>
+    </div>
+  `).join("");
+
+  listEl.querySelectorAll(".subtask-cb").forEach(cb => {
+    cb.addEventListener("change", async () => {
+      const id = parseInt(cb.dataset.id);
+      const childRow = rowData.find(r => r.id === id);
+      if (!childRow) return;
+      childRow.completed = cb.checked;
+      if (cb.checked && !childRow.date_completed) childRow.date_completed = fmtDate(new Date());
+      if (!cb.checked) childRow.date_completed = "";
+      await saveRow(childRow);
+      gridApi?.forEachNode(node => {
+        if (node.data?.id === id) {
+          Object.assign(node.data, childRow);
+          gridApi.refreshCells({ rowNodes: [node], force: true });
+        }
+      });
+      // Also refresh parent row badge
+      gridApi?.forEachNode(node => {
+        if (node.data?.id === row.id) gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
+      });
+      renderSubtasksList(row);
+    });
+  });
+
+  listEl.querySelectorAll(".subtask-link").forEach(btn => {
+    btn.addEventListener("click", () => {
+      navigateToRow(parseInt(btn.dataset.id));
+    });
+  });
 }
 
 async function logFollowUp() {
@@ -453,6 +503,34 @@ async function logFollowUp() {
   renderFollowupList(detailRowData);
   await saveRow(detailRowData);
   toast("Follow-up logged.", "success");
+}
+
+function openSnoozePopover(anchorEl) {
+  const btn = anchorEl || document.getElementById("btn-detail-snooze");
+  const pop = document.getElementById("snooze-popover");
+  if (!pop || !btn) return;
+  const dt = document.getElementById("snooze-until-dt");
+  if (dt && !dt.value) {
+    const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(8, 0, 0, 0);
+    dt.value = fmtDate(tmr) + "T08:00";
+  }
+  pop.style.display = "flex";
+  // #detail-panel has a CSS transform, which makes it the containing block for position:fixed children.
+  // So fixed coords must be relative to the panel, not the viewport — subtract the panel's offset.
+  requestAnimationFrame(() => {
+    const rect      = btn.getBoundingClientRect();
+    const panelRect = (document.getElementById("detail-panel") || document.body).getBoundingClientRect();
+    const popW = pop.offsetWidth  || 220;
+    const popH = pop.offsetHeight || 80;
+    pop.style.left = Math.max(0, (rect.right - popW) - panelRect.left) + "px";
+    pop.style.top  = (rect.top - popH - 6 - panelRect.top) + "px";
+  });
+}
+
+async function logFollowUpAndSnooze(anchorEl) {
+  if (!detailRowData?.id) return;
+  await logFollowUp();
+  openSnoozePopover(anchorEl);
 }
 
 // ---------------------------------------------------------------------------
@@ -483,68 +561,59 @@ function unsnoozeRow(id) {
   updateRowCount();
 }
 
+function updateSnoozeBadge() {
+  const badge = document.getElementById("snoozed-badge");
+  if (badge) { const cnt = activeSnoozedCount(); badge.textContent = cnt; badge.style.display = cnt > 0 ? "" : "none"; }
+}
+
 function activeSnoozedCount() {
   const now = fmtSnoozeNow();
   return Object.values(snoozedItems).filter(d => d >= now).length;
 }
 
-// ---------------------------------------------------------------------------
-// Hidden-row actions
-// ---------------------------------------------------------------------------
-
-function toggleHideRow(id) {
-  if (hiddenRowIds.has(id)) hiddenRowIds.delete(id);
-  else hiddenRowIds.add(id);
-  saveHiddenRows();
-  gridApi?.onFilterChanged();
-  updateRowCount();
-}
-
-function bulkToggleHide(hide) {
-  const selected = gridApi?.getSelectedRows() || [];
-  if (!selected.length) return;
-  selected.forEach(r => {
-    if (r.id) {
-      if (hide) hiddenRowIds.add(r.id);
-      else hiddenRowIds.delete(r.id);
-    }
-  });
-  saveHiddenRows();
-  gridApi?.deselectAll();
-  gridApi?.onFilterChanged();
-  updateRowCount();
-  toast(`${selected.length} row${selected.length > 1 ? "s" : ""} ${hide ? "hidden" : "unhidden"}.`, "success");
-}
 
 function bulkSnooze() {
   const selected = gridApi?.getSelectedRows() || [];
   if (!selected.length) return;
-  const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(8, 0, 0, 0);
+
+  const pop = document.getElementById("bulk-snooze-popover");
+  const btn = document.getElementById("btn-bulk-snooze");
+  if (!pop || !btn) return;
+
+  // Pre-fill to tomorrow 08:00
   const dt = document.getElementById("bulk-snooze-until-dt");
-  if (dt) dt.value = fmtDate(tmr) + "T08:00";
-  showModal("modal-bulk-snooze");
+  if (dt && !dt.value) {
+    const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(8, 0, 0, 0);
+    dt.value = fmtDate(tmr) + "T08:00";
+  }
+
+  if (pop.style.display !== "none") { pop.style.display = "none"; return; }
+
+  pop.style.display = "flex";
+  requestAnimationFrame(() => {
+    const rect = btn.getBoundingClientRect();
+    const popW = pop.offsetWidth || 220;
+    pop.style.left = Math.max(4, rect.right - popW) + "px";
+    pop.style.top  = (rect.bottom + 4) + "px";
+  });
 }
 
 function bulkSnoozeConfirm() {
   const selected = gridApi?.getSelectedRows() || [];
-  if (!selected.length) { hideModal("modal-bulk-snooze"); return; }
+  if (!selected.length) return;
   const dtVal = document.getElementById("bulk-snooze-until-dt")?.value;
   if (!dtVal) { toast("Please pick a date/time.", "error"); return; }
   const untilStr = dtVal.replace("T", " ");
   selected.forEach(r => { if (r.id) snoozedItems[r.id] = untilStr; });
   saveSnoozedItems();
-  hideModal("modal-bulk-snooze");
+  document.getElementById("bulk-snooze-popover").style.display = "none";
+  document.getElementById("bulk-snooze-until-dt").value = "";
   gridApi?.deselectAll();
   gridApi?.onFilterChanged();
   gridApi?.redrawRows();
   updateRowCount();
-  const badge = document.getElementById("snoozed-badge");
-  if (badge) {
-    const cnt = activeSnoozedCount();
-    badge.textContent = cnt;
-    badge.style.display = cnt > 0 ? "" : "none";
-  }
-  toast(`${selected.length} row${selected.length > 1 ? "s" : ""} snoozed until ${untilStr}.`, "success");
+  updateSnoozeBadge();
+  toast(`${selected.length} item${selected.length > 1 ? "s" : ""} snoozed until ${untilStr}.`, "success");
 }
 
 async function bulkMoveToToday() {
@@ -554,7 +623,7 @@ async function bulkMoveToToday() {
   const now   = fmtDateTime(new Date());
   const moved = [];
   for (const r of selected) {
-    if (!r.id) continue;
+    if (!r.id || r.completed) continue;
     r.date          = today;
     r.last_modified = now;
     moved.push(r);
@@ -568,65 +637,3 @@ async function bulkMoveToToday() {
   toast(`${moved.length} item${moved.length > 1 ? "s" : ""} moved to today.`, "success");
 }
 
-// ---------------------------------------------------------------------------
-// Browser notifications
-// ---------------------------------------------------------------------------
-
-async function requestNotificationPermission() {
-  if (!("Notification" in window)) return false;
-  if (Notification.permission === "granted") return true;
-  if (Notification.permission === "denied")  return false;
-  const perm = await Notification.requestPermission();
-  return perm === "granted";
-}
-
-function checkDueNotifications() {
-  if (!("Notification" in window) || Notification.permission !== "granted") return;
-  const today   = fmtDate(new Date());
-  const nowTime = new Date().toTimeString().slice(0, 5);
-  const notified = getNotifiedToday();
-  const notifOff = getNotifOffIds();
-
-  rowData.forEach(r => {
-    if (r.deleted || r.completed || !r.date) return;
-    if (notified[r.id]) return;
-    if (notifOff.has(r.id)) return;
-
-    const isDueToday = r.date === today;
-    const isOverdue  = r.date < today;
-    if (!isDueToday && !isOverdue) return;
-
-    if (isDueToday) {
-      const notifTime = getNotifTime(r.id);
-      if (notifTime > nowTime) {
-        const [rh, rm] = notifTime.split(":").map(Number);
-        const [nh, nm] = nowTime.split(":").map(Number);
-        const diffMins = (rh * 60 + rm) - (nh * 60 + nm);
-        if (diffMins > 15) return;
-      }
-    }
-
-    markNotified(r.id);
-    const label = isOverdue ? "Overdue" : (r.time ? `Due at ${r.time}` : "Due today");
-    const notif  = new Notification(`${label}: ${r.item || "Task"}`, {
-      body: [r.category, r.description].filter(Boolean).join(" · ") || "Work Tracker",
-      icon: "/static/icon.png",
-      tag:  `wt-${r.id}`,
-    });
-    notif.onclick = () => {
-      window.focus();
-      switchView("grid");
-      setTimeout(() => navigateToRow(r.id), 80);
-      notif.close();
-    };
-  });
-}
-
-async function initNotifications() {
-  if (!("Notification" in window)) return;
-  const granted = await requestNotificationPermission();
-  if (granted) {
-    checkDueNotifications();
-    setInterval(checkDueNotifications, 5 * 60 * 1000);
-  }
-}

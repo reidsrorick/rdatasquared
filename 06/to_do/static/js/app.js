@@ -13,19 +13,23 @@
 let gridApi               = null;
 let rowData               = [];
 let activePreset          = "all";
-let activeCategoryFilters = null;  // null = show all; [] = show none; [...] = filter to these
+let activeCategoryFilters = [];    // [] with catFilterShowAll=true = show all; [] with false = show nothing
+let catFilterShowAll      = true;  // true = no category filter; false = use activeCategoryFilters explicitly
 let activeDateFilter      = "all";
 let dateCustomFrom        = "";
 let dateCustomTo          = "";
-let addingNewRow          = false;
+let addingNewRow          = null;   // row object currently being added (null when none)
 let detailRowData         = null;
 let wrapText              = false;
 let hiddenColumns         = {};
-let hiddenRowIds          = new Set();
-let showHiddenRows        = false;
-let showSnoozed           = false;
 let snoozedItems          = {};
 let condFmtRules          = [];
+let customCategories      = [];
+let activeStatusFilter    = "";
+let collapsedParents      = new Set();  // parent row IDs whose children are hidden in grid
+let showSnoozedInGrid     = false;      // when true, snoozed items appear in the main grid
+let hiddenDetailFields    = new Set();  // field keys hidden in the detail panel
+let displayDateFormat     = "YYYY-MM-DD"; // display format for date columns (stored values stay ISO)
 
 // ---------------------------------------------------------------------------
 // Category dropdown
@@ -34,37 +38,61 @@ let condFmtRules          = [];
 function updateCategoryFilterLabel() {
   const label = document.getElementById("category-filter-label");
   if (!label) return;
-  if (activeCategoryFilters === null) label.textContent = "All Categories";
-  else if (activeCategoryFilters.length === 0) label.textContent = "No Category";
+  if (catFilterShowAll) label.textContent = "All Categories";
+  else if (activeCategoryFilters.length === 0) label.textContent = "No Categories";
   else if (activeCategoryFilters.length === 1) label.textContent = activeCategoryFilters[0];
   else label.textContent = `${activeCategoryFilters.length} Categories`;
+}
+
+function updateCategoryDatalist() {
+  const dl = document.getElementById("category-datalist");
+  if (!dl) return;
+  const dataCats = [...new Set(rowData.map(r => r.category || "").filter(Boolean))];
+  const customSet = new Set(customCategories);
+  const all = [...customCategories, ...dataCats.filter(c => !customSet.has(c)).sort()];
+  dl.innerHTML = all.map(c => `<option value="${esc(c)}"></option>`).join("");
 }
 
 function updateCategoryDropdown() {
   const menu = document.getElementById("cat-filter-menu");
   if (!menu) return;
-  const cats = [...new Set(rowData.map(r => r.category || "").filter(Boolean))].sort();
+  // Custom categories first (in defined order), then any data-only cats alphabetically
+  const dataCats  = [...new Set(rowData.map(r => r.category || "").filter(Boolean))];
+  const customSet = new Set(customCategories);
+  const cats = [
+    ...customCategories.filter(c => dataCats.includes(c)),
+    ...dataCats.filter(c => !customSet.has(c)).sort(),
+  ];
 
-  const allChecked = activeCategoryFilters === null;
+  // "All" checked = catFilterShowAll=true; individual cats also visually checked.
+  // Individual cats checked when in show-all mode OR explicitly included in activeCategoryFilters.
   menu.innerHTML = `
     <label class="col-picker-item cat-filter-item cat-filter-all">
       <input type="checkbox" class="col-picker-cb cat-filter-cb cat-filter-all-cb"
-             ${allChecked ? "checked" : ""} />
+             ${catFilterShowAll ? "checked" : ""} />
       <span>All Categories</span>
     </label>
     <div class="cat-filter-divider"></div>
   ` + cats.map(c => `
     <label class="col-picker-item cat-filter-item">
       <input type="checkbox" class="col-picker-cb cat-filter-cb" data-cat="${esc(c)}"
-             ${(activeCategoryFilters === null || activeCategoryFilters.includes(c)) ? "checked" : ""} />
+             ${(catFilterShowAll || activeCategoryFilters.includes(c)) ? "checked" : ""} />
       <span>${esc(c)}</span>
     </label>
   `).join("");
 
-  // "All" checked = null (show everything); unchecked = [] (show nothing, user picks cats)
+  // "All" checked → show-all mode, all individual cats check.
+  // "All" unchecked → explicit mode with nothing selected (shows nothing until user picks cats).
   menu.querySelector(".cat-filter-all-cb").addEventListener("change", e => {
-    activeCategoryFilters = e.target.checked ? null : [];
-    updateCategoryDropdown();
+    if (e.target.checked) {
+      catFilterShowAll = true;
+      activeCategoryFilters = [];
+      menu.querySelectorAll(".cat-filter-cb:not(.cat-filter-all-cb)").forEach(cb => { cb.checked = true; });
+    } else {
+      catFilterShowAll = false;
+      activeCategoryFilters = [];
+      menu.querySelectorAll(".cat-filter-cb:not(.cat-filter-all-cb)").forEach(cb => { cb.checked = false; });
+    }
     updateCategoryFilterLabel();
     gridApi?.onFilterChanged();
     saveFiltersToStorage();
@@ -74,22 +102,59 @@ function updateCategoryDropdown() {
   menu.querySelectorAll(".cat-filter-cb:not(.cat-filter-all-cb)").forEach(cb => {
     cb.addEventListener("change", () => {
       const cat = cb.dataset.cat;
-      if (activeCategoryFilters === null) {
-        // Was showing all — unchecking one cat means "all except this"
-        activeCategoryFilters = cats.filter(c => c !== cat);
-      } else if (cb.checked) {
-        if (!activeCategoryFilters.includes(cat)) activeCategoryFilters = [...activeCategoryFilters, cat];
+      if (cb.checked) {
+        catFilterShowAll = false;
+        if (!activeCategoryFilters.includes(cat)) activeCategoryFilters.push(cat);
       } else {
+        // If unchecking from show-all, transition to explicit-all minus this cat
+        if (catFilterShowAll) {
+          catFilterShowAll = false;
+          activeCategoryFilters = [...cats];
+        }
         activeCategoryFilters = activeCategoryFilters.filter(c => c !== cat);
       }
-      // "All" is checked only in null (show-all) state
-      menu.querySelector(".cat-filter-all-cb").checked = activeCategoryFilters === null;
+      // If all individual cats are now checked, snap back to show-all
+      const allChecked = [...menu.querySelectorAll(".cat-filter-cb:not(.cat-filter-all-cb)")].every(c => c.checked);
+      if (allChecked) { catFilterShowAll = true; activeCategoryFilters = []; }
+      menu.querySelector(".cat-filter-all-cb").checked = catFilterShowAll;
       updateCategoryFilterLabel();
       gridApi?.onFilterChanged();
       saveFiltersToStorage();
       updateRowCount();
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Past-due badge
+// ---------------------------------------------------------------------------
+
+function applyDetailFieldVisibility() {
+  const panel = document.getElementById("detail-panel");
+  if (!panel) return;
+  // Show/hide individual fields
+  panel.querySelectorAll("[data-detail-field]").forEach(el => {
+    el.style.display = hiddenDetailFields.has(el.dataset.detailField) ? "none" : "";
+  });
+  // Hide row-2 groups when all their children are hidden; show otherwise
+  panel.querySelectorAll("[data-detail-row-group]").forEach(row => {
+    const anyVisible = [...row.querySelectorAll("[data-detail-field]")]
+      .some(f => !hiddenDetailFields.has(f.dataset.detailField));
+    row.style.display = anyVisible ? "" : "none";
+  });
+}
+
+function updatePastDueBadge() {
+  const badge = document.getElementById("past-due-badge");
+  if (!badge) return;
+  const today = fmtDate(new Date());
+  const count = rowData.filter(r => !r.deleted && !r.completed && r.date && r.date < today).length;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.hidden = false;
+  } else {
+    badge.hidden = true;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -112,20 +177,24 @@ function activatePreset(preset) {
 }
 
 function clearAllFilters() {
-  activeCategoryFilters = null;
+  activeCategoryFilters = [];
+  catFilterShowAll      = true;
   activeDateFilter      = "all";
+  activeStatusFilter    = "";
   dateCustomFrom        = "";
   dateCustomTo          = "";
   updateCategoryFilterLabel();
-  const dateSel = document.getElementById("date-filter");
-  if (dateSel) dateSel.value = "all";
+  const dateSel    = document.getElementById("date-filter");
+  const statusSel  = document.getElementById("status-filter");
+  if (dateSel)   dateSel.value   = "all";
+  if (statusSel) statusSel.value = "";
   const rangeEl = document.getElementById("date-custom-range");
   if (rangeEl) rangeEl.style.display = "none";
   const fromEl  = document.getElementById("date-custom-from");
   const toEl    = document.getElementById("date-custom-to");
   if (fromEl) fromEl.value = "";
   if (toEl)   toEl.value   = "";
-  updateCategoryDropdown();
+  document.querySelectorAll(".cat-filter-cb").forEach(cb => { cb.checked = false; });
 }
 
 function clearAllFiltersUI() {
@@ -153,13 +222,17 @@ function restoreFiltersFromStorage() {
     gridApi?.setGridOption("quickFilterText", state.quick);
   }
 
-  if ("categories" in state) {
-    if (state.categories === null) {
-      activeCategoryFilters = null;
-    } else if (Array.isArray(state.categories)) {
-      const validCats = new Set(rowData.map(r => r.category || "").filter(Boolean));
-      activeCategoryFilters = state.categories.filter(c => validCats.has(c));
-    }
+  // Restore catFilterShowAll: use saved value if present; otherwise infer from categories length
+  if ('catShowAll' in state) {
+    catFilterShowAll = state.catShowAll;
+  } else {
+    catFilterShowAll = !(Array.isArray(state.categories) && state.categories.length > 0);
+  }
+  if (Array.isArray(state.categories)) {
+    const validCats = new Set(rowData.map(r => r.category || "").filter(Boolean));
+    activeCategoryFilters = state.categories.filter(c => validCats.has(c));
+  }
+  if (!catFilterShowAll || activeCategoryFilters.length > 0) {
     updateCategoryDropdown();
     updateCategoryFilterLabel();
   }
@@ -168,6 +241,12 @@ function restoreFiltersFromStorage() {
   if (dateSel && state.date && state.date !== "all") {
     activeDateFilter = state.date;
     dateSel.value    = state.date;
+  }
+
+  const statusSel = document.getElementById("status-filter");
+  if (statusSel && state.status) {
+    activeStatusFilter = state.status;
+    statusSel.value    = state.status;
   }
 
   if (state.preset && state.preset !== "all") {
@@ -195,7 +274,7 @@ function seedRowFromFilters() {
     if (activeDateFilter === "today")    seed.date = today;
     if (activeDateFilter === "tomorrow") seed.date = tomorrow;
   }
-  if (activeCategoryFilters !== null && activeCategoryFilters.length >= 1) seed.category = activeCategoryFilters[0];
+  if (activeCategoryFilters.length >= 1) seed.category = activeCategoryFilters[0];
   return seed;
 }
 
@@ -204,26 +283,31 @@ function addNewRow() {
   const newRow = {
     item: "", category: "", date: "", time: "", sort: 0,
     description: "", completed: false, date_completed: "",
-    last_modified: now, deleted: false,
+    last_modified: now, created_at: now, deleted: false,
     ...seedRowFromFilters(),
   };
-  addingNewRow = true;
-  gridApi.onFilterChanged();
-  const result    = gridApi.applyTransaction({ add: [newRow], addIndex: 0 });
-  const addedNode = result?.add?.[0];
-  if (addedNode) {
-    gridApi.ensureNodeVisible(addedNode, "top");
-    gridApi.startEditingCell({ rowIndex: addedNode.rowIndex, colKey: "item" });
-  }
-  saveRow(newRow).then(saved => {
-    addingNewRow = false;
-    if (saved) Object.assign(newRow, saved);
-    if (newRow.id) setNotifOff(newRow.id, true);
-    gridApi.applyTransaction({ update: [newRow] });
+
+  // saveRow has no internal await — it mutates newRow (sets .id) and saves synchronously
+  saveRow(newRow);
+
+  rowData.push(newRow);
+
+  try {
+    addingNewRow = newRow;
+    gridApi.applyTransaction({ add: [newRow], addIndex: 0 });
+    addingNewRow = null;
     gridApi.onFilterChanged();
+    updateCategoryDropdown();
     updateRowCount();
-    openDetailPanel(newRow);
-  });
+  } catch (_) {
+    addingNewRow = null;
+  }
+
+  // Defer panel open so it runs after this click event finishes propagating to document.
+  // Without the timeout the document-click handler (which closes panels on outside-clicks)
+  // would fire while the panel is already open and immediately close it.
+  const row = newRow;
+  setTimeout(() => openDetailPanel(row), 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -295,12 +379,106 @@ function _updateExportButtonLabel() {
   }
 }
 
-function updateLastExportLabel() {
-  const el = document.getElementById("last-export-label");
-  if (!el) return;
-  const ts = getLastExportTime();
-  el.textContent = ts ? `Last exported: ${ts}` : "";
-  el.style.display = ts ? "" : "none";
+// ---------------------------------------------------------------------------
+// Subtask helpers
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Bulk set parent
+// ---------------------------------------------------------------------------
+
+let _bulkSetParentId = null;
+
+function openBulkSetParentModal() {
+  const sel = gridApi?.getSelectedRows() || [];
+  if (!sel.length) return;
+
+  _bulkSetParentId = null;
+
+  const descEl = document.getElementById("set-parent-desc");
+  if (descEl) descEl.textContent = `Assign ${sel.length} selected task${sel.length !== 1 ? "s" : ""} as subtasks of:`;
+
+  // Reset UI
+  document.getElementById("set-parent-search").value        = "";
+  document.getElementById("set-parent-dropdown").style.display = "none";
+  document.getElementById("set-parent-selected").style.display  = "none";
+  document.getElementById("set-parent-chosen-name").textContent = "";
+  document.getElementById("btn-set-parent-confirm").disabled    = true;
+
+  showModal("modal-set-parent");
+  setTimeout(() => document.getElementById("set-parent-search")?.focus(), 80);
+}
+
+async function bulkSetParent() {
+  if (!_bulkSetParentId) return;
+  const sel = gridApi?.getSelectedRows() || [];
+  if (!sel.length) return;
+
+  // Prevent assigning a task as its own parent or creating a direct cycle
+  const selectedIds = new Set(sel.map(r => r.id));
+  if (selectedIds.has(_bulkSetParentId)) {
+    toast("Cannot set a task as its own parent.", "error");
+    return;
+  }
+
+  let count = 0;
+  for (const row of sel) {
+    row.parent_id = _bulkSetParentId;
+    await saveRow(row);
+    gridApi?.forEachNode(node => {
+      if (node.data?.id === row.id) {
+        Object.assign(node.data, row);
+        gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
+      }
+    });
+    count++;
+  }
+
+  // Refresh parent row badge
+  gridApi?.forEachNode(node => {
+    if (node.data?.id === _bulkSetParentId)
+      gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
+  });
+
+  // Refresh detail panel if open and affected
+  if (detailRowData && (selectedIds.has(detailRowData.id) || detailRowData.id === _bulkSetParentId)) {
+    populateDetailPanel(detailRowData);
+  }
+
+  hideModal("modal-set-parent");
+  toast(`${count} task${count !== 1 ? "s" : ""} assigned as subtasks.`, "success");
+}
+
+async function addSubtask() {
+  if (!detailRowData?.id) return;
+  const inp  = document.getElementById("subtask-new-name");
+  const name = inp?.value.trim();
+  if (!name) return;
+
+  const now    = fmtDateTime(new Date());
+  const newRow = {
+    item: name, category: detailRowData.category || "",
+    date: "", time: "", sort: 0,
+    description: "", completed: false, date_completed: "",
+    last_modified: now, deleted: false,
+    parent_id: detailRowData.id,
+  };
+
+  const saved = await saveRow(newRow);
+  if (saved) {
+    rowData.push(saved);
+    gridApi?.applyTransaction({ add: [saved] });
+    gridApi?.onFilterChanged();
+    updateRowCount();
+    if (inp) inp.value = "";
+    renderSubtasksList(detailRowData);
+    // Refresh parent row Item column badge
+    gridApi?.forEachNode(node => {
+      if (node.data?.id === detailRowData.id)
+        gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
+    });
+    toast(`Subtask "${name}" added.`, "success");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -311,21 +489,18 @@ document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
   loadWrapText();
   loadColumnVisibility();
-  loadHiddenRows();
   loadSnoozedItems();
+  loadCollapsedParents();
+  loadDetailFieldPrefs();
+  loadDateFormat();
   loadCondFmt();
+  loadCategoryOrder();
 
-  // Seed snooze badge
-  (() => {
-    const cnt   = activeSnoozedCount();
-    const badge = document.getElementById("snoozed-badge");
-    if (badge) { badge.textContent = cnt; badge.style.display = cnt > 0 ? "" : "none"; }
-  })();
+  updateSnoozeBadge();
 
   initGrid();
-  initNotifications();
   _updateExportButtonLabel();
-  updateLastExportLabel();
+  updateLastExportDisplay();
 
   // ── Navbar ──────────────────────────────────────────────────────────────
   document.querySelectorAll(".nav-btn").forEach(btn =>
@@ -359,6 +534,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapBtn = document.getElementById("btn-wrap-text");
   wrapBtn.classList.toggle("active", wrapText);
   wrapBtn.addEventListener("click", toggleWrapText);
+
+  // ── Status filter ────────────────────────────────────────────────────────
+  document.getElementById("status-filter")?.addEventListener("change", e => {
+    activeStatusFilter = e.target.value;
+    gridApi?.onFilterChanged();
+    saveFiltersToStorage();
+    updateRowCount();
+  });
+
+  // ── Date display format ──────────────────────────────────────────────────
+  document.getElementById("date-format-select")?.addEventListener("change", e => {
+    displayDateFormat = e.target.value;
+    saveDateFormat();
+    gridApi?.refreshCells({ columns: ["date", "date_completed"], force: true });
+  });
 
   // ── Date filter ──────────────────────────────────────────────────────────
   document.getElementById("date-filter").addEventListener("change", e => {
@@ -401,11 +591,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Bulk action bar ───────────────────────────────────────────────────────
   document.getElementById("btn-bulk-complete").addEventListener("click",    () => bulkAction("complete"));
   document.getElementById("btn-bulk-incomplete").addEventListener("click",  () => bulkAction("incomplete"));
-  document.getElementById("btn-bulk-hide").addEventListener("click",        () => bulkToggleHide(true));
-  document.getElementById("btn-bulk-unhide").addEventListener("click",      () => bulkToggleHide(false));
-  document.getElementById("btn-bulk-snooze")?.addEventListener("click",         bulkSnooze);
+  document.getElementById("btn-bulk-snooze")?.addEventListener("click", e => { e.stopPropagation(); bulkSnooze(); });
   document.getElementById("btn-bulk-snooze-confirm")?.addEventListener("click", bulkSnoozeConfirm);
   document.getElementById("btn-bulk-move-today")?.addEventListener("click", bulkMoveToToday);
+  document.getElementById("btn-bulk-set-parent")?.addEventListener("click", openBulkSetParentModal);
   document.getElementById("btn-bulk-delete").addEventListener("click",      bulkDelete);
   document.getElementById("btn-deselect").addEventListener("click",         () => gridApi?.deselectAll());
 
@@ -500,69 +689,188 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Detail panel ─────────────────────────────────────────────────────────
   document.getElementById("btn-detail-close").addEventListener("click", closeDetailPanel);
-  document.getElementById("btn-detail-save").addEventListener("click",  saveDetailPanel);
-  document.getElementById("btn-detail-duplicate")?.addEventListener("click", () => { if (detailRowData) duplicateRow(detailRowData); });
 
-  // Detail field picker
-  const DETAIL_FIELD_DEFS = [
-    { id: "category",       label: "Category" },
-    { id: "datetime",       label: "Date & Time" },
-    { id: "sort",           label: "Sort" },
-    { id: "recurrence",     label: "Recurrence" },
-    { id: "description",    label: "Description" },
-    { id: "followup",       label: "Follow-up Log" },
-    { id: "link",           label: "Link / URL" },
-    { id: "date-completed", label: "Date Completed" },
-    { id: "notifications",  label: "Notifications" },
-  ];
-
+  // Detail field customization
   document.getElementById("btn-detail-customize")?.addEventListener("click", e => {
     e.stopPropagation();
-    const picker = document.getElementById("detail-field-picker");
-    if (!picker) return;
-    if (picker.style.display !== "none") { picker.style.display = "none"; return; }
-
-    const hidden = getDetailHiddenFields();
-    picker.innerHTML = DETAIL_FIELD_DEFS.map(f => `
-      <label class="col-picker-item" style="padding:6px 14px;font-size:13px">
-        <input type="checkbox" class="col-picker-cb" data-field="${esc(f.id)}"
-               ${!hidden[f.id] ? "checked" : ""} style="accent-color:var(--accent);width:14px;height:14px"/>
-        <span>${esc(f.label)}</span>
-      </label>`).join("");
-
-    picker.querySelectorAll("input[data-field]").forEach(cb => {
-      cb.addEventListener("change", () => {
-        const h = getDetailHiddenFields();
-        if (cb.checked) delete h[cb.dataset.field];
-        else h[cb.dataset.field] = true;
-        saveDetailHiddenFields(h);
-        applyDetailFieldVisibility();
-        // Re-apply notification special case if toggled
-        if (cb.dataset.field === "notifications" && detailRowData) {
-          const notifRow = document.getElementById("detail-notif-row");
-          if (cb.checked && "Notification" in window && detailRowData.id) {
-            notifRow.style.display = "";
-          } else {
-            notifRow.style.display = "none";
-          }
-        }
-      });
+    const pop = document.getElementById("detail-customize-popover");
+    const isOpen = pop.style.display !== "none";
+    if (isOpen) { pop.style.display = "none"; return; }
+    // Sync checkboxes to current hidden state
+    pop.querySelectorAll(".detail-field-cb").forEach(cb => {
+      cb.checked = !hiddenDetailFields.has(cb.dataset.field);
     });
+    pop.style.display = "block";
+  });
 
-    picker.style.display = "";
+  document.getElementById("detail-customize-popover")?.addEventListener("change", e => {
+    const cb = e.target.closest(".detail-field-cb");
+    if (!cb) return;
+    const field = cb.dataset.field;
+    if (cb.checked) hiddenDetailFields.delete(field);
+    else hiddenDetailFields.add(field);
+    saveDetailFieldPrefs();
+    applyDetailFieldVisibility();
   });
 
   document.addEventListener("click", e => {
-    if (!e.target.closest("#btn-detail-customize") && !e.target.closest("#detail-field-picker")) {
-      const picker = document.getElementById("detail-field-picker");
-      if (picker) picker.style.display = "none";
+    const pop = document.getElementById("detail-customize-popover");
+    if (!pop || pop.style.display === "none") return;
+    if (!document.getElementById("btn-detail-customize")?.contains(e.target) && !pop.contains(e.target)) {
+      pop.style.display = "none";
     }
   });
+  document.getElementById("btn-detail-save").addEventListener("click",  saveDetailPanel);
+  document.getElementById("btn-detail-duplicate")?.addEventListener("click", () => { if (detailRowData) duplicateRow(detailRowData); });
   document.getElementById("btn-detail-date-today")?.addEventListener("click", () => {
     const inp = document.getElementById("detail-date");
     if (inp) inp.value = fmtDate(new Date());
   });
   document.getElementById("btn-log-followup")?.addEventListener("click", logFollowUp);
+  document.getElementById("btn-log-followup-snooze")?.addEventListener("click", e => { e.stopPropagation(); logFollowUpAndSnooze(e.currentTarget); });
+
+  // ── Parent task picker ────────────────────────────────────────────────────
+  document.getElementById("detail-parent-search")?.addEventListener("input", e => {
+    const q        = e.target.value.toLowerCase().trim();
+    const dropdown = document.getElementById("detail-parent-dropdown");
+    if (!dropdown) return;
+    if (!q) { dropdown.style.display = "none"; return; }
+
+    // Exclude self and direct children of current row
+    const childIds = new Set(rowData.filter(r => r.parent_id === detailRowData?.id).map(r => r.id));
+    const matches  = rowData.filter(r =>
+      !r.deleted && r.id !== detailRowData?.id && !childIds.has(r.id)
+      && (r.item || "").toLowerCase().includes(q)
+    ).slice(0, 10);
+
+    if (!matches.length) { dropdown.style.display = "none"; return; }
+
+    dropdown.innerHTML = matches.map(r =>
+      `<div class="parent-dropdown-item" data-id="${r.id}" data-name="${esc(r.item || "")}">
+        <span class="parent-dropdown-id">#${r.id}</span>
+        <span class="parent-dropdown-name">${esc(r.item || "(no name)")}</span>
+      </div>`
+    ).join("");
+    dropdown.style.display = "";
+    // Position fixed to escape overflow:hidden/auto on detail-panel body
+    requestAnimationFrame(() => {
+      const inp  = document.getElementById("detail-parent-search");
+      const rect = inp?.getBoundingClientRect();
+      if (rect) {
+        dropdown.style.top   = (rect.bottom + 2) + "px";
+        dropdown.style.left  = rect.left + "px";
+        dropdown.style.width = rect.width + "px";
+      }
+    });
+
+    dropdown.querySelectorAll(".parent-dropdown-item").forEach(item => {
+      item.addEventListener("mousedown", e => {
+        e.preventDefault();
+        const parentId   = parseInt(item.dataset.id);
+        const parentName = item.dataset.name;
+        document.getElementById("detail-parent-id").value        = parentId;
+        document.getElementById("detail-parent-name").textContent = parentName || `#${parentId}`;
+        document.getElementById("detail-parent-selected").style.display  = "";
+        document.getElementById("detail-parent-search-wrap").style.display = "none";
+        document.getElementById("detail-parent-search").value   = "";
+        dropdown.style.display = "none";
+      });
+    });
+  });
+
+  document.getElementById("detail-parent-search")?.addEventListener("blur", () => {
+    setTimeout(() => {
+      const dd = document.getElementById("detail-parent-dropdown");
+      if (dd) dd.style.display = "none";
+    }, 150);
+  });
+
+  document.getElementById("btn-clear-parent")?.addEventListener("click", () => {
+    document.getElementById("detail-parent-id").value = "";
+    document.getElementById("detail-parent-selected").style.display   = "none";
+    document.getElementById("detail-parent-search-wrap").style.display = "";
+    document.getElementById("detail-parent-search").value = "";
+    const dd = document.getElementById("detail-parent-dropdown");
+    if (dd) dd.style.display = "none";
+  });
+
+  document.getElementById("btn-open-parent")?.addEventListener("click", () => {
+    const parentId = parseInt(document.getElementById("detail-parent-id")?.value);
+    if (!parentId) return;
+    const parentRow = rowData.find(r => r.id === parentId && !r.deleted);
+    if (parentRow) openDetailPanel(parentRow);
+    else toast("Parent task not found.", "warning");
+  });
+
+  // ── Bulk set parent modal search ─────────────────────────────────────────
+  document.getElementById("set-parent-search")?.addEventListener("input", e => {
+    const q        = e.target.value.toLowerCase().trim();
+    const dropdown = document.getElementById("set-parent-dropdown");
+    if (!dropdown) return;
+    if (!q) { dropdown.style.display = "none"; return; }
+
+    const selectedIds = new Set((gridApi?.getSelectedRows() || []).map(r => r.id));
+    const matches = rowData.filter(r =>
+      !r.deleted && !selectedIds.has(r.id)
+      && (r.item || "").toLowerCase().includes(q)
+    ).slice(0, 10);
+
+    if (!matches.length) { dropdown.style.display = "none"; return; }
+
+    dropdown.innerHTML = matches.map(r =>
+      `<div class="parent-dropdown-item" data-id="${r.id}" data-name="${esc(r.item || "")}">
+        <span class="parent-dropdown-id">#${r.id}</span>
+        <span class="parent-dropdown-name">${esc(r.item || "(no name)")}</span>
+      </div>`
+    ).join("");
+    dropdown.style.display = "";
+    requestAnimationFrame(() => {
+      const inp  = document.getElementById("set-parent-search");
+      const rect = inp?.getBoundingClientRect();
+      if (rect) {
+        dropdown.style.top   = (rect.bottom + 2) + "px";
+        dropdown.style.left  = rect.left + "px";
+        dropdown.style.width = rect.width + "px";
+      }
+    });
+
+    dropdown.querySelectorAll(".parent-dropdown-item").forEach(item => {
+      item.addEventListener("mousedown", e => {
+        e.preventDefault();
+        _bulkSetParentId = parseInt(item.dataset.id);
+        const name = item.dataset.name;
+        document.getElementById("set-parent-chosen-name").textContent = name || `#${_bulkSetParentId}`;
+        document.getElementById("set-parent-selected").style.display  = "";
+        document.getElementById("set-parent-search").value = "";
+        document.getElementById("set-parent-dropdown").style.display = "none";
+        document.getElementById("btn-set-parent-confirm").disabled = false;
+      });
+    });
+  });
+
+  document.getElementById("set-parent-search")?.addEventListener("blur", () => {
+    setTimeout(() => {
+      const dd = document.getElementById("set-parent-dropdown");
+      if (dd) dd.style.display = "none";
+    }, 150);
+  });
+
+  document.getElementById("btn-set-parent-clear")?.addEventListener("click", () => {
+    _bulkSetParentId = null;
+    document.getElementById("set-parent-selected").style.display  = "none";
+    document.getElementById("set-parent-chosen-name").textContent = "";
+    document.getElementById("btn-set-parent-confirm").disabled    = true;
+    document.getElementById("set-parent-search").value = "";
+    document.getElementById("set-parent-search").focus();
+  });
+
+  document.getElementById("btn-set-parent-confirm")?.addEventListener("click", bulkSetParent);
+
+  // ── Subtask add ───────────────────────────────────────────────────────────
+  document.getElementById("btn-add-subtask")?.addEventListener("click", addSubtask);
+  document.getElementById("subtask-new-name")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); addSubtask(); }
+  });
   document.getElementById("followup-note-input")?.addEventListener("keydown", e => {
     if (e.key === "Enter") { e.preventDefault(); logFollowUp(); }
   });
@@ -570,7 +878,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!detailRowData?.id) return;
     confirm$("Delete item?", `Move "${detailRowData.item || "this item"}" to trash?`, async () => {
       const rowToDelete = detailRowData;
-      rowToDelete.deleted = true;
+      rowToDelete.deleted       = true;
+      rowToDelete.last_modified = fmtDateTime(new Date());
       await saveRow(rowToDelete);
       toast("Item moved to trash", "info");
       closeDetailPanel();
@@ -588,21 +897,11 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.style.display = e.target.value ? "" : "none";
   });
 
-  document.getElementById("detail-notif-enabled")?.addEventListener("change", e => {
-    if (detailRowData?.id) {
-      setNotifOff(detailRowData.id, !e.target.checked);
-      const timeInp = document.getElementById("detail-notif-time");
-      if (timeInp) timeInp.disabled = !e.target.checked;
-    }
-  });
-  document.getElementById("detail-notif-time")?.addEventListener("change", e => {
-    if (detailRowData?.id) setNotifTime(detailRowData.id, e.target.value);
-  });
-
   document.getElementById("detail-recur-on")?.addEventListener("change", e => {
-    const disabled = !e.target.checked;
-    document.getElementById("detail-recur-count").disabled = disabled;
-    document.getElementById("detail-recur-unit").disabled  = disabled;
+    const on = e.target.checked;
+    document.getElementById("detail-recur-count").disabled = !on;
+    document.getElementById("detail-recur-unit").disabled  = !on;
+    document.querySelector(".recur-inputs")?.classList.toggle("recur-inputs--on", on);
   });
 
   document.getElementById("detail-completed").addEventListener("change", e => {
@@ -623,6 +922,98 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
   document.getElementById("btn-refresh-dashboard").addEventListener("click", loadDashboard);
+
+  // ── Category manager ──────────────────────────────────────────────────────
+  let catDragSrcIdx = null;
+
+  function renderCategoryList() {
+    const el = document.getElementById("cat-manager-list");
+    if (!el) return;
+    if (!customCategories.length) {
+      el.innerHTML = `<div class="empty-msg">No categories defined. Add one below or import from data.</div>`;
+      return;
+    }
+    el.innerHTML = customCategories.map((cat, i) => `
+      <div class="cat-mgr-row" draggable="true" data-idx="${i}">
+        <span class="cat-mgr-handle" title="Drag to reorder">⠿</span>
+        <span class="cat-mgr-name">${esc(cat)}</span>
+        <button class="cat-mgr-del btn btn-ghost btn-sm icon-btn" data-idx="${i}" title="Remove">✕</button>
+      </div>
+    `).join("");
+
+    el.querySelectorAll(".cat-mgr-row").forEach(row => {
+      row.addEventListener("dragstart", e => {
+        catDragSrcIdx = parseInt(row.dataset.idx);
+        e.dataTransfer.effectAllowed = "move";
+        setTimeout(() => row.classList.add("dragging"), 0);
+      });
+      row.addEventListener("dragend", () => {
+        row.classList.remove("dragging");
+        el.querySelectorAll(".cat-mgr-row").forEach(r => r.classList.remove("drag-over"));
+      });
+      row.addEventListener("dragover",  e => e.preventDefault());
+      row.addEventListener("dragenter", e => {
+        e.preventDefault();
+        el.querySelectorAll(".cat-mgr-row").forEach(r => r.classList.remove("drag-over"));
+        if (parseInt(row.dataset.idx) !== catDragSrcIdx) row.classList.add("drag-over");
+      });
+      row.addEventListener("drop", e => {
+        e.preventDefault();
+        const targetIdx = parseInt(row.dataset.idx);
+        if (catDragSrcIdx === null || catDragSrcIdx === targetIdx) return;
+        const [moved] = customCategories.splice(catDragSrcIdx, 1);
+        customCategories.splice(targetIdx, 0, moved);
+        catDragSrcIdx = null;
+        saveCategoryOrder();
+        updateCategoryDropdown();
+        updateCategoryDatalist();
+        renderCategoryList();
+      });
+    });
+
+    el.querySelectorAll(".cat-mgr-del").forEach(btn => {
+      btn.addEventListener("click", () => {
+        customCategories.splice(parseInt(btn.dataset.idx), 1);
+        saveCategoryOrder();
+        updateCategoryDropdown();
+        updateCategoryDatalist();
+        renderCategoryList();
+      });
+    });
+  }
+
+  document.getElementById("btn-manage-categories")?.addEventListener("click", () => {
+    renderCategoryList();
+    showModal("modal-categories");
+  });
+
+  document.getElementById("btn-add-category")?.addEventListener("click", () => {
+    const inp = document.getElementById("new-category-input");
+    const val = inp?.value.trim();
+    if (!val) return;
+    if (!customCategories.includes(val)) {
+      customCategories.push(val);
+      saveCategoryOrder();
+      updateCategoryDropdown();
+      updateCategoryDatalist();
+    }
+    if (inp) inp.value = "";
+    renderCategoryList();
+  });
+
+  document.getElementById("new-category-input")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("btn-add-category")?.click(); }
+  });
+
+  document.getElementById("btn-import-categories")?.addEventListener("click", () => {
+    const dataCats = [...new Set(rowData.map(r => r.category || "").filter(Boolean))];
+    let added = 0;
+    dataCats.forEach(c => { if (!customCategories.includes(c)) { customCategories.push(c); added++; } });
+    if (added) { saveCategoryOrder(); updateCategoryDropdown(); updateCategoryDatalist(); }
+    renderCategoryList();
+    if (added) toast(`Imported ${added} categor${added > 1 ? "ies" : "y"} from data.`, "success");
+    else toast("All data categories are already in the list.", "info");
+  });
 
   // ── Conditional formatting ────────────────────────────────────────────────
   document.getElementById("btn-cond-fmt")?.addEventListener("click", openCondFmtModal);
@@ -668,27 +1059,79 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ── Hidden-rows toggle ────────────────────────────────────────────────────
-  document.getElementById("btn-show-hidden")?.addEventListener("click", () => {
-    showHiddenRows = !showHiddenRows;
-    document.getElementById("btn-show-hidden")?.classList.toggle("active", showHiddenRows);
+
+  // ── Snoozed modal ─────────────────────────────────────────────────────────
+  function renderSnoozedModal(search) {
+    const now = fmtSnoozeNow();
+    const items = rowData
+      .filter(r => !r.deleted && snoozedItems[r.id] && snoozedItems[r.id] >= now)
+      .sort((a, b) => snoozedItems[a.id].localeCompare(snoozedItems[b.id]));
+
+    const q = (search || "").toLowerCase();
+    const filtered = q
+      ? items.filter(r => (r.item || "").toLowerCase().includes(q) || (r.category || "").toLowerCase().includes(q))
+      : items;
+
+    const list = document.getElementById("snoozed-items-list");
+    if (!list) return;
+
+    if (!filtered.length) {
+      list.innerHTML = `<div class="deleted-empty">${q ? "No snoozed items match your search." : "No snoozed items."}</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(r => `
+      <div class="snoozed-item">
+        <div class="snoozed-item-info">
+          <div class="snoozed-item-name">${esc(r.item || "(no name)")}</div>
+          <div class="snoozed-item-meta">
+            ${r.category ? `<span class="snoozed-meta-cat">${esc(r.category)}</span>` : ""}
+            ${r.date ? `<span>Due: ${esc(r.date)}</span>` : ""}
+            <span class="snoozed-meta-until">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+              Until: ${esc(snoozedItems[r.id])}
+            </span>
+          </div>
+        </div>
+        <div class="snoozed-item-actions">
+          <button class="btn btn-sm btn-secondary" onclick="navigateToRow(${r.id});hideModal('modal-snoozed')">Open</button>
+          <button class="btn btn-sm btn-warning snoozed-unsnooze-btn" data-id="${r.id}">Unsnooze</button>
+        </div>
+      </div>
+    `).join("");
+
+    list.querySelectorAll(".snoozed-unsnooze-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        unsnoozeRow(parseInt(btn.dataset.id));
+        updateSnoozeBadge();
+        renderSnoozedModal(document.getElementById("snoozed-search")?.value || "");
+      });
+    });
+  }
+
+  document.getElementById("btn-show-snoozed")?.addEventListener("click", () => {
+    showSnoozedInGrid = !showSnoozedInGrid;
+    document.getElementById("btn-show-snoozed").classList.toggle("active", showSnoozedInGrid);
     gridApi?.onFilterChanged();
     updateRowCount();
   });
 
-  // ── Snoozed toggle ────────────────────────────────────────────────────────
-  document.getElementById("btn-show-snoozed")?.addEventListener("click", () => {
-    showSnoozed = !showSnoozed;
-    document.getElementById("btn-show-snoozed")?.classList.toggle("active", showSnoozed);
-    const badge = document.getElementById("snoozed-badge");
-    if (badge) {
-      const cnt = activeSnoozedCount();
-      badge.textContent = cnt;
-      badge.style.display = cnt > 0 ? "" : "none";
-    }
+  document.getElementById("snoozed-search")?.addEventListener("input", e => {
+    renderSnoozedModal(e.target.value);
+  });
+
+  document.getElementById("btn-unsnooze-all")?.addEventListener("click", () => {
+    const now = fmtSnoozeNow();
+    Object.keys(snoozedItems).forEach(id => {
+      if (snoozedItems[id] >= now) delete snoozedItems[id];
+    });
+    saveSnoozedItems();
     gridApi?.onFilterChanged();
     gridApi?.redrawRows();
     updateRowCount();
+    updateSnoozeBadge();
+    renderSnoozedModal("");
+    toast("All items unsnoozed.", "success");
   });
 
   // ── Right-click context menu ──────────────────────────────────────────────
@@ -703,28 +1146,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const node = gridApi?.getDisplayedRowAtIndex(rowIdx);
     if (!node?.data?.id) return;
     ctxRowData = node.data;
-    const isHidden  = hiddenRowIds.has(ctxRowData.id);
     const isSnoozed = isSnoozeActive(ctxRowData.id);
-    document.getElementById("ctx-hide-row").textContent   = isHidden  ? "Unhide Row" : "Hide Row";
-    document.getElementById("ctx-snooze-row").textContent = isSnoozed ? "Unsnooze"   : "Snooze";
+    document.getElementById("ctx-snooze-row").textContent = isSnoozed
+      ? `Unsnooze (until ${snoozedItems[ctxRowData.id]})`
+      : "Snooze";
     rowContextMenu.style.display = "block";
     rowContextMenu.style.left    = e.pageX + "px";
     rowContextMenu.style.top     = e.pageY + "px";
-  });
-  document.getElementById("ctx-hide-row")?.addEventListener("click", () => {
-    if (ctxRowData?.id) toggleHideRow(ctxRowData.id);
-    rowContextMenu.style.display = "none";
   });
   document.getElementById("ctx-snooze-row")?.addEventListener("click", () => {
     if (ctxRowData?.id) {
       if (isSnoozeActive(ctxRowData.id)) unsnoozeRow(ctxRowData.id);
       else snoozeRow(ctxRowData.id, 1);
-      const badge = document.getElementById("snoozed-badge");
-      if (badge) {
-        const cnt = activeSnoozedCount();
-        badge.textContent = cnt;
-        badge.style.display = cnt > 0 ? "" : "none";
-      }
+      updateSnoozeBadge();
       if (detailRowData?.id === ctxRowData.id) populateDetailPanel(detailRowData);
     }
     rowContextMenu.style.display = "none";
@@ -745,22 +1179,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!detailRowData?.id) return;
     if (isSnoozeActive(detailRowData.id)) {
       unsnoozeRow(detailRowData.id);
-      const badge = document.getElementById("snoozed-badge");
-      if (badge) { const cnt = activeSnoozedCount(); badge.textContent = cnt; badge.style.display = cnt > 0 ? "" : "none"; }
+      updateSnoozeBadge();
       populateDetailPanel(detailRowData);
+      document.getElementById("snooze-popover").style.display = "none";
     } else {
       const pop = document.getElementById("snooze-popover");
-      if (pop) pop.style.display = pop.style.display === "none" ? "flex" : "none";
+      if (pop && pop.style.display !== "none") {
+        pop.style.display = "none";
+      } else {
+        openSnoozePopover();
+      }
     }
   });
-  // Pre-fill snooze datetime when popover opens
-  document.getElementById("btn-detail-snooze")?.addEventListener("click", () => {
-    const dt = document.getElementById("snooze-until-dt");
-    if (dt && !dt.value) {
-      const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(8, 0, 0, 0);
-      dt.value = fmtDate(tmr) + "T08:00";
-    }
-  }, true); // capture phase
 
   document.getElementById("btn-snooze-confirm")?.addEventListener("click", () => {
     if (!detailRowData?.id) return;
@@ -770,14 +1200,17 @@ document.addEventListener("DOMContentLoaded", () => {
     saveSnoozedItems();
     gridApi?.onFilterChanged(); gridApi?.redrawRows(); updateRowCount();
     document.getElementById("snooze-popover").style.display = "none";
-    const badge = document.getElementById("snoozed-badge");
-    if (badge) { const cnt = activeSnoozedCount(); badge.textContent = cnt; badge.style.display = cnt > 0 ? "" : "none"; }
+    updateSnoozeBadge();
     populateDetailPanel(detailRowData);
     toast(`Snoozed until ${dtVal.replace("T", " ")}.`, "success");
   });
   document.addEventListener("click", e => {
     if (!e.target.closest(".snooze-wrap")) {
       const pop = document.getElementById("snooze-popover");
+      if (pop) pop.style.display = "none";
+    }
+    if (!e.target.closest("#btn-bulk-snooze") && !e.target.closest("#bulk-snooze-popover")) {
+      const pop = document.getElementById("bulk-snooze-popover");
       if (pop) pop.style.display = "none";
     }
   });
@@ -846,12 +1279,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!e.target.closest(".dropdown-persist")) {
       document.querySelectorAll(".dropdown.open").forEach(d => d.classList.remove("open"));
     }
+    // Close detail panel when clicking outside it
+    const panel = document.getElementById("detail-panel");
+    if (panel?.classList.contains("open") && !e.target.closest("#detail-panel") && !e.target.closest(".modal-overlay")) {
+      closeDetailPanel();
+    }
   });
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────
   document.addEventListener("keydown", e => {
     const inInput = document.activeElement.matches("input,textarea,select");
-    if (e.ctrlKey && e.key === "s") {
+    if (e.ctrlKey && e.key === "Enter") {
       const panel = document.getElementById("detail-panel");
       if (panel && !panel.classList.contains("hidden") && detailRowData) {
         e.preventDefault();

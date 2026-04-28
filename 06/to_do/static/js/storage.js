@@ -64,28 +64,16 @@ function saveCondFmt() {
 
 function saveFiltersToStorage() {
   const state = {
-    preset:     activePreset,
-    categories: activeCategoryFilters,
-    date:       activeDateFilter,
-    quick:      document.getElementById("quick-filter")?.value || "",
+    preset:      activePreset,
+    categories:  activeCategoryFilters,
+    catShowAll:  catFilterShowAll,
+    date:        activeDateFilter,
+    status:      activeStatusFilter,
+    quick:       document.getElementById("quick-filter")?.value || "",
   };
   localStorage.setItem("wt-filters", JSON.stringify(state));
 }
 
-// ---------------------------------------------------------------------------
-// Hidden rows
-// ---------------------------------------------------------------------------
-
-function loadHiddenRows() {
-  try {
-    const arr = JSON.parse(localStorage.getItem("wt-hidden-rows") || "[]");
-    hiddenRowIds = new Set(arr);
-  } catch { hiddenRowIds = new Set(); }
-}
-
-function saveHiddenRows() {
-  localStorage.setItem("wt-hidden-rows", JSON.stringify([...hiddenRowIds]));
-}
 
 // ---------------------------------------------------------------------------
 // Snoozed items
@@ -106,84 +94,65 @@ function saveSnoozedItems() {
   localStorage.setItem("wt-snoozed", JSON.stringify(snoozedItems));
 }
 
+
 // ---------------------------------------------------------------------------
-// Notifications
+// Date display format
 // ---------------------------------------------------------------------------
 
-const NOTIF_KEY          = "wt-notified-today"; // set of IDs notified today
-const NOTIF_OFF_KEY      = "wt-notif-off";      // set of IDs with notifications disabled
-const NOTIF_TIME_KEY     = "wt-notif-times";    // { [id]: "HH:MM" } scheduled times
-const NOTIF_DEFAULT_TIME = "09:00";
-
-function getNotifOffIds() {
-  try { return new Set(JSON.parse(localStorage.getItem(NOTIF_OFF_KEY) || "[]")); }
-  catch { return new Set(); }
+function loadDateFormat() {
+  displayDateFormat = localStorage.getItem("wt-date-format") || "YYYY-MM-DD";
+  const sel = document.getElementById("date-format-select");
+  if (sel) sel.value = displayDateFormat;
 }
 
-function setNotifOff(id, disabled) {
-  const ids = getNotifOffIds();
-  if (disabled) ids.add(id); else ids.delete(id);
-  localStorage.setItem(NOTIF_OFF_KEY, JSON.stringify([...ids]));
+function saveDateFormat() {
+  localStorage.setItem("wt-date-format", displayDateFormat);
 }
 
-function isNotifDisabled(id) { return getNotifOffIds().has(id); }
+// ---------------------------------------------------------------------------
+// Detail panel field visibility
+// ---------------------------------------------------------------------------
 
-function getNotifTimes() {
-  try { return JSON.parse(localStorage.getItem(NOTIF_TIME_KEY) || "{}"); }
-  catch { return {}; }
+function loadDetailFieldPrefs() {
+  try { hiddenDetailFields = new Set(JSON.parse(localStorage.getItem("wt-detail-fields") || "[]")); }
+  catch { hiddenDetailFields = new Set(); }
 }
 
-function setNotifTime(id, time) {
-  const times = getNotifTimes();
-  if (time) times[id] = time; else delete times[id];
-  localStorage.setItem(NOTIF_TIME_KEY, JSON.stringify(times));
+function saveDetailFieldPrefs() {
+  localStorage.setItem("wt-detail-fields", JSON.stringify([...hiddenDetailFields]));
 }
 
-function getNotifTime(id) {
-  return getNotifTimes()[id] || NOTIF_DEFAULT_TIME;
+// ---------------------------------------------------------------------------
+// Collapsed parents
+// ---------------------------------------------------------------------------
+
+function loadCollapsedParents() {
+  try { collapsedParents = new Set(JSON.parse(localStorage.getItem("wt-collapsed") || "[]")); }
+  catch { collapsedParents = new Set(); }
 }
 
-function getNotifiedToday() {
-  try {
-    const d = JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}");
-    if (d.date !== fmtDate(new Date())) return {};
-    return d.ids || {};
-  } catch { return {}; }
+function saveCollapsedParents() {
+  localStorage.setItem("wt-collapsed", JSON.stringify([...collapsedParents]));
 }
 
-function markNotified(id) {
-  const today = fmtDate(new Date());
-  let d;
-  try { d = JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}"); } catch { d = {}; }
-  if (d.date !== today) d = { date: today, ids: {} };
-  d.ids[id] = true;
-  localStorage.setItem(NOTIF_KEY, JSON.stringify(d));
+// ---------------------------------------------------------------------------
+// Custom category order
+// ---------------------------------------------------------------------------
+
+function loadCategoryOrder() {
+  try { customCategories = JSON.parse(localStorage.getItem("wt-categories") || "[]"); }
+  catch { customCategories = []; }
+}
+
+function saveCategoryOrder() {
+  localStorage.setItem("wt-categories", JSON.stringify(customCategories));
 }
 
 // ---------------------------------------------------------------------------
 // Export settings
 // ---------------------------------------------------------------------------
 
-const DETAIL_FIELDS_KEY    = "wt-detail-fields";
-const EXPORT_SETTINGS_KEY  = "wt-export-settings";
-const LAST_EXPORT_KEY      = "wt-last-export";
-
-function getLastExportTime() {
-  return localStorage.getItem(LAST_EXPORT_KEY) || null;
-}
-
-function saveLastExportTime() {
-  localStorage.setItem(LAST_EXPORT_KEY, fmtDateTime(new Date()));
-}
-
-function getDetailHiddenFields() {
-  try { return JSON.parse(localStorage.getItem(DETAIL_FIELDS_KEY) || "{}"); }
-  catch { return {}; }
-}
-
-function saveDetailHiddenFields(hidden) {
-  localStorage.setItem(DETAIL_FIELDS_KEY, JSON.stringify(hidden));
-}
+const EXPORT_SETTINGS_KEY = "wt-export-settings";
 
 function getExportSettings() {
   try { return JSON.parse(localStorage.getItem(EXPORT_SETTINGS_KEY) || "{}"); }

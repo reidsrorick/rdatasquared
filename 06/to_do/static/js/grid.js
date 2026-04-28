@@ -13,10 +13,22 @@
 
 // Columns available for show/hide (colId → display label)
 const TOGGLEABLE_COLS = {
-  item: "Item", category: "Category", date: "Date", time: "Time",
+  item: "Item", category: "Category", status: "Status", date: "Date", time: "Time",
   sort: "Sort", description: "Description", completed: "Done?",
   link: "Link", date_completed: "Date Completed", last_modified: "Last Modified",
 };
+
+const STATUS_OPTIONS = [
+  { value: "",                 label: "—",                     color: null,        bg: null },
+  { value: "in_progress",      label: "In Progress",           color: "#fff",      bg: "#3b82f6" },
+  { value: "pending_followup", label: "Pending Follow Up",     color: "#fff",      bg: "#8b5cf6" },
+  { value: "waiting",          label: "Waiting on Dependency", color: "#1a1a1a",   bg: "#f59e0b" },
+  { value: "blocked",          label: "Blocked",               color: "#fff",      bg: "#ef4444" },
+];
+
+function getStatusOption(value) {
+  return STATUS_OPTIONS.find(s => s.value === (value || "")) || STATUS_OPTIONS[0];
+}
 
 const COND_FMT_CONDITIONS = [
   { value: "past_due",     label: "Past Due (not completed)" },
@@ -81,7 +93,7 @@ class HoverDateRenderer {
 
     this.span = document.createElement("span");
     this.span.style.flex = "1";
-    this.span.textContent = p.value || "";
+    this.span.textContent = fmtDisplayDate(p.value, displayDateFormat);
 
     // Hidden date input — positioned offscreen so showPicker() still works
     this.input = document.createElement("input");
@@ -106,7 +118,7 @@ class HoverDateRenderer {
     };
     this._onChange = () => {
       p.setValue(this.input.value);
-      this.span.textContent = this.input.value;
+      this.span.textContent = fmtDisplayDate(this.input.value, displayDateFormat);
     };
 
     this.btn.addEventListener("click",    this._onBtnClick);
@@ -120,7 +132,7 @@ class HoverDateRenderer {
   refresh(p) {
     this.p = p;
     this.input.value      = p.value || "";
-    this.span.textContent = p.value || "";
+    this.span.textContent = fmtDisplayDate(p.value, displayDateFormat);
     return true;
   }
 }
@@ -148,6 +160,7 @@ function buildColumnDefs() {
     // Row selection checkbox
     {
       headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: true,
       checkboxSelection: true,
       width: 46, minWidth: 46, maxWidth: 46,
       pinned: "left",
@@ -190,11 +203,77 @@ function buildColumnDefs() {
       cellStyle: wrapText
         ? { whiteSpace: "normal", lineHeight: "1.5", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "flex-start" }
         : { display: "flex", alignItems: "center", justifyContent: "flex-start" },
+      cellRenderer: p => {
+        const isSubtask  = !!(p.data?.parent_id);
+        const children   = rowData.filter(r => r.parent_id === p.data?.id && !r.deleted);
+        const isSnoozed  = showSnoozedInGrid && isSnoozeActive(p.data?.id);
+        if (!isSubtask && !children.length && !isSnoozed) return esc(p.value || "");
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "display:flex;align-items:center;gap:5px;width:100%;height:100%";
+        if (isSubtask) {
+          const pfx = document.createElement("span");
+          pfx.className   = "item-subtask-prefix";
+          pfx.textContent = "↳";
+          wrap.appendChild(pfx);
+        }
+        if (children.length > 0) {
+          const isCollapsed = collapsedParents.has(p.data.id);
+          const chevron = document.createElement("span");
+          chevron.className   = "item-collapse-toggle";
+          chevron.textContent = isCollapsed ? "▶" : "▾";
+          chevron.title       = isCollapsed ? "Show subtasks" : "Hide subtasks";
+          chevron.addEventListener("click", e => {
+            e.stopPropagation();
+            if (collapsedParents.has(p.data.id)) collapsedParents.delete(p.data.id);
+            else collapsedParents.add(p.data.id);
+            saveCollapsedParents();
+            gridApi.onFilterChanged();
+            gridApi.refreshCells({ force: true });
+          });
+          wrap.appendChild(chevron);
+        }
+        const txt = document.createElement("span");
+        txt.style.flex  = "1";
+        txt.textContent = p.value || "";
+        wrap.appendChild(txt);
+        if (children.length > 0) {
+          const done        = children.filter(r => r.completed).length;
+          const isCollapsed = collapsedParents.has(p.data.id);
+          const badge = document.createElement("span");
+          badge.className   = "item-subtask-badge";
+          badge.textContent = isCollapsed ? `${children.length} hidden` : `${done}/${children.length}`;
+          wrap.appendChild(badge);
+        }
+        if (isSnoozed) {
+          const until = snoozedItems[p.data.id];
+          const snoozeTag = document.createElement("span");
+          snoozeTag.className = "item-snooze-tag";
+          snoozeTag.title     = `Snoozed until ${until}`;
+          snoozeTag.textContent = "🌙";
+          wrap.appendChild(snoozeTag);
+        }
+        return wrap;
+      },
     },
     {
       field: "category", headerName: "Category", minWidth: 110, width: 140, editable: true,
       headerClass: "ag-header-center",
       cellStyle: { textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" },
+    },
+    {
+      field: "status", headerName: "Status", width: 170, editable: false,
+      headerClass: "ag-header-center",
+      cellStyle: { display: "flex", alignItems: "center", justifyContent: "center" },
+      cellRenderer: p => {
+        const opt = getStatusOption(p.value);
+        if (!opt.bg) return "";
+        const pill = document.createElement("span");
+        pill.className   = "status-pill";
+        pill.textContent = opt.label;
+        pill.style.cssText = `background:${opt.bg};color:${opt.color}`;
+        return pill;
+      },
+      comparator: (a, b) => (a || "").localeCompare(b || ""),
     },
     {
       field: "date", headerName: "Date", width: 130, editable: true,
@@ -287,22 +366,18 @@ function passesDateFilter(row) {
 }
 
 function isExternalFilterPresent() {
-  return activePreset !== "all" || activeCategoryFilters !== null || activeDateFilter !== "all"
-    || hiddenRowIds.size > 0 || Object.keys(snoozedItems).length > 0 || showSnoozed;
+  return activePreset !== "all" || !catFilterShowAll || activeCategoryFilters.length > 0
+    || activeDateFilter !== "all" || activeStatusFilter !== "" || Object.keys(snoozedItems).length > 0
+    || collapsedParents.size > 0;
 }
 
 function doesExternalFilterPass(node) {
   if (!node.data) return true;
-  if (!node.data.id && addingNewRow) return true;
+  if (addingNewRow && node.data === addingNewRow) return true;
   const row = node.data;
 
-  // Exclusive views: hidden-only or snoozed-only
-  if (showHiddenRows) return hiddenRowIds.has(row.id);
-  if (showSnoozed)    return isSnoozeActive(row.id);
-
-  // Normal view: suppress hidden and snoozed rows
-  if (hiddenRowIds.has(row.id)) return false;
-  if (isSnoozeActive(row.id))   return false;
+  if (!showSnoozedInGrid && isSnoozeActive(row.id)) return false;
+  if (row.parent_id && collapsedParents.has(row.parent_id)) return false;
 
   const today    = fmtDate(new Date());
   const tomorrow = fmtDate(new Date(Date.now() + 86_400_000));
@@ -315,8 +390,9 @@ function doesExternalFilterPass(node) {
     case "due_tomorrow": if (row.completed || row.date !== tomorrow) return false; break;
   }
 
-  if (activeCategoryFilters !== null && !activeCategoryFilters.includes(row.category || "")) return false;
+  if (!catFilterShowAll && !activeCategoryFilters.includes(row.category || "")) return false;
   if (!passesDateFilter(row)) return false;
+  if (activeStatusFilter !== "" && (row.status || "") !== activeStatusFilter) return false;
   return true;
 }
 
@@ -454,19 +530,25 @@ function initGrid() {
     doesExternalFilterPass,
 
     getRowClass: p => {
-      if (p.data?.deleted)                                return "row-deleted";
-      if (isSnoozeActive(p.data?.id) && showSnoozed)     return "row-snoozed";
-      if (hiddenRowIds.has(p.data?.id) && showHiddenRows) return "row-hidden";
-      if (p.data?.completed)                              return "row-completed";
+      if (p.data?.deleted)                                 return "row-deleted";
+      if (p.data?.completed)                               return "row-completed";
       return "";
     },
     getRowStyle: p => {
       if (!p.data || p.data.deleted) return null;
-      return evalCondFmt(p.data);
+      const style = evalCondFmt(p.data) || {};
+      if (showSnoozedInGrid && isSnoozeActive(p.data.id)) {
+        return { ...style, background: style.background || "var(--snooze-row-bg, rgba(180,140,60,0.12))" };
+      }
+      return Object.keys(style).length ? style : null;
     },
 
+    onRowClicked: p => {
+      // Single-click only selects; use the sidebar icon button or double-click to open the detail panel
+    },
     onCellValueChanged:  onCellValueChanged,
     onSelectionChanged:  onSelectionChanged,
+    onRowDoubleClicked:  p => openDetailPanel(p.data),
     onSortChanged:       () => saveSortToStorage(),
     onGridReady: () => { loadRows(); applyColumnVisibility(); restoreSortFromStorage(); },
 

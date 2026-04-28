@@ -53,31 +53,33 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
     </button>
 
-    <div class="dropdown" id="import-dropdown">
-      <button class="btn btn-secondary dropdown-toggle">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Import
-      </button>
-      <div class="dropdown-menu">
-        <button class="dropdown-item" id="btn-import-csv">CSV file</button>
-        <button class="dropdown-item" id="btn-import-json">JSON backup</button>
+    <div class="import-export-group">
+      <div class="dropdown" id="import-dropdown">
+        <button class="btn btn-secondary dropdown-toggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import
+        </button>
+        <div class="dropdown-menu">
+          <button class="dropdown-item" id="btn-import-csv">CSV file</button>
+          <button class="dropdown-item" id="btn-import-json">JSON backup</button>
+        </div>
       </div>
-    </div>
 
-    <div class="dropdown" id="export-dropdown">
-      <button id="btn-export-default" class="btn btn-secondary">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export
-      </button>
-      <button class="btn btn-secondary dropdown-toggle export-caret" title="More export options" aria-label="More export options">▾</button>
-      <div class="dropdown-menu">
-        <button class="dropdown-item" id="btn-export-csv">Export as CSV</button>
-        <button class="dropdown-item" id="btn-export-json">Export as JSON (backup)</button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item" id="btn-open-export-settings">Export Settings…</button>
-        <div class="dropdown-divider"></div>
-        <span id="last-export-label" style="display:none;padding:5px 14px;font-size:11px;color:var(--text-subtle);pointer-events:none"></span>
+      <div class="dropdown" id="export-dropdown">
+        <button id="btn-export-default" class="btn btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn btn-secondary dropdown-toggle export-caret" title="More export options" aria-label="More export options">▾</button>
+        <div class="dropdown-menu">
+          <button class="dropdown-item" id="btn-export-csv">Export as CSV</button>
+          <button class="dropdown-item" id="btn-export-json">Export as JSON (backup)</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" id="btn-open-export-settings">Export Settings…</button>
+        </div>
       </div>
+
+      <span id="last-export-label" class="last-export-label" style="display:none"></span>
     </div>
 
     <button id="btn-theme" class="btn btn-ghost icon-btn" title="Toggle light / dark mode">
@@ -97,13 +99,26 @@
         <button class="preset-btn active" data-preset="all">All</button>
         <button class="preset-btn" data-preset="open">Open</button>
         <button class="preset-btn" data-preset="completed">Completed</button>
-        <button class="preset-btn" data-preset="past_due">Past Due</button>
+        <button class="preset-btn" data-preset="past_due">Past Due <span class="past-due-badge" id="past-due-badge" hidden></span></button>
         <button class="preset-btn" data-preset="due_today">Due Today</button>
         <button class="preset-btn" data-preset="due_tomorrow">Due Tomorrow</button>
         <button class="preset-btn" data-preset="recent">Recent</button>
       </div>
     </div>
     <div class="toolbar-right">
+      <!-- Date display format -->
+      <div class="filter-select-wrap" title="Date display format">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <select id="date-format-select" class="filter-select">
+          <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+          <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+          <option value="M/D/YY">M/D/YY</option>
+          <option value="MMM D, YYYY">Apr 27, 2026</option>
+          <option value="D MMM YYYY">27 Apr 2026</option>
+        </select>
+      </div>
+
       <!-- Column visibility picker -->
       <div class="dropdown" id="columns-dropdown">
         <button class="btn btn-ghost btn-sm dropdown-toggle" title="Show/hide columns">
@@ -121,15 +136,11 @@
         Wrap
       </button>
 
-      <button id="btn-show-hidden" class="btn btn-ghost btn-sm" title="Show/hide hidden rows">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        Hidden
-      </button>
       <button id="btn-cond-fmt" class="btn btn-ghost btn-sm" title="Conditional formatting rules">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
         Format
       </button>
-      <button id="btn-show-snoozed" class="btn btn-ghost btn-sm" title="View snoozed items">
+      <button id="btn-show-snoozed" class="btn btn-ghost btn-sm" title="Show snoozed items in grid">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
         Snoozed
         <span id="snoozed-badge" class="badge" style="display:none">0</span>
@@ -151,6 +162,11 @@
   <!-- Toolbar row 2 — filters + search -->
   <div class="toolbar toolbar-row-2">
     <div class="toolbar-left">
+
+      <!-- Category manager button -->
+      <button id="btn-manage-categories" class="btn btn-ghost btn-sm icon-btn" title="Manage category list">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      </button>
 
       <!-- Category multi-select dropdown -->
       <div class="dropdown dropdown-persist" id="category-dropdown">
@@ -190,6 +206,18 @@
         <input type="date" id="date-custom-to"   class="filter-date-input" style="display:none" title="To date" />
       </div>
 
+      <!-- Status filter -->
+      <div class="filter-select-wrap">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        <select id="status-filter" class="filter-select">
+          <option value="">All Statuses</option>
+          <option value="in_progress">In Progress</option>
+          <option value="pending_followup">Pending Follow Up</option>
+          <option value="waiting">Waiting on Dependency</option>
+          <option value="blocked">Blocked</option>
+        </select>
+      </div>
+
       <!-- Quick search -->
       <div class="search-wrapper">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -215,15 +243,25 @@
     <div class="sel-actions">
       <button id="btn-bulk-complete"   class="btn btn-sm btn-success">Mark Complete</button>
       <button id="btn-bulk-incomplete" class="btn btn-sm btn-secondary">Mark Incomplete</button>
-      <button id="btn-bulk-hide"       class="btn btn-sm btn-ghost">Hide</button>
-      <button id="btn-bulk-unhide"     class="btn btn-sm btn-ghost">Unhide</button>
-      <button id="btn-bulk-snooze"     class="btn btn-sm btn-ghost">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-        Snooze
-      </button>
+      <div style="position:relative">
+        <button id="btn-bulk-snooze" class="btn btn-sm btn-ghost">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          Snooze
+        </button>
+        <div id="bulk-snooze-popover" class="snooze-popover" style="display:none">
+          <div class="snooze-row">
+            <input type="datetime-local" id="bulk-snooze-until-dt" class="detail-input" style="font-size:12px" />
+          </div>
+          <button id="btn-bulk-snooze-confirm" class="btn btn-sm btn-warning" style="width:100%">Snooze Selected</button>
+        </div>
+      </div>
       <button id="btn-bulk-move-today" class="btn btn-sm btn-secondary">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Move to Today
+      </button>
+      <button id="btn-bulk-set-parent"  class="btn btn-sm btn-ghost">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        Set Parent
       </button>
       <button id="btn-bulk-delete"     class="btn btn-sm btn-danger">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
@@ -394,23 +432,6 @@
 
 <!-- ═══════════════════════════ MODALS ════════════════════════════════ -->
 
-<!-- Bulk Snooze -->
-<div id="modal-bulk-snooze" class="modal-overlay hidden">
-  <div class="modal" style="max-width:340px">
-    <div class="modal-header">
-      <h2>Snooze Until…</h2>
-      <button class="modal-close" data-close="modal-bulk-snooze">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="datetime-local" id="bulk-snooze-until-dt" class="detail-input" style="width:100%;font-size:13px" />
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" data-close="modal-bulk-snooze">Cancel</button>
-      <button id="btn-bulk-snooze-confirm" class="btn btn-warning">Snooze</button>
-    </div>
-  </div>
-</div>
-
 <!-- Export Settings -->
 <div id="modal-export-settings" class="modal-overlay hidden">
   <div class="modal">
@@ -549,6 +570,80 @@
   </div>
 </div>
 
+<!-- Snoozed Items -->
+<div id="modal-snoozed" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-2px"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        Snoozed Items
+      </h2>
+      <button class="modal-close" data-close="modal-snoozed">✕</button>
+    </div>
+    <div class="modal-body" style="padding-bottom:0">
+      <div class="search-wrapper" style="margin-bottom:12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="snoozed-search" placeholder="Filter by name or category…" autocomplete="off" />
+      </div>
+      <div id="snoozed-items-list" class="snoozed-items-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-unsnooze-all" class="btn btn-ghost btn-sm" style="color:var(--danger)">Unsnooze All</button>
+      <button class="btn btn-ghost" data-close="modal-snoozed">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Manager -->
+<div id="modal-categories" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Manage Categories</h2>
+      <button class="modal-close" data-close="modal-categories">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-subtle);margin:0 0 14px">Drag rows to reorder. This order is used in the category filter and as autocomplete suggestions.</p>
+      <div id="cat-manager-list" class="cat-manager-list"></div>
+      <div class="cat-manager-add">
+        <input type="text" id="new-category-input" class="detail-input" placeholder="New category name…" style="flex:1" />
+        <button id="btn-add-category" class="btn btn-primary btn-sm">Add</button>
+        <button id="btn-import-categories" class="btn btn-ghost btn-sm" title="Add all categories currently in your data">Import from data</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="modal-categories">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Set Parent (bulk) -->
+<div id="modal-set-parent" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Set Parent Task</h2>
+      <button class="btn btn-ghost btn-sm icon-btn" data-close="modal-set-parent">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+      <p id="set-parent-desc" style="font-size:13px;color:var(--text-muted)"></p>
+      <div style="position:relative">
+        <input type="text" id="set-parent-search" class="detail-input" placeholder="Search for parent task…" autocomplete="off" />
+        <div id="set-parent-dropdown" class="parent-dropdown" style="display:none"></div>
+      </div>
+      <div id="set-parent-selected" style="display:none">
+        <div class="parent-selected">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          <span id="set-parent-chosen-name" style="flex:1;font-size:13px;font-weight:500;color:var(--text)"></span>
+          <button type="button" id="btn-set-parent-clear" class="btn btn-ghost btn-sm icon-btn" title="Clear selection">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="modal-set-parent">Cancel</button>
+      <button id="btn-set-parent-confirm" class="btn btn-primary" disabled>Apply to Selected</button>
+    </div>
+  </div>
+</div>
+
 <!-- Confirm -->
 <div id="modal-confirm" class="modal-overlay hidden">
   <div class="modal modal-sm">
@@ -570,7 +665,6 @@
 
 <!-- Row context menu -->
 <div id="row-context-menu" style="display:none;position:fixed;z-index:800;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);min-width:160px;overflow:hidden;">
-  <button id="ctx-hide-row"    style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Hide Row</button>
   <button id="ctx-snooze-row"  style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Snooze</button>
   <button id="ctx-duplicate"   style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Duplicate</button>
   <button id="ctx-open-detail" style="display:block;width:100%;padding:9px 14px;text-align:left;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;" onmouseover="this.style.background='var(--bg-surface-2)'" onmouseout="this.style.background='none'">Open Detail Panel</button>
@@ -588,13 +682,23 @@
 <div id="detail-panel" class="detail-panel">
   <div class="detail-header">
     <span class="detail-title">Item Details</span>
-    <div class="detail-header-actions">
-      <div style="position:relative">
-        <button id="btn-detail-customize" class="btn btn-ghost btn-sm icon-btn" title="Customize visible fields">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2" fill="currentColor"/><circle cx="16" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="18" r="2" fill="currentColor"/></svg>
-        </button>
-        <div id="detail-field-picker" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px 0;min-width:180px;z-index:200">
-        </div>
+    <div class="detail-header-actions" style="position:relative">
+      <button id="btn-detail-customize" class="btn btn-ghost btn-sm icon-btn" title="Customize visible fields">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      </button>
+      <div id="detail-customize-popover" class="detail-customize-popover" style="display:none">
+        <div class="detail-customize-title">Visible Fields</div>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="status" /> Status</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="category" /> Category</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="parent_task" /> Parent Task</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="date" /> Date</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="time" /> Time</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="sort" /> Sort</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="date_completed" /> Date Completed</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="recurrence" /> Recurrence</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="link" /> Link / URL</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="subtasks" /> Subtasks</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="followup" /> Follow-up Log</label>
       </div>
       <button id="btn-detail-delete" class="btn btn-sm btn-danger" title="Delete this item">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
@@ -605,126 +709,172 @@
 
   <div class="detail-body">
 
-    <!-- Completed toggle -->
-    <div class="detail-completed-row">
-      <label class="detail-done-label">
-        <input type="checkbox" id="detail-completed" class="detail-done-cb" />
-        <span class="detail-done-text">Completed</span>
-      </label>
-      <span id="detail-done-badge" class="detail-done-badge done" style="display:none">Done</span>
-      <span id="detail-open-badge" class="detail-done-badge open">Open</span>
-    </div>
+    <!-- Left column: task attributes -->
+    <div class="detail-col detail-col-l">
 
-    <div class="detail-field">
-      <label class="detail-label">Item</label>
-      <textarea id="detail-item" class="detail-input detail-item-input" placeholder="Task name…" rows="1"></textarea>
-    </div>
-
-    <div class="detail-field" data-detail-field="category">
-      <label class="detail-label">Category</label>
-      <input type="text" id="detail-category" class="detail-input" placeholder="Category…" />
-    </div>
-
-    <div class="detail-row-2" data-detail-field="datetime">
-      <div class="detail-field">
-        <label class="detail-label">Date</label>
-        <div class="detail-date-row">
-          <input type="date" id="detail-date" class="detail-input" style="flex:1" />
-          <button type="button" id="btn-detail-date-today" class="btn btn-ghost btn-sm" title="Set to today" style="white-space:nowrap;padding:4px 8px;font-size:11px">Today</button>
-        </div>
-      </div>
-      <div class="detail-field">
-        <label class="detail-label">Time</label>
-        <input type="time" id="detail-time" class="detail-input" />
-      </div>
-    </div>
-
-    <div class="detail-field" data-detail-field="sort">
-      <label class="detail-label">Sort</label>
-      <input type="number" id="detail-sort" class="detail-input" placeholder="0" step="1" />
-    </div>
-
-    <div class="detail-field" data-detail-field="recurrence">
-      <label class="detail-label">Recurrence</label>
-      <div class="recur-row">
-        <label class="detail-done-label" style="flex:none;gap:6px">
-          <input type="checkbox" id="detail-recur-on" class="detail-done-cb" />
-          <span class="detail-done-text" style="font-weight:500">Repeat every</span>
-        </label>
-        <input type="number" id="detail-recur-count" class="snooze-count" value="1" min="1" max="999" style="width:58px" />
-        <select id="detail-recur-unit" class="snooze-unit">
-          <option value="days">day(s)</option>
-          <option value="weekdays">weekday(s)</option>
-          <option value="weeks">week(s)</option>
-          <option value="months">month(s)</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="detail-field" data-detail-field="description">
-      <label class="detail-label">Description</label>
-      <textarea id="detail-description" class="detail-input detail-textarea" placeholder="Notes, details…" rows="4"></textarea>
-    </div>
-
-    <!-- Follow-up log -->
-    <div class="detail-section" id="detail-followup-section" data-detail-field="followup">
-      <div class="detail-section-header">
-        <span class="detail-label">Follow-up Log</span>
-      </div>
-      <div class="followup-input-row">
-        <input type="text" id="followup-note-input" class="detail-input followup-note-input" placeholder="Add a note (optional)…" />
-        <button type="button" id="btn-log-followup" class="btn btn-ghost btn-sm">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Log
-        </button>
-      </div>
-      <div id="detail-followup-list" class="detail-followup-list"></div>
-    </div>
-
-    <div class="detail-field" data-detail-field="link">
-      <label class="detail-label">Link / URL</label>
-      <div class="detail-link-row">
-        <input type="url" id="detail-link" class="detail-input" placeholder="https://…" />
-        <a id="detail-link-open" class="btn btn-ghost btn-sm icon-btn" target="_blank" rel="noopener noreferrer" title="Open link" style="display:none">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-      </div>
-    </div>
-
-    <div class="detail-field" data-detail-field="date-completed">
-      <label class="detail-label">Date Completed</label>
-      <input type="date" id="detail-date-completed" class="detail-input" />
-    </div>
-
-    <!-- Notification settings -->
-    <div id="detail-notif-row" data-detail-field="notifications" style="display:none">
+      <!-- Completed toggle -->
       <div class="detail-completed-row">
         <label class="detail-done-label">
-          <input type="checkbox" id="detail-notif-enabled" class="detail-done-cb" />
-          <span class="detail-done-text">Notifications enabled</span>
+          <input type="checkbox" id="detail-completed" class="detail-done-cb" />
+          <span class="detail-done-text">Completed</span>
         </label>
+        <span id="detail-done-badge" class="detail-done-badge done" style="display:none">Done</span>
+        <span id="detail-open-badge" class="detail-done-badge open">Open</span>
       </div>
-      <div class="detail-notif-time-row">
-        <label class="detail-label" style="font-size:11px;margin-bottom:0">Notify at</label>
-        <input type="time" id="detail-notif-time" class="detail-input detail-notif-time-input" value="09:00" />
-        <span class="detail-notif-hint">on due date</span>
-      </div>
-    </div>
 
-    <div class="detail-meta">
-      <div class="detail-meta-row">
-        <span class="detail-meta-label">Last Modified</span>
-        <span id="detail-last-modified" class="detail-meta-value">—</span>
+      <!-- Status -->
+      <div class="detail-field" data-detail-field="status">
+        <label class="detail-label">Status</label>
+        <select id="detail-status" class="detail-input detail-status-select">
+          <option value="">— None —</option>
+          <option value="in_progress">In Progress</option>
+          <option value="pending_followup">Pending Follow Up</option>
+          <option value="waiting">Waiting on Dependency</option>
+          <option value="blocked">Blocked</option>
+        </select>
       </div>
-      <div class="detail-meta-row">
-        <span class="detail-meta-label">Created</span>
-        <span id="detail-created-at" class="detail-meta-value">—</span>
+
+      <div class="detail-field">
+        <label class="detail-label">Item</label>
+        <textarea id="detail-item" class="detail-input detail-item-input" placeholder="Task name…" rows="1"></textarea>
       </div>
-      <div class="detail-meta-row">
-        <span class="detail-meta-label">ID</span>
-        <span id="detail-id" class="detail-meta-value">—</span>
+
+      <div class="detail-field" data-detail-field="category">
+        <label class="detail-label">Category</label>
+        <input type="text" id="detail-category" class="detail-input" placeholder="Category…" list="category-datalist" autocomplete="off" />
+        <datalist id="category-datalist"></datalist>
       </div>
-    </div>
+
+      <div class="detail-field" data-detail-field="parent_task">
+        <label class="detail-label">Parent Task</label>
+        <input type="hidden" id="detail-parent-id" value="" />
+        <div id="detail-parent-selected" class="parent-selected" style="display:none">
+          <button type="button" id="btn-open-parent" class="parent-open-btn" title="Click to open parent task">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+            <span id="detail-parent-name"></span>
+          </button>
+          <button type="button" id="btn-clear-parent" class="btn btn-ghost btn-sm icon-btn" title="Remove parent">✕</button>
+        </div>
+        <div id="detail-parent-search-wrap" class="parent-search-wrap">
+          <input type="text" id="detail-parent-search" class="detail-input" placeholder="Search for parent task…" autocomplete="off" />
+          <div id="detail-parent-dropdown" class="parent-dropdown" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="detail-row-2" data-detail-row-group="date-time">
+        <div class="detail-field" data-detail-field="date">
+          <label class="detail-label">Date</label>
+          <div class="detail-date-row">
+            <input type="date" id="detail-date" class="detail-input" style="flex:1" />
+            <button type="button" id="btn-detail-date-today" class="btn btn-ghost btn-sm" title="Set to today" style="white-space:nowrap;padding:4px 8px;font-size:11px">Today</button>
+          </div>
+        </div>
+        <div class="detail-field" data-detail-field="time">
+          <label class="detail-label">Time</label>
+          <input type="time" id="detail-time" class="detail-input" />
+        </div>
+      </div>
+
+      <div class="detail-row-2" data-detail-row-group="sort-datecomp">
+        <div class="detail-field" data-detail-field="sort">
+          <label class="detail-label">Sort</label>
+          <input type="number" id="detail-sort" class="detail-input" placeholder="0" step="1" />
+        </div>
+        <div class="detail-field" data-detail-field="date_completed">
+          <label class="detail-label">Date Completed</label>
+          <input type="date" id="detail-date-completed" class="detail-input" />
+        </div>
+      </div>
+
+      <div class="detail-field" data-detail-field="recurrence">
+        <label class="detail-label">Recurrence</label>
+        <div class="recur-row">
+          <label class="recur-toggle" title="Enable recurrence">
+            <input type="checkbox" id="detail-recur-on" />
+            <span class="recur-toggle-track"></span>
+          </label>
+          <span class="recur-every-label">Every</span>
+          <div class="recur-inputs">
+            <input type="number" id="detail-recur-count" class="recur-count" value="1" min="1" max="999" />
+            <select id="detail-recur-unit" class="recur-unit">
+              <option value="days">days</option>
+              <option value="weekdays">weekdays</option>
+              <option value="weeks">weeks</option>
+              <option value="months">months</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-field" data-detail-field="link">
+        <label class="detail-label">Link / URL</label>
+        <div class="detail-link-row">
+          <input type="url" id="detail-link" class="detail-input" placeholder="https://…" />
+          <a id="detail-link-open" class="btn btn-ghost btn-sm icon-btn" target="_blank" rel="noopener noreferrer" title="Open link" style="display:none">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="detail-meta">
+        <div class="detail-meta-row">
+          <span class="detail-meta-label">Last Modified</span>
+          <span id="detail-last-modified" class="detail-meta-value">—</span>
+        </div>
+        <div class="detail-meta-row">
+          <span class="detail-meta-label">Created</span>
+          <span id="detail-created-at" class="detail-meta-value">—</span>
+        </div>
+        <div class="detail-meta-row">
+          <span class="detail-meta-label">ID</span>
+          <span id="detail-id" class="detail-meta-value">—</span>
+        </div>
+      </div>
+
+    </div><!-- /detail-col-l -->
+
+    <!-- Right column: notes, subtasks, follow-ups -->
+    <div class="detail-col detail-col-r">
+
+      <div class="detail-field">
+        <label class="detail-label">Description</label>
+        <textarea id="detail-description" class="detail-input detail-textarea" placeholder="Notes, details…" rows="5"></textarea>
+      </div>
+
+      <!-- Subtasks -->
+      <div class="detail-field" id="detail-subtasks-section" data-detail-field="subtasks">
+        <div class="detail-subtasks-header">
+          <label class="detail-label">Subtasks</label>
+          <span id="detail-subtasks-progress" class="subtasks-progress"></span>
+        </div>
+        <div id="detail-subtasks-list" class="detail-subtasks-list"></div>
+        <div class="subtask-add-row">
+          <input type="text" id="subtask-new-name" class="detail-input subtask-new-input" placeholder="Add a subtask…" autocomplete="off" />
+          <button type="button" id="btn-add-subtask" class="btn btn-ghost btn-sm">Add</button>
+        </div>
+      </div>
+
+      <!-- Follow-up log -->
+      <div class="detail-section" id="detail-followup-section" data-detail-field="followup">
+        <div class="detail-section-header">
+          <span class="detail-label">Follow-up Log</span>
+        </div>
+        <div class="followup-input-row">
+          <input type="text" id="followup-note-input" class="detail-input followup-note-input" placeholder="Add a note (optional)…" />
+          <button type="button" id="btn-log-followup" class="btn btn-ghost btn-sm">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Log
+          </button>
+          <button type="button" id="btn-log-followup-snooze" class="btn btn-ghost btn-sm" title="Log follow-up and snooze">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            Log &amp; Snooze
+          </button>
+        </div>
+        <div id="detail-followup-list" class="detail-followup-list"></div>
+      </div>
+
+    </div><!-- /detail-col-r -->
+
   </div><!-- /detail-body -->
 
   <div class="detail-footer">
@@ -741,7 +891,6 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
         Snooze
       </button>
-      <span id="detail-snooze-until" style="display:none;font-size:11px;color:var(--text-subtle);text-align:right;line-height:1.3"></span>
       <div id="snooze-popover" class="snooze-popover" style="display:none">
         <div class="snooze-row">
           <input type="datetime-local" id="snooze-until-dt" class="detail-input" style="font-size:12px" />
@@ -749,6 +898,7 @@
         <button id="btn-snooze-confirm" class="btn btn-sm btn-warning" style="width:100%">Snooze</button>
       </div>
     </div>
+    <span id="detail-snooze-until" class="detail-snooze-until" style="display:none"></span>
   </div>
 </div><!-- /detail-panel -->
 

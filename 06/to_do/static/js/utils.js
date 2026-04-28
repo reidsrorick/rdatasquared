@@ -22,6 +22,25 @@ function fmtDateTime(d) {
     String(d.getSeconds()).padStart(2, "0");
 }
 
+// Display-only date formatter — converts stored ISO "YYYY-MM-DD" to chosen display format.
+// The underlying stored value is always ISO; this only affects what users see.
+function fmtDisplayDate(isoStr, fmt) {
+  if (!isoStr) return "";
+  const parts = isoStr.split("-");
+  if (parts.length !== 3) return isoStr;
+  const [y, m, d] = parts;
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const mi = parseInt(m, 10) - 1;
+  switch (fmt) {
+    case "MM/DD/YYYY":  return `${m}/${d}/${y}`;
+    case "DD/MM/YYYY":  return `${d}/${m}/${y}`;
+    case "M/D/YY":      return `${parseInt(m)}/${parseInt(d)}/${y.slice(2)}`;
+    case "MMM D, YYYY": return `${months[mi]} ${parseInt(d)}, ${y}`;
+    case "D MMM YYYY":  return `${parseInt(d)} ${months[mi]} ${y}`;
+    default:            return isoStr; // YYYY-MM-DD
+  }
+}
+
 function fmtTime12h(timeStr) {
   // Convert "HH:MM" (24h) to "h:MM AM/PM" for display; sorting still uses raw 24h
   if (!timeStr) return "";

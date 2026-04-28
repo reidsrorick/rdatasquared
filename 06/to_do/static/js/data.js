@@ -43,7 +43,6 @@ async function loadRows() {
   updateCategoryDropdown();
   restoreFiltersFromStorage();
   updateRowCount();
-  checkDueNotifications();
 }
 
 // ---------------------------------------------------------------------------
@@ -209,13 +208,6 @@ async function doImport() {
       const data = JSON.parse(text);
       if (!Array.isArray(data.items)) throw new Error("Invalid backup file — expected { items: [...] }");
       items = data.items;
-      if (data.snoozed && typeof data.snoozed === "object") {
-        if (mode === "replace") {
-          snoozedItems = {};
-        }
-        Object.assign(snoozedItems, data.snoozed);
-        saveSnoozedItems();
-      }
     } else if (filename.endsWith(".csv")) {
       items = _parseCSV(text);
     } else {
@@ -224,19 +216,38 @@ async function doImport() {
 
     const now = fmtDateTime(new Date());
 
+    // Parse snoozed state from JSON backup (not present in CSV)
+    const backupSnoozed = (filename.endsWith(".json") && data.snoozed && typeof data.snoozed === "object")
+      ? data.snoozed : {};
+
     if (mode === "replace") {
-      // Reset the ID counter
       _idCounter = null;
       _saveAllItems(items.map(r => ({ ...r, id: r.id ?? _nextId(), created_at: r.created_at || now })));
+      // Restore snoozed state directly (IDs preserved in replace mode)
+      snoozedItems = { ...backupSnoozed };
+      saveSnoozedItems();
     } else {
       const existing = getAllItems();
-      // Give each imported row a fresh id to avoid collisions
       const base     = existing.length > 0 ? Math.max(...existing.map(r => Number(r.id) || 0)) + 1 : 1;
-      const newItems = items.map((r, i) => ({ ...r, id: base + i, created_at: r.created_at || now }));
+      // Build old-id → new-id map so snoozed entries follow their rows
+      const idMap  = {};
+      const newItems = items.map((r, i) => {
+        const newId = base + i;
+        if (r.id != null) idMap[r.id] = newId;
+        return { ...r, id: newId, created_at: r.created_at || now };
+      });
       _saveAllItems([...existing, ...newItems]);
+      // Merge snoozed: translate old IDs to new IDs, don't overwrite existing snoozes
+      const now2 = fmtSnoozeNow();
+      Object.entries(backupSnoozed).forEach(([oldId, until]) => {
+        const newId = idMap[oldId];
+        if (newId != null && until >= now2) snoozedItems[newId] = until;
+      });
+      saveSnoozedItems();
     }
 
-    _idCounter = null; // force re-seed on next save
+    _idCounter = null;
+    updateSnoozeBadge();
     hideModal("modal-import");
     toast(`Imported ${items.length} row(s) (${mode})`, "success");
     await loadRows();
@@ -295,6 +306,23 @@ function _parseCSV(text) {
 // Export
 // ---------------------------------------------------------------------------
 
+function recordLastExport() {
+  localStorage.setItem("wt-last-export", fmtDateTime(new Date()));
+  updateLastExportDisplay();
+}
+
+function updateLastExportDisplay() {
+  const el = document.getElementById("last-export-label");
+  if (!el) return;
+  const val = localStorage.getItem("wt-last-export");
+  if (!val) { el.style.display = "none"; return; }
+  // Format "YYYY-MM-DD HH:MM:SS" → "Apr 27, 5:24 PM"
+  const d = new Date(val.replace(" ", "T"));
+  const label = isNaN(d) ? val : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  el.textContent = `Exported ${label}`;
+  el.style.display = "";
+}
+
 function exportData(format) {
   const ts = new Date().toISOString().slice(0, 10);
 
@@ -302,16 +330,15 @@ function exportData(format) {
     const payload = {
       version:    "1.0",
       exportedAt: fmtDateTime(new Date()),
-      snoozed:    {...snoozedItems},
       items:      getAllItems(),
+      snoozed:    { ...snoozedItems },
     };
     _triggerDownload(
       new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
       `work-tracker-${ts}.json`
     );
-    saveLastExportTime();
-    updateLastExportLabel();
     toast("Exported as JSON backup", "info");
+    recordLastExport();
 
   } else if (format === "csv") {
     const headers = ["ID","Item","Category","Date","Time","Sort","Description","Completed?","Date Completed","Last Modified"];
@@ -323,9 +350,8 @@ function exportData(format) {
       .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
       .join("\n");
     _triggerDownload(new Blob([csv], { type: "text/csv" }), `work-tracker-${ts}.csv`);
-    saveLastExportTime();
-    updateLastExportLabel();
     toast("Exported as CSV", "info");
+    recordLastExport();
   }
 }
 
@@ -382,8 +408,8 @@ async function exportToDefault() {
     const payload = {
       version:    "1.0",
       exportedAt: fmtDateTime(new Date()),
-      snoozed:    {...snoozedItems},
       items:      getAllItems(),
+      snoozed:    { ...snoozedItems },
     };
     content = JSON.stringify(payload, null, 2);
   } else {
@@ -403,9 +429,8 @@ async function exportToDefault() {
     await writable.write(content);
     await writable.close();
     const folder = settings.folderName || "selected folder";
-    saveLastExportTime();
-    updateLastExportLabel();
     toast(`Exported to ${folder}/${filename}`, "success");
+    recordLastExport();
   } catch (err) {
     console.error("Default export failed:", err);
     toast("Export failed: " + err.message, "error");
@@ -484,7 +509,7 @@ async function createEntryOnDate(dateStr) {
     description: "", completed: false, date_completed: "",
     last_modified: now, deleted: false,
   };
-  if (activeCategoryFilters !== null && activeCategoryFilters.length === 1) newRow.category = activeCategoryFilters[0];
+  if (activeCategoryFilters.length === 1) newRow.category = activeCategoryFilters[0];
 
   const saved = await saveRow(newRow);
   if (!saved) return;
