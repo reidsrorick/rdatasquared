@@ -45,7 +45,7 @@
   </nav>
 
   <div class="navbar-actions">
-    <button id="btn-new-row" class="btn btn-primary">
+    <button id="btn-new-row" class="btn btn-primary" title="Add new item (Alt+N)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Add Row
     </button>
@@ -81,6 +81,11 @@
     </div>
     <div class="toolbar-right">
       <!-- Wrap text toggle -->
+      <button id="btn-collapse-all" class="btn btn-ghost btn-sm" title="Collapse all parent rows">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 9 12 17 20 9"/></svg>
+        Collapse All
+      </button>
+
       <button id="btn-wrap-text" class="btn btn-ghost btn-sm" title="Wrap text in Item and Description columns">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
         Wrap
@@ -89,6 +94,10 @@
       <button id="btn-cond-fmt" class="btn btn-ghost btn-sm" title="Conditional formatting rules">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
         Format
+      </button>
+      <button id="btn-manage-statuses" class="btn btn-ghost btn-sm" title="Manage status options">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        Status
       </button>
       <button id="btn-show-snoozed" class="btn btn-ghost btn-sm" title="Show snoozed items in grid">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
@@ -149,18 +158,6 @@
         <input type="date" id="date-custom-from" class="filter-date-input" title="From date" />
         <span id="date-custom-sep" class="date-range-sep" style="display:none">→</span>
         <input type="date" id="date-custom-to"   class="filter-date-input" style="display:none" title="To date" />
-      </div>
-
-      <!-- Status filter -->
-      <div class="filter-select-wrap">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
-        <select id="status-filter" class="filter-select">
-          <option value="">All Statuses</option>
-          <option value="in_progress">In Progress</option>
-          <option value="pending_followup">Pending Follow Up</option>
-          <option value="waiting">Waiting on Dependency</option>
-          <option value="blocked">Blocked</option>
-        </select>
       </div>
 
       <!-- Quick search -->
@@ -643,6 +640,35 @@
   </div>
 </div>
 
+<!-- Manage Statuses -->
+<div id="modal-statuses" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Manage Statuses</h2>
+      <button class="modal-close" data-close="modal-statuses">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-subtle);margin:0 0 14px">Add, edit, or remove status options. Each status needs a label and a pill color.</p>
+      <div id="status-manager-list"></div>
+      <div class="status-manager-add" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--border)">
+        <p style="font-size:12px;font-weight:600;color:var(--text-muted);margin:0">Add new status</p>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="new-status-label" class="detail-input" placeholder="Label…" style="flex:1;min-width:120px" />
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;color:var(--text-subtle)">Pill</label>
+            <input type="color" id="new-status-bg"    value="#6366f1" style="width:32px;height:28px;border-radius:4px;border:1px solid var(--border);cursor:pointer;padding:1px;background:none" title="Pill background color" />
+            <input type="color" id="new-status-color" value="#ffffff" style="width:32px;height:28px;border-radius:4px;border:1px solid var(--border);cursor:pointer;padding:1px;background:none" title="Text color" />
+          </div>
+          <button id="btn-add-status" class="btn btn-primary btn-sm">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="modal-statuses">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Set Parent (bulk) -->
 <div id="modal-set-parent" class="modal-overlay hidden">
   <div class="modal modal-sm">
@@ -752,13 +778,7 @@
       <!-- Status -->
       <div class="detail-field" data-detail-field="status">
         <label class="detail-label">Status</label>
-        <select id="detail-status" class="detail-input detail-status-select">
-          <option value="">— None —</option>
-          <option value="in_progress">In Progress</option>
-          <option value="pending_followup">Pending Follow Up</option>
-          <option value="waiting">Waiting on Dependency</option>
-          <option value="blocked">Blocked</option>
-        </select>
+        <select id="detail-status" class="detail-input detail-status-select"></select>
       </div>
 
       <div class="detail-field">
@@ -768,8 +788,13 @@
 
       <div class="detail-field" data-detail-field="category">
         <label class="detail-label">Category</label>
-        <input type="text" id="detail-category" class="detail-input" placeholder="Category…" list="category-datalist" autocomplete="off" />
-        <datalist id="category-datalist"></datalist>
+        <div class="cat-combo" id="cat-combo">
+          <div class="cat-tags-wrap" id="cat-tags-wrap">
+            <div class="cat-tags" id="cat-tags"></div>
+            <input type="text" id="detail-category-input" class="cat-tag-input" placeholder="Add category…" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="cat-combo-list" />
+          </div>
+          <ul id="cat-combo-list" class="cat-combo-list" role="listbox" aria-label="Categories"></ul>
+        </div>
       </div>
 
       <div class="detail-field" data-detail-field="parent_task">

@@ -134,7 +134,7 @@ async function showDeletedModal() {
       <div class="deleted-item" data-id="${r.id}">
         <div class="deleted-item-info">
           <div class="deleted-item-name">${esc(r.item || "(no name)")}</div>
-          <div class="deleted-item-meta">${esc(r.category || "")} · ${esc(r.last_modified || "")}</div>
+          <div class="deleted-item-meta">${esc(getCategories(r).join(", "))} · ${esc(r.last_modified || "")}</div>
         </div>
         <button class="btn btn-sm btn-secondary" onclick="restoreRow(${r.id})">Restore</button>
       </div>
@@ -460,7 +460,7 @@ function exportData(format) {
   } else if (format === "csv") {
     const headers = ["ID","Item","Category","Date","Time","Sort","Description","Completed?","Date Completed","Last Modified"];
     const csvRows = getAllItems().filter(r => !r.deleted).map(r => [
-      r.id, r.item, r.category, r.date, r.time, r.sort,
+      r.id, r.item, getCategories(r).join(", "), r.date, r.time, r.sort,
       r.description, r.completed ? "Yes" : "No", r.date_completed, r.last_modified,
     ]);
     const csv = [headers, ...csvRows]
@@ -532,7 +532,7 @@ async function exportToDefault() {
   } else {
     const headers = ["ID","Item","Category","Date","Time","Sort","Description","Completed?","Date Completed","Last Modified"];
     const csvRows = getAllItems().filter(r => !r.deleted).map(r => [
-      r.id, r.item, r.category, r.date, r.time, r.sort,
+      r.id, r.item, getCategories(r).join(", "), r.date, r.time, r.sort,
       r.description, r.completed ? "Yes" : "No", r.date_completed, r.last_modified,
     ]);
     content = [headers, ...csvRows]

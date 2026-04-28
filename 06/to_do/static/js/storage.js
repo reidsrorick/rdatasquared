@@ -68,7 +68,7 @@ function saveFiltersToStorage() {
     categories:  activeCategoryFilters,
     catShowAll:  catFilterShowAll,
     date:        activeDateFilter,
-    status:      activeStatusFilter,
+
     quick:       document.getElementById("quick-filter")?.value || "",
   };
   localStorage.setItem("wt-filters", JSON.stringify(state));
@@ -146,6 +146,37 @@ function loadCategoryOrder() {
 
 function saveCategoryOrder() {
   localStorage.setItem("wt-categories", JSON.stringify(customCategories));
+}
+
+// ---------------------------------------------------------------------------
+// Custom status options
+// ---------------------------------------------------------------------------
+
+const DEFAULT_STATUS_OPTIONS = [
+  { value: "",                 label: "—",                     color: null,      bg: null },
+  { value: "in_progress",      label: "In Progress",           color: "#ffffff", bg: "#3b82f6" },
+  { value: "pending_followup", label: "Pending Follow Up",     color: "#ffffff", bg: "#8b5cf6" },
+  { value: "waiting",          label: "Waiting on Dependency", color: "#1a1a1a", bg: "#f59e0b" },
+  { value: "blocked",          label: "Blocked",               color: "#ffffff", bg: "#ef4444" },
+];
+
+function loadStatusOptions() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("wt-status-options") || "null");
+    if (Array.isArray(saved) && saved.length) {
+      // Always keep the blank "none" entry first
+      statusOptions = [DEFAULT_STATUS_OPTIONS[0], ...saved.filter(s => s.value)];
+    } else {
+      statusOptions = [...DEFAULT_STATUS_OPTIONS];
+    }
+  } catch {
+    statusOptions = [...DEFAULT_STATUS_OPTIONS];
+  }
+}
+
+function saveStatusOptions() {
+  // Persist everything except the blank sentinel
+  localStorage.setItem("wt-status-options", JSON.stringify(statusOptions.filter(s => s.value)));
 }
 
 // ---------------------------------------------------------------------------

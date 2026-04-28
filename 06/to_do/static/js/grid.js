@@ -18,16 +18,8 @@ const TOGGLEABLE_COLS = {
   link: "Link", date_completed: "Date Completed", last_modified: "Last Modified",
 };
 
-const STATUS_OPTIONS = [
-  { value: "",                 label: "—",                     color: null,        bg: null },
-  { value: "in_progress",      label: "In Progress",           color: "#fff",      bg: "#3b82f6" },
-  { value: "pending_followup", label: "Pending Follow Up",     color: "#fff",      bg: "#8b5cf6" },
-  { value: "waiting",          label: "Waiting on Dependency", color: "#1a1a1a",   bg: "#f59e0b" },
-  { value: "blocked",          label: "Blocked",               color: "#fff",      bg: "#ef4444" },
-];
-
 function getStatusOption(value) {
-  return STATUS_OPTIONS.find(s => s.value === (value || "")) || STATUS_OPTIONS[0];
+  return statusOptions.find(s => s.value === (value || "")) || statusOptions[0] || { value: "", label: "—", color: null, bg: null };
 }
 
 const COND_FMT_CONDITIONS = [
@@ -199,6 +191,7 @@ function buildColumnDefs() {
     },
     {
       field: "item", headerName: "Item", minWidth: 160, flex: 2, editable: true,
+      rowDrag: true,
       wrapText: wrapText, autoHeight: wrapText,
       cellStyle: wrapText
         ? { whiteSpace: "normal", lineHeight: "1.5", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "flex-start" }
@@ -256,9 +249,13 @@ function buildColumnDefs() {
       },
     },
     {
-      field: "category", headerName: "Category", minWidth: 110, width: 140, editable: true,
+      field: "category", headerName: "Category", minWidth: 110, width: 160, editable: false,
+      wrapText: wrapText, autoHeight: wrapText,
       headerClass: "ag-header-center",
-      cellStyle: { textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" },
+      cellStyle: wrapText
+        ? { textAlign: "center", whiteSpace: "normal", lineHeight: "1.5", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "center" }
+        : { textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" },
+      valueGetter: p => getCategories(p.data).join(", "),
     },
     {
       field: "status", headerName: "Status", width: 170, editable: false,
@@ -367,7 +364,7 @@ function passesDateFilter(row) {
 
 function isExternalFilterPresent() {
   return activePreset !== "all" || !catFilterShowAll || activeCategoryFilters.length > 0
-    || activeDateFilter !== "all" || activeStatusFilter !== "" || Object.keys(snoozedItems).length > 0
+    || activeDateFilter !== "all" || Object.keys(snoozedItems).length > 0
     || collapsedParents.size > 0;
 }
 
@@ -390,9 +387,8 @@ function doesExternalFilterPass(node) {
     case "due_tomorrow": if (row.completed || row.date !== tomorrow) return false; break;
   }
 
-  if (!catFilterShowAll && !activeCategoryFilters.includes(row.category || "")) return false;
+  if (!catFilterShowAll && !getCategories(row).some(c => activeCategoryFilters.includes(c))) return false;
   if (!passesDateFilter(row)) return false;
-  if (activeStatusFilter !== "" && (row.status || "") !== activeStatusFilter) return false;
   return true;
 }
 
@@ -546,6 +542,77 @@ function initGrid() {
     onRowClicked: p => {
       // Single-click only selects; use the sidebar icon button or double-click to open the detail panel
     },
+    postSortRows: params => {
+      const nodes = params.nodes;
+      // Build child map preserving sorted order within each group
+      const childMap = {};
+      const parents  = [];
+      const orphans  = [];
+      nodes.forEach(n => {
+        const pid = n.data?.parent_id;
+        if (pid) {
+          if (!childMap[pid]) childMap[pid] = [];
+          childMap[pid].push(n);
+        } else {
+          parents.push(n);
+        }
+      });
+      // Orphaned children: parent_id set but parent not visible in this node list
+      const parentIdSet = new Set(parents.map(p => p.data?.id));
+      nodes.forEach(n => { if (n.data?.parent_id && !parentIdSet.has(n.data.parent_id)) orphans.push(n); });
+      const result = [];
+      parents.forEach(p => {
+        result.push(p);
+        (childMap[p.data?.id] || []).forEach(c => result.push(c));
+      });
+      orphans.forEach(n => result.push(n));
+      nodes.length = 0;
+      result.forEach(n => nodes.push(n));
+    },
+
+    onRowDragMove: e => {
+      document.querySelectorAll(".row-drop-target").forEach(el => el.classList.remove("row-drop-target"));
+      if (e.overNode && e.overNode !== e.node && e.overNode.data) {
+        const overRowId = e.overNode.data.id;
+        const dragRowId = e.node.data?.id;
+        // Don't highlight if dropping onto own child
+        const isOwnChild = e.overNode.data.parent_id === dragRowId;
+        if (!isOwnChild) {
+          gridApi.forEachNode(node => {
+            if (node.data?.id === overRowId) {
+              const rowEl = document.querySelector(`.ag-row[row-id="${node.id}"]`);
+              if (rowEl) rowEl.classList.add("row-drop-target");
+            }
+          });
+        }
+      }
+    },
+
+    onRowDragLeave: () => {
+      document.querySelectorAll(".row-drop-target").forEach(el => el.classList.remove("row-drop-target"));
+    },
+
+    onRowDragEnd: async e => {
+      document.querySelectorAll(".row-drop-target").forEach(el => el.classList.remove("row-drop-target"));
+      if (!e.overNode || e.overNode === e.node) return;
+      const dragRow = e.node.data;
+      const overRow = e.overNode.data;
+      if (!dragRow || !overRow) return;
+      // Prevent circular: can't drop onto own child
+      if (overRow.parent_id === dragRow.id) return;
+      // Prevent dropping onto itself
+      if (dragRow.id === overRow.id) return;
+
+      dragRow.parent_id = overRow.id;
+      dragRow.last_modified = fmtDateTime(new Date());
+      await saveRow(dragRow);
+      gridApi.applyTransaction({ update: [dragRow] });
+      gridApi.onFilterChanged();
+      gridApi.refreshCells({ force: true });
+      updateRowCount();
+      toast(`"${dragRow.item || "Item"}" attached to "${overRow.item || "Item"}"`, "success");
+    },
+
     onCellValueChanged:  onCellValueChanged,
     onSelectionChanged:  onSelectionChanged,
     onRowDoubleClicked:  p => openDetailPanel(p.data),

@@ -57,7 +57,7 @@ function renderCalendar() {
   rowData.forEach(r => {
     if (r.deleted || !r.date) return;
     if (calHideCompleted && r.completed) return;
-    if (calQ && !(r.item || "").toLowerCase().includes(calQ) && !(r.category || "").toLowerCase().includes(calQ)) return;
+    if (calQ && !(r.item || "").toLowerCase().includes(calQ) && !getCategories(r).some(c => c.toLowerCase().includes(calQ))) return;
     (byDate[r.date] = byDate[r.date] || []).push(r);
   });
 
@@ -192,7 +192,7 @@ function renderWeekItem(r, isPast) {
     <div class="week-item-body">
       <div class="week-item-name">${esc(r.item || "(no name)")}</div>
       ${r.time     ? `<div class="week-item-time">${esc(fmtTime12h(r.time))}</div>` : ""}
-      ${r.category ? `<div class="week-item-cat">${esc(r.category)}</div>` : ""}
+      ${getCategories(r).length ? `<div class="week-item-cat">${esc(getCategories(r).join(", "))}</div>` : ""}
     </div>
   </div>`;
 }
@@ -227,7 +227,7 @@ function renderWeekView() {
   rowData.forEach(r => {
     if (r.deleted) return;
     if (calHideCompleted && r.completed) return;
-    if (wkQ && !(r.item || "").toLowerCase().includes(wkQ) && !(r.category || "").toLowerCase().includes(wkQ)) return;
+    if (wkQ && !(r.item || "").toLowerCase().includes(wkQ) && !getCategories(r).some(c => c.toLowerCase().includes(wkQ))) return;
     const key = r.date || "__none__";
     (byDate[key] = byDate[key] || []).push(r);
   });
@@ -342,10 +342,13 @@ function loadDashboard() {
   // By-category breakdown
   const catMap = {};
   active.forEach(r => {
-    const cat = (r.category || "").trim() || "(No Category)";
-    if (!catMap[cat]) catMap[cat] = { cat, total: 0, done: 0 };
-    catMap[cat].total++;
-    if (r.completed) catMap[cat].done++;
+    const cats = getCategories(r);
+    const groups = cats.length ? cats : ["(No Category)"];
+    groups.forEach(cat => {
+      if (!catMap[cat]) catMap[cat] = { cat, total: 0, done: 0 };
+      catMap[cat].total++;
+      if (r.completed) catMap[cat].done++;
+    });
   });
   const by_category = Object.values(catMap).sort((a, b) => b.total - a.total);
 
@@ -444,7 +447,7 @@ function renderRecentList(items) {
       <div class="recent-dot ${r.completed ? "done" : ""}"></div>
       <div class="recent-info">
         <div class="recent-name">${esc(r.item || "(no name)")}</div>
-        <div class="recent-meta">${esc(r.category || "—")}</div>
+        <div class="recent-meta">${esc(getCategories(r).join(", ") || "—")}</div>
       </div>
       <div class="recent-time">${esc((r.last_modified || "").slice(0, 16))}</div>
     </div>
@@ -458,11 +461,14 @@ function openWeekBreakdown(label, startDate, endDate) {
 
   const catMap = {};
   items.forEach(r => {
-    const cat = (r.category || "").trim() || "(No Category)";
-    if (!catMap[cat]) catMap[cat] = { total: 0, done: 0, open: 0, items: [] };
-    catMap[cat].total++;
-    if (r.completed) catMap[cat].done++; else catMap[cat].open++;
-    catMap[cat].items.push(r);
+    const cats = getCategories(r);
+    const groups = cats.length ? cats : ["(No Category)"];
+    groups.forEach(cat => {
+      if (!catMap[cat]) catMap[cat] = { total: 0, done: 0, open: 0, items: [] };
+      catMap[cat].total++;
+      if (r.completed) catMap[cat].done++; else catMap[cat].open++;
+      if (!catMap[cat].items.includes(r)) catMap[cat].items.push(r);
+    });
   });
 
   const cats = Object.entries(catMap).sort((a, b) => b[1].total - a[1].total);

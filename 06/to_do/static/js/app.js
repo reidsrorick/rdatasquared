@@ -6,7 +6,7 @@
 
 "use strict";
 
-const APP_VERSION = "v4.0.0";
+const APP_VERSION = "v5";
 
 // ---------------------------------------------------------------------------
 // Shared state — globals read by every other module
@@ -27,11 +27,29 @@ let hiddenColumns         = {};
 let snoozedItems          = {};
 let condFmtRules          = [];
 let customCategories      = [];
-let activeStatusFilter    = "";
+let statusOptions         = [];   // loaded from localStorage; falls back to DEFAULT_STATUS_OPTIONS
 let collapsedParents      = new Set();  // parent row IDs whose children are hidden in grid
 let showSnoozedInGrid     = false;      // when true, snoozed items appear in the main grid
 let hiddenDetailFields    = new Set();  // field keys hidden in the detail panel
 let displayDateFormat     = "YYYY-MM-DD"; // display format for date columns (stored values stay ISO)
+
+// ---------------------------------------------------------------------------
+// Status selects — rebuild filter dropdown + detail panel select from statusOptions
+// ---------------------------------------------------------------------------
+
+function rebuildStatusSelects() {
+  const detailSel = document.getElementById("detail-status");
+  if (detailSel) {
+    const cur = detailSel.value;
+    detailSel.innerHTML = statusOptions.map(s =>
+      `<option value="${esc(s.value)}">${esc(s.label)}</option>`
+    ).join("");
+    detailSel.value = statusOptions.some(s => s.value === cur) ? cur : "";
+  }
+
+  // Refresh grid cells so pills re-render with current options
+  gridApi?.refreshCells({ columns: ["status"], force: true });
+}
 
 // ---------------------------------------------------------------------------
 // Category dropdown
@@ -46,20 +64,12 @@ function updateCategoryFilterLabel() {
   else label.textContent = `${activeCategoryFilters.length} Categories`;
 }
 
-function updateCategoryDatalist() {
-  const dl = document.getElementById("category-datalist");
-  if (!dl) return;
-  const dataCats = [...new Set(rowData.map(r => r.category || "").filter(Boolean))];
-  const customSet = new Set(customCategories);
-  const all = [...customCategories, ...dataCats.filter(c => !customSet.has(c)).sort()];
-  dl.innerHTML = all.map(c => `<option value="${esc(c)}"></option>`).join("");
-}
 
 function updateCategoryDropdown() {
   const menu = document.getElementById("cat-filter-menu");
   if (!menu) return;
   // Custom categories first (in defined order), then any data-only cats alphabetically
-  const dataCats  = [...new Set(rowData.map(r => r.category || "").filter(Boolean))];
+  const dataCats  = [...new Set(rowData.flatMap(r => getCategories(r)).filter(Boolean))];
   const customSet = new Set(customCategories);
   const cats = [
     ...customCategories.filter(c => dataCats.includes(c)),
@@ -182,14 +192,11 @@ function clearAllFilters() {
   activeCategoryFilters = [];
   catFilterShowAll      = true;
   activeDateFilter      = "all";
-  activeStatusFilter    = "";
   dateCustomFrom        = "";
   dateCustomTo          = "";
   updateCategoryFilterLabel();
-  const dateSel    = document.getElementById("date-filter");
-  const statusSel  = document.getElementById("status-filter");
-  if (dateSel)   dateSel.value   = "all";
-  if (statusSel) statusSel.value = "";
+  const dateSel = document.getElementById("date-filter");
+  if (dateSel) dateSel.value = "all";
   const rangeEl = document.getElementById("date-custom-range");
   if (rangeEl) rangeEl.style.display = "none";
   const fromEl  = document.getElementById("date-custom-from");
@@ -231,7 +238,7 @@ function restoreFiltersFromStorage() {
     catFilterShowAll = !(Array.isArray(state.categories) && state.categories.length > 0);
   }
   if (Array.isArray(state.categories)) {
-    const validCats = new Set(rowData.map(r => r.category || "").filter(Boolean));
+    const validCats = new Set(rowData.flatMap(r => getCategories(r)).filter(Boolean));
     activeCategoryFilters = state.categories.filter(c => validCats.has(c));
   }
   if (!catFilterShowAll || activeCategoryFilters.length > 0) {
@@ -243,12 +250,6 @@ function restoreFiltersFromStorage() {
   if (dateSel && state.date && state.date !== "all") {
     activeDateFilter = state.date;
     dateSel.value    = state.date;
-  }
-
-  const statusSel = document.getElementById("status-filter");
-  if (statusSel && state.status) {
-    activeStatusFilter = state.status;
-    statusSel.value    = state.status;
   }
 
   if (state.preset && state.preset !== "all") {
@@ -276,7 +277,7 @@ function seedRowFromFilters() {
     if (activeDateFilter === "today")    seed.date = today;
     if (activeDateFilter === "tomorrow") seed.date = tomorrow;
   }
-  if (activeCategoryFilters.length >= 1) seed.category = activeCategoryFilters[0];
+  if (activeCategoryFilters.length >= 1) seed.category = JSON.stringify([activeCategoryFilters[0]]);
   return seed;
 }
 
@@ -480,7 +481,7 @@ async function addSubtask() {
   const now    = fmtDateTime(new Date());
   const newRow = {
     item: name, category: detailRowData.category || "",
-    date: "", time: "", sort: 0,
+    date: detailRowData.date || "", time: detailRowData.time || "", sort: 0,
     description: "", completed: false, date_completed: "",
     last_modified: now, deleted: false,
     parent_id: detailRowData.id,
@@ -517,10 +518,13 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDateFormat();
   loadCondFmt();
   loadCategoryOrder();
+  loadStatusOptions();
 
   updateSnoozeBadge();
+  rebuildStatusSelects();
 
   initGrid();
+  initCategoryCombo();
   _updateExportButtonLabel();
   updateLastExportDisplay();
 
@@ -560,14 +564,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapBtn = document.getElementById("btn-wrap-text");
   wrapBtn.classList.toggle("active", wrapText);
   wrapBtn.addEventListener("click", toggleWrapText);
-
-  // ── Status filter ────────────────────────────────────────────────────────
-  document.getElementById("status-filter")?.addEventListener("change", e => {
-    activeStatusFilter = e.target.value;
-    gridApi?.onFilterChanged();
-    saveFiltersToStorage();
-    updateRowCount();
-  });
 
   // ── Date display format ──────────────────────────────────────────────────
   document.getElementById("date-format-select")?.addEventListener("input", e => {
@@ -750,10 +746,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Exclude self and direct children of current row
     const childIds = new Set(rowData.filter(r => r.parent_id === detailRowData?.id).map(r => r.id));
-    const matches  = rowData.filter(r =>
-      !r.deleted && r.id !== detailRowData?.id && !childIds.has(r.id)
-      && (r.item || "").toLowerCase().includes(q)
-    ).slice(0, 10);
+    const isIdSearch = /^#?\d+$/.test(raw);
+    const matches  = rowData.filter(r => {
+      if (r.deleted || r.id === detailRowData?.id || childIds.has(r.id)) return false;
+      if (isIdSearch) return String(r.id) === raw.replace(/^#/, "");
+      return (r.item || "").toLowerCase().includes(q);
+    }).slice(0, 10);
 
     const createHtml = `<div class="parent-dropdown-item parent-dropdown-create" data-create="1" data-name="${esc(raw)}">
       <span class="parent-dropdown-id" style="color:var(--primary)">＋</span>
@@ -834,10 +832,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!q) { dropdown.style.display = "none"; return; }
 
     const selectedIds = new Set((gridApi?.getSelectedRows() || []).map(r => r.id));
-    const matches = rowData.filter(r =>
-      !r.deleted && !selectedIds.has(r.id)
-      && (r.item || "").toLowerCase().includes(q)
-    ).slice(0, 10);
+    const isIdSearch  = /^#?\d+$/.test(raw);
+    const matches = rowData.filter(r => {
+      if (r.deleted || selectedIds.has(r.id)) return false;
+      if (isIdSearch) return String(r.id) === raw.replace(/^#/, "");
+      return (r.item || "").toLowerCase().includes(q);
+    }).slice(0, 10);
 
     const createHtml = `<div class="parent-dropdown-item parent-dropdown-create" data-create="1" data-name="${esc(raw)}">
       <span class="parent-dropdown-id" style="color:var(--primary)">＋</span>
@@ -1000,7 +1000,6 @@ document.addEventListener("DOMContentLoaded", () => {
         catDragSrcIdx = null;
         saveCategoryOrder();
         updateCategoryDropdown();
-        updateCategoryDatalist();
         renderCategoryList();
       });
     });
@@ -1010,11 +1009,99 @@ document.addEventListener("DOMContentLoaded", () => {
         customCategories.splice(parseInt(btn.dataset.idx), 1);
         saveCategoryOrder();
         updateCategoryDropdown();
-        updateCategoryDatalist();
         renderCategoryList();
       });
     });
   }
+
+  // ── Manage Statuses modal ─────────────────────────────────────────────────
+  function slugify(str) {
+    return str.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  }
+
+  function renderStatusList() {
+    const el = document.getElementById("status-manager-list");
+    if (!el) return;
+    const editable = statusOptions.filter(s => s.value); // skip blank sentinel
+    if (!editable.length) { el.innerHTML = `<p style="font-size:13px;color:var(--text-subtle)">No statuses yet.</p>`; return; }
+    el.innerHTML = editable.map((s, i) => `
+      <div class="status-mgr-row" data-idx="${i + 1}" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-subtle)">
+        <span class="status-pill" style="background:${esc(s.bg)};color:${esc(s.color || '#fff')};min-width:90px;text-align:center">${esc(s.label)}</span>
+        <input type="text"  class="detail-input smgr-label" data-idx="${i + 1}" value="${esc(s.label)}" style="flex:1;min-width:100px" placeholder="Label" />
+        <input type="color" class="smgr-bg"    data-idx="${i + 1}" value="${s.bg    || '#6366f1'}" style="width:32px;height:28px;border-radius:4px;border:1px solid var(--border);cursor:pointer;padding:1px;background:none" title="Pill color" />
+        <input type="color" class="smgr-color" data-idx="${i + 1}" value="${s.color || '#ffffff'}" style="width:32px;height:28px;border-radius:4px;border:1px solid var(--border);cursor:pointer;padding:1px;background:none" title="Text color" />
+        <button class="btn btn-ghost btn-sm smgr-save"   data-idx="${i + 1}" title="Save">✓</button>
+        <button class="btn btn-ghost btn-sm smgr-del icon-btn" data-idx="${i + 1}" title="Delete">✕</button>
+      </div>
+    `).join("");
+
+    el.querySelectorAll(".smgr-save").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx   = parseInt(btn.dataset.idx);
+        const row   = el.querySelector(`.status-mgr-row[data-idx="${idx}"]`);
+        const label = row.querySelector(".smgr-label").value.trim();
+        const bg    = row.querySelector(".smgr-bg").value;
+        const color = row.querySelector(".smgr-color").value;
+        if (!label) return;
+        statusOptions[idx].label = label;
+        statusOptions[idx].bg    = bg;
+        statusOptions[idx].color = color;
+        saveStatusOptions();
+        rebuildStatusSelects();
+        renderStatusList();
+      });
+    });
+
+    // Live preview pill on color/label change
+    el.querySelectorAll(".smgr-label,.smgr-bg,.smgr-color").forEach(inp => {
+      inp.addEventListener("input", () => {
+        const idx   = parseInt(inp.dataset.idx);
+        const row   = el.querySelector(`.status-mgr-row[data-idx="${idx}"]`);
+        const label = row.querySelector(".smgr-label").value || "…";
+        const bg    = row.querySelector(".smgr-bg").value;
+        const color = row.querySelector(".smgr-color").value;
+        const pill  = row.querySelector(".status-pill");
+        if (pill) { pill.textContent = label; pill.style.background = bg; pill.style.color = color; }
+      });
+    });
+
+    el.querySelectorAll(".smgr-del").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.idx);
+        statusOptions.splice(idx, 1);
+        saveStatusOptions();
+        rebuildStatusSelects();
+        renderStatusList();
+      });
+    });
+  }
+
+  document.getElementById("btn-manage-statuses")?.addEventListener("click", () => {
+    renderStatusList();
+    showModal("modal-statuses");
+  });
+
+  document.getElementById("btn-add-status")?.addEventListener("click", () => {
+    const labelInp = document.getElementById("new-status-label");
+    const label    = labelInp?.value.trim();
+    if (!label) return;
+    const bg    = document.getElementById("new-status-bg")?.value    || "#6366f1";
+    const color = document.getElementById("new-status-color")?.value || "#ffffff";
+    const value = slugify(label) || ("status_" + Date.now());
+    if (!statusOptions.some(s => s.value === value)) {
+      statusOptions.push({ value, label, bg, color });
+      saveStatusOptions();
+      rebuildStatusSelects();
+      renderStatusList();
+      if (labelInp) labelInp.value = "";
+    } else {
+      toast("A status with that name already exists.", "error");
+    }
+  });
+
+  document.getElementById("new-status-label")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("btn-add-status")?.click(); }
+  });
 
   document.getElementById("btn-manage-categories")?.addEventListener("click", () => {
     renderCategoryList();
@@ -1029,7 +1116,6 @@ document.addEventListener("DOMContentLoaded", () => {
       customCategories.push(val);
       saveCategoryOrder();
       updateCategoryDropdown();
-      updateCategoryDatalist();
     }
     if (inp) inp.value = "";
     renderCategoryList();
@@ -1040,10 +1126,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-import-categories")?.addEventListener("click", () => {
-    const dataCats = [...new Set(rowData.map(r => r.category || "").filter(Boolean))];
+    const dataCats = [...new Set(rowData.flatMap(r => getCategories(r)).filter(Boolean))];
     let added = 0;
     dataCats.forEach(c => { if (!customCategories.includes(c)) { customCategories.push(c); added++; } });
-    if (added) { saveCategoryOrder(); updateCategoryDropdown(); updateCategoryDatalist(); }
+    if (added) { saveCategoryOrder(); updateCategoryDropdown(); }
     renderCategoryList();
     if (added) toast(`Imported ${added} categor${added > 1 ? "ies" : "y"} from data.`, "success");
     else toast("All data categories are already in the list.", "info");
@@ -1103,7 +1189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const q = (search || "").toLowerCase();
     const filtered = q
-      ? items.filter(r => (r.item || "").toLowerCase().includes(q) || (r.category || "").toLowerCase().includes(q))
+      ? items.filter(r => (r.item || "").toLowerCase().includes(q) || getCategories(r).some(c => c.toLowerCase().includes(q)))
       : items;
 
     const list = document.getElementById("snoozed-items-list");
@@ -1119,7 +1205,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="snoozed-item-info">
           <div class="snoozed-item-name">${esc(r.item || "(no name)")}</div>
           <div class="snoozed-item-meta">
-            ${r.category ? `<span class="snoozed-meta-cat">${esc(r.category)}</span>` : ""}
+            ${getCategories(r).length ? `<span class="snoozed-meta-cat">${esc(getCategories(r).join(", "))}</span>` : ""}
             ${r.date ? `<span>Due: ${esc(r.date)}</span>` : ""}
             <span class="snoozed-meta-until">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
@@ -1142,6 +1228,23 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
+
+  document.getElementById("btn-collapse-all")?.addEventListener("click", () => {
+    const parentIds = new Set(
+      rowData.filter(r => !r.deleted && !r.parent_id && rowData.some(c => c.parent_id === r.id && !c.deleted))
+               .map(r => r.id)
+    );
+    const allCollapsed = parentIds.size > 0 && [...parentIds].every(id => collapsedParents.has(id));
+    if (allCollapsed) {
+      parentIds.forEach(id => collapsedParents.delete(id));
+    } else {
+      parentIds.forEach(id => collapsedParents.add(id));
+    }
+    saveCollapsedParents();
+    gridApi?.onFilterChanged();
+    gridApi?.refreshCells({ force: true });
+    updateCollapseAllBtn();
+  });
 
   document.getElementById("btn-show-snoozed")?.addEventListener("click", () => {
     showSnoozedInGrid = !showSnoozedInGrid;
@@ -1323,6 +1426,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Global keyboard shortcuts ─────────────────────────────────────────────
   document.addEventListener("keydown", e => {
     const inInput = document.activeElement.matches("input,textarea,select");
+    if (e.altKey && e.key === "n" && !inInput) {
+      const gridView = document.getElementById("view-grid");
+      if (gridView && gridView.style.display !== "none") {
+        e.preventDefault();
+        addNewRow();
+      }
+    }
     if (e.ctrlKey && e.key === "Enter") {
       const panel = document.getElementById("detail-panel");
       if (panel && !panel.classList.contains("hidden") && detailRowData) {

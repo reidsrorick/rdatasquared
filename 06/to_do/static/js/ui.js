@@ -41,6 +41,155 @@ function setSaveStatus(state) {
 // Row count and filter summary
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Category tag-chip combobox for detail panel
+// ---------------------------------------------------------------------------
+
+// Module-level selected categories for the currently open detail panel
+let _detailCategories = [];
+
+function getCategoryComboValue() { return [..._detailCategories]; }
+
+function initCategoryCombo() {
+  const tagsEl  = document.getElementById("cat-tags");
+  const input   = document.getElementById("detail-category-input");
+  const list    = document.getElementById("cat-combo-list");
+  const wrap    = document.getElementById("cat-tags-wrap");
+  if (!tagsEl || !input || !list) return;
+
+  let activeIdx = -1;
+
+  // Click on the wrap area focuses the input
+  wrap?.addEventListener("mousedown", e => {
+    if (e.target === wrap || e.target === tagsEl) { e.preventDefault(); input.focus(); }
+  });
+
+  function allCategories() {
+    const dataCats = [...new Set(
+      (rowData || []).flatMap(r => getCategories(r)).filter(Boolean)
+    )];
+    const customSet = new Set(customCategories || []);
+    return [...(customCategories || []), ...dataCats.filter(c => !customSet.has(c)).sort()];
+  }
+
+  function renderTags() {
+    tagsEl.innerHTML = "";
+    _detailCategories.forEach((cat, i) => {
+      const chip = document.createElement("span");
+      chip.className = "cat-chip";
+      chip.innerHTML = `<span>${esc(cat)}</span><button type="button" class="cat-chip-remove" aria-label="Remove ${esc(cat)}">×</button>`;
+      chip.querySelector(".cat-chip-remove").addEventListener("click", () => {
+        _detailCategories.splice(i, 1);
+        renderTags();
+        renderList(input.value);
+      });
+      tagsEl.appendChild(chip);
+    });
+  }
+
+  function renderList(query) {
+    const q = (query || "").trim().toLowerCase();
+    const cats = allCategories().filter(c => !_detailCategories.includes(c));
+    const matches = q ? cats.filter(c => c.toLowerCase().includes(q)) : cats;
+    const isNew = q && !allCategories().some(c => c.toLowerCase() === q) && !_detailCategories.some(c => c.toLowerCase() === q);
+
+    list.innerHTML = "";
+    activeIdx = -1;
+
+    matches.forEach(c => {
+      const li = document.createElement("li");
+      li.textContent = c;
+      li.setAttribute("role", "option");
+      li.addEventListener("mousedown", e => { e.preventDefault(); addTag(c); });
+      list.appendChild(li);
+    });
+
+    if (isNew) {
+      const li = document.createElement("li");
+      li.textContent = `Add "${query.trim()}"`;
+      li.className = "cat-combo-new";
+      li.setAttribute("role", "option");
+      li.addEventListener("mousedown", e => { e.preventDefault(); addTag(query.trim()); });
+      list.appendChild(li);
+    }
+
+    const hasItems = list.children.length > 0;
+    list.classList.toggle("open", hasItems);
+    input.setAttribute("aria-expanded", hasItems ? "true" : "false");
+  }
+
+  function addTag(value) {
+    const v = value.trim();
+    if (!v || _detailCategories.includes(v)) { input.value = ""; renderList(""); return; }
+    _detailCategories.push(v);
+    input.value = "";
+    renderTags();
+    renderList("");
+    input.focus();
+  }
+
+  function close() {
+    list.classList.remove("open");
+    input.setAttribute("aria-expanded", "false");
+    activeIdx = -1;
+  }
+
+  function moveActive(dir) {
+    const items = [...list.querySelectorAll("li")];
+    if (!items.length) return;
+    items.forEach(li => li.removeAttribute("aria-selected"));
+    activeIdx = Math.max(0, Math.min(items.length - 1, activeIdx + dir));
+    items[activeIdx].setAttribute("aria-selected", "true");
+    items[activeIdx].scrollIntoView({ block: "nearest" });
+  }
+
+  // Expose a way to set categories from outside (populateDetailPanel)
+  initCategoryCombo._set = cats => {
+    _detailCategories = [...cats];
+    renderTags();
+    renderList("");
+    close();
+  };
+
+  input.addEventListener("input",  () => renderList(input.value));
+  input.addEventListener("focus",  () => renderList(input.value));
+  input.addEventListener("blur",   () => setTimeout(close, 150));
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      const sel   = list.querySelector("[aria-selected='true']");
+      const first = list.querySelector("li:not(.cat-combo-new)");
+      const target = sel || (input.value.trim() ? first : null);
+      if (target) { e.preventDefault(); e.stopPropagation(); addTag(target.textContent.replace(/^Add "(.+)"$/, "$1")); return; }
+      if (input.value.trim()) { e.preventDefault(); e.stopPropagation(); addTag(input.value); return; }
+    }
+    if (e.key === "Backspace" && !input.value && _detailCategories.length) {
+      _detailCategories.pop();
+      renderTags();
+      renderList("");
+      return;
+    }
+    if (!list.classList.contains("open")) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
+    else if (e.key === "ArrowUp")  { e.preventDefault(); moveActive(-1); }
+    else if (e.key === "Escape") { e.stopPropagation(); close(); }
+  });
+}
+
+function updateCollapseAllBtn() {
+  const btn = document.getElementById("btn-collapse-all");
+  if (!btn) return;
+  const parentIds = rowData.filter(r => !r.deleted && !r.parent_id && rowData.some(c => c.parent_id === r.id && !c.deleted)).map(r => r.id);
+  if (parentIds.length === 0) { btn.style.display = "none"; return; }
+  btn.style.display = "";
+  const allCollapsed = parentIds.every(id => collapsedParents.has(id));
+  const svg = allCollapsed
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 15 12 7 20 15"/></svg>'
+    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 9 12 17 20 9"/></svg>';
+  btn.innerHTML = svg + (allCollapsed ? " Expand All" : " Collapse All");
+  btn.title = allCollapsed ? "Expand all parent rows" : "Collapse all parent rows";
+}
+
 function updateRowCount() {
   if (!gridApi) return;
   let n = 0;
@@ -48,6 +197,7 @@ function updateRowCount() {
   document.getElementById("row-count").textContent = `${n} row${n !== 1 ? "s" : ""}`;
   updateFilterSummary();
   updatePastDueBadge();
+  updateCollapseAllBtn();
 }
 
 function updateFilterSummary() {
@@ -56,7 +206,6 @@ function updateFilterSummary() {
   if (activeCategoryFilters.length === 1) parts.push(activeCategoryFilters[0]);
   else if (activeCategoryFilters.length > 1) parts.push(`${activeCategoryFilters.length} categories`);
   if (activeDateFilter !== "all") parts.push(document.querySelector(`#date-filter option[value="${activeDateFilter}"]`)?.textContent || activeDateFilter);
-  if (activeStatusFilter) parts.push(getStatusOption(activeStatusFilter).label);
   const quick = document.getElementById("quick-filter")?.value;
   if (quick) parts.push(`"${quick}"`);
 
@@ -162,7 +311,10 @@ function openDetailPanel(row) {
   const panel = document.getElementById("detail-panel");
   applyDetailFieldVisibility();
   panel.classList.add("open");
-  requestAnimationFrame(() => autoResizeTextarea(document.getElementById("detail-item")));
+  requestAnimationFrame(() => {
+    autoResizeTextarea(document.getElementById("detail-item"));
+    if (!row.item) document.getElementById("detail-item").focus();
+  });
 }
 
 function closeDetailPanel() {
@@ -194,7 +346,7 @@ function autoResizeTextarea(el) {
 function populateDetailPanel(row) {
   const itemEl = document.getElementById("detail-item");
   itemEl.value = row.item || "";
-  document.getElementById("detail-category").value       = row.category       || "";
+  if (initCategoryCombo._set) initCategoryCombo._set(getCategories(row));
   document.getElementById("detail-date").value           = row.date           || "";
   document.getElementById("detail-time").value           = row.time           || "";
   document.getElementById("detail-sort").value           = row.sort           ?? "";
@@ -309,7 +461,7 @@ async function saveDetailPanel() {
 
   Object.assign(detailRowData, {
     item:        document.getElementById("detail-item").value,
-    category:    document.getElementById("detail-category").value,
+    category:    JSON.stringify(getCategoryComboValue()),
     date:        document.getElementById("detail-date").value,
     time:        document.getElementById("detail-time").value,
     sort:        parseFloat(document.getElementById("detail-sort").value) || 0,

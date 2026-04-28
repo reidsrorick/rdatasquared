@@ -93,6 +93,27 @@ function esc(s) {
 
 function pad2(n) { return String(n).padStart(2, "0"); }
 
+// Returns row.category as a string[] regardless of whether it is stored as a
+// JSON array (new format) or a plain string (legacy format).
+function getCategories(row) {
+  const c = row?.category ?? "";
+  if (!c) return [];
+  if (c.charAt(0) === "[") {
+    try { return JSON.parse(c).filter(Boolean); } catch {}
+  }
+  return [c];
+}
+
+// Converts a string[] back to the stored format (JSON array string).
+function setCategories(row, arr) {
+  row.category = arr.length ? JSON.stringify(arr) : "";
+}
+
+// Display helper — returns a human-readable comma-joined string.
+function fmtCategories(row) {
+  return getCategories(row).join(", ");
+}
+
 // ---------------------------------------------------------------------------
 // Date calculations
 // ---------------------------------------------------------------------------
