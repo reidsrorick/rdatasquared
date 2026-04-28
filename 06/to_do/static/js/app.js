@@ -6,6 +6,8 @@
 
 "use strict";
 
+const APP_VERSION = "v3.0.0";
+
 // ---------------------------------------------------------------------------
 // Shared state — globals read by every other module
 // ---------------------------------------------------------------------------
@@ -506,6 +508,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".nav-btn").forEach(btn =>
     btn.addEventListener("click", () => switchView(btn.dataset.view))
   );
+  document.getElementById("btn-settings").addEventListener("click", () => {
+    document.getElementById("settings-version").textContent = APP_VERSION;
+    showModal("modal-settings");
+  });
   document.getElementById("btn-theme").addEventListener("click", toggleTheme);
   document.getElementById("btn-new-row").addEventListener("click", addNewRow);
   document.getElementById("btn-refresh-grid")?.addEventListener("click", () => {
@@ -622,22 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-export-excel")?.addEventListener("click", () => exportData("excel"));
   document.getElementById("btn-export-json")?.addEventListener("click",  () => exportData("json"));
 
-  // Export main button — use default path if configured, else open the dropdown
-  document.getElementById("btn-export-default")?.addEventListener("click", e => {
-    e.stopPropagation();
-    const settings = getExportSettings();
-    if (settings.folderName) {
-      document.getElementById("export-dropdown")?.classList.remove("open");
-      exportToDefault();
-    } else {
-      document.querySelectorAll(".dropdown.open").forEach(o => {
-        if (o.id !== "export-dropdown") o.classList.remove("open");
-      });
-      document.getElementById("export-dropdown")?.classList.toggle("open");
-    }
-  });
-
-  // Export caret — handled by the generic .dropdown-toggle handler above
+  document.getElementById("btn-export-default")?.addEventListener("click", () => exportToDefault());
 
   // ── Export Settings modal ─────────────────────────────────────────────────
   document.getElementById("btn-open-export-settings")?.addEventListener("click", openExportSettingsModal);

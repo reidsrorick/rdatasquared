@@ -286,6 +286,17 @@ html, body {
   color: var(--text-subtle);
   min-width: 76px;
 }
+.settings-section-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-subtle);
+  margin: 16px 0 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.settings-section-heading:first-child { margin-top: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════
    VIEWS
