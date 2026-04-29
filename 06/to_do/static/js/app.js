@@ -6,7 +6,7 @@
 
 "use strict";
 
-const APP_VERSION = "v5";
+const APP_VERSION = "v6";
 
 // ---------------------------------------------------------------------------
 // Shared state — globals read by every other module
@@ -728,6 +728,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   document.getElementById("btn-detail-save").addEventListener("click", e => { e.stopPropagation(); saveDetailPanel(); });
+  document.getElementById("btn-detail-save-close").addEventListener("click", e => { e.stopPropagation(); saveDetailPanel(true); });
   document.getElementById("btn-detail-duplicate")?.addEventListener("click", () => { if (detailRowData) duplicateRow(detailRowData); });
   document.getElementById("btn-detail-date-today")?.addEventListener("click", () => {
     const inp = document.getElementById("detail-date");

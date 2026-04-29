@@ -1633,7 +1633,7 @@ input.date-format-input.filter-select {
 .followup-note { color: var(--text); flex: 2; }
 .followup-del { opacity: 0; padding: 2px 4px !important; font-size: 10px !important; flex-shrink: 0; }
 .followup-entry:hover .followup-del { opacity: 1; }
-.followup-ts-edit { font-family: var(--font-mono); font-size: 11px; color: var(--text-subtle); flex: 0 0 auto; width: 148px; padding: 1px 3px; }
+.followup-ts-edit { font-family: var(--font-mono); font-size: 11px; color: var(--text-subtle); flex: 0 0 auto; width: 172px; padding: 1px 3px; }
 .followup-note-edit { flex: 1; font-size: 12px; color: var(--text); padding: 1px 3px; resize: none; line-height: 1.4; overflow-y: hidden; }
 .followup-input-row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
 .followup-note-input { flex: 1; font-size: 12px; }

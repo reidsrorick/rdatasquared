@@ -13,6 +13,7 @@
 
 // Columns available for show/hide (colId → display label)
 const TOGGLEABLE_COLS = {
+  id: "ID", "detail-btn": "Card",
   item: "Item", category: "Category", status: "Status", date: "Date", time: "Time",
   sort: "Sort", description: "Description", completed: "Done?",
   link: "Link", date_completed: "Date Completed", last_modified: "Last Modified",
@@ -174,6 +175,7 @@ function buildColumnDefs() {
     },
     // Open detail panel button
     {
+      colId: "detail-btn",
       headerName: "",
       width: 38, minWidth: 38, maxWidth: 38,
       pinned: "left",
@@ -234,7 +236,8 @@ function buildColumnDefs() {
           const isCollapsed = collapsedParents.has(p.data.id);
           const badge = document.createElement("span");
           badge.className   = "item-subtask-badge";
-          badge.textContent = isCollapsed ? `${children.length} hidden` : `${done}/${children.length}`;
+          if (done === children.length) return wrap;
+          badge.textContent = `${done}/${children.length}`;
           wrap.appendChild(badge);
         }
         if (isSnoozed) {
