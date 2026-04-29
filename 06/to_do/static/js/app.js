@@ -727,7 +727,7 @@ document.addEventListener("DOMContentLoaded", () => {
       pop.style.display = "none";
     }
   });
-  document.getElementById("btn-detail-save").addEventListener("click",  saveDetailPanel);
+  document.getElementById("btn-detail-save").addEventListener("click", e => { e.stopPropagation(); saveDetailPanel(); });
   document.getElementById("btn-detail-duplicate")?.addEventListener("click", () => { if (detailRowData) duplicateRow(detailRowData); });
   document.getElementById("btn-detail-date-today")?.addEventListener("click", () => {
     const inp = document.getElementById("detail-date");
@@ -1231,8 +1231,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("btn-collapse-all")?.addEventListener("click", () => {
     const parentIds = new Set(
-      rowData.filter(r => !r.deleted && !r.parent_id && rowData.some(c => c.parent_id === r.id && !c.deleted))
-               .map(r => r.id)
+      rowData.filter(r => !r.deleted && rowData.some(c => c.parent_id === r.id && !c.deleted))
+             .map(r => r.id)
     );
     const allCollapsed = parentIds.size > 0 && [...parentIds].every(id => collapsedParents.has(id));
     if (allCollapsed) {
@@ -1437,7 +1437,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const panel = document.getElementById("detail-panel");
       if (panel && !panel.classList.contains("hidden") && detailRowData) {
         e.preventDefault();
-        saveDetailPanel();
+        saveDetailPanel(true);
       }
     }
     if (e.ctrlKey && !e.shiftKey && e.key === "z" && !inInput) {

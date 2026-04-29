@@ -156,12 +156,12 @@ function initCategoryCombo() {
   input.addEventListener("blur",   () => setTimeout(close, 150));
 
   input.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
+    if (e.key === "Tab") {
       const sel   = list.querySelector("[aria-selected='true']");
       const first = list.querySelector("li:not(.cat-combo-new)");
       const target = sel || (input.value.trim() ? first : null);
-      if (target) { e.preventDefault(); e.stopPropagation(); addTag(target.textContent.replace(/^Add "(.+)"$/, "$1")); return; }
-      if (input.value.trim()) { e.preventDefault(); e.stopPropagation(); addTag(input.value); return; }
+      if (target) { e.preventDefault(); addTag(target.textContent.replace(/^Add "(.+)"$/, "$1")); return; }
+      if (input.value.trim()) { e.preventDefault(); addTag(input.value); return; }
     }
     if (e.key === "Backspace" && !input.value && _detailCategories.length) {
       _detailCategories.pop();
@@ -179,7 +179,7 @@ function initCategoryCombo() {
 function updateCollapseAllBtn() {
   const btn = document.getElementById("btn-collapse-all");
   if (!btn) return;
-  const parentIds = rowData.filter(r => !r.deleted && !r.parent_id && rowData.some(c => c.parent_id === r.id && !c.deleted)).map(r => r.id);
+  const parentIds = rowData.filter(r => !r.deleted && rowData.some(c => c.parent_id === r.id && !c.deleted)).map(r => r.id);
   if (parentIds.length === 0) { btn.style.display = "none"; return; }
   btn.style.display = "";
   const allCollapsed = parentIds.every(id => collapsedParents.has(id));
@@ -443,7 +443,7 @@ function populateDetailPanel(row) {
   }
 }
 
-async function saveDetailPanel() {
+async function saveDetailPanel(closeAfter = false) {
   if (!detailRowData) return;
 
   const panelItem = document.getElementById("detail-item").value.trim();
@@ -506,6 +506,7 @@ async function saveDetailPanel() {
       spawnRecurringOccurrence(detailRowData);
     }
 
+    if (!closeAfter) return;
     document.getElementById("detail-panel").classList.remove("open");
     detailRowData = null;
   }

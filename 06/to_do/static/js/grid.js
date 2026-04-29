@@ -374,7 +374,16 @@ function doesExternalFilterPass(node) {
   const row = node.data;
 
   if (!showSnoozedInGrid && isSnoozeActive(row.id)) return false;
-  if (row.parent_id && collapsedParents.has(row.parent_id)) return false;
+
+  // Hide if any ancestor is collapsed (handles arbitrary nesting depth)
+  if (row.parent_id) {
+    let pid = row.parent_id;
+    while (pid) {
+      if (collapsedParents.has(pid)) return false;
+      const parent = rowData.find(r => r.id === pid);
+      pid = parent?.parent_id ?? null;
+    }
+  }
 
   const today    = fmtDate(new Date());
   const tomorrow = fmtDate(new Date(Date.now() + 86_400_000));
@@ -544,28 +553,33 @@ function initGrid() {
     },
     postSortRows: params => {
       const nodes = params.nodes;
-      // Build child map preserving sorted order within each group
+      // Build child map from all visible nodes
       const childMap = {};
-      const parents  = [];
-      const orphans  = [];
       nodes.forEach(n => {
         const pid = n.data?.parent_id;
         if (pid) {
           if (!childMap[pid]) childMap[pid] = [];
           childMap[pid].push(n);
-        } else {
-          parents.push(n);
         }
       });
-      // Orphaned children: parent_id set but parent not visible in this node list
-      const parentIdSet = new Set(parents.map(p => p.data?.id));
-      nodes.forEach(n => { if (n.data?.parent_id && !parentIdSet.has(n.data.parent_id)) orphans.push(n); });
+
+      // Root nodes: no parent_id, or parent not present in this visible set
+      const nodeIdSet = new Set(nodes.map(n => n.data?.id));
+      const roots = nodes.filter(n => !n.data?.parent_id || !nodeIdSet.has(n.data.parent_id));
+
+      // Depth-first insertion so children always follow their parent at any depth
       const result = [];
-      parents.forEach(p => {
-        result.push(p);
-        (childMap[p.data?.id] || []).forEach(c => result.push(c));
-      });
-      orphans.forEach(n => result.push(n));
+      const visited = new Set();
+      function appendTree(n) {
+        if (visited.has(n)) return;
+        visited.add(n);
+        result.push(n);
+        (childMap[n.data?.id] || []).forEach(appendTree);
+      }
+      roots.forEach(appendTree);
+      // Safety net: any node not yet visited (shouldn't happen)
+      nodes.forEach(n => { if (!visited.has(n)) result.push(n); });
+
       nodes.length = 0;
       result.forEach(n => nodes.push(n));
     },
@@ -598,10 +612,14 @@ function initGrid() {
       const dragRow = e.node.data;
       const overRow = e.overNode.data;
       if (!dragRow || !overRow) return;
-      // Prevent circular: can't drop onto own child
-      if (overRow.parent_id === dragRow.id) return;
-      // Prevent dropping onto itself
       if (dragRow.id === overRow.id) return;
+      // Prevent circular: can't drop onto any descendant
+      let pid = overRow.parent_id;
+      while (pid) {
+        if (pid === dragRow.id) return;
+        const ancestor = rowData.find(r => r.id === pid);
+        pid = ancestor?.parent_id ?? null;
+      }
 
       dragRow.parent_id = overRow.id;
       dragRow.last_modified = fmtDateTime(new Date());
