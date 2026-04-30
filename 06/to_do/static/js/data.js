@@ -248,6 +248,11 @@ async function doImport() {
         if (r.id != null) idMap[r.id] = newId;
         return { ...r, id: newId, created_at: r.created_at || now };
       });
+      // Remap parent_id to new IDs so parent-child links stay valid after ID reassignment
+      newItems.forEach(r => {
+        if (r.parent_id != null && idMap[r.parent_id] != null) r.parent_id = idMap[r.parent_id];
+        else if (r.parent_id != null && !existing.some(e => e.id === r.parent_id)) r.parent_id = null;
+      });
       _saveAllItems([...existing, ...newItems]);
       // Merge snoozed: translate old IDs to new IDs, don't overwrite existing snoozes
       const now2 = fmtSnoozeNow();

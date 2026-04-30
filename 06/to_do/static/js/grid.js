@@ -381,7 +381,10 @@ function doesExternalFilterPass(node) {
   // Hide if any ancestor is collapsed (handles arbitrary nesting depth)
   if (row.parent_id) {
     let pid = row.parent_id;
+    const visited = new Set();
     while (pid) {
+      if (visited.has(pid)) break; // break circular parent chain
+      visited.add(pid);
       if (collapsedParents.has(pid)) return false;
       const parent = rowData.find(r => r.id === pid);
       pid = parent?.parent_id ?? null;
