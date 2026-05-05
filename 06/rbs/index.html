@@ -1,0 +1,3429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget</title>
+  <style>
+/* ── reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #f4f6f9;
+  --surface:     #ffffff;
+  --surface-alt: #fafbfc;
+  --border:      #e2e6ea;
+  --text:        #1a1d23;
+  --muted:       #6b7280;
+  --pos:         #16a34a;
+  --pos-light:   #dcfce7;
+  --neg:         #dc2626;
+  --neg-light:   #fee2e2;
+  --accent:      #2563eb;
+  --accent-light:#eff6ff;
+  --radius:      10px;
+  --shadow:      0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+}
+
+[data-theme="dark"] {
+  --bg:          #111318;
+  --surface:     #1c1f26;
+  --surface-alt: #161920;
+  --border:      #2e3240;
+  --text:        #e2e6ed;
+  --muted:       #8b92a0;
+  --pos-light:   #0a2318;
+  --neg-light:   #2a0e0e;
+  --accent-light:#1a2540;
+  --shadow:      0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── layout ───────────────────────────────────────────────────────────────── */
+.app { min-height: 100vh; }
+
+.app-header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-title { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.app-sub   { color: var(--muted); font-size: 13px; }
+
+.app-main {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── summary ──────────────────────────────────────────────────────────────── */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow);
+}
+
+.s-label  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+.s-amount { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }
+
+/* ── add form ─────────────────────────────────────────────────────────────── */
+.add-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section-title { font-size: 15px; font-weight: 600; }
+.type-toggle   { display: flex; gap: 8px; }
+
+.type-btn {
+  flex: 1; padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.type-btn:hover          { border-color: #adb5bd; color: var(--text); }
+.type-btn.active-expense { background: var(--neg-light); border-color: var(--neg); color: var(--neg); }
+.type-btn.active-income  { background: var(--pos-light); border-color: var(--pos); color: var(--pos); }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 110px 1fr auto auto;
+  gap: 8px; align-items: center;
+}
+.f-merchant { grid-column: 1 / -1; }
+.f-desc     { grid-column: 1 / -1; }
+.f-account  { grid-column: 1 / -1; }
+.f-amount   { width: 110px; }
+
+input, select {
+  height: 38px; padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px; outline: none;
+  transition: border-color .15s; width: 100%;
+}
+input:focus, select:focus { border-color: var(--accent); }
+
+.add-btn {
+  height: 38px; padding: 0 18px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; transition: opacity .15s;
+}
+.add-btn:hover { opacity: .88; }
+.form-error { color: var(--neg); font-size: 12px; }
+
+/* ── transaction list ─────────────────────────────────────────────────────── */
+.tx-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+
+.tx-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+}
+.tx-count { font-size: 12px; color: var(--muted); }
+
+.filters {
+  display: flex; gap: 8px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border); background: var(--surface-alt);
+}
+.search-input { flex: 2; min-width: 180px; }
+
+.filter-wrap       { position: relative; display: flex; align-items: center; }
+.filter-clear      {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; border: none; background: var(--muted); color: var(--surface);
+  border-radius: 50%; cursor: pointer; font-size: 11px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  opacity: .7; transition: opacity .1s;
+}
+.filter-clear:hover { opacity: 1; }
+.filter-wrap .cat-combo input { padding-right: 26px; }
+.field-clear-btn {
+  flex-shrink: 0; width: 20px; height: 20px; border: none; border-radius: 50%;
+  background: var(--muted); color: var(--surface); font-size: 14px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: .6; transition: opacity .1s;
+}
+.field-clear-btn:hover { opacity: 1; }
+.filter-reset {
+  font-size: 12px; color: var(--accent); background: none; border: none;
+  cursor: pointer; white-space: nowrap; padding: 0 4px; flex-shrink: 0;
+}
+.filter-reset:hover { text-decoration: underline; }
+.empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ── transaction row ──────────────────────────────────────────────────────── */
+.tx-row {
+  display: flex; align-items: center;
+  border-bottom: 1px solid var(--border); transition: background .1s;
+}
+.tx-row:last-child { border-bottom: none; }
+.tx-row:hover { background: var(--surface-alt); }
+
+.tx-accent { width: 3px; align-self: stretch; flex-shrink: 0; }
+.tx-income    .tx-accent { background: var(--pos); }
+.tx-expense   .tx-accent { background: var(--neg); }
+.tx-transfer  .tx-accent { background: #cbd5e1; }
+.tx-transfer  .tx-amount { color: var(--muted); }
+.tx-transfer  .tx-desc   { color: var(--muted); }
+
+.tx-body { flex: 1; padding: 12px 14px; min-width: 0; }
+.tx-top  { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+
+.tx-desc-wrap { display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
+.tx-desc   { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-merchant { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-amount { font-size: 14px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.tx-meta   { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+.tx-date   { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.tx-acct   { font-size: 11px; color: var(--muted); }
+.tx-id     { font-size: 10px; color: #b0b8c4; font-family: monospace; flex-shrink: 0; }
+
+.cat-pill {
+  font-size: 11px; padding: 1px 8px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+  cursor: pointer; transition: border-color .1s, color .1s;
+}
+.cat-pill:hover { border-color: var(--accent); color: var(--accent); }
+.cat-select-inline { height: 24px; font-size: 11px; padding: 0 6px; border-radius: 6px; }
+
+.cat-combo { position: relative; width: 100%; }
+.cat-combo input { width: 100%; }
+.cat-combo-inline input { height: 24px; font-size: 11px; padding: 0 6px; }
+.cat-dropdown {
+  position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 60;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  max-height: 200px; overflow-y: auto;
+}
+.cat-dropdown-item {
+  display: block; width: 100%; padding: 7px 12px;
+  border: none; background: none; text-align: left;
+  font-size: 13px; color: var(--text); cursor: pointer;
+}
+.cat-dropdown-item:first-child { border-radius: 6px 6px 0 0; }
+.cat-dropdown-item:last-child  { border-radius: 0 0 6px 6px; }
+.cat-dropdown-item.active { background: var(--accent-light); color: var(--accent); }
+
+.cat-field { display: flex; flex-direction: column; gap: 2px; }
+.cat-field select { width: 100%; }
+.cat-suggest-hint {
+  font-size: 10px; color: var(--accent); text-align: center;
+  letter-spacing: .2px; pointer-events: none;
+}
+
+.del-btn {
+  width: 36px; height: 36px; flex-shrink: 0; margin-right: 8px;
+  border: none; background: transparent; color: #cbd5e1;
+  font-size: 18px; cursor: pointer; border-radius: 6px; transition: background .1s, color .1s;
+}
+.del-btn:hover { background: var(--neg-light); color: var(--neg); }
+
+.del-confirm-yes, .del-confirm-no {
+  height: 28px; padding: 0 10px; border-radius: 5px; cursor: pointer;
+  font-size: 12px; font-weight: 500; border: none; white-space: nowrap;
+  transition: background .1s;
+}
+.del-confirm-yes { background: var(--neg); color: #fff; margin-right: 4px; }
+.del-confirm-yes:hover { background: #b91c1c; }
+.del-confirm-no  { background: var(--border); color: var(--text); }
+.del-confirm-no:hover  { background: var(--muted); color: #fff; }
+
+/* ── cleared button ───────────────────────────────────────────────────────── */
+.cleared-btn {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border: none; background: transparent; cursor: pointer;
+  font-size: 15px; border-radius: 6px; color: var(--border);
+  transition: color .15s, background .1s;
+  display: flex; align-items: center; justify-content: center;
+}
+.cleared-btn.is-cleared { color: var(--pos); }
+.cleared-btn:hover { background: var(--bg); }
+
+.edit-btn {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border: none; background: transparent; cursor: pointer;
+  font-size: 13px; border-radius: 6px; color: var(--muted);
+  transition: background .1s, color .1s;
+  display: flex; align-items: center; justify-content: center;
+}
+.edit-btn:hover { background: var(--accent-light); color: var(--accent); }
+
+/* ── tags ─────────────────────────────────────────────────────────────────── */
+.tag-input-wrap {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); padding: 3px 8px;
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+  cursor: text; min-height: 36px;
+}
+.tag-input-wrap:focus-within { border-color: var(--accent); }
+.tag-pill-input {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--accent-light); color: var(--accent);
+  border-radius: 999px; padding: 2px 4px 2px 9px; font-size: 12px; font-weight: 500;
+}
+.tag-pill-input button {
+  border: none; background: none; color: var(--accent); cursor: pointer;
+  font-size: 13px; padding: 0; line-height: 1;
+}
+.tag-pill-input button:hover { color: var(--neg); }
+.tag-combo-input { position: relative; flex: 1; min-width: 80px; }
+.tag-combo-input input {
+  border: none; background: none; padding: 2px 4px; width: 100%;
+  outline: none; font-size: 13px; color: var(--text);
+}
+.tx-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tx-tag  { font-size: 11px; padding: 1px 7px; border-radius: 999px;
+  background: var(--accent-light); color: var(--accent); font-weight: 500; }
+
+/* ── duplicate review ─────────────────────────────────────────────────────── */
+.review-step  { display: flex; flex-direction: column; gap: 12px; }
+.review-note  { font-size: 13px; color: var(--muted); }
+.review-pair  { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color .15s; }
+.review-pair.decided-match  { border-color: var(--pos); }
+.review-pair.decided-import { border-color: var(--accent); }
+.review-sides { display: grid; grid-template-columns: 1fr 1fr; }
+.review-side  { padding: 12px 14px; border-right: 1px solid var(--border); }
+.review-side:last-child { border-right: none; }
+.review-side-label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 5px; }
+.review-side-desc  { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.review-side-meta  { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+.review-side-amt   { font-weight: 600; }
+.review-actions    { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--border); background: var(--surface-alt); justify-content: flex-end; }
+.review-badge      { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; margin-right: auto; }
+.review-badge.match  { background: var(--pos-light);    color: var(--pos);    }
+.review-badge.import { background: var(--accent-light); color: var(--accent); }
+
+/* ── import button (header) ───────────────────────────────────────────────── */
+.header-actions { margin-left: auto; display: flex; gap: 8px; }
+
+.import-btn, .export-btn {
+  height: 34px; padding: 0 14px;
+  border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: background .15s;
+  white-space: nowrap;
+}
+.import-btn {
+  background: var(--surface); color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.import-btn:hover { background: var(--accent-light); }
+.export-btn {
+  background: var(--surface); color: var(--muted);
+  border: 1px solid var(--border);
+}
+.export-btn:hover { background: var(--bg); color: var(--text); }
+
+.privacy-btn {
+  height: 34px; padding: 0 14px;
+  border-radius: 6px; font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+  background: var(--surface); color: var(--muted);
+  border: 1px solid var(--border);
+}
+.privacy-btn:hover      { background: var(--bg); color: var(--text); }
+.privacy-btn.active     { background: #1e293b; color: #fff; border-color: #1e293b; }
+.privacy-btn.active:hover { opacity: .88; }
+
+/* ── modal ────────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 16px;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: 100%; max-width: 640px;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+.modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close {
+  width: 30px; height: 30px; border: none; background: transparent;
+  font-size: 20px; color: var(--muted); cursor: pointer; border-radius: 6px; line-height: 1;
+}
+.modal-close:hover { background: var(--bg); color: var(--text); }
+
+.modal-body {
+  padding: 20px; overflow-y: auto; flex: 1;
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.modal-footer {
+  padding: 14px 20px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
+}
+
+/* ── mapping UI ───────────────────────────────────────────────────────────── */
+.file-info {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg); border-radius: 6px; padding: 10px 14px;
+}
+.file-name  { font-size: 13px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-count { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+
+.block-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted); margin-bottom: 4px;
+}
+
+.mapping-grid  { display: flex; flex-direction: column; gap: 8px; }
+.mapping-row   { display: grid; grid-template-columns: 160px 1fr; align-items: center; gap: 12px; }
+.mapping-label { font-size: 13px; }
+
+.radio-group { display: flex; gap: 20px; }
+.radio-group label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.check-label       { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.muted-note        { color: var(--muted); font-size: 12px; }
+
+/* ── preview table ────────────────────────────────────────────────────────── */
+.preview-wrap { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+
+.preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.preview-table th {
+  background: var(--bg); padding: 7px 10px; text-align: left;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--muted); border-bottom: 1px solid var(--border);
+}
+.preview-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.preview-table tr:last-child td { border-bottom: none; }
+.row-invalid td { color: #adb5bd; }
+.warn { color: #f59e0b; }
+
+/* ── result cards ─────────────────────────────────────────────────────────── */
+.result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.result-card { background: var(--bg); border-radius: 8px; padding: 20px 14px; text-align: center; }
+.result-num  { font-size: 32px; font-weight: 700; line-height: 1; }
+.result-lbl  { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 6px; }
+
+/* ── shared buttons ───────────────────────────────────────────────────────── */
+.btn-primary {
+  height: 36px; padding: 0 18px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 6px; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: opacity .15s;
+}
+.btn-primary:hover    { opacity: .88; }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+.btn-secondary {
+  height: 36px; padding: 0 18px;
+  background: transparent; color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: 13px; cursor: pointer; transition: background .1s;
+}
+.btn-secondary:hover { background: var(--bg); }
+
+.btn-danger {
+  height: 36px; padding: 0 18px;
+  background: var(--neg); color: #fff;
+  border: none; border-radius: 6px; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: opacity .15s;
+}
+.btn-danger:hover { opacity: .88; }
+
+.truncate-confirm {
+  margin-top: 10px; padding: 12px 14px;
+  background: var(--neg-light); border: 1px solid var(--neg);
+  border-radius: 6px; font-size: 13px;
+}
+
+.link-btn {
+  background: none; border: none;
+  color: var(--accent); font-size: 12px;
+  cursor: pointer; padding: 0; text-decoration: underline;
+  flex-shrink: 0;
+}
+
+/* ── category manager ─────────────────────────────────────────────────────── */
+.cat-list { display: flex; flex-direction: column; gap: 2px; }
+
+.cat-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-radius: 6px; gap: 8px;
+}
+.cat-row:hover { background: var(--bg); }
+
+.cat-name  { font-size: 13px; flex: 1; }
+.cat-badge {
+  font-size: 10px; color: var(--muted); border: 1px solid var(--border);
+  border-radius: 999px; padding: 1px 7px; margin-left: 8px;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+
+.cat-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.cat-btn {
+  width: 28px; height: 28px; border: none; background: transparent;
+  color: var(--muted); border-radius: 5px; cursor: pointer; font-size: 13px;
+  transition: background .1s, color .1s;
+}
+.cat-btn:hover     { background: var(--border); color: var(--text); }
+.cat-btn.cat-del:hover { background: var(--neg-light); color: var(--neg); }
+
+.cat-budget-wrap   { display:flex; align-items:center; gap:3px; flex-shrink:0; }
+.cat-budget-symbol { font-size:11px; color:var(--muted); }
+.cat-budget-input  {
+  width:66px; font-size:12px; padding:2px 6px;
+  border:1px solid var(--border); border-radius:4px;
+  background:var(--surface); color:var(--text); text-align:right;
+}
+.cat-budget-input:focus { border-color:var(--accent); outline:none; }
+
+.budget-indicator { font-size:11px; font-weight:600; text-align:right; white-space:nowrap; }
+.budget-over      { color:var(--neg); }
+.budget-warn      { color:#d97706; }
+.budget-under     { color:var(--pos); }
+
+.cat-add-row { display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.cat-add-row input { flex: 1; }
+
+/* ── transfer linker ──────────────────────────────────────────────────────── */
+.link-source-card {
+  background: var(--bg); border-radius: 6px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px; font-size: 13px;
+}
+.link-source-card .lc-left { flex: 1; min-width: 0; }
+
+.link-candidates { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+
+.link-candidate {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); cursor: pointer; text-align: left;
+  transition: border-color .1s, background .1s; width: 100%; gap: 12px;
+}
+.link-candidate:hover { border-color: var(--accent); background: var(--accent-light); }
+
+.lc-left { flex: 1; min-width: 0; }
+.lc-desc { display: block; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-meta { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.lc-amt  { font-size: 14px; font-weight: 600; flex-shrink: 0; }
+
+.linked-badge {
+  font-size: 10px; color: #64748b;
+  border: 1px solid #cbd5e1; border-radius: 999px;
+  padding: 1px 7px; letter-spacing: .2px;
+}
+
+/* ── tab nav ──────────────────────────────────────────────────────────────── */
+.tab-nav {
+  display: flex; gap: 0;
+  border-bottom: 2px solid var(--border);
+  background: var(--surface);
+  position: sticky; top: 57px; z-index: 99;
+  padding: 0 24px;
+}
+.tab-btn {
+  padding: 11px 18px;
+  border: none; background: transparent;
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  cursor: pointer; position: relative; transition: color .15s;
+  margin-bottom: -2px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ── dashboard ────────────────────────────────────────────────────────────── */
+.dashboard { display: flex; flex-direction: column; gap: 20px; }
+
+.range-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.range-tab {
+  padding: 5px 13px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); color: var(--muted);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.range-tab:hover { border-color: #adb5bd; color: var(--text); }
+.range-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.dash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.dash-title {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted); margin-bottom: 14px;
+}
+
+/* account cards */
+.acct-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.acct-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.acct-name    { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.acct-balance { font-size: 20px; font-weight: 700; letter-spacing: -.4px; }
+.acct-sub     { display: flex; gap: 6px; font-size: 11px; align-items: center; }
+.acct-divider { color: var(--border); }
+.acct-last-date { font-size: 11px; color: var(--muted); }
+
+.acct-reconcile-btn {
+  margin-top: 6px; padding: 4px 0;
+  background: none; border: none;
+  color: var(--accent); font-size: 11px;
+  cursor: pointer; text-align: left;
+  opacity: .7; transition: opacity .15s;
+}
+.acct-reconcile-btn:hover { opacity: 1; }
+
+/* category bars */
+.cat-bar-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 80px 80px;
+  align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.cat-bar-row:last-child { margin-bottom: 0; }
+.cat-bar-label { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-bar-track {
+  height: 8px; border-radius: 999px;
+  background: var(--border); overflow: hidden;
+}
+.cat-bar-fill { height: 100%; border-radius: 999px; transition: width .4s ease; }
+.cat-bar-pct  { font-size: 11px; color: var(--muted); text-align: right; }
+.cat-bar-amt  { font-size: 12px; font-weight: 500; text-align: right; }
+
+/* monthly chart */
+.monthly-chart {
+  display: flex; gap: 10px;
+}
+.month-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.month-bars {
+  height: 110px; width: 100%;
+  display: flex; align-items: flex-end; gap: 3px;
+}
+.month-bar-wrap {
+  flex: 1; height: 100%;
+  display: flex; align-items: flex-end;
+}
+.month-bar {
+  width: 100%; border-radius: 3px 3px 0 0;
+  min-height: 2px; transition: height .35s ease;
+}
+.income-bar  { background: var(--pos); opacity: .8; }
+.expense-bar { background: var(--neg); opacity: .8; }
+.month-label { font-size: 10px; color: var(--muted); }
+
+.chart-legend {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 12px; justify-content: flex-end;
+}
+.legend-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-label { font-size: 11px; color: var(--muted); }
+.legend-gap   { width: 12px; }
+
+/* settings modal ───────────────────────────────────────────────────────────── */
+.setting-section { display: flex; flex-direction: column; gap: 10px; }
+
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0; gap: 12px;
+}
+.setting-label { font-size: 13px; }
+
+.theme-toggle { display: flex; gap: 6px; }
+.theme-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--muted);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.theme-btn:hover        { border-color: #adb5bd; color: var(--text); }
+.theme-btn.active       { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.setting-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* drag-and-drop category manager */
+.drag-handle {
+  cursor: grab; color: var(--border); font-size: 14px;
+  padding: 0 4px; user-select: none; flex-shrink: 0;
+  line-height: 1;
+}
+.drag-handle:active { cursor: grabbing; }
+.dragging { opacity: .35; }
+
+.cat-group-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 4px 5px; margin-top: 6px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+}
+.cat-group-header:first-child { margin-top: 0; }
+.cat-group-label { flex: 1; cursor: text; }
+.cat-group-label:hover { color: var(--text); }
+.cat-group-input {
+  flex: 1; height: 22px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  padding: 0 6px; border-radius: 4px;
+}
+.cat-row-indent { padding-left: 20px; }
+
+.drop-line {
+  height: 2px; background: var(--accent);
+  border-radius: 1px; margin: 0;
+  pointer-events: none;
+}
+
+.cat-new-group-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.cat-new-group-row input { flex: 1; }
+
+/* combobox group headers */
+.cat-dropdown-header {
+  padding: 6px 12px 3px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted);
+  cursor: default; pointer-events: none;
+  border-top: 1px solid var(--border);
+}
+.cat-dropdown-header:first-child { border-top: none; }
+
+/* ── planning ─────────────────────────────────────────────────────────────── */
+.plan-month-nav { display: flex; align-items: center; gap: 10px; }
+.plan-month-nav button {
+  width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--text); cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center; transition: background .15s;
+}
+.plan-month-nav button:hover:not(:disabled) { background: var(--surface-alt); }
+.plan-month-nav button:disabled { opacity: .3; cursor: default; }
+.plan-month-label { font-size: 18px; font-weight: 700; min-width: 180px; text-align: center; letter-spacing: -.3px; }
+
+.plan-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; }
+.plan-kpi {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;
+}
+.plan-kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 600; }
+.plan-kpi-value { font-size: 22px; font-weight: 700; letter-spacing: -.5px; line-height: 1.1; }
+.plan-kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.plan-table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+
+.plan-cols { grid-template-columns: 20px 1fr 110px 90px 120px 1fr; }
+.plan-row-header {
+  display: grid; gap: 12px; padding: 9px 16px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 600;
+  background: var(--surface-alt); border-bottom: 2px solid var(--border);
+}
+
+.plan-section { display: flex; flex-direction: column; }
+.plan-section + .plan-section { border-top: 1px solid var(--border); }
+
+.plan-section-title-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-alt); border-bottom: 1px solid var(--border);
+  padding: 7px 16px; cursor: grab; user-select: none;
+}
+.plan-section-title-row:active { cursor: grabbing; }
+.plan-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--text); font-weight: 700; flex: 1; }
+
+.plan-row {
+  display: grid; gap: 12px; padding: 10px 16px; align-items: center;
+  transition: background .1s; border-bottom: 1px solid var(--border);
+}
+.plan-row:last-child { border-bottom: none; }
+.plan-row:hover { background: var(--surface-alt); }
+
+.plan-cat-name { font-size: 13px; font-weight: 500; }
+.plan-budget-display {
+  width: 100%; font-size: 13px; font-weight: 600; padding: 5px 8px; text-align: right;
+  border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--text);
+  transition: border-color .15s, background .15s, color .15s;
+  font-family: inherit;
+}
+.plan-budget-display:hover { border-color: var(--border); background: var(--surface-alt); }
+.plan-budget-empty { color: var(--muted); font-weight: 400; }
+.plan-budget-empty:hover { color: var(--text); }
+.plan-budget-input {
+  width: 100%; font-size: 13px; font-weight: 600; padding: 5px 8px; text-align: right;
+  border: 1px solid var(--accent); border-radius: 6px;
+  background: var(--bg); color: var(--text); outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  font-family: inherit;
+}
+.plan-budget-input::placeholder { color: var(--muted); }
+
+.plan-spent { font-size: 13px; font-weight: 500; text-align: right; }
+.plan-delta { font-size: 12px; font-weight: 600; text-align: right; }
+
+.plan-bar-wrap { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.plan-bar-track { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.plan-bar-fill  { height: 100%; border-radius: 999px; transition: width .4s ease; }
+.plan-bar-pct   { font-size: 10px; color: var(--muted); text-align: right; line-height: 1; }
+
+.plan-unbudgeted .plan-cat-name { color: var(--muted); font-style: italic; }
+
+.plan-total-row {
+  display: grid; gap: 12px; padding: 11px 16px;
+  border-top: 2px solid var(--border); font-weight: 700; font-size: 13px;
+  background: var(--surface-alt);
+}
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .summary       { grid-template-columns: 1fr; }
+  .form-grid     { grid-template-columns: 1fr 1fr; }
+  .f-merchant    { grid-column: 1 / -1; }
+  .f-desc        { grid-column: 1 / -1; }
+  .f-account     { grid-column: 1 / -1; }
+  .filters       { flex-wrap: wrap; }
+  .mapping-row   { grid-template-columns: 1fr; }
+  .result-grid   { grid-template-columns: 1fr; }
+  .cat-bar-row   { grid-template-columns: 90px 1fr 64px 64px; }
+  .tab-nav       { padding: 0 12px; }
+}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+
+const DEFAULT_CATEGORIES = [
+  'Food & Dining','Housing','Transport','Entertainment',
+  'Healthcare','Shopping','Utilities','Income','Savings','Other','Transfer','Reconciliation'
+];
+const TRANSFER_CAT    = 'Transfer';
+const RECONCILE_CAT   = 'Reconciliation';
+const PROTECTED_CATS  = new Set([TRANSFER_CAT, RECONCILE_CAT]);
+// Excluded from income/expense totals and charts, but counted in per-account balances
+const isExcluded = (t) => PROTECTED_CATS.has(t.category);
+
+// ── persistence ───────────────────────────────────────────────────────────────
+function useLocalStorage(key, initial) {
+  const [value, setValue] = useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : initial; }
+    catch { return initial; }
+  });
+  useEffect(() => { localStorage.setItem(key, JSON.stringify(value)); }, [key, value]);
+  return [value, setValue];
+}
+
+// ── formatting ────────────────────────────────────────────────────────────────
+const fmt   = (n) => new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(Math.abs(n));
+const today = ()  => new Date().toISOString().split('T')[0];
+
+// ── category guesser ──────────────────────────────────────────────────────────
+function guessCategory(desc, transactions) {
+  const norm = desc.toLowerCase().trim();
+  if (norm.length < 3 || transactions.length === 0) return null;
+
+  // Build frequency map: normalized description → { category: count }
+  const freq = {};
+  for (const t of transactions) {
+    const key = t.description.toLowerCase().trim();
+    if (!freq[key]) freq[key] = {};
+    freq[key][t.category] = (freq[key][t.category] || 0) + 1;
+  }
+
+  const catScores = {};
+  for (const [key, cats] of Object.entries(freq)) {
+    let score = 0;
+    if (key === norm) {
+      score = 100;
+    } else if (key.startsWith(norm) || norm.startsWith(key)) {
+      score = 10 * (Math.min(key.length, norm.length) / Math.max(key.length, norm.length));
+    } else {
+      const normWords = norm.split(/\s+/).filter(w => w.length > 2);
+      const keyWords  = key.split(/\s+/).filter(w => w.length > 2);
+      if (normWords.length > 0 && keyWords.length > 0) {
+        const hits = normWords.filter(w => keyWords.some(kw => kw.includes(w) || w.includes(kw)));
+        if (hits.length > 0) score = hits.length / Math.max(normWords.length, keyWords.length);
+      }
+    }
+    if (score > 0) {
+      const total = Object.values(cats).reduce((a, b) => a + b, 0);
+      const best  = Object.entries(cats).sort((a, b) => b[1] - a[1])[0][0];
+      catScores[best] = (catScores[best] || 0) + score * total;
+    }
+  }
+
+  if (Object.keys(catScores).length === 0) return null;
+  return Object.entries(catScores).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+// ── CSV parsing ───────────────────────────────────────────────────────────────
+function parseCSVRow(line) {
+  const result = [];
+  let current = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      result.push(current.trim()); current = '';
+    } else {
+      current += c;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function parseCSV(text) {
+  const clean = text.replace(/^﻿/, ''); // strip BOM
+  const lines = clean.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return null;
+  const headers = parseCSVRow(lines[0]);
+  const rows = lines.slice(1)
+    .map(line => {
+      const vals = parseCSVRow(line);
+      const row = {};
+      headers.forEach((h, i) => { row[h] = (vals[i] ?? '').trim(); });
+      return row;
+    })
+    .filter(row => Object.values(row).some(v => v !== ''));
+  return { headers, rows };
+}
+
+function normalizeDate(str) {
+  if (!str) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const mdy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+  const mdy2 = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (mdy2) return `${mdy2[3]}-${mdy2[1].padStart(2,'0')}-${mdy2[2].padStart(2,'0')}`;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? str : d.toISOString().split('T')[0];
+}
+
+function parseAmount(str) {
+  if (str === null || str === undefined || str === '') return null;
+  const s = String(str).trim();
+  if (!s) return null;
+  const neg = (s.startsWith('(') && s.endsWith(')')) || s.startsWith('-');
+  const n = parseFloat(s.replace(/[($,\s)]/g, ''));
+  if (isNaN(n)) return null;
+  return neg ? -Math.abs(n) : n;
+}
+
+function autoDetect(headers) {
+  const find = (pats) => headers.find(h => pats.some(p => p.test(h))) || '';
+  return {
+    dateCol:     find([/^date$/i, /transaction.?date/i, /posted.?date/i, /posting.?date/i, /trans.?date/i]),
+    merchantCol: find([/^merchant$/i, /^payee$/i, /^vendor$/i]),
+    descCol:     find([/^description$/i, /^name$/i, /^memo$/i, /transaction.?desc/i, /narrative/i]),
+    amountCol:   find([/^amount$/i, /transaction.?amount/i]),
+    debitCol:    find([/^debit$/i, /debit.?amount/i, /withdrawal/i]),
+    creditCol:   find([/^credit$/i, /credit.?amount/i, /deposit/i]),
+    txNumCol:    find([/^txNum$/i, /^tx_num$/i, /^transaction.?num/i]),
+  };
+}
+
+function applyMapping(row, mapping) {
+  const date        = normalizeDate(row[mapping.dateCol] || '');
+  const merchant    = (row[mapping.merchantCol] || '').replace(/\s+/g, ' ').trim();
+  const description = (row[mapping.descCol] || '').replace(/\s+/g, ' ').trim();
+  let amount = null;
+
+  if (mapping.amountMode === 'single') {
+    amount = parseAmount(row[mapping.amountCol]);
+    if (amount !== null && mapping.negateAmount) amount = -amount;
+  } else {
+    const debit  = parseAmount(row[mapping.debitCol])  ?? 0;
+    const credit = parseAmount(row[mapping.creditCol]) ?? 0;
+    amount = credit - debit;
+  }
+
+  const txNum = mapping.txNumCol
+    ? (parseInt(row[mapping.txNumCol], 10) || null)
+    : null;
+  const valid = !!date && (!!merchant || !!description) && amount !== null && !isNaN(amount);
+  return { date, merchant, description, amount, txNum, valid };
+}
+
+// ── small shared components ───────────────────────────────────────────────────
+function ColSelect({ value, onChange, opts }) {
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)}>
+      {opts.map(o => <option key={o} value={o}>{o || '— skip —'}</option>)}
+    </select>
+  );
+}
+
+function MappingRow({ label, children }) {
+  return (
+    <div className="mapping-row">
+      <span className="mapping-label">{label}</span>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+// ── MapStep ───────────────────────────────────────────────────────────────────
+function MapStep({ csvData, fileName, mapping, setMap, previewRows, onChangeFile, categories }) {
+  const opts = ['', ...csvData.headers];
+  return (
+    <>
+      <div className="file-info">
+        <span className="file-name">📄 {fileName}</span>
+        <button className="link-btn" onClick={onChangeFile}>Change file</button>
+        <span className="file-count">{csvData.rows.length} rows</span>
+      </div>
+
+      <div>
+        <p className="block-title">Column Mapping</p>
+        <div className="mapping-grid">
+          <MappingRow label="Date column">
+            <ColSelect value={mapping.dateCol} onChange={v => setMap('dateCol', v)} opts={opts} />
+          </MappingRow>
+          <MappingRow label="Merchant column">
+            <ColSelect value={mapping.merchantCol} onChange={v => setMap('merchantCol', v)} opts={opts} />
+          </MappingRow>
+          <MappingRow label="Description column">
+            <ColSelect value={mapping.descCol} onChange={v => setMap('descCol', v)} opts={opts} />
+          </MappingRow>
+          <MappingRow label="Amount type">
+            <div className="radio-group">
+              {[['single','Single column'],['split','Separate debit / credit']].map(([val, lbl]) => (
+                <label key={val}>
+                  <input type="radio" name="amtMode" value={val}
+                    checked={mapping.amountMode === val}
+                    onChange={() => setMap('amountMode', val)} />
+                  {lbl}
+                </label>
+              ))}
+            </div>
+          </MappingRow>
+
+          {mapping.amountMode === 'single' && <>
+            <MappingRow label="Amount column">
+              <ColSelect value={mapping.amountCol} onChange={v => setMap('amountCol', v)} opts={opts} />
+            </MappingRow>
+            <MappingRow label="">
+              <label className="check-label">
+                <input type="checkbox" checked={mapping.negateAmount}
+                  onChange={e => setMap('negateAmount', e.target.checked)} />
+                Negate amounts &nbsp;
+                <span className="muted-note">(if expenses show as positive)</span>
+              </label>
+            </MappingRow>
+          </>}
+
+          {mapping.amountMode === 'split' && <>
+            <MappingRow label="Debit column">
+              <ColSelect value={mapping.debitCol} onChange={v => setMap('debitCol', v)} opts={opts} />
+            </MappingRow>
+            <MappingRow label="Credit column">
+              <ColSelect value={mapping.creditCol} onChange={v => setMap('creditCol', v)} opts={opts} />
+            </MappingRow>
+          </>}
+
+          <MappingRow label="Transaction ID">
+            <ColSelect value={mapping.txNumCol} onChange={v => setMap('txNumCol', v)} opts={opts} />
+          </MappingRow>
+          <MappingRow label="Account name">
+            <input value={mapping.accountName}
+              onChange={e => setMap('accountName', e.target.value)}
+              placeholder="e.g. Checking" />
+          </MappingRow>
+          <MappingRow label="Default category">
+            <select value={mapping.defaultCategory} onChange={e => setMap('defaultCategory', e.target.value)}>
+              {categories.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </MappingRow>
+          <MappingRow label="On duplicates">
+            <div className="radio-group">
+              {[['skip','Skip'], ['update','Update existing'], ['replace','Replace ALL data']].map(([val, lbl]) => (
+                <label key={val} style={val === 'replace' ? {color:'var(--neg)',fontWeight:600} : {}}>
+                  <input type="radio" name="importMode" value={val}
+                    checked={mapping.importMode === val}
+                    onChange={() => setMap('importMode', val)} />
+                  {lbl}
+                </label>
+              ))}
+            </div>
+          </MappingRow>
+        </div>
+      </div>
+
+      <div>
+        <p className="block-title">Preview — first 5 rows</p>
+        <div className="preview-wrap">
+          <table className="preview-table">
+            <thead>
+              <tr><th>Date</th><th>Merchant</th><th>Description</th><th>Amount</th><th></th></tr>
+            </thead>
+            <tbody>
+              {previewRows.map((row, i) => (
+                <tr key={i} className={!row.valid ? 'row-invalid' : ''}>
+                  <td>{row.date || '—'}</td>
+                  <td>{row.merchant || '—'}</td>
+                  <td>{row.description || '—'}</td>
+                  <td className={row.valid ? (row.amount >= 0 ? 'pos' : 'neg') : ''}>
+                    {row.valid ? `${row.amount >= 0 ? '+' : '−'}${fmt(row.amount)}` : '—'}
+                  </td>
+                  <td>{row.valid ? '✓' : <span className="warn">skip</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── DoneStep ──────────────────────────────────────────────────────────────────
+function DoneStep({ result }) {
+  const cards = result.replaced != null
+    ? [
+        { num: result.imported,  label: 'Imported',  color: result.imported > 0 ? 'var(--pos)' : 'var(--muted)' },
+        { num: result.replaced,  label: 'Deleted',   color: result.replaced > 0 ? 'var(--neg)' : 'var(--muted)' },
+        { num: result.errors,    label: 'Rows skipped', color: result.errors > 0 ? 'var(--neg)' : 'var(--muted)' },
+      ]
+    : [
+        { num: result.imported,    label: 'Imported',           color: result.imported > 0 ? 'var(--pos)' : 'var(--muted)' },
+        result.matched != null
+          ? { num: result.matched, label: 'Matched & Cleared',  color: result.matched > 0 ? 'var(--pos)' : 'var(--muted)' }
+          : { num: result.updated ?? result.duplicates,
+              label: result.updated != null ? 'Updated' : 'Duplicates skipped',
+              color: result.updated > 0 ? 'var(--accent)' : 'var(--muted)' },
+        { num: result.errors,      label: 'Rows skipped',       color: result.errors > 0 ? 'var(--neg)' : 'var(--muted)' },
+      ];
+  return (
+    <div className="result-grid">
+      {cards.map(c => (
+        <div key={c.label} className="result-card">
+          <div className="result-num" style={{color: c.color}}>{c.num}</div>
+          <div className="result-lbl">{c.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── CSVImporter ───────────────────────────────────────────────────────────────
+const DEFAULT_MAPPING = {
+  dateCol:'', merchantCol:'', descCol:'', amountMode:'single',
+  amountCol:'', negateAmount:false, debitCol:'', creditCol:'',
+  txNumCol:'', accountName:'', defaultCategory:'Other', importMode:'skip'
+};
+
+function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categories, externalFile, onExternalFileConsumed }) {
+  const fileRef = useRef(null);
+  const [open, setOpen]       = useState(false);
+  const [step, setStep]       = useState('map');
+  const [csvData, setCsvData] = useState(null);
+  const [fileName, setFileName] = useState('');
+  const [mapping, setMapping] = useState(DEFAULT_MAPPING);
+  const [result, setResult]         = useState(null);
+  const [pendingReview, setPendingReview]   = useState([]);
+  const [decisions, setDecisions]           = useState({});
+  const [pendingCounts, setPendingCounts]   = useState({});
+  const [pendingReplace, setPendingReplace] = useState(null);
+  const [importSettings, setImportSettings] = useLocalStorage('budget_import_settings', {});
+
+  const setMap = (k, v) => setMapping(m => ({ ...m, [k]: v }));
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    const text = await file.text();
+    const parsed = parseCSV(text);
+    if (!parsed) { alert('Could not parse CSV — make sure it has a header row.'); return; }
+    const auto = autoDetect(parsed.headers);
+    const s    = importSettings;
+    // For column fields: prefer auto-detect, fall back to saved if that column still exists
+    const col  = (autoVal, key) => autoVal || (s[key] && parsed.headers.includes(s[key]) ? s[key] : '');
+    let amountMode;
+    if (auto.amountCol)                         amountMode = 'single';
+    else if (auto.debitCol || auto.creditCol)   amountMode = 'split';
+    else                                         amountMode = s.amountMode || 'single';
+    const name = file.name.replace(/\.csv$/i, '');
+    setFileName(file.name);
+    setCsvData(parsed);
+    setMapping({
+      ...DEFAULT_MAPPING,
+      dateCol:         col(auto.dateCol,  'dateCol'),
+      descCol:         col(auto.descCol,  'descCol'),
+      amountCol:       col(auto.amountCol,'amountCol'),
+      debitCol:        col(auto.debitCol, 'debitCol'),
+      creditCol:       col(auto.creditCol,'creditCol'),
+      txNumCol:        col(auto.txNumCol, 'txNumCol'),
+      amountMode,
+      negateAmount:    s.negateAmount    ?? false,
+      defaultCategory: s.defaultCategory || 'Other',
+      importMode:      s.importMode      || 'skip',
+      accountName:     name,
+    });
+    setStep('map');
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (externalFile) { handleFile(externalFile); onExternalFileConsumed?.(); }
+  }, [externalFile]);
+
+  const previewRows = useMemo(() => {
+    if (!csvData) return [];
+    return csvData.rows.slice(0, 5).map(row => applyMapping(row, mapping));
+  }, [csvData, mapping]);
+
+  const handleConfirmReplace = () => {
+    if (!pendingReplace) return;
+    const { accountName: _omit, ...settingsToSave } = mapping;
+    setImportSettings(settingsToSave);
+    onReplaceAll(pendingReplace.rows);
+    setResult({ imported: pendingReplace.rows.length, replaced: transactions.length, errors: pendingReplace.errors });
+    setPendingReplace(null);
+    setStep('done');
+  };
+
+  const handleImport = () => {
+    // Replace-all mode: parse rows then go to confirmation step
+    if (mapping.importMode === 'replace') {
+      let errors = 0;
+      const rows = [];
+      // Build a case-insensitive lookup for CSV columns
+      const getCol = (row, name) => {
+        const key = csvData.headers.find(h => h.toLowerCase() === name.toLowerCase());
+        return key != null ? row[key] : undefined;
+      };
+      for (const row of csvData.rows) {
+        const mapped = applyMapping(row, mapping);
+        if (!mapped.valid) { errors++; continue; }
+        const rawCleared  = getCol(row, 'cleared');
+        const rawTags     = getCol(row, 'tags');
+        const rawTransId  = getCol(row, 'transferId');
+        rows.push({
+          id:          crypto.randomUUID(),
+          ...(mapped.txNum ? { txNum: mapped.txNum } : {}),
+          merchant:    mapped.merchant,
+          description: mapped.description,
+          amount:      mapped.amount,
+          date:        mapped.date,
+          category:    getCol(row, 'category')    || mapping.defaultCategory,
+          accountName: getCol(row, 'accountName') || mapping.accountName || '',
+          cleared:     rawCleared === 'true' ? true : rawCleared === 'false' ? false : undefined,
+          tags:        rawTags ? rawTags.split(';').filter(Boolean) : [],
+          ...(rawTransId ? { transferId: rawTransId } : {}),
+        });
+      }
+      setPendingReplace({ rows, errors });
+      setStep('confirm-replace');
+      return;
+    }
+
+    let imported = 0, updated = 0, skipped = 0, errors = 0;
+    const newTx = [];
+    const patches = [];
+    const reviewPairs = [];
+
+    for (const row of csvData.rows) {
+      const mapped = applyMapping(row, mapping);
+      if (!mapped.valid) { errors++; continue; }
+
+      // Exact match: same txNum, or same date + amount + description
+      const exactMatch = mapped.txNum
+        ? transactions.find(t => t.txNum === mapped.txNum)
+        : transactions.find(t =>
+            t.date === mapped.date &&
+            Math.abs(t.amount - mapped.amount) < 0.005 &&
+            t.description.toLowerCase() === mapped.description.toLowerCase()
+          );
+
+      if (exactMatch) {
+        if (mapping.importMode === 'update') {
+          patches.push({ id: exactMatch.id, data: {
+            description: mapped.description,
+            amount: mapped.amount,
+            date: mapped.date,
+            ...(mapping.accountName ? { accountName: mapping.accountName } : {}),
+          }});
+          updated++;
+        } else {
+          skipped++;
+        }
+        continue;
+      }
+
+      // Fuzzy match: same amount, date within 3 days (description may differ) → needs review
+      const fuzzyMatch = !mapped.txNum && transactions.find(t => {
+        const dayDiff = Math.abs(new Date(t.date) - new Date(mapped.date)) / 86400000;
+        return dayDiff <= 3 && Math.abs(t.amount - mapped.amount) < 0.005;
+      });
+
+      if (fuzzyMatch) {
+        reviewPairs.push({
+          incoming: { merchant: mapped.merchant, description: mapped.description, amount: mapped.amount, date: mapped.date, accountName: mapping.accountName, category: mapping.defaultCategory },
+          existing: fuzzyMatch,
+        });
+        continue;
+      }
+
+      newTx.push({
+        id: crypto.randomUUID(),
+        ...(mapped.txNum ? { txNum: mapped.txNum } : {}),
+        merchant:    mapped.merchant,
+        description: mapped.description,
+        amount:      mapped.amount,
+        date:        mapped.date,
+        category:    mapping.defaultCategory,
+        accountName: mapping.accountName,
+        cleared:     true,
+      });
+      imported++;
+    }
+
+    const { accountName: _omit, ...settingsToSave } = mapping;
+    setImportSettings(settingsToSave);
+    if (newTx.length > 0)   onImport(newTx);
+    if (patches.length > 0) onUpdate(patches);
+
+    if (reviewPairs.length > 0) {
+      setPendingReview(reviewPairs);
+      setDecisions({});
+      setPendingCounts({ imported, updated, skipped, errors });
+      setStep('review');
+    } else {
+      const result = mapping.importMode === 'update'
+        ? { imported, updated, errors }
+        : { imported, duplicates: skipped, errors };
+      setResult(result);
+      setStep('done');
+    }
+  };
+
+  const handleConfirmReview = () => {
+    const toImport = [];
+    const toMark   = [];
+    let matched = 0, reviewImported = 0;
+
+    pendingReview.forEach((pair, idx) => {
+      if ((decisions[idx] ?? 'match') === 'import') {
+        toImport.push({
+          id: crypto.randomUUID(),
+          description: pair.incoming.description,
+          amount: pair.incoming.amount,
+          date: pair.incoming.date,
+          category: pair.incoming.category,
+          accountName: pair.incoming.accountName,
+          cleared: true,
+        });
+        reviewImported++;
+      } else {
+        toMark.push({ id: pair.existing.id, data: { cleared: true } });
+        matched++;
+      }
+    });
+
+    if (toImport.length > 0) onImport(toImport);
+    if (toMark.length > 0)   onUpdate(toMark);
+
+    setResult({
+      imported: (pendingCounts.imported || 0) + reviewImported,
+      matched,
+      duplicates: pendingCounts.skipped || 0,
+      errors: pendingCounts.errors || 0,
+    });
+    setStep('done');
+  };
+
+  const close = () => { setOpen(false); setStep('map'); setResult(null); };
+  const canImport = mapping.dateCol && (mapping.merchantCol || mapping.descCol) &&
+    (mapping.amountMode === 'single' ? mapping.amountCol : (mapping.debitCol || mapping.creditCol));
+
+  return (
+    <>
+      <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}}
+        onChange={e => { handleFile(e.target.files[0]); e.target.value = ''; }} />
+
+      {open && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && close()}>
+          <div className="modal">
+            <div className="modal-header">
+              <span className="modal-title">
+                {step === 'done' ? 'Import Complete' : step === 'review' ? 'Review Duplicates' : step === 'confirm-replace' ? 'Confirm Replace' : 'Import CSV'}
+              </span>
+              <button className="modal-close" onClick={close}>×</button>
+            </div>
+
+            <div className="modal-body">
+              {step === 'map' && csvData && (
+                <MapStep
+                  csvData={csvData} fileName={fileName}
+                  mapping={mapping} setMap={setMap}
+                  previewRows={previewRows}
+                  onChangeFile={() => fileRef.current.click()}
+                  categories={categories}
+                />
+              )}
+              {step === 'confirm-replace' && pendingReplace && (
+                <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+                  <div className="truncate-confirm">
+                    <p>This will <strong>permanently delete all {transactions.length} existing transaction{transactions.length !== 1 ? 's' : ''}</strong> and replace them with the <strong>{pendingReplace.rows.length} rows</strong> from this CSV.</p>
+                    <p style={{marginTop:'8px',color:'var(--neg)',fontWeight:600}}>This cannot be undone.</p>
+                  </div>
+                  {pendingReplace.errors > 0 && (
+                    <p className="muted-note">{pendingReplace.errors} row{pendingReplace.errors !== 1 ? 's' : ''} could not be parsed and will be skipped.</p>
+                  )}
+                </div>
+              )}
+              {step === 'review' && (
+                <div className="review-step">
+                  <p className="review-note">
+                    {pendingReview.length} potential duplicate{pendingReview.length !== 1 ? 's' : ''} found — same amount, dates within 3 days.
+                    Default is <strong>Match & Clear</strong>. Switch any to <strong>Import Anyway</strong> to keep both.
+                  </p>
+                  {pendingReview.map((pair, idx) => {
+                    const dec = decisions[idx] ?? 'match';
+                    return (
+                      <div key={idx} className={`review-pair decided-${dec}`}>
+                        <div className="review-sides">
+                          <div className="review-side">
+                            <div className="review-side-label">Existing</div>
+                            <div className="review-side-desc" title={pair.existing.description}>{pair.existing.description}</div>
+                            <div className="review-side-meta">
+                              <span>{pair.existing.date}</span>
+                              <span className={`review-side-amt ${pair.existing.amount >= 0 ? 'pos' : 'neg'}`}>
+                                {pair.existing.amount >= 0 ? '+' : '−'}{fmt(pair.existing.amount)}
+                              </span>
+                              {pair.existing.category && <span>{pair.existing.category}</span>}
+                            </div>
+                          </div>
+                          <div className="review-side">
+                            <div className="review-side-label">Incoming (CSV)</div>
+                            <div className="review-side-desc" title={pair.incoming.description}>{pair.incoming.description}</div>
+                            <div className="review-side-meta">
+                              <span>{pair.incoming.date}</span>
+                              <span className={`review-side-amt ${pair.incoming.amount >= 0 ? 'pos' : 'neg'}`}>
+                                {pair.incoming.amount >= 0 ? '+' : '−'}{fmt(pair.incoming.amount)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="review-actions">
+                          <span className={`review-badge ${dec}`}>
+                            {dec === 'match' ? '✓ Match & Clear' : '+ Import Anyway'}
+                          </span>
+                          {dec === 'match'
+                            ? <button className="btn-secondary" onClick={() => setDecisions(d => ({...d, [idx]: 'import'}))}>Import Anyway</button>
+                            : <button className="btn-secondary" onClick={() => setDecisions(d => ({...d, [idx]: 'match'}))}>Match & Clear</button>
+                          }
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {step === 'done' && result && <DoneStep result={result} />}
+            </div>
+
+            <div className="modal-footer">
+              {step === 'map' && <>
+                <button className="btn-secondary" onClick={close}>Cancel</button>
+                <button className="btn-primary" onClick={handleImport} disabled={!canImport}>
+                  Import {csvData?.rows.length} rows →
+                </button>
+              </>}
+              {step === 'confirm-replace' && <>
+                <button className="btn-secondary" onClick={close}>Cancel</button>
+                <button className="btn-danger" onClick={handleConfirmReplace}>
+                  Yes, Replace All Data
+                </button>
+              </>}
+              {step === 'review' && <>
+                <button className="btn-secondary" onClick={close}>Cancel</button>
+                <button className="btn-primary" onClick={handleConfirmReview}>
+                  Confirm {pendingReview.length} {pendingReview.length === 1 ? 'Decision' : 'Decisions'} →
+                </button>
+              </>}
+              {step === 'done' && <>
+                <button className="btn-secondary"
+                  onClick={() => { setStep('map'); setResult(null); fileRef.current.click(); }}>
+                  Import Another
+                </button>
+                <button className="btn-primary" onClick={close}>Done</button>
+              </>}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── CategoryManager ───────────────────────────────────────────────────────────
+function CategoryManager({ structure, budgets, onSetBudget, onAddCat, onRenameCat, onDeleteCat, onAddGroup, onRenameGroup, onDeleteGroup, onReorderStructure, onClose }) {
+  const [newCat, setNewCat]         = useState('');
+  const [newGroup, setNewGroup]     = useState('');
+  const [showGroupInput, setShowGroupInput] = useState(false);
+  const [editingCat, setEditingCat] = useState(null);   // { idx, value }
+  const [editingGroup, setEditingGroup] = useState(null); // { id, value }
+  const [error, setError]           = useState('');
+  // Use a ref for the dragged index so handleDrop always reads the current value
+  // (useState would be stale inside the drop closure)
+  const dragIdxRef = useRef(null);
+  const [draggingIdx, setDraggingIdx] = useState(null); // visual only
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+
+  const categories = useMemo(() =>
+    structure.filter(i => i.kind === 'cat').map(i => i.name),
+    [structure]
+  );
+
+  const handleAddCat = () => {
+    const name = newCat.trim();
+    if (!name) return;
+    if (categories.map(c => c.toLowerCase()).includes(name.toLowerCase()))
+      return setError('Category already exists.');
+    onAddCat(name);
+    setNewCat(''); setError('');
+  };
+
+  const handleAddGroup = () => {
+    const name = newGroup.trim();
+    if (!name) return;
+    onAddGroup(name);
+    setNewGroup(''); setShowGroupInput(false);
+  };
+
+  const commitRenameCat = (idx) => {
+    const item = structure[idx];
+    const name = editingCat.value.trim();
+    setEditingCat(null);
+    if (!name || name === item.name) return;
+    if (categories.map(c => c.toLowerCase()).includes(name.toLowerCase()))
+      return setError('Category already exists.');
+    onRenameCat(item.name, name); setError('');
+  };
+
+  const commitRenameGroup = (id) => {
+    const name = editingGroup.value.trim();
+    setEditingGroup(null);
+    if (!name) return;
+    onRenameGroup(id, name);
+  };
+
+  // Drag-and-drop — dragstart per item, dragover/drop on the container
+  const handleDragStart = (e, idx) => {
+    dragIdxRef.current = idx;
+    setDraggingIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const clearDrag = () => { dragIdxRef.current = null; setDraggingIdx(null); setDragOverIdx(null); };
+
+  // Container-level: compute insert index from mouse Y using bounding rects
+  const getDropIdx = (e) => {
+    const rows = e.currentTarget.querySelectorAll('[data-drag-idx]');
+    for (const row of rows) {
+      const rect = row.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) return parseInt(row.dataset.dragIdx);
+    }
+    return structure.length; // drop at end
+  };
+
+  const handleListDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIdx(getDropIdx(e));
+  };
+
+  const handleListDrop = (e) => {
+    e.preventDefault();
+    const from = dragIdxRef.current;
+    const to   = getDropIdx(e);
+    if (from === null) { clearDrag(); return; }
+
+    const src  = structure[from];
+    let next   = [...structure];
+
+    if (src.kind === 'group') {
+      let end = from + 1;
+      while (end < next.length && next[end].kind === 'cat') end++;
+      const block = next.splice(from, end - from);
+      const adj = to > from ? Math.max(0, to - block.length) : to;
+      next.splice(adj, 0, ...block);
+    } else {
+      const [item] = next.splice(from, 1);
+      const adj = to > from ? to - 1 : to;
+      next.splice(Math.max(0, adj), 0, item);
+    }
+
+    onReorderStructure(next);
+    clearDrag();
+  };
+
+  const handleDragEnd = clearDrag;
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{maxWidth:'480px'}}>
+        <div className="modal-header">
+          <span className="modal-title">Manage Categories</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          {error && <p className="form-error">{error}</p>}
+
+          {/* New group row */}
+          {showGroupInput
+            ? <div className="cat-new-group-row">
+                <input autoFocus placeholder="Group name" value={newGroup}
+                  onChange={e => setNewGroup(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddGroup(); if (e.key === 'Escape') { setShowGroupInput(false); setNewGroup(''); } }} />
+                <button className="btn-primary" onClick={handleAddGroup} disabled={!newGroup.trim()}>Add</button>
+                <button className="btn-secondary" onClick={() => { setShowGroupInput(false); setNewGroup(''); }}>Cancel</button>
+              </div>
+            : <button className="btn-secondary" style={{marginBottom:'8px'}}
+                onClick={() => setShowGroupInput(true)}>+ New Group</button>
+          }
+
+          <div className="cat-list"
+            onDragOver={handleListDragOver}
+            onDrop={handleListDrop}>
+            {structure.map((item, idx) => {
+              const isGroup = item.kind === 'group';
+              const isDragging = draggingIdx === idx;
+
+              if (isGroup) {
+                const isEditingThis = editingGroup?.id === item.id;
+                return (
+                  <React.Fragment key={item.id}>
+                    {dragOverIdx === idx && <div className="drop-line" />}
+                    <div
+                      data-drag-idx={idx}
+                      className={`cat-group-header${isDragging ? ' dragging' : ''}`}
+                      draggable
+                      onDragStart={e => handleDragStart(e, idx)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <span className="drag-handle">⠿</span>
+                      {isEditingThis
+                        ? <input autoFocus className="cat-group-input" value={editingGroup.value}
+                            onChange={e => setEditingGroup(g => ({ ...g, value: e.target.value }))}
+                            onKeyDown={e => { if (e.key === 'Enter') commitRenameGroup(item.id); if (e.key === 'Escape') setEditingGroup(null); }}
+                            onBlur={() => commitRenameGroup(item.id)} />
+                        : <span className="cat-group-label"
+                            onClick={() => setEditingGroup({ id: item.id, value: item.name })}>
+                            {item.name}
+                          </span>
+                      }
+                      {!isEditingThis && (
+                        <button className="cat-btn cat-del" title="Delete group"
+                          onClick={() => onDeleteGroup(item.id)}>×</button>
+                      )}
+                    </div>
+                  </React.Fragment>
+                );
+              }
+
+              // category item
+              const isProtected = PROTECTED_CATS.has(item.name);
+              const isEditingThis = editingCat?.idx === idx;
+              return (
+                <React.Fragment key={`cat-${item.name}-${idx}`}>
+                  {dragOverIdx === idx && <div className="drop-line" />}
+                  <div
+                    data-drag-idx={idx}
+                    className={`cat-row cat-row-indent${isDragging ? ' dragging' : ''}`}
+                    draggable={!isProtected}
+                    onDragStart={e => handleDragStart(e, idx)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    {!isProtected && <span className="drag-handle">⠿</span>}
+                    {isEditingThis
+                      ? <input autoFocus value={editingCat.value}
+                          onChange={e => setEditingCat(c => ({ ...c, value: e.target.value }))}
+                          onKeyDown={e => { if (e.key === 'Enter') commitRenameCat(idx); if (e.key === 'Escape') setEditingCat(null); }}
+                          onBlur={() => commitRenameCat(idx)} />
+                      : <span className="cat-name">
+                          {item.name}
+                          {isProtected && <span className="cat-badge">protected</span>}
+                        </span>
+                    }
+                    {!isEditingThis && !isProtected && (
+                      <div className="cat-budget-wrap">
+                        <span className="cat-budget-symbol">$</span>
+                        <input
+                          type="number"
+                          className="cat-budget-input"
+                          placeholder="budget"
+                          min="0"
+                          step="1"
+                          value={budgets[item.name] ?? ''}
+                          onChange={e => onSetBudget(item.name, e.target.value === '' ? null : parseFloat(e.target.value))}
+                        />
+                      </div>
+                    )}
+                    {!isEditingThis && !isProtected && (
+                      <div className="cat-actions">
+                        <button className="cat-btn" title="Rename"
+                          onClick={() => { setEditingCat({ idx, value: item.name }); setError(''); }}>✏</button>
+                        <button className="cat-btn cat-del" title="Delete"
+                          onClick={() => onDeleteCat(item.name)}>×</button>
+                      </div>
+                    )}
+                  </div>
+                </React.Fragment>
+              );
+            })}
+            {/* Drop indicator at end of list */}
+            {dragOverIdx === structure.length && <div className="drop-line" />}
+          </div>
+
+          <div className="cat-add-row">
+            <input placeholder="New category name" value={newCat}
+              onChange={e => { setNewCat(e.target.value); setError(''); }}
+              onKeyDown={e => e.key === 'Enter' && handleAddCat()} />
+            <button className="btn-primary" onClick={handleAddCat} disabled={!newCat.trim()}>
+              Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+function Summary({ transactions, privacy }) {
+  const budgetTx  = transactions.filter(t => !isExcluded(t));
+  const income    = budgetTx.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+  const expenses  = budgetTx.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+  const balance   = income + expenses;
+  const mask = (val, cls, prefix = '') => privacy
+    ? <span className="s-amount" style={{color:'var(--muted)',letterSpacing:'2px'}}>••••••</span>
+    : <span className={`s-amount ${cls}`}>{prefix}{fmt(val)}</span>;
+  return (
+    <div className="summary">
+      <div className="summary-card">
+        <span className="s-label">Balance</span>
+        {mask(balance, balance >= 0 ? 'pos' : 'neg', balance < 0 ? '−' : '')}
+      </div>
+      <div className="summary-card">
+        <span className="s-label">Income</span>
+        {mask(income, 'pos')}
+      </div>
+      <div className="summary-card">
+        <span className="s-label">Expenses</span>
+        {mask(expenses, 'neg')}
+      </div>
+    </div>
+  );
+}
+
+// ── CategoryCombobox ──────────────────────────────────────────────────────────
+function CategoryCombobox({ value, categories, structure, onChange, autoFocus, onDone, inline }) {
+  const [query, setQuery]       = useState('');
+  const [open, setOpen]         = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const inputRef = useRef(null);
+
+  const displayItems = useMemo(() => {
+    if (query) {
+      return categories
+        .filter(c => c.toLowerCase().includes(query.toLowerCase()))
+        .map(name => ({ type: 'cat', name }));
+    }
+    if (!structure) return categories.map(name => ({ type: 'cat', name }));
+    const items = [];
+    for (const item of structure) {
+      if (item.kind === 'group') {
+        items.push({ type: 'header', name: item.name });
+      } else {
+        items.push({ type: 'cat', name: item.name });
+      }
+    }
+    return items;
+  }, [query, structure, categories]);
+
+  const firstCatIdx = useMemo(() =>
+    displayItems.findIndex(i => i.type === 'cat'),
+    [displayItems]
+  );
+
+  useEffect(() => {
+    setActiveIdx(firstCatIdx >= 0 ? firstCatIdx : 0);
+  }, [query, firstCatIdx]);
+
+  useEffect(() => { if (autoFocus) inputRef.current?.focus(); }, []);
+
+  const select = (cat) => {
+    onChange(cat);
+    setQuery('');
+    setOpen(false);
+    onDone?.();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIdx(i => {
+        let next = i + 1;
+        while (next < displayItems.length && displayItems[next].type === 'header') next++;
+        return next < displayItems.length ? next : i;
+      });
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIdx(i => {
+        let next = i - 1;
+        while (next >= 0 && displayItems[next].type === 'header') next--;
+        return next >= 0 ? next : i;
+      });
+      return;
+    }
+    if ((e.key === 'Tab' || e.key === 'Enter') && open && displayItems.length > 0) {
+      const item = displayItems[activeIdx];
+      if (item && item.type === 'cat') { select(item.name); return; }
+    }
+    if (e.key === 'Escape') { setOpen(false); setQuery(''); inputRef.current?.blur(); }
+  };
+
+  return (
+    <div className={`cat-combo${inline ? ' cat-combo-inline' : ''}`}>
+      <input
+        ref={inputRef}
+        value={open ? query : value}
+        onChange={e => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => { setQuery(''); setOpen(true); }}
+        onBlur={() => setTimeout(() => { setOpen(false); setQuery(''); onDone?.(); }, 150)}
+        onKeyDown={handleKeyDown}
+        placeholder={value}
+      />
+      {open && displayItems.length > 0 && (
+        <div className="cat-dropdown">
+          {displayItems.map((item, i) =>
+            item.type === 'header'
+              ? <div key={`h-${item.name}-${i}`} className="cat-dropdown-header">{item.name}</div>
+              : <button key={item.name}
+                  className={`cat-dropdown-item${i === activeIdx ? ' active' : ''}`}
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => select(item.name)}>
+                  {item.name}
+                </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── AccountCombobox ───────────────────────────────────────────────────────────
+function AccountCombobox({ value, accounts, onChange, placeholder = 'Account' }) {
+  const [query, setQuery]   = useState('');
+  const [open, setOpen]     = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const inputRef = useRef(null);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return q ? accounts.filter(a => a.toLowerCase().includes(q)) : accounts;
+  }, [query, accounts]);
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  const select = (name) => { onChange(name); setQuery(''); setOpen(false); };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return; }
+    if (e.key === 'Tab' && open && filtered.length > 0) { select(filtered[activeIdx] ?? query); return; }
+    if (e.key === 'Escape') { setOpen(false); setQuery(''); inputRef.current?.blur(); }
+  };
+
+  return (
+    <div className="cat-combo">
+      <input
+        ref={inputRef}
+        value={open ? query : value}
+        onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true); }}
+        onFocus={() => { setQuery(''); setOpen(true); }}
+        onBlur={() => setTimeout(() => { setOpen(false); setQuery(''); }, 150)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+      />
+      {open && filtered.length > 0 && (
+        <div className="cat-dropdown">
+          {filtered.map((a, i) => (
+            <button key={a}
+              className={`cat-dropdown-item${i === activeIdx ? ' active' : ''}`}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => select(a)}>
+              {a}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── FilterCombobox ────────────────────────────────────────────────────────────
+function FilterCombobox({ value, options, onChange, allLabel = 'All' }) {
+  const [query, setQuery]   = useState('');
+  const [open, setOpen]     = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const inputRef = useRef(null);
+
+  const allOptions = [allLabel, ...options];
+  const filtered   = query
+    ? allOptions.filter(o => o.toLowerCase().includes(query.toLowerCase()))
+    : allOptions;
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  const select = (val) => { onChange(val); setQuery(''); setOpen(false); };
+
+  const handleBlur = () => setTimeout(() => {
+    setOpen(false);
+    setQuery('');
+  }, 150);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i+1, filtered.length-1)); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIdx(i => Math.max(i-1, 0)); return; }
+    if ((e.key === 'Tab' || e.key === 'Enter') && open && filtered.length > 0) {
+      e.preventDefault(); select(filtered[activeIdx]); return;
+    }
+    if (e.key === 'Escape') { setOpen(false); setQuery(''); inputRef.current?.blur(); }
+  };
+
+  return (
+    <div className="cat-combo">
+      <input
+        ref={inputRef}
+        value={open ? query : value}
+        onChange={e => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => { setQuery(''); setOpen(true); }}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder={allLabel}
+      />
+      {open && filtered.length > 0 && (
+        <div className="cat-dropdown">
+          {filtered.map((o, i) => (
+            <button key={o}
+              className={`cat-dropdown-item${i === activeIdx ? ' active' : ''}`}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => select(o)}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── TagInput ──────────────────────────────────────────────────────────────────
+function TagInput({ value = [], onChange, allTags = [] }) {
+  const [input, setInput] = useState('');
+  const [open, setOpen]   = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const inputRef = useRef(null);
+
+  const suggestions = allTags.filter(t =>
+    !value.includes(t) && t.toLowerCase().includes(input.toLowerCase())
+  );
+
+  useEffect(() => { setActiveIdx(0); }, [input]);
+
+  const add = (tag) => {
+    const t = tag.trim().toLowerCase();
+    if (t && !value.includes(t)) onChange([...value, t]);
+    setInput(''); setOpen(false);
+  };
+
+  const remove = (tag) => onChange(value.filter(t => t !== tag));
+
+  const handleKeyDown = (e) => {
+    if ((e.key === 'Enter' || e.key === ',') && input.trim()) { e.preventDefault(); add(open && suggestions[activeIdx] ? suggestions[activeIdx] : input); return; }
+    if (e.key === 'Tab' && open && suggestions.length > 0)    { e.preventDefault(); add(suggestions[activeIdx] ?? input); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i+1, suggestions.length-1)); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIdx(i => Math.max(i-1, 0)); return; }
+    if (e.key === 'Backspace' && !input && value.length > 0)  { remove(value[value.length-1]); return; }
+    if (e.key === 'Escape') { setOpen(false); setInput(''); }
+  };
+
+  return (
+    <div className="tag-input-wrap" onClick={() => inputRef.current?.focus()}>
+      {value.map(tag => (
+        <span key={tag} className="tag-pill-input">
+          {tag}
+          <button type="button" onClick={e => { e.stopPropagation(); remove(tag); }}>×</button>
+        </span>
+      ))}
+      <div className="tag-combo-input">
+        <input
+          ref={inputRef}
+          value={input}
+          placeholder={value.length === 0 ? 'Add tags…' : ''}
+          onChange={e => { setInput(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => { setOpen(false); setInput(''); }, 150)}
+          onKeyDown={handleKeyDown}
+        />
+        {open && suggestions.length > 0 && (
+          <div className="cat-dropdown">
+            {suggestions.map((s, i) => (
+              <button key={s}
+                className={`cat-dropdown-item${i === activeIdx ? ' active' : ''}`}
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => add(s)}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── AddTransaction ────────────────────────────────────────────────────────────
+const EMPTY = { description:'', amount:'', category:'Other', date:today(), type:'expense', accountName:'', merchant:'', tags:[] };
+
+function AddTransaction({ onAdd, categories, structure, transactions, accounts, allTags }) {
+  const [form, setForm] = useState(EMPTY);
+  const [error, setError] = useState('');
+  const [categoryLocked, setCategoryLocked] = useState(false);
+  const [suggestedCat, setSuggestedCat] = useState(null);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  useEffect(() => {
+    const text = form.merchant.trim() || form.description.trim();
+    if (!text) {
+      setCategoryLocked(false);
+      setSuggestedCat(null);
+      return;
+    }
+    if (categoryLocked) return;
+    const guess = guessCategory(text, transactions);
+    if (guess) {
+      setSuggestedCat(guess);
+      setForm(f => ({ ...f, category: guess }));
+    } else {
+      setSuggestedCat(null);
+    }
+  }, [form.merchant, form.description]);
+
+  const handleCategoryChange = (v) => {
+    setCategoryLocked(true);
+    setSuggestedCat(null);
+    set('category', v);
+  };
+
+  const submit = (e) => {
+    e.preventDefault(); setError('');
+    const amt = parseFloat(form.amount);
+    if (!form.merchant.trim() && !form.description.trim()) return setError('Merchant or description is required.');
+    if (isNaN(amt) || amt <= 0)  return setError('Enter a valid positive amount.');
+    onAdd({
+      id: crypto.randomUUID(),
+      description: form.description.trim(),
+      amount: form.type === 'expense' ? -amt : amt,
+      category: form.category,
+      date: form.date,
+      accountName: form.accountName,
+      merchant: form.merchant.trim(),
+      tags: form.tags,
+      cleared: false,
+    });
+    setForm(f => ({ ...EMPTY, type: f.type, date: f.date, category: f.category, accountName: f.accountName }));
+    setCategoryLocked(false);
+    setSuggestedCat(null);
+  };
+
+  return (
+    <form className="add-form" onSubmit={submit}>
+      <h2 className="section-title">Add Transaction</h2>
+      <div className="type-toggle">
+        {['expense','income'].map(t => (
+          <button key={t} type="button"
+            className={`type-btn ${form.type === t ? `active-${t}` : ''}`}
+            onClick={() => set('type', t)}>
+            {t === 'expense' ? '− Expense' : '+ Income'}
+          </button>
+        ))}
+      </div>
+      <div className="form-grid">
+        <input className="f-merchant" placeholder="Merchant"
+          value={form.merchant} onChange={e => set('merchant', e.target.value)} />
+        <input className="f-desc" placeholder="Description (optional)"
+          value={form.description} onChange={e => set('description', e.target.value)} />
+        <div className="f-account" style={{display:'flex',alignItems:'center',gap:'6px'}}>
+          <AccountCombobox
+            value={form.accountName}
+            accounts={accounts}
+            onChange={v => set('accountName', v)}
+          />
+          {form.accountName && (
+            <button type="button" className="field-clear-btn" onClick={() => set('accountName', '')} title="Clear account">×</button>
+          )}
+        </div>
+        <input className="f-amount" type="number" placeholder="0.00" min="0" step="0.01"
+          value={form.amount} onChange={e => set('amount', e.target.value)} />
+        <div className="cat-field">
+          <CategoryCombobox
+            value={form.category}
+            categories={categories}
+            structure={structure}
+            onChange={handleCategoryChange}
+          />
+          {suggestedCat && <span className="cat-suggest-hint">from history</span>}
+        </div>
+        <input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+        <button className="add-btn" type="submit">Add</button>
+      </div>
+      <TagInput value={form.tags} onChange={tags => set('tags', tags)} allTags={allTags} />
+      {error && <p className="form-error">{error}</p>}
+    </form>
+  );
+}
+
+// ── EditTransactionModal ──────────────────────────────────────────────────────
+function EditTransactionModal({ t, categories, structure, accounts, allTags, onSave, onClose }) {
+  const [form, setForm] = useState({
+    description: t.description,
+    amount:      String(Math.abs(t.amount)),
+    category:    t.category,
+    date:        t.date,
+    type:        t.amount >= 0 ? 'income' : 'expense',
+    accountName: t.accountName || '',
+    merchant:    t.merchant || '',
+    tags:        t.tags || [],
+  });
+  const [error, setError] = useState('');
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(form.amount);
+    if (!form.description.trim()) return setError('Description is required.');
+    if (isNaN(amt) || amt <= 0)   return setError('Enter a valid positive amount.');
+    onSave({
+      description: form.description.trim(),
+      amount:      form.type === 'expense' ? -amt : amt,
+      category:    form.category,
+      date:        form.date,
+      accountName: form.accountName,
+      merchant:    form.merchant.trim(),
+      tags:        form.tags,
+    });
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{maxWidth:'440px'}}>
+        <div className="modal-header">
+          <span className="modal-title">Edit Transaction</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <form onSubmit={submit}>
+          <div className="modal-body" style={{gap:'10px'}}>
+            <div className="type-toggle">
+              {['expense','income'].map(tp => (
+                <button key={tp} type="button"
+                  className={`type-btn ${form.type === tp ? `active-${tp}` : ''}`}
+                  onClick={() => set('type', tp)}>
+                  {tp === 'expense' ? '− Expense' : '+ Income'}
+                </button>
+              ))}
+            </div>
+            <input autoFocus placeholder="Description" value={form.description}
+              onChange={e => set('description', e.target.value)} />
+            <input placeholder="Merchant (optional)" value={form.merchant}
+              onChange={e => set('merchant', e.target.value)} />
+            <input type="number" placeholder="0.00" min="0" step="0.01"
+              value={form.amount} onChange={e => set('amount', e.target.value)} />
+            <CategoryCombobox
+              value={form.category} categories={categories} structure={structure}
+              onChange={v => set('category', v)} />
+            <input type="date" value={form.date}
+              onChange={e => set('date', e.target.value)} />
+            <AccountCombobox
+              value={form.accountName}
+              accounts={accounts}
+              onChange={v => set('accountName', v)}
+              placeholder="Account (optional)"
+            />
+            <TagInput value={form.tags} onChange={tags => set('tags', tags)} allTags={allTags || []} />
+            {error && <p className="form-error">{error}</p>}
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── TransactionRow ────────────────────────────────────────────────────────────
+function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, categories, structure, privacy, accounts, allTags }) {
+  const [editingCat, setEditingCat] = useState(false);
+  const [showEdit, setShowEdit]         = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleCatChange = (newCat) => {
+    const wasTransfer = t.category === TRANSFER_CAT;
+    const isTransfer  = newCat === TRANSFER_CAT;
+    if (wasTransfer && !isTransfer && t.transferId) onUnlink(t.id);
+    onEdit(t.id, { category: newCat });
+    if (isTransfer && !wasTransfer) onRequestLink(t.id);
+    setEditingCat(false);
+  };
+
+  return (
+    <>
+    <div className={`tx-row ${t.category === TRANSFER_CAT ? 'tx-transfer' : t.amount >= 0 ? 'tx-income' : 'tx-expense'}`}>
+      <div className="tx-accent" />
+      <div className="tx-body">
+        <div className="tx-top">
+          <div className="tx-desc-wrap">
+            <span className="tx-desc">{t.description}</span>
+            {t.merchant && <span className="tx-merchant">{t.merchant}</span>}
+          </div>
+          <span className={`tx-amount ${privacy ? '' : t.amount >= 0 ? 'pos' : 'neg'}`}
+            style={privacy ? {color:'var(--muted)',letterSpacing:'2px'} : {}}>
+            {privacy ? '••••••' : `${t.amount >= 0 ? '+' : '−'}${fmt(t.amount)}`}
+          </span>
+        </div>
+        <div className="tx-meta">
+          {t.txNum && <span className="tx-id">#{t.txNum}</span>}
+          <span className="tx-date">{t.date}</span>
+          {t.accountName && <span className="tx-acct">{t.accountName}</span>}
+          {editingCat
+            ? <CategoryCombobox
+                value={t.category}
+                categories={categories}
+                structure={structure}
+                onChange={handleCatChange}
+                autoFocus
+                onDone={() => setEditingCat(false)}
+                inline
+              />
+            : <button className="cat-pill" onClick={() => setEditingCat(true)} title="Edit category">
+                {t.category}
+              </button>
+          }
+          {t.transferId && <span className="linked-badge">↔ linked</span>}
+        </div>
+        {t.tags?.length > 0 && (
+          <div className="tx-tags">
+            {t.tags.map(tag => <span key={tag} className="tx-tag">{tag}</span>)}
+          </div>
+        )}
+      </div>
+      <button className="edit-btn" onClick={() => setShowEdit(true)} title="Edit">✏</button>
+      <button
+        className={`cleared-btn${t.cleared ? ' is-cleared' : ''}`}
+        onClick={() => onEdit(t.id, { cleared: !t.cleared })}
+        title={t.cleared ? 'Cleared — click to unmark' : 'Uncleared — click to mark cleared'}
+      >{t.cleared ? '●' : '○'}</button>
+      {confirmDelete
+        ? <>
+            <button className="del-confirm-yes" onClick={() => onDelete(t.id)}>Delete</button>
+            <button className="del-confirm-no"  onClick={() => setConfirmDelete(false)}>Cancel</button>
+          </>
+        : <button className="del-btn" onClick={() => setConfirmDelete(true)} title="Delete">×</button>
+      }
+    </div>
+    {showEdit && (
+      <EditTransactionModal
+        t={t}
+        categories={categories}
+        structure={structure}
+        accounts={accounts || []}
+        allTags={allTags || []}
+        onSave={patch => onEdit(t.id, patch)}
+        onClose={() => setShowEdit(false)}
+      />
+    )}
+    </>
+  );
+}
+
+// ── TransactionList ───────────────────────────────────────────────────────────
+function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnlink, categories, structure, privacy }) {
+  const [search, setSearch]   = useState('');
+  const [catFilter, setCat]   = useState('All categories');
+  const [typeFilter, setType] = useState('All types');
+  const [acctFilter, setAcct] = useState('All accounts');
+
+  const accounts = useMemo(() => {
+    const names = [...new Set(transactions.map(t => t.accountName).filter(Boolean))].sort();
+    return names;
+  }, [transactions]);
+
+  const allTags = useMemo(() => {
+    const tags = new Set(transactions.flatMap(t => t.tags || []));
+    return [...tags].sort();
+  }, [transactions]);
+
+  const filtered = useMemo(() =>
+    [...transactions]
+      .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+      .filter(t => {
+        const q = search.toLowerCase();
+        const matchSearch = !q
+          || t.description.toLowerCase().includes(q)
+          || (t.merchant && t.merchant.toLowerCase().includes(q))
+          || t.date.includes(q)
+          || t.category.toLowerCase().includes(q)
+          || (t.accountName && t.accountName.toLowerCase().includes(q))
+          || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(q)))
+          || String(Math.abs(t.amount)).includes(q)
+          || (t.txNum && String(t.txNum).includes(q.replace(/^#/, '')));
+        const matchCat    = catFilter === 'All categories' || catFilter === 'All' || t.category === catFilter;
+        const matchAcct   = acctFilter === 'All accounts'  || acctFilter === 'All' || t.accountName === acctFilter;
+        const matchType   = typeFilter === 'All types'     || typeFilter === 'All'
+          || (typeFilter === 'Income'  && t.amount > 0)
+          || (typeFilter === 'Expense' && t.amount < 0);
+        return matchSearch && matchCat && matchAcct && matchType;
+      }),
+    [transactions, search, catFilter, acctFilter, typeFilter]
+  );
+
+  return (
+    <div className="tx-section">
+      <div className="tx-header">
+        <h2 className="section-title">Transactions</h2>
+        <span className="tx-count">{filtered.length} of {transactions.length}</span>
+      </div>
+      <div className="filters">
+        <div className="filter-wrap" style={{flex:2,minWidth:'180px'}}>
+          <input className="search-input" style={{width:'100%'}} placeholder="Search…"
+            value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <button className="filter-clear" onClick={() => setSearch('')}>×</button>}
+        </div>
+        {accounts.length > 0 && (
+          <div className="filter-wrap">
+            <FilterCombobox value={acctFilter} options={accounts} onChange={setAcct} allLabel="All accounts" />
+            {acctFilter !== 'All accounts' && <button className="filter-clear" onClick={() => setAcct('All accounts')}>×</button>}
+          </div>
+        )}
+        <div className="filter-wrap">
+          <FilterCombobox value={catFilter} options={categories} onChange={setCat} allLabel="All categories" />
+          {catFilter !== 'All categories' && <button className="filter-clear" onClick={() => setCat('All categories')}>×</button>}
+        </div>
+        <div className="filter-wrap">
+          <FilterCombobox value={typeFilter} options={['Income','Expense']} onChange={setType} allLabel="All types" />
+          {typeFilter !== 'All types' && <button className="filter-clear" onClick={() => setType('All types')}>×</button>}
+        </div>
+        {(search || acctFilter !== 'All accounts' || catFilter !== 'All categories' || typeFilter !== 'All types') && (
+          <button className="filter-reset" onClick={() => { setSearch(''); setAcct('All accounts'); setCat('All categories'); setType('All types'); }}>
+            Reset all
+          </button>
+        )}
+      </div>
+      {filtered.length === 0
+        ? <p className="empty">No transactions match your filters.</p>
+        : filtered.map(t => (
+            <TransactionRow key={t.id} t={t} onDelete={onDelete} onEdit={onEdit}
+              onRequestLink={onRequestLink} onUnlink={onUnlink}
+              categories={categories} structure={structure} privacy={privacy} accounts={accounts} allTags={allTags} />
+          ))
+      }
+    </div>
+  );
+}
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+function exportCSV(transactions) {
+  const cols = ['txNum','date','merchant','description','amount','category','accountName','transferId','cleared','tags'];
+  const escape = (v) => {
+    const s = String(v ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const rows = [...transactions]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(t => cols.map(c => c === 'tags' ? escape((t.tags || []).join(';')) : escape(t[c])).join(','));
+  return [cols.join(','), ...rows].join('\n');
+}
+
+// ── TransferLinker ────────────────────────────────────────────────────────────
+function TransferLinker({ sourceTx, transactions, onLink, onClose }) {
+  const candidates = useMemo(() => {
+    const sourceAbs  = Math.abs(sourceTx.amount);
+    const sourceDate = new Date(sourceTx.date);
+    return transactions
+      .filter(t =>
+        t.id !== sourceTx.id &&
+        !t.transferId &&
+        Math.abs(Math.abs(t.amount) - sourceAbs) < 0.01
+      )
+      .sort((a, b) =>
+        Math.abs(new Date(a.date) - sourceDate) - Math.abs(new Date(b.date) - sourceDate)
+      )
+      .slice(0, 25);
+  }, [sourceTx, transactions]);
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{maxWidth:'560px'}}>
+        <div className="modal-header">
+          <span className="modal-title">Link Transfer Counterpart</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div>
+            <p className="block-title">Linking from</p>
+            <div className="link-source-card">
+              <div className="lc-left">
+                <span className="lc-desc">{sourceTx.description}</span>
+                <span className="lc-meta">{sourceTx.date}{sourceTx.accountName && ` · ${sourceTx.accountName}`}</span>
+              </div>
+              <span className={`lc-amt ${sourceTx.amount >= 0 ? 'pos' : 'neg'}`}>
+                {sourceTx.amount >= 0 ? '+' : '−'}{fmt(sourceTx.amount)}
+              </span>
+            </div>
+          </div>
+          <div>
+            <p className="block-title">Select the matching transaction</p>
+            {candidates.length === 0
+              ? <p className="empty" style={{padding:'20px 0'}}>
+                  No transactions with a matching amount found.<br/>
+                  The transfer is saved — you can link it later by re-selecting the category.
+                </p>
+              : <div className="link-candidates">
+                  {candidates.map(t => (
+                    <button key={t.id} className="link-candidate" onClick={() => onLink(sourceTx.id, t.id)}>
+                      <div className="lc-left">
+                        <span className="lc-desc">{t.description}</span>
+                        <span className="lc-meta">{t.date}{t.accountName && ` · ${t.accountName}`}</span>
+                      </div>
+                      <span className={`lc-amt ${t.amount >= 0 ? 'pos' : 'neg'}`}>
+                        {t.amount >= 0 ? '+' : '−'}{fmt(t.amount)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+            }
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Skip for now</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Dashboard helpers ─────────────────────────────────────────────────────────
+const CAT_PALETTE = [
+  '#2563eb','#16a34a','#dc2626','#d97706','#7c3aed',
+  '#0891b2','#be185d','#65a30d','#ea580c','#6366f1',
+];
+
+const RANGES = [
+  { key:'month',      label:'This Month'  },
+  { key:'last-month', label:'Last Month'  },
+  { key:'3m',         label:'3 Months'    },
+  { key:'6m',         label:'6 Months'    },
+  { key:'year',       label:'This Year'   },
+  { key:'all',        label:'All Time'    },
+];
+
+function getDateRange(key) {
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth();
+  const iso = (d) => d.toISOString().split('T')[0];
+  if (key === 'month')      return { start: `${y}-${String(mo+1).padStart(2,'0')}-01`, end: null };
+  if (key === 'last-month') return { start: iso(new Date(y,mo-1,1)), end: iso(new Date(y,mo,0)) };
+  if (key === '3m')         return { start: iso(new Date(y,mo-2,1)), end: null };
+  if (key === '6m')         return { start: iso(new Date(y,mo-5,1)), end: null };
+  if (key === 'year')       return { start: `${y}-01-01`, end: null };
+  return { start: null, end: null };
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function Dashboard({ transactions, privacy, budgets, onReconcile }) {
+  const [range, setRange] = useState('month');
+
+  const { start, end } = useMemo(() => getDateRange(range), [range]);
+
+  const filtered = useMemo(() =>
+    transactions.filter(t =>
+      !isExcluded(t) &&
+      (!start || t.date >= start) &&
+      (!end   || t.date <= end)
+    ), [transactions, start, end]);
+
+  // Account balances include ALL transaction types (transfers + reconciliations matter per-account)
+  const accountSummaries = useMemo(() => {
+    const map = {};
+    for (const t of transactions) {
+      const key = t.accountName || 'Manual';
+      if (!map[key]) map[key] = { in: 0, out: 0, lastDate: '' };
+      if (t.amount > 0) map[key].in  += t.amount;
+      else              map[key].out += Math.abs(t.amount);
+      if (t.date > map[key].lastDate) map[key].lastDate = t.date;
+    }
+    return Object.entries(map)
+      .map(([name, d]) => ({ name, balance: d.in - d.out, in: d.in, out: d.out, lastDate: d.lastDate }))
+      .sort((a,b) => b.balance - a.balance);
+  }, [transactions]);
+
+  const income   = filtered.filter(t => t.amount > 0).reduce((s,t) => s + t.amount, 0);
+  const expenses = filtered.filter(t => t.amount < 0).reduce((s,t) => s + t.amount, 0);
+  const net      = income + expenses;
+
+  const catBreakdown = useMemo(() => {
+    const map = {};
+    for (const t of filtered.filter(t => t.amount < 0))
+      map[t.category] = (map[t.category] || 0) + Math.abs(t.amount);
+    return Object.entries(map).sort((a,b) => b[1] - a[1]);
+  }, [filtered]);
+
+  const totalExp = catBreakdown.reduce((s,[,v]) => s + v, 0);
+
+  const budgetMonths = { month:1, 'last-month':1, '3m':3, '6m':6, year:12 }[range] ?? null;
+
+  const monthlyData = useMemo(() => {
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return {
+        key:   `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+        label: d.toLocaleDateString('en-US', { month: 'short' }),
+        income: 0, expenses: 0,
+      };
+    });
+    for (const t of transactions.filter(t => !isExcluded(t))) {
+      const m = months.find(m => m.key === t.date.slice(0,7));
+      if (!m) continue;
+      if (t.amount > 0) m.income   += t.amount;
+      else              m.expenses += Math.abs(t.amount);
+    }
+    return months;
+  }, [transactions]);
+
+  const maxBar = Math.max(...monthlyData.flatMap(m => [m.income, m.expenses]), 1);
+
+  const mask = (n, sign = false) => {
+    if (privacy) return <span style={{color:'var(--muted)',letterSpacing:'2px'}}>••••••</span>;
+    return <>{sign && n < 0 ? '−' : ''}{fmt(n)}</>;
+  };
+
+  return (
+    <div className="dashboard">
+      <div className="range-tabs">
+        {RANGES.map(r => (
+          <button key={r.key} className={`range-tab ${range === r.key ? 'active' : ''}`}
+            onClick={() => setRange(r.key)}>{r.label}</button>
+        ))}
+      </div>
+
+      {accountSummaries.length > 0 && (
+        <div className="dash-card">
+          <p className="dash-title">Accounts — All Time</p>
+          <div className="acct-grid">
+            {accountSummaries.map(a => (
+              <div key={a.name} className="acct-card">
+                <span className="acct-name">{a.name}</span>
+                <span className={`acct-balance ${a.balance >= 0 ? 'pos' : 'neg'}`}>
+                  {privacy ? '••••••' : `${a.balance < 0 ? '−' : ''}${fmt(a.balance)}`}
+                </span>
+                <div className="acct-sub">
+                  <span className="pos">{privacy ? '•••' : `+${fmt(a.in)}`}</span>
+                  <span className="acct-divider">·</span>
+                  <span className="neg">{privacy ? '•••' : `−${fmt(a.out)}`}</span>
+                </div>
+                {a.lastDate && (
+                  <span className="acct-last-date">Last: {a.lastDate}</span>
+                )}
+                <button className="acct-reconcile-btn" onClick={() => onReconcile(a)}>
+                  ⚖ Reconcile
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="summary">
+        <div className="summary-card">
+          <span className="s-label">Income</span>
+          <span className="s-amount pos">{mask(income)}</span>
+        </div>
+        <div className="summary-card">
+          <span className="s-label">Expenses</span>
+          <span className="s-amount neg">{mask(expenses)}</span>
+        </div>
+        <div className="summary-card">
+          <span className="s-label">Net</span>
+          <span className={`s-amount ${net >= 0 ? 'pos' : 'neg'}`}>{mask(net, true)}</span>
+        </div>
+      </div>
+
+      <div className="dash-card">
+        <p className="dash-title">Spending by Category</p>
+        {catBreakdown.length === 0
+          ? <p className="empty" style={{padding:'16px 0'}}>No expense data for this period.</p>
+          : catBreakdown.map(([cat, amt], i) => {
+              const monthlyBudget = budgets[cat];
+              const periodBudget  = monthlyBudget && budgetMonths ? monthlyBudget * budgetMonths : null;
+
+              if (periodBudget) {
+                const usedPct  = (amt / periodBudget) * 100;
+                const barPct   = Math.min(usedPct, 100);
+                const isOver   = amt > periodBudget;
+                const isWarn   = !isOver && usedPct >= 80;
+                const barColor = isOver ? 'var(--neg)' : isWarn ? '#d97706' : 'var(--pos)';
+                const diff     = Math.abs(periodBudget - amt);
+                return (
+                  <div key={cat} className="cat-bar-row">
+                    <span className="cat-bar-label">{cat}</span>
+                    <div className="cat-bar-track">
+                      <div className="cat-bar-fill" style={{width:`${barPct}%`, background:barColor}} />
+                    </div>
+                    <span className="cat-bar-amt">{mask(amt)}</span>
+                    <span className={`budget-indicator ${isOver ? 'budget-over' : isWarn ? 'budget-warn' : 'budget-under'}`}>
+                      {privacy ? '••••' : isOver ? `Over ${fmt(diff)}` : `${fmt(diff)} left`}
+                    </span>
+                  </div>
+                );
+              }
+
+              const pct = totalExp > 0 ? (amt / totalExp) * 100 : 0;
+              return (
+                <div key={cat} className="cat-bar-row">
+                  <span className="cat-bar-label">{cat}</span>
+                  <div className="cat-bar-track">
+                    <div className="cat-bar-fill"
+                      style={{width:`${pct}%`, background: CAT_PALETTE[i % CAT_PALETTE.length]}} />
+                  </div>
+                  <span className="cat-bar-pct">{pct.toFixed(0)}%</span>
+                  <span className="cat-bar-amt">{mask(amt)}</span>
+                </div>
+              );
+            })
+        }
+      </div>
+
+      <div className="dash-card">
+        <p className="dash-title">Monthly Trend</p>
+        <div className="monthly-chart">
+          {monthlyData.map(m => (
+            <div key={m.key} className="month-col">
+              <div className="month-bars">
+                <div className="month-bar-wrap">
+                  <div className="month-bar income-bar"
+                    style={{height:`${(m.income / maxBar) * 100}%`}} />
+                </div>
+                <div className="month-bar-wrap">
+                  <div className="month-bar expense-bar"
+                    style={{height:`${(m.expenses / maxBar) * 100}%`}} />
+                </div>
+              </div>
+              <span className="month-label">{m.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="chart-legend">
+          <span className="legend-dot" style={{background:'var(--pos)'}} />
+          <span className="legend-label">Income</span>
+          <span className="legend-gap" />
+          <span className="legend-dot" style={{background:'var(--neg)'}} />
+          <span className="legend-label">Expenses</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ReconcileModal ────────────────────────────────────────────────────────────
+function ReconcileModal({ account, onConfirm, onClose }) {
+  const [actual, setActual] = useState('');
+
+  const parsed = actual !== '' ? parseFloat(actual) : null;
+  const diff   = parsed !== null && !isNaN(parsed) ? parsed - account.balance : null;
+  const balanced = diff !== null && Math.abs(diff) < 0.005;
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{maxWidth:'360px'}}>
+        <div className="modal-header">
+          <span className="modal-title">Reconcile — {account.name}</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body" style={{gap:'14px'}}>
+          <div className="setting-row">
+            <span className="setting-label">Calculated balance</span>
+            <span className={`s-amount ${account.balance >= 0 ? 'pos' : 'neg'}`} style={{fontSize:'15px'}}>
+              {account.balance < 0 ? '−' : ''}{fmt(account.balance)}
+            </span>
+          </div>
+          <div className="setting-row">
+            <span className="setting-label">Actual balance</span>
+            <input type="number" placeholder="e.g. −72.00" step="0.01"
+              value={actual} onChange={e => setActual(e.target.value)}
+              style={{width:'140px'}} autoFocus />
+          </div>
+          {balanced && (
+            <p style={{color:'var(--pos)', fontSize:'13px'}}>✓ Already balanced — no adjustment needed.</p>
+          )}
+          {diff !== null && !balanced && (
+            <p className="muted-note">
+              Adjustment: <strong style={{color: diff > 0 ? 'var(--pos)' : 'var(--neg)'}}>
+                {diff > 0 ? '+' : '−'}{fmt(diff)}
+              </strong> will be added as a Reconciliation transaction.
+            </p>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary"
+            disabled={diff === null || balanced}
+            onClick={() => { onConfirm(account.name, diff); onClose(); }}>
+            Create Adjustment
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SettingsModal ─────────────────────────────────────────────────────────────
+function SettingsModal({ theme, onThemeChange, onManageCategories, onImportSettings, onTruncate, transactions, onClose }) {
+  const fileRef = useRef(null);
+  const [truncateDate, setTruncateDate] = useState('');
+  const [confirming, setConfirming]     = useState(false);
+
+  const truncateCount = truncateDate
+    ? transactions.filter(t => t.date < truncateDate).length
+    : 0;
+
+  const handleTruncate = () => {
+    onTruncate(truncateDate);
+    setTruncateDate('');
+    setConfirming(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{maxWidth:'400px'}}>
+        <div className="modal-header">
+          <span className="modal-title">Settings</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="setting-section">
+            <p className="block-title">Appearance</p>
+            <div className="setting-row">
+              <span className="setting-label">Theme</span>
+              <div className="theme-toggle">
+                {[['light','☀ Light'],['dark','◑ Dark']].map(([val, lbl]) => (
+                  <button key={val} className={`theme-btn ${theme === val ? 'active' : ''}`}
+                    onClick={() => onThemeChange(val)}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="setting-section">
+            <p className="block-title">Categories</p>
+            <button className="btn-secondary" onClick={onManageCategories}>Manage Categories →</button>
+          </div>
+
+          <div className="setting-section">
+            <p className="block-title">Truncate Data</p>
+            <p className="muted-note" style={{marginBottom:'10px'}}>
+              Permanently delete all transactions before a chosen date.
+            </p>
+            <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+              <input type="date" value={truncateDate}
+                onChange={e => { setTruncateDate(e.target.value); setConfirming(false); }}
+                style={{flex:1}} />
+              <button className="btn-secondary"
+                disabled={!truncateDate || truncateCount === 0}
+                onClick={() => setConfirming(true)}>
+                Truncate
+              </button>
+            </div>
+            {truncateDate && truncateCount === 0 && (
+              <p className="muted-note" style={{marginTop:'8px'}}>No transactions before this date.</p>
+            )}
+            {confirming && truncateCount > 0 && (
+              <div className="truncate-confirm">
+                <p>Delete <strong>{truncateCount} transaction{truncateCount !== 1 ? 's' : ''}</strong> before {truncateDate}? This cannot be undone.</p>
+                <div style={{display:'flex', gap:'8px', marginTop:'10px'}}>
+                  <button className="btn-secondary" onClick={() => setConfirming(false)}>Cancel</button>
+                  <button className="btn-danger" onClick={handleTruncate}>Yes, Delete</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="setting-section">
+            <p className="block-title">Backup</p>
+            <div className="setting-actions">
+              <button className="btn-secondary" onClick={() => fileRef.current.click()}>↑ Import Settings</button>
+              <input ref={fileRef} type="file" accept=".json" style={{display:'none'}}
+                onChange={e => { onImportSettings(e.target.files[0]); e.target.value = ''; }} />
+            </div>
+            <p className="muted-note" style={{marginTop:'8px'}}>
+              Saves theme, categories, and import preferences. Does not include transactions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Planning ──────────────────────────────────────────────────────────────────
+function PlanBudgetCell({ budget, privacy, onSet }) {
+  const [editing, setEditing] = useState(false);
+  const [raw, setRaw]         = useState('');
+  const inputRef              = useRef(null);
+
+  const open = () => {
+    setRaw(budget ? String(budget) : '');
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  };
+
+  const commit = () => {
+    const v = parseFloat(raw);
+    onSet(isNaN(v) || v <= 0 ? null : v);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="number" className="plan-budget-input plan-budget-input--editing"
+        min="0" step="1" placeholder="0"
+        value={raw}
+        onChange={e => setRaw(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
+      />
+    );
+  }
+
+  return (
+    <button className={`plan-budget-display ${!budget ? 'plan-budget-empty' : ''}`} onClick={open} title="Click to edit">
+      {privacy ? '••••••' : budget ? fmt(budget) : 'Set budget'}
+    </button>
+  );
+}
+
+function Planning({ transactions, budgets, onSetBudget, categories, structure, onReorderStructure, privacy }) {
+  const now = new Date();
+  const [year, setYear]   = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+
+  const planDragIdxRef  = useRef(null);
+  const [planDragging, setPlanDragging] = useState(null);
+
+  const planClearDrag = () => { planDragIdxRef.current = null; setPlanDragging(null); };
+
+  const planGetDropIdx = (e) => {
+    const rows = e.currentTarget.querySelectorAll('[data-drag-idx]');
+    for (const row of rows) {
+      const rect = row.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) return parseInt(row.dataset.dragIdx);
+    }
+    return structure.length;
+  };
+
+  const planDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
+
+  const planDrop = (e) => {
+    e.preventDefault();
+    const from = planDragIdxRef.current;
+    const to   = planGetDropIdx(e);
+    if (from === null) { planClearDrag(); return; }
+    const src  = structure[from];
+    let next   = [...structure];
+    if (src.kind === 'group') {
+      let end = from + 1;
+      while (end < next.length && next[end].kind === 'cat') end++;
+      const block = next.splice(from, end - from);
+      const adj = to > from ? Math.max(0, to - block.length) : to;
+      next.splice(adj, 0, ...block);
+    } else {
+      const [item] = next.splice(from, 1);
+      const adj = to > from ? to - 1 : to;
+      next.splice(Math.max(0, adj), 0, item);
+    }
+    onReorderStructure(next);
+    planClearDrag();
+  };
+
+  const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const monthLabel = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+  const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
+  const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
+
+  const monthTx = useMemo(() =>
+    transactions.filter(t => !isExcluded(t) && t.date.startsWith(monthKey)),
+    [transactions, monthKey]
+  );
+
+  const spending = useMemo(() => {
+    const map = {};
+    for (const t of monthTx.filter(t => t.amount < 0))
+      map[t.category] = (map[t.category] || 0) + Math.abs(t.amount);
+    return map;
+  }, [monthTx]);
+
+  const income = useMemo(() => monthTx.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0), [monthTx]);
+
+  const planCats = categories.filter(c => !PROTECTED_CATS.has(c));
+  const budgetedCats = planCats.filter(c => budgets[c]);
+  const unbudgetedCats = planCats.filter(c => !budgets[c] && spending[c]);
+
+  const totalBudgeted = budgetedCats.reduce((s, c) => s + (budgets[c] || 0), 0);
+  const totalSpent    = budgetedCats.reduce((s, c) => s + (spending[c] || 0), 0);
+  const totalDelta    = totalBudgeted - totalSpent;
+
+  const mask = (n) => privacy ? '••••••' : fmt(n);
+
+  const renderRow = (cat, structureIdx) => {
+    const budget  = budgets[cat] || 0;
+    const spent   = spending[cat] || 0;
+    const hasBudget = budget > 0;
+    const pct     = hasBudget ? Math.min((spent / budget) * 100, 100) : 0;
+    const isOver  = hasBudget && spent > budget;
+    const isWarn  = hasBudget && !isOver && pct >= 80;
+    const barColor = isOver ? 'var(--neg)' : isWarn ? '#d97706' : 'var(--pos)';
+    const delta   = hasBudget ? budget - spent : null;
+    const isDragging = planDragging === structureIdx;
+
+    return (
+      <div key={cat}
+        className={`plan-row plan-cols${!hasBudget ? ' plan-unbudgeted' : ''}${isDragging ? ' dragging' : ''}`}
+        data-drag-idx={structureIdx}
+        draggable
+        onDragStart={e => { planDragIdxRef.current = structureIdx; setPlanDragging(structureIdx); e.dataTransfer.effectAllowed = 'move'; }}
+        onDragEnd={planClearDrag}
+      >
+        <span className="drag-handle">⠿</span>
+        <span className="plan-cat-name">{cat}</span>
+        <PlanBudgetCell budget={budget} privacy={privacy} onSet={v => onSetBudget(cat, v)} />
+        <span className={`plan-spent ${spent > 0 ? 'neg' : ''}`}>
+          {spent > 0 ? (privacy ? '••••••' : fmt(spent)) : '—'}
+        </span>
+        <span className={`plan-delta ${delta === null ? '' : delta < 0 ? 'budget-over' : delta === 0 ? '' : 'budget-under'}`}>
+          {delta === null ? '—'
+            : privacy ? '••••••'
+            : delta < 0 ? `−${fmt(Math.abs(delta))}`
+            : delta === 0 ? 'On target'
+            : `+${fmt(delta)}`}
+        </span>
+        <div className="plan-bar-wrap">
+          <div className="plan-bar-track">
+            {hasBudget && spent > 0 && (
+              <div className="plan-bar-fill" style={{ width: `${pct}%`, background: barColor }} />
+            )}
+          </div>
+          {hasBudget && spent > 0 && !privacy && (
+            <span className="plan-bar-pct">{Math.round((spent/budget)*100)}%</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Build ordered list of budgeted cats respecting structure groups
+  const structureGroups = useMemo(() => {
+    const groups = [];
+    let current = { name: null, cats: [] };
+    for (const item of structure) {
+      if (item.kind === 'group') {
+        if (current.cats.length > 0 || current.name) groups.push(current);
+        current = { name: item.name, cats: [] };
+      } else if (item.kind === 'cat' && !PROTECTED_CATS.has(item.name)) {
+        current.cats.push(item.name);
+      }
+    }
+    groups.push(current);
+    return groups;
+  }, [structure]);
+
+  const budgetUsedPct = totalBudgeted > 0 ? Math.round((totalSpent / totalBudgeted) * 100) : 0;
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+
+      {/* Month nav */}
+      <div className="dash-card" style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'12px'}}>
+        <div className="plan-month-nav">
+          <button onClick={prevMonth}>‹</button>
+          <span className="plan-month-label">{monthLabel}</span>
+          <button onClick={nextMonth} disabled={isCurrentMonth}>›</button>
+        </div>
+        {!isCurrentMonth && (
+          <button className="btn-secondary" style={{fontSize:'12px',padding:'4px 12px'}}
+            onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); }}>
+            Back to current month
+          </button>
+        )}
+      </div>
+
+      {/* KPI cards */}
+      <div className="plan-kpi-grid">
+        <div className="plan-kpi">
+          <span className="plan-kpi-label">Income</span>
+          <span className="plan-kpi-value pos">{mask(income)}</span>
+        </div>
+        <div className="plan-kpi">
+          <span className="plan-kpi-label">Budgeted</span>
+          <span className="plan-kpi-value">{mask(totalBudgeted)}</span>
+          {income > 0 && !privacy && <span className="plan-kpi-sub">{Math.round((totalBudgeted/income)*100)}% of income</span>}
+        </div>
+        <div className="plan-kpi">
+          <span className="plan-kpi-label">Spent</span>
+          <span className={`plan-kpi-value ${totalSpent > totalBudgeted ? 'neg' : ''}`}>{mask(totalSpent)}</span>
+          {totalBudgeted > 0 && !privacy && <span className="plan-kpi-sub">{budgetUsedPct}% of budget used</span>}
+        </div>
+        <div className="plan-kpi">
+          <span className="plan-kpi-label">Remaining</span>
+          <span className={`plan-kpi-value ${totalDelta < 0 ? 'neg' : 'pos'}`}>
+            {privacy ? '••••••' : totalDelta < 0 ? `−${fmt(Math.abs(totalDelta))}` : fmt(totalDelta)}
+          </span>
+          {!privacy && totalBudgeted > 0 && <span className="plan-kpi-sub">{totalDelta < 0 ? 'over budget' : 'left to spend'}</span>}
+        </div>
+      </div>
+
+      {/* Category table */}
+      <div className="plan-table">
+        <div className="plan-row-header plan-cols">
+          <span />
+          <span>Category</span>
+          <span style={{textAlign:'right'}}>Budget</span>
+          <span style={{textAlign:'right'}}>Spent</span>
+          <span style={{textAlign:'right'}}>Status</span>
+          <span style={{paddingLeft:'4px'}}>Progress</span>
+        </div>
+
+        <div onDragOver={planDragOver} onDrop={planDrop}>
+        {structureGroups.map((group, gi) => {
+          const groupCats = group.cats.filter(c => categories.includes(c) && !PROTECTED_CATS.has(c));
+          if (groupCats.length === 0 && !group.name) return null;
+          const groupStructureIdx = group.name
+            ? structure.findIndex(s => s.kind === 'group' && s.name === group.name)
+            : null;
+          const isGroupDragging = groupStructureIdx !== null && planDragging === groupStructureIdx;
+          return (
+            <div key={gi} className={`plan-section${isGroupDragging ? ' dragging' : ''}`}>
+              {group.name && (
+                <div className="plan-section-title-row"
+                  data-drag-idx={groupStructureIdx}
+                  draggable
+                  onDragStart={e => { planDragIdxRef.current = groupStructureIdx; setPlanDragging(groupStructureIdx); e.dataTransfer.effectAllowed = 'move'; }}
+                  onDragEnd={planClearDrag}
+                >
+                  <span className="drag-handle" style={{color:'var(--muted)'}}>⠿</span>
+                  <span className="plan-section-title">{group.name}</span>
+                </div>
+              )}
+              {groupCats.map(cat => {
+                const sidx = structure.findIndex(s => s.kind === 'cat' && s.name === cat);
+                return renderRow(cat, sidx);
+              })}
+            </div>
+          );
+        })}
+        </div>
+
+        {/* Total row */}
+        {budgetedCats.length > 0 && (
+          <div className="plan-total-row plan-cols">
+            <span />
+            <span>Total</span>
+            <span style={{textAlign:'right'}}>{mask(totalBudgeted)}</span>
+            <span style={{textAlign:'right',color:'var(--neg)'}}>{totalSpent > 0 ? mask(totalSpent) : '—'}</span>
+            <span style={{textAlign:'right'}} className={totalDelta < 0 ? 'budget-over' : 'budget-under'}>
+              {privacy ? '••••••' : totalDelta < 0 ? `−${fmt(Math.abs(totalDelta))}` : `+${fmt(totalDelta)}`}
+            </span>
+            <span />
+          </div>
+        )}
+
+        {/* Unbudgeted spending */}
+        {unbudgetedCats.length > 0 && (
+          <div className="plan-section" style={{borderTop:'2px solid var(--border)'}}>
+            <div className="plan-section-title-row" style={{cursor:'default'}}>
+              <span className="plan-section-title" style={{color:'var(--neg)'}}>Unbudgeted Spending</span>
+              <span style={{fontSize:'11px',color:'var(--muted)'}}>set a budget to track these</span>
+            </div>
+            {unbudgetedCats.map(cat => {
+              const sidx = structure.findIndex(s => s.kind === 'cat' && s.name === cat);
+              return renderRow(cat, sidx);
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+function App() {
+  const [transactions, setTx]         = useLocalStorage('budget_v1', []);
+  const [catStructure, setCatStructure] = useLocalStorage('budget_category_structure', null);
+  const [legacyCats]                    = useLocalStorage('budget_categories', DEFAULT_CATEGORIES);
+  const [nextTxNum, setNextTxNum]     = useLocalStorage('budget_next_tx_num', 1);
+
+  // Resolve: if budget_category_structure not yet saved, migrate from legacyCats
+  const structure = catStructure ?? legacyCats.map(name => ({ kind: 'cat', name }));
+  const setStructure = (val) => setCatStructure(typeof val === 'function' ? val(structure) : val);
+
+  // Derived flat list used everywhere categories: string[] is needed
+  const categories = useMemo(() =>
+    structure.filter(i => i.kind === 'cat').map(i => i.name),
+    [structure]
+  );
+  const [activeTab, setActiveTab]       = useLocalStorage('budget_active_tab', 'dashboard');
+  const [showCatMgr, setShowCatMgr]     = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [reconcilingAcct, setReconciling] = useState(null);
+  const [linkingTxId, setLinkingTxId] = useState(null);
+  const [privacy, setPrivacy]         = useLocalStorage('budget_privacy', false);
+  const [theme, setTheme]             = useLocalStorage('budget_theme', 'light');
+  const [budgets, setBudgets]         = useLocalStorage('budget_budgets', {});
+
+  const setBudget = (cat, amt) => setBudgets(prev =>
+    amt != null && !isNaN(amt) && amt > 0
+      ? { ...prev, [cat]: amt }
+      : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== cat))
+  );
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const importAllRef = useRef(null);
+  const [pendingCsvFile, setPendingCsvFile] = useState(null);
+
+  const handleImportAll = async (files) => {
+    for (const file of files) {
+      if (file.name.endsWith('.json')) {
+        await importSettings(file);
+      } else if (file.name.endsWith('.csv')) {
+        setPendingCsvFile(file);
+      }
+    }
+  };
+
+  const exportAll = () => {
+    const dl = (href, name) => {
+      const a = Object.assign(document.createElement('a'), { href, download: name });
+      a.click();
+      URL.revokeObjectURL(href);
+    };
+    dl(
+      URL.createObjectURL(new Blob([JSON.stringify({
+        version: 2, theme,
+        categoryStructure: structure,
+        budgets,
+        importSettings: JSON.parse(localStorage.getItem('budget_import_settings') || '{}'),
+      }, null, 2)], { type: 'application/json' })),
+      'budget_settings.json'
+    );
+    if (transactions.length > 0) dl(
+      URL.createObjectURL(new Blob([exportCSV(transactions)], { type: 'text/csv' })),
+      'budget_transactions.csv'
+    );
+  };
+
+  const importSettings = async (file) => {
+    if (!file) return;
+    try {
+      const s = JSON.parse(await file.text());
+      if (s.theme) setTheme(s.theme);
+      if (s.categoryStructure) {
+        setCatStructure(s.categoryStructure);
+      } else if (Array.isArray(s.categories)) {
+        setCatStructure(s.categories.map(name => ({ kind: 'cat', name })));
+      }
+      if (s.budgets) setBudgets(s.budgets);
+      if (s.importSettings) localStorage.setItem('budget_import_settings', JSON.stringify(s.importSettings));
+      setShowSettings(false);
+    } catch {
+      alert('Could not read settings file.');
+    }
+  };
+
+  // Backfill txNum for any existing transactions that predate this field
+  useEffect(() => {
+    if (transactions.length === 0 || transactions.every(t => t.txNum)) return;
+    const sorted = [...transactions].sort((a, b) =>
+      a.date.localeCompare(b.date) || a.id.localeCompare(b.id)
+    );
+    let counter = 1;
+    const updated = sorted.map(t => t.txNum ? t : { ...t, txNum: counter++ });
+    const maxNum = Math.max(...updated.map(t => t.txNum));
+    setTx(updated);
+    setNextTxNum(prev => Math.max(prev, maxNum + 1));
+  }, []); // eslint-disable-line
+
+  const addTx = (t) => {
+    const num = nextTxNum;
+    setNextTxNum(n => n + 1);
+    setTx(prev => [{ ...t, txNum: num }, ...prev]);
+  };
+
+  const addMany = (txs) => {
+    const needNum = txs.filter(t => !t.txNum).length;
+    const start   = nextTxNum;
+    if (needNum > 0) setNextTxNum(n => n + needNum);
+    let counter = start;
+    setTx(prev => [...txs.map(t => t.txNum ? t : { ...t, txNum: counter++ }), ...prev]);
+  };
+  const deleteTx     = (id)          => setTx(prev => prev.filter(t => t.id !== id));
+  const truncateTx   = (beforeDate)  => setTx(prev => prev.filter(t => t.date >= beforeDate));
+  const replaceAllTx = (txs) => {
+    setTx(txs);
+    const maxNum = txs.reduce((m, t) => Math.max(m, t.txNum || 0), 0);
+    if (maxNum > 0) setNextTxNum(maxNum + 1);
+  };
+
+  const reconcile = (accountName, diff) => {
+    addTx({
+      id: crypto.randomUUID(),
+      description: `Reconciliation — ${accountName}`,
+      amount: diff,
+      category: RECONCILE_CAT,
+      date: today(),
+      accountName,
+    });
+  };
+  const editTx     = (id, patch) => setTx(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+  const updateMany = (patches)   => setTx(prev => prev.map(t => {
+    const p = patches.find(p => p.id === t.id);
+    return p ? { ...t, ...p.data } : t;
+  }));
+
+  const addCategory    = (name)           => setStructure(s => [...s, { kind: 'cat', name }]);
+  const renameCategory = (oldName, newName) => {
+    setStructure(s => s.map(i => i.kind === 'cat' && i.name === oldName ? { ...i, name: newName } : i));
+    setTx(prev => prev.map(t => t.category === oldName ? { ...t, category: newName } : t));
+  };
+  const deleteCategory = (name) => {
+    setStructure(s => s.filter(i => !(i.kind === 'cat' && i.name === name)));
+    setTx(prev => prev.map(t => t.category === name ? { ...t, category: 'Other' } : t));
+  };
+  const addGroup    = (name)        => setStructure(s => [...s, { kind: 'group', id: crypto.randomUUID(), name }]);
+  const renameGroup = (id, newName) => setStructure(s => s.map(i => i.kind === 'group' && i.id === id ? { ...i, name: newName } : i));
+  const deleteGroup = (id)          => setStructure(s => s.filter(i => !(i.kind === 'group' && i.id === id)));
+  const reorderStructure = (newStructure) => setStructure(newStructure);
+
+  const requestLink = (id) => setLinkingTxId(id);
+
+  const linkTransfers = (sourceId, targetId) => {
+    const sharedId = crypto.randomUUID();
+    setTx(prev => prev.map(t =>
+      t.id === sourceId || t.id === targetId
+        ? { ...t, transferId: sharedId, category: TRANSFER_CAT }
+        : t
+    ));
+    setLinkingTxId(null);
+  };
+
+  const unlinkTransfer = (id) => {
+    setTx(prev => {
+      const tx = prev.find(t => t.id === id);
+      if (!tx?.transferId) return prev;
+      const tid = tx.transferId;
+      return prev.map(t => t.transferId === tid ? { ...t, transferId: null } : t);
+    });
+  };
+
+  const linkingTx = linkingTxId ? transactions.find(t => t.id === linkingTxId) : null;
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1 className="app-title">Budget</h1>
+        <span className="app-sub">
+          {new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' })}
+        </span>
+        <div className="header-actions">
+          <button className={`privacy-btn${privacy ? ' active' : ''}`}
+            onClick={() => setPrivacy(p => !p)}>
+            {privacy ? '👁 Show Amounts' : '🙈 Hide Amounts'}
+          </button>
+          <button className="export-btn" onClick={() => importAllRef.current.click()}>
+            ↑ Import
+          </button>
+          <input ref={importAllRef} type="file" accept=".csv,.json" multiple style={{display:'none'}}
+            onChange={e => { handleImportAll([...e.target.files]); e.target.value = ''; }} />
+          <button className="export-btn" onClick={exportAll}>
+            ↓ Export
+          </button>
+          <button className="export-btn" onClick={() => setShowSettings(true)} title="Settings">
+            ⚙
+          </button>
+          <CSVImporter transactions={transactions} onImport={addMany} onUpdate={updateMany} onReplaceAll={replaceAllTx} categories={categories}
+            externalFile={pendingCsvFile} onExternalFileConsumed={() => setPendingCsvFile(null)} />
+        </div>
+      </header>
+      <nav className="tab-nav">
+        {[['dashboard','Dashboard'],['planning','Planning'],['transactions','Transactions']].map(([key,label]) => (
+          <button key={key} className={`tab-btn ${activeTab === key ? 'active' : ''}`}
+            onClick={() => setActiveTab(key)}>{label}</button>
+        ))}
+      </nav>
+      <main className="app-main">
+        {activeTab === 'dashboard' && (
+          <Dashboard transactions={transactions} privacy={privacy}
+            budgets={budgets} onReconcile={setReconciling} />
+        )}
+        {activeTab === 'planning' && (
+          <Planning
+            transactions={transactions}
+            budgets={budgets}
+            onSetBudget={setBudget}
+            categories={categories}
+            structure={structure}
+            onReorderStructure={reorderStructure}
+            privacy={privacy}
+          />
+        )}
+        {activeTab === 'transactions' && (<>
+          <Summary transactions={transactions} privacy={privacy} />
+          <AddTransaction onAdd={addTx} categories={categories} structure={structure} transactions={transactions}
+            accounts={[...new Set(transactions.map(t => t.accountName).filter(Boolean))].sort()}
+            allTags={[...new Set(transactions.flatMap(t => t.tags || []))].sort()} />
+          <TransactionList
+            transactions={transactions} onDelete={deleteTx} onEdit={editTx}
+            onRequestLink={requestLink} onUnlink={unlinkTransfer}
+            categories={categories} structure={structure} privacy={privacy}
+          />
+        </>)}
+      </main>
+      {showCatMgr && (
+        <CategoryManager
+          structure={structure}
+          budgets={budgets}
+          onSetBudget={setBudget}
+          onAddCat={addCategory}
+          onRenameCat={renameCategory}
+          onDeleteCat={deleteCategory}
+          onAddGroup={addGroup}
+          onRenameGroup={renameGroup}
+          onDeleteGroup={deleteGroup}
+          onReorderStructure={reorderStructure}
+          onClose={() => setShowCatMgr(false)}
+        />
+      )}
+      {reconcilingAcct && (
+        <ReconcileModal
+          account={reconcilingAcct}
+          onConfirm={reconcile}
+          onClose={() => setReconciling(null)}
+        />
+      )}
+      {showSettings && (
+        <SettingsModal
+          theme={theme} onThemeChange={setTheme}
+          onManageCategories={() => { setShowSettings(false); setShowCatMgr(true); }}
+          onImportSettings={importSettings}
+          onTruncate={truncateTx}
+          transactions={transactions}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+      {linkingTx && (
+        <TransferLinker
+          sourceTx={linkingTx}
+          transactions={transactions}
+          onLink={linkTransfers}
+          onClose={() => setLinkingTxId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
