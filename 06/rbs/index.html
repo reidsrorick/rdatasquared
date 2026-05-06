@@ -167,6 +167,72 @@ input:focus, select:focus { border-color: var(--accent); }
 }
 .tx-count { font-size: 12px; color: var(--muted); }
 
+/* ── Table View ─────────────────────────────────────────────────────────────── */
+.table-view { display: flex; flex-direction: column; gap: 12px; }
+
+.table-bulk-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; background: var(--accent-light);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  font-size: 13px;
+}
+.table-bulk-count { font-weight: 600; color: var(--accent); white-space: nowrap; }
+.table-bulk-bar select {
+  padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); font-size: 13px; color: var(--text);
+}
+.table-bulk-apply {
+  padding: 5px 14px; border-radius: 6px; border: none;
+  background: var(--accent); color: #fff; font-size: 13px;
+  font-weight: 600; cursor: pointer;
+}
+.table-bulk-apply:hover { opacity: .85; }
+.table-bulk-apply:disabled { opacity: .4; cursor: default; }
+.table-bulk-deselect {
+  padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; font-size: 13px; color: var(--muted); cursor: pointer;
+  margin-left: auto;
+}
+.table-bulk-deselect:hover { color: var(--text); }
+
+.tbl-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow); overflow: auto;
+}
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--surface-alt); border-bottom: 2px solid var(--border);
+  padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .5px; color: var(--muted);
+  white-space: nowrap; user-select: none;
+}
+.tbl th.sortable { cursor: pointer; }
+.tbl th.sortable:hover { color: var(--text); }
+.tbl th .sort-icon { margin-left: 4px; opacity: .5; }
+.tbl td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--surface-alt); }
+.tbl tr.tbl-selected td { background: var(--accent-light); }
+.tbl tr.tbl-selected:hover td { background: var(--accent-light); filter: brightness(.97); }
+.tbl-cb { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--accent); }
+.tbl-cb-cell { width: 32px; padding: 7px 6px 7px 12px !important; }
+.tbl-amount { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
+.tbl-cat-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  background: var(--surface-alt); border: 1px solid var(--border);
+  font-size: 11px; cursor: pointer; white-space: nowrap;
+}
+.tbl-cat-pill:hover { border-color: var(--accent); color: var(--accent); }
+.tbl-acct { font-size: 11px; color: var(--muted); }
+.tbl-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.tbl-tag { font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  background: var(--surface-alt); color: var(--muted); border: 1px solid var(--border); }
+.tbl-inline-select {
+  padding: 2px 4px; border-radius: 4px; border: 1px solid var(--accent);
+  background: var(--surface); font-size: 12px; color: var(--text);
+}
+
 .filters {
   display: flex; flex-direction: column;
   border-bottom: 1px solid var(--border); background: var(--surface-alt);
@@ -253,6 +319,7 @@ input:focus, select:focus { border-color: var(--accent); }
   pointer-events: none;
   animation: toast-in .2s ease;
 }
+.toast.toast-error { background: #dc2626; color: #fff; }
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -339,11 +406,10 @@ input:focus, select:focus { border-color: var(--accent); }
 .ms-filter-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
 .ms-filter-btn.active .ms-arrow { color: var(--accent); }
 .ms-dropdown {
-  position: absolute; top: calc(100% + 4px); left: 0;
-  min-width: 100%; width: max-content; max-width: 280px;
+  position: fixed;
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.15);
-  z-index: 300; display: flex; flex-direction: column; max-height: 280px;
+  z-index: 300; display: flex; flex-direction: column;
 }
 .ms-search { padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .ms-search input { width: 100%; }
@@ -906,7 +972,28 @@ input:focus, select:focus { border-color: var(--accent); }
 
 .plan-table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
 
-.plan-cols { grid-template-columns: 20px 1fr 110px 90px 120px 1fr; }
+.plan-cols { grid-template-columns: 20px 1fr 80px 110px 90px 120px 1fr; }
+
+.plan-due-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+  cursor: pointer; border: 1px solid var(--border); background: var(--surface-alt);
+  color: var(--muted); transition: border-color .15s, color .15s; white-space: nowrap;
+  font-family: inherit;
+}
+.plan-due-btn:hover { border-color: var(--accent); color: var(--accent); }
+.plan-due-btn.due-red    { background: #fef2f2; border-color: var(--neg); color: var(--neg); }
+.plan-due-btn.due-yellow { background: #fefce8; border-color: #ca8a04; color: #ca8a04; }
+.plan-due-btn.due-green  { background: #f0fdf4; border-color: #16a34a; color: #16a34a; }
+.plan-due-btn.due-empty { opacity: 0; pointer-events: none; border-color: transparent; background: transparent; }
+.plan-row:hover .plan-due-btn.due-empty { opacity: 1; pointer-events: auto; border-color: var(--border); background: var(--surface-alt); }
+.plan-due-input {
+  width: 52px; font-size: 12px; font-weight: 600; padding: 3px 6px; text-align: center;
+  border: 1px solid var(--accent); border-radius: 4px;
+  background: var(--bg); color: var(--text); outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  font-family: inherit;
+}
 .plan-row-header {
   display: grid; gap: 12px; padding: 9px 16px;
   font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 600;
@@ -1015,6 +1102,7 @@ function useLocalStorage(key, initial) {
 
 // ── formatting ────────────────────────────────────────────────────────────────
 const fmt   = (n) => new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(Math.abs(n));
+const ordinal = (n) => { const s = ['th','st','nd','rd']; const v = n % 100; return n + (s[(v-20)%10] || s[v] || s[0]); };
 const today = ()  => new Date().toISOString().split('T')[0];
 
 // ── category guesser ──────────────────────────────────────────────────────────
@@ -1025,7 +1113,7 @@ function guessCategory(desc, transactions) {
   // Build frequency map: normalized description → { category: count }
   const freq = {};
   for (const t of transactions) {
-    const key = t.description.toLowerCase().trim();
+    const key = (t.merchant || t.description || '').toLowerCase().trim();
     if (!freq[key]) freq[key] = {};
     freq[key][t.category] = (freq[key][t.category] || 0) + 1;
   }
@@ -1054,6 +1142,44 @@ function guessCategory(desc, transactions) {
 
   if (Object.keys(catScores).length === 0) return null;
   return Object.entries(catScores).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function guessAccount(desc, transactions) {
+  const norm = desc.toLowerCase().trim();
+  if (norm.length < 3 || transactions.length === 0) return null;
+
+  const freq = {};
+  for (const t of transactions) {
+    if (!t.accountName) continue;
+    const key = (t.merchant || t.description || '').toLowerCase().trim();
+    if (!freq[key]) freq[key] = {};
+    freq[key][t.accountName] = (freq[key][t.accountName] || 0) + 1;
+  }
+
+  const acctScores = {};
+  for (const [key, accts] of Object.entries(freq)) {
+    let score = 0;
+    if (key === norm) {
+      score = 100;
+    } else if (key.startsWith(norm) || norm.startsWith(key)) {
+      score = 10 * (Math.min(key.length, norm.length) / Math.max(key.length, norm.length));
+    } else {
+      const normWords = norm.split(/\s+/).filter(w => w.length > 2);
+      const keyWords  = key.split(/\s+/).filter(w => w.length > 2);
+      if (normWords.length > 0 && keyWords.length > 0) {
+        const hits = normWords.filter(w => keyWords.some(kw => kw.includes(w) || w.includes(kw)));
+        if (hits.length > 0) score = hits.length / Math.max(normWords.length, keyWords.length);
+      }
+    }
+    if (score > 0) {
+      const total = Object.values(accts).reduce((a, b) => a + b, 0);
+      const best  = Object.entries(accts).sort((a, b) => b[1] - a[1])[0][0];
+      acctScores[best] = (acctScores[best] || 0) + score * total;
+    }
+  }
+
+  if (Object.keys(acctScores).length === 0) return null;
+  return Object.entries(acctScores).sort((a, b) => b[1] - a[1])[0][0];
 }
 
 // ── CSV parsing ───────────────────────────────────────────────────────────────
@@ -2158,6 +2284,34 @@ function MultiSelectFilter({ excluded, options, onChange, allLabel }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const wrapRef = useRef(null);
+  const dropRef = useRef(null);
+
+  useEffect(() => {
+    if (!open || !dropRef.current || !wrapRef.current) return;
+    const el = dropRef.current;
+    const tr = wrapRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - tr.bottom - 8;
+    const spaceAbove = tr.top - 8;
+    const minW = Math.max(tr.width, 180);
+
+    el.style.width = `${minW}px`;
+    el.style.maxHeight = '';
+    el.style.top = 'auto';
+    el.style.bottom = 'auto';
+    el.style.left = `${tr.left}px`;
+
+    if (spaceBelow >= spaceAbove || spaceBelow >= 160) {
+      el.style.top = `${tr.bottom + 4}px`;
+      el.style.maxHeight = `${Math.max(spaceBelow, 80)}px`;
+    } else {
+      el.style.bottom = `${window.innerHeight - tr.top + 4}px`;
+      el.style.maxHeight = `${Math.max(spaceAbove, 80)}px`;
+    }
+
+    if (tr.left + minW > window.innerWidth - 8) {
+      el.style.left = `${window.innerWidth - minW - 8}px`;
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -2177,13 +2331,16 @@ function MultiSelectFilter({ excluded, options, onChange, allLabel }) {
 
   const visible = search ? options.filter(o => o.toLowerCase().includes(search.toLowerCase())) : options;
   const allChecked = excluded.size === 0;
-  const numSelected = options.length - excluded.size;
+  const selectedOptions = options.filter(o => !excluded.has(o));
+  const numSelected = selectedOptions.length;
 
   const label = allChecked
     ? allLabel
     : numSelected === 1
-      ? (options.find(o => !excluded.has(o)) ?? allLabel)
-      : `${numSelected} of ${options.length} selected`;
+      ? (selectedOptions[0] ?? allLabel)
+      : numSelected === 0
+        ? `None selected`
+        : `${numSelected} of ${options.length} selected`;
 
   const toggleItem = (item) => {
     const next = new Set(excluded);
@@ -2200,7 +2357,7 @@ function MultiSelectFilter({ excluded, options, onChange, allLabel }) {
         <span className="ms-arrow">▾</span>
       </button>
       {open && (
-        <div className="ms-dropdown">
+        <div className="ms-dropdown" ref={dropRef}>
           <div className="ms-search">
             <input autoFocus placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
               onKeyDown={e => {
@@ -2319,6 +2476,8 @@ function AddTransaction({ onAdd, categories, structure, transactions, accounts, 
   const [error, setError] = useState('');
   const [categoryLocked, setCategoryLocked] = useState(false);
   const [suggestedCat, setSuggestedCat] = useState(null);
+  const [accountLocked, setAccountLocked] = useState(false);
+  const [collapsed, setCollapsed] = useLocalStorage('budget_add_form_collapsed', false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -2329,13 +2488,14 @@ function AddTransaction({ onAdd, categories, structure, transactions, accounts, 
       setSuggestedCat(null);
       return;
     }
-    if (categoryLocked) return;
-    const guess = guessCategory(text, transactions);
-    if (guess) {
-      setSuggestedCat(guess);
-      setForm(f => ({ ...f, category: guess }));
-    } else {
-      setSuggestedCat(null);
+    if (!categoryLocked) {
+      const guess = guessCategory(text, transactions);
+      if (guess) { setSuggestedCat(guess); setForm(f => ({ ...f, category: guess })); }
+      else setSuggestedCat(null);
+    }
+    if (!accountLocked) {
+      const guess = guessAccount(text, transactions);
+      if (guess) setForm(f => f.accountName ? f : { ...f, accountName: guess });
     }
   }, [form.merchant, form.description]);
 
@@ -2350,65 +2510,80 @@ function AddTransaction({ onAdd, categories, structure, transactions, accounts, 
     const amt = parseFloat(form.amount);
     if (!form.merchant.trim() && !form.description.trim()) return setError('Merchant or description is required.');
     if (isNaN(amt) || amt <= 0)  return setError('Enter a valid positive amount.');
-    onAdd({
-      id: crypto.randomUUID(),
-      description: form.description.trim(),
-      amount: form.type === 'expense' ? -amt : amt,
-      category: form.category,
-      date: form.date,
-      accountName: form.accountName,
-      merchant: form.merchant.trim(),
-      tags: form.tags,
-      cleared: false,
-    });
-    setForm(f => ({ ...EMPTY, type: f.type, date: f.date }));
-    setCategoryLocked(false);
-    setSuggestedCat(null);
+    try {
+      onAdd({
+        id: crypto.randomUUID(),
+        description: form.description.trim(),
+        amount: form.type === 'expense' ? -amt : amt,
+        category: form.category,
+        date: form.date,
+        accountName: form.accountName,
+        merchant: form.merchant.trim(),
+        tags: form.tags,
+        cleared: false,
+      });
+      setForm(f => ({ ...EMPTY, type: f.type, date: f.date }));
+      setCategoryLocked(false);
+      setSuggestedCat(null);
+      setAccountLocked(false);
+    } catch (err) {
+      setError('Failed to save transaction. Your storage may be full.');
+    }
   };
 
   return (
     <form className="add-form" onSubmit={submit}>
-      <h2 className="section-title">Add Transaction</h2>
-      <div className="type-toggle">
-        {['expense','income'].map(t => (
-          <button key={t} type="button"
-            className={`type-btn ${form.type === t ? `active-${t}` : ''}`}
-            onClick={() => set('type', t)}>
-            {t === 'expense' ? '− Expense' : '+ Income'}
-          </button>
-        ))}
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <h2 className="section-title" style={{margin:0}}>Add Transaction</h2>
+        <button type="button" onClick={() => setCollapsed(c => !c)}
+          style={{background:'none', border:'none', cursor:'pointer', fontSize:'18px',
+            color:'var(--muted)', lineHeight:1, padding:'2px 4px'}}
+          title={collapsed ? 'Expand form' : 'Minimize form'}>
+          {collapsed ? '▾' : '▴'}
+        </button>
       </div>
-      <div className="form-grid">
-        <input className="f-merchant" placeholder="Merchant"
-          value={form.merchant} onChange={e => set('merchant', e.target.value)} />
-        <input className="f-desc" placeholder="Description (optional)"
-          value={form.description} onChange={e => set('description', e.target.value)} />
-        <div className="f-account" style={{display:'flex',alignItems:'center',gap:'6px'}}>
-          <AccountCombobox
-            value={form.accountName}
-            accounts={accounts}
-            onChange={v => set('accountName', v)}
-          />
-          {form.accountName && (
-            <button type="button" className="field-clear-btn" onClick={() => set('accountName', '')} title="Clear account">×</button>
-          )}
+      {!collapsed && (<>
+        <div className="type-toggle">
+          {['expense','income'].map(t => (
+            <button key={t} type="button"
+              className={`type-btn ${form.type === t ? `active-${t}` : ''}`}
+              onClick={() => set('type', t)}>
+              {t === 'expense' ? '− Expense' : '+ Income'}
+            </button>
+          ))}
         </div>
-        <input className="f-amount" type="number" placeholder="0.00" min="0" step="0.01"
-          value={form.amount} onChange={e => set('amount', e.target.value)} />
-        <div className="cat-field">
-          <CategoryCombobox
-            value={form.category}
-            categories={categories}
-            structure={structure}
-            onChange={handleCategoryChange}
-          />
-          {suggestedCat && <span className="cat-suggest-hint">from history</span>}
+        <div className="form-grid">
+          <input className="f-merchant" placeholder="Merchant"
+            value={form.merchant} onChange={e => set('merchant', e.target.value)} />
+          <input className="f-desc" placeholder="Description (optional)"
+            value={form.description} onChange={e => set('description', e.target.value)} />
+          <div className="f-account" style={{display:'flex',alignItems:'center',gap:'6px'}}>
+            <AccountCombobox
+              value={form.accountName}
+              accounts={accounts}
+              onChange={v => { setAccountLocked(!!v); set('accountName', v); }}
+            />
+            {form.accountName && (
+              <button type="button" className="field-clear-btn" onClick={() => { setAccountLocked(false); set('accountName', ''); }} title="Clear account">×</button>
+            )}
+          </div>
+          <input className="f-amount" type="number" placeholder="0.00" min="0" step="0.01"
+            value={form.amount} onChange={e => set('amount', e.target.value)} />
+          <div className="cat-field">
+            <CategoryCombobox
+              value={form.category}
+              categories={categories}
+              structure={structure}
+              onChange={handleCategoryChange}
+            />
+            {suggestedCat && <span className="cat-suggest-hint">from history</span>}
+          </div>
+          <input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+          <button className="add-btn" type="submit">Add</button>
         </div>
-        <input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
-        <button className="add-btn" type="submit">Add</button>
-      </div>
-      <TagInput value={form.tags} onChange={tags => set('tags', tags)} allTags={allTags} />
-      {error && <p className="form-error">{error}</p>}
+        <TagInput value={form.tags} onChange={tags => set('tags', tags)} allTags={allTags} />
+        {error && <p className="form-error">{error}</p>}
+      </>)}
     </form>
   );
 }
@@ -2433,16 +2608,20 @@ function EditTransactionModal({ t, categories, structure, accounts, allTags, onS
     const amt = parseFloat(form.amount);
     if (!form.merchant.trim() && !form.description.trim()) return setError('Merchant or description is required.');
     if (isNaN(amt) || amt <= 0)   return setError('Enter a valid positive amount.');
-    onSave({
-      description: form.description.trim(),
-      amount:      form.type === 'expense' ? -amt : amt,
-      category:    form.category,
-      date:        form.date,
-      accountName: form.accountName,
-      merchant:    form.merchant.trim(),
-      tags:        form.tags,
-    });
-    onClose();
+    try {
+      onSave({
+        description: form.description.trim(),
+        amount:      form.type === 'expense' ? -amt : amt,
+        category:    form.category,
+        date:        form.date,
+        accountName: form.accountName,
+        merchant:    form.merchant.trim(),
+        tags:        form.tags,
+      });
+      onClose();
+    } catch (err) {
+      setError('Failed to save. Your storage may be full.');
+    }
   };
 
   return (
@@ -2598,6 +2777,274 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, onLinkDu
   );
 }
 
+// ── TableView ─────────────────────────────────────────────────────────────────
+function TableView({ transactions, onEdit, categories, privacy }) {
+  const [search, setSearch]   = useState('');
+  const [selected, setSelected] = useState(() => new Set());
+  const [sortCol, setSortCol] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
+  const [bulkField, setBulkField]   = useState('category');
+  const [bulkCat, setBulkCat]       = useState('');
+  const [bulkAcct, setBulkAcct]     = useState('');
+  const [bulkTagAction, setBulkTagAction] = useState('add'); // 'add' | 'remove' | 'replace'
+  const [bulkTag, setBulkTag]       = useState('');
+  const [bulkNewTag, setBulkNewTag] = useState('');
+  const [bulkMerchant, setBulkMerchant] = useState('');
+  const [bulkDesc, setBulkDesc]     = useState('');
+  const [editingCell, setEditingCell] = useState(null); // { id, field }
+
+  const allAccounts = useMemo(() =>
+    [...new Set(transactions.map(t => t.accountName).filter(Boolean))].sort(),
+    [transactions]
+  );
+  const allTags = useMemo(() =>
+    [...new Set(transactions.flatMap(t => t.tags || []))].sort(),
+    [transactions]
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return transactions
+      .filter(t => !t.duplicateOf)
+      .filter(t => !q
+        || (t.merchant || t.description || '').toLowerCase().includes(q)
+        || t.category.toLowerCase().includes(q)
+        || (t.accountName || '').toLowerCase().includes(q)
+        || t.date.includes(q)
+        || String(Math.abs(t.amount)).includes(q)
+        || (t.txNum && String(t.txNum).includes(q.replace(/^#/, '')))
+      )
+      .sort((a, b) => {
+        let av = a[sortCol], bv = b[sortCol];
+        if (sortCol === 'amount') { av = a.amount; bv = b.amount; }
+        if (sortCol === 'merchant') { av = (a.merchant || a.description || '').toLowerCase(); bv = (b.merchant || b.description || '').toLowerCase(); }
+        if (av < bv) return sortDir === 'asc' ? -1 : 1;
+        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [transactions, search, sortCol, sortDir]);
+
+  const allSelected = filtered.length > 0 && filtered.every(t => selected.has(t.id));
+  const someSelected = selected.size > 0;
+
+  const sort = (col) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  };
+  const sortIcon = (col) => sortCol === col ? (sortDir === 'asc' ? '▲' : '▼') : '';
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(filtered.map(t => t.id)));
+  };
+  const toggleRow = (id) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const applyBulk = () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    const txMap = Object.fromEntries(transactions.map(t => [t.id, t]));
+    if (bulkField === 'category' && bulkCat)
+      ids.forEach(id => onEdit(id, { category: bulkCat }));
+    else if (bulkField === 'account' && bulkAcct)
+      ids.forEach(id => onEdit(id, { accountName: bulkAcct }));
+    else if (bulkField === 'merchant' && bulkMerchant)
+      ids.forEach(id => onEdit(id, { merchant: bulkMerchant }));
+    else if (bulkField === 'description' && bulkDesc)
+      ids.forEach(id => onEdit(id, { description: bulkDesc }));
+    else if (bulkField === 'cleared')
+      ids.forEach(id => onEdit(id, { cleared: true }));
+    else if (bulkField === 'uncleared')
+      ids.forEach(id => onEdit(id, { cleared: false }));
+    else if (bulkField === 'tags') {
+      const tagVal = bulkTagAction === 'add' || bulkTagAction === 'remove' ? bulkTag : bulkNewTag;
+      if (!tagVal) return;
+      ids.forEach(id => {
+        const cur = txMap[id]?.tags || [];
+        let next;
+        if (bulkTagAction === 'add')     next = [...new Set([...cur, tagVal])];
+        else if (bulkTagAction === 'remove') next = cur.filter(t => t !== tagVal);
+        else                              next = [tagVal];
+        onEdit(id, { tags: next });
+      });
+    }
+    setSelected(new Set());
+  };
+
+  const bulkReady = (
+    (bulkField === 'category'    && bulkCat) ||
+    (bulkField === 'account'     && bulkAcct) ||
+    (bulkField === 'merchant'    && bulkMerchant) ||
+    (bulkField === 'description' && bulkDesc) ||
+    bulkField === 'cleared' || bulkField === 'uncleared' ||
+    (bulkField === 'tags' && (
+      (bulkTagAction === 'add'     && bulkTag) ||
+      (bulkTagAction === 'remove'  && bulkTag) ||
+      (bulkTagAction === 'replace' && bulkNewTag)
+    ))
+  );
+
+  const startEdit = (id, field) => setEditingCell({ id, field });
+  const commitEdit = (id, field, value) => { onEdit(id, { [field]: value }); setEditingCell(null); };
+
+  return (
+    <div className="table-view">
+      <div style={{display:'flex', alignItems:'center', gap:10}}>
+        <div style={{position:'relative', flex:'1 1 280px'}}>
+          <input className="search-input" style={{width:'100%'}} placeholder="Search…"
+            value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <button className="filter-clear" onClick={() => setSearch('')}>×</button>}
+        </div>
+        <span style={{fontSize:12, color:'var(--muted)', whiteSpace:'nowrap'}}>
+          {filtered.length} rows
+        </span>
+      </div>
+
+      {someSelected && (
+        <div className="table-bulk-bar">
+          <span className="table-bulk-count">{selected.size} selected</span>
+          <span style={{color:'var(--muted)'}}>Set:</span>
+          <select value={bulkField} onChange={e => { setBulkField(e.target.value); }}>
+            <option value="category">Category</option>
+            <option value="account">Account</option>
+            <option value="merchant">Merchant</option>
+            <option value="description">Description</option>
+            <option value="tags">Tags</option>
+            <option value="cleared">Mark Cleared</option>
+            <option value="uncleared">Mark Uncleared</option>
+          </select>
+
+          {bulkField === 'category' && (
+            <select value={bulkCat} onChange={e => setBulkCat(e.target.value)}>
+              <option value="">— pick category —</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
+          {bulkField === 'account' && (
+            <select value={bulkAcct} onChange={e => setBulkAcct(e.target.value)}>
+              <option value="">— pick account —</option>
+              {allAccounts.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          )}
+          {bulkField === 'merchant' && (
+            <input className="tbl-inline-select" style={{minWidth:180}} placeholder="New merchant value…"
+              value={bulkMerchant} onChange={e => setBulkMerchant(e.target.value)} />
+          )}
+          {bulkField === 'description' && (
+            <input className="tbl-inline-select" style={{minWidth:180}} placeholder="New description value…"
+              value={bulkDesc} onChange={e => setBulkDesc(e.target.value)} />
+          )}
+          {bulkField === 'tags' && (<>
+            <select value={bulkTagAction} onChange={e => { setBulkTagAction(e.target.value); setBulkTag(''); setBulkNewTag(''); }}>
+              <option value="add">Add tag</option>
+              <option value="remove">Remove tag</option>
+              <option value="replace">Replace all tags with</option>
+            </select>
+            {(bulkTagAction === 'add') && (
+              <input className="tbl-inline-select" style={{minWidth:130}} placeholder="Tag name…"
+                value={bulkTag} onChange={e => setBulkTag(e.target.value)}
+                list="bulk-tag-datalist" />
+            )}
+            {bulkTagAction === 'remove' && (
+              <select value={bulkTag} onChange={e => setBulkTag(e.target.value)}>
+                <option value="">— pick tag —</option>
+                {allTags.map(tg => <option key={tg} value={tg}>{tg}</option>)}
+              </select>
+            )}
+            {bulkTagAction === 'replace' && (
+              <input className="tbl-inline-select" style={{minWidth:130}} placeholder="New tag…"
+                value={bulkNewTag} onChange={e => setBulkNewTag(e.target.value)}
+                list="bulk-tag-datalist" />
+            )}
+            <datalist id="bulk-tag-datalist">{allTags.map(tg => <option key={tg} value={tg} />)}</datalist>
+          </>)}
+
+          <button className="table-bulk-apply" disabled={!bulkReady} onClick={applyBulk}>Apply to {selected.size}</button>
+          <button className="table-bulk-deselect" onClick={() => setSelected(new Set())}>Deselect all</button>
+        </div>
+      )}
+
+      <div className="tbl-wrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th className="tbl-cb-cell">
+                <input type="checkbox" className="tbl-cb"
+                  checked={allSelected}
+                  ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                  onChange={toggleAll} />
+              </th>
+              <th className="sortable" onClick={() => sort('date')}>Date <span className="sort-icon">{sortIcon('date')}</span></th>
+              <th className="sortable" onClick={() => sort('merchant')}>Merchant <span className="sort-icon">{sortIcon('merchant')}</span></th>
+              <th className="sortable" onClick={() => sort('category')}>Category <span className="sort-icon">{sortIcon('category')}</span></th>
+              <th className="sortable" onClick={() => sort('accountName')}>Account <span className="sort-icon">{sortIcon('accountName')}</span></th>
+              <th className="sortable" style={{textAlign:'right'}} onClick={() => sort('amount')}>Amount <span className="sort-icon">{sortIcon('amount')}</span></th>
+              <th>Tags</th>
+              <th>✓</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0
+              ? <tr><td colSpan={8} style={{textAlign:'center', padding:'24px', color:'var(--muted)'}}>No transactions match.</td></tr>
+              : filtered.map(t => {
+                const isSelected = selected.has(t.id);
+                const editingCat = editingCell?.id === t.id && editingCell?.field === 'category';
+                const editingAcct = editingCell?.id === t.id && editingCell?.field === 'accountName';
+                return (
+                  <tr key={t.id} className={isSelected ? 'tbl-selected' : ''}>
+                    <td className="tbl-cb-cell">
+                      <input type="checkbox" className="tbl-cb" checked={isSelected} onChange={() => toggleRow(t.id)} />
+                    </td>
+                    <td style={{whiteSpace:'nowrap'}}>{t.date}</td>
+                    <td>{t.merchant || t.description}</td>
+                    <td>
+                      {editingCat
+                        ? <select autoFocus className="tbl-inline-select"
+                            value={t.category}
+                            onChange={e => commitEdit(t.id, 'category', e.target.value)}
+                            onBlur={() => setEditingCell(null)}>
+                            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        : <span className="tbl-cat-pill" onClick={() => startEdit(t.id, 'category')}>{t.category}</span>
+                      }
+                    </td>
+                    <td className="tbl-acct">
+                      {editingAcct
+                        ? <select autoFocus className="tbl-inline-select"
+                            value={t.accountName || ''}
+                            onChange={e => commitEdit(t.id, 'accountName', e.target.value)}
+                            onBlur={() => setEditingCell(null)}>
+                            <option value="">—</option>
+                            {allAccounts.map(a => <option key={a} value={a}>{a}</option>)}
+                          </select>
+                        : <span style={{cursor:'pointer'}} onClick={() => startEdit(t.id, 'accountName')}>{t.accountName || '—'}</span>
+                      }
+                    </td>
+                    <td className={`tbl-amount ${t.amount >= 0 ? 'pos' : 'neg'}`}
+                        style={privacy ? {letterSpacing:'2px'} : {}}>
+                      {privacy ? '••••••' : `${t.amount >= 0 ? '+' : '−'}${fmt(t.amount)}`}
+                    </td>
+                    <td>
+                      {t.tags?.length > 0 && (
+                        <div className="tbl-tags">
+                          {t.tags.map(tag => <span key={tag} className="tbl-tag">{tag}</span>)}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{textAlign:'center', color: t.cleared ? 'var(--pos)' : 'var(--muted)', cursor:'pointer'}}
+                        onClick={() => onEdit(t.id, { cleared: !t.cleared })}>
+                      {t.cleared ? '●' : '○'}
+                    </td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── TransactionList ───────────────────────────────────────────────────────────
 function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnlink, onLinkDuplicate, onDismissFuzzy, categories, structure, privacy, jumpTo }) {
   const [search, setSearch]         = useState('');
@@ -2628,10 +3075,13 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
 
   useEffect(() => {
     if (!jumpTo) return;
-    if (jumpTo.catFilter  != null) setCat(new Set(categories.filter(c => c !== jumpTo.catFilter)));
-    if (jumpTo.acctFilter != null) setAcct(new Set(accounts.filter(a => a !== jumpTo.acctFilter)));
+    const txCats  = [...new Set(transactions.map(t => t.category).filter(Boolean))];
+    const txAccts = [...new Set(transactions.map(t => t.accountName).filter(Boolean))];
+    const txTags  = [...new Set(transactions.flatMap(t => t.tags || []))];
+    if (jumpTo.catFilter  != null) setCat(new Set(txCats.filter(c => c !== jumpTo.catFilter)));
+    if (jumpTo.acctFilter != null) setAcct(new Set(txAccts.filter(a => a !== jumpTo.acctFilter)));
     if (jumpTo.typeFilter != null) setType(new Set(['Income','Expense'].filter(t => t !== jumpTo.typeFilter)));
-    if (jumpTo.tagFilter  != null) setTag(new Set(allTags.filter(t => t !== jumpTo.tagFilter)));
+    if (jumpTo.tagFilter  != null) setTag(new Set(txTags.filter(t => t !== jumpTo.tagFilter)));
     if (jumpTo.dateMode === 'month') {
       setDateMode('month');
       setNavYear(jumpTo.navYear);
@@ -2643,12 +3093,12 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
     } else if (jumpTo.dateMode === 'all') {
       setDateMode('all');
     }
-  }, [jumpTo]);
+  }, [jumpTo]); // eslint-disable-line
 
   // Shared search predicate (used in all available-options memos)
   const passSearch = (t, q) => !q
-    || t.description.toLowerCase().includes(q)
-    || (t.merchant && t.merchant.toLowerCase().includes(q))
+    || (t.description || '').toLowerCase().includes(q)
+    || (t.merchant || '').toLowerCase().includes(q)
     || t.date.includes(q)
     || t.category.toLowerCase().includes(q)
     || (t.accountName && t.accountName.toLowerCase().includes(q))
@@ -2742,8 +3192,8 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
         if (t.duplicateOf && !showLinked) return false;
         const q = search.toLowerCase();
         const matchSearch = !q
-          || t.description.toLowerCase().includes(q)
-          || (t.merchant && t.merchant.toLowerCase().includes(q))
+          || (t.description || '').toLowerCase().includes(q)
+          || (t.merchant || '').toLowerCase().includes(q)
           || t.date.includes(q)
           || t.category.toLowerCase().includes(q)
           || (t.accountName && t.accountName.toLowerCase().includes(q))
@@ -2772,7 +3222,7 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
         <span className="tx-count">
           {filtered.length} of {transactions.filter(t => showLinked || !t.duplicateOf).length}
           {(() => {
-            const net = filtered.reduce((s, t) => s + t.amount, 0);
+            const net = filtered.filter(t => t.category !== RECONCILE_CAT).reduce((s, t) => s + t.amount, 0);
             return (
               <span style={{marginLeft:'10px', color: net >= 0 ? 'var(--pos)' : 'var(--neg)', fontWeight:500}}>
                 {privacy ? '••••••' : `${net >= 0 ? '+' : '−'}${fmt(net)}`}
@@ -3426,7 +3876,7 @@ function PlanBudgetCell({ budget, privacy, onSet }) {
   );
 }
 
-function Planning({ transactions, budgets, onSetBudget, categories, structure, onReorderStructure, privacy, year, month, onYearChange, onMonthChange, onNavigate, budgetMonthKeys, onCopyBudget }) {
+function Planning({ transactions, budgets, onSetBudget, categories, structure, onReorderStructure, privacy, year, month, onYearChange, onMonthChange, onNavigate, budgetMonthKeys, onCopyBudget, dueDays, onSetDueDay }) {
   const now      = new Date();
   const setYear  = onYearChange;
   const setMonth = onMonthChange;
@@ -3434,6 +3884,7 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
   const planDragIdxRef  = useRef(null);
   const [planDragging, setPlanDragging] = useState(null);
   const [showImport, setShowImport] = useState(false);
+  const [editingDue, setEditingDue] = useState(null); // cat name
   const [importSource, setImportSource] = useState('');
 
   const planClearDrag = () => { planDragIdxRef.current = null; setPlanDragging(null); };
@@ -3515,6 +3966,23 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
     const delta   = hasBudget ? budget - spent : null;
     const isDragging = planDragging === structureIdx;
 
+    const dueDay = dueDays?.[cat];
+    const todayDay = isCurrentMonth ? now.getDate() : null;
+    const dueClass = (() => {
+      if (!dueDay || !isCurrentMonth || spent > 0) return '';
+      const diff = todayDay - dueDay; // negative = before, 0 = today, positive = past
+      if (diff >= 1)  return 'due-red';
+      if (diff === 0) return 'due-yellow';
+      if (diff === -1) return 'due-green';
+      return '';
+    })();
+
+    const commitDue = (val) => {
+      const n = parseInt(val);
+      onSetDueDay(cat, n >= 1 && n <= 31 ? n : null);
+      setEditingDue(null);
+    };
+
     return (
       <div key={cat}
         className={`plan-row plan-cols${!hasBudget ? ' plan-unbudgeted' : ''}${isDragging ? ' dragging' : ''}`}
@@ -3525,6 +3993,19 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
       >
         <span className="drag-handle">⠿</span>
         <span className="plan-cat-name nav-link" onClick={() => onNavigate({ catFilter: cat, dateMode: 'month', navYear: year, navMonth: month })}>{cat}</span>
+        {editingDue === cat
+          ? <input autoFocus type="number" min="1" max="31" className="plan-due-input"
+              defaultValue={dueDay || ''}
+              placeholder="Day"
+              onBlur={e => commitDue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') commitDue(e.target.value); if (e.key === 'Escape') { onSetDueDay(cat, null); setEditingDue(null); } }}
+            />
+          : <button className={`plan-due-btn${dueClass ? ` ${dueClass}` : !dueDay ? ' due-empty' : ''}`}
+              onClick={() => setEditingDue(cat)}
+              title={dueDay ? `Due on the ${ordinal(dueDay)} — click to change. Press Escape to clear.` : 'Set due day'}>
+              {dueDay ? ordinal(dueDay) : '+ due'}
+            </button>
+        }
         <PlanBudgetCell budget={budget} privacy={privacy} onSet={v => onSetBudget(cat, v)} />
         <span className={`plan-spent ${spent > 0 ? 'neg nav-link' : ''}`}
           onClick={spent > 0 ? () => onNavigate({ catFilter: cat, dateMode: 'month', navYear: year, navMonth: month }) : undefined}>
@@ -3646,6 +4127,7 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
         <div className="plan-row-header plan-cols">
           <span />
           <span>Category</span>
+          <span>Due</span>
           <span style={{textAlign:'right'}}>Budget</span>
           <span style={{textAlign:'right'}}>Spent</span>
           <span style={{textAlign:'right'}}>Status</span>
@@ -3687,6 +4169,7 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
           <div className="plan-total-row plan-cols">
             <span />
             <span>Total</span>
+            <span />
             <span style={{textAlign:'right'}}>{mask(totalBudgeted)}</span>
             <span style={{textAlign:'right',color:'var(--neg)'}}>{totalSpent > 0 ? mask(totalSpent) : '—'}</span>
             <span style={{textAlign:'right'}} className={totalDelta < 0 ? 'budget-over' : 'budget-under'}>
@@ -3733,12 +4216,14 @@ function App() {
   const [activeTab, setActiveTab]       = useLocalStorage('budget_active_tab', 'dashboard');
   const [planYear, setPlanYear]         = useState(() => new Date().getFullYear());
   const [planMonth, setPlanMonth]       = useState(() => new Date().getMonth());
-  const [toast, setToast]               = useState(null);
+  const [toast, setToast]               = useState(null); // { msg, type }
+  const [autoSave, setAutoSave]         = useLocalStorage('budget_autosave', false);
+  const [lastSaved, setLastSaved]       = useState(null); // Date
   const toastTimer = useRef(null);
-  const showToast = (msg) => {
+  const showToast = (msg, type = 'info') => {
     clearTimeout(toastTimer.current);
-    setToast(msg);
-    toastTimer.current = setTimeout(() => setToast(null), 3000);
+    setToast({ msg, type });
+    toastTimer.current = setTimeout(() => setToast(null), type === 'error' ? 5000 : 3000);
   };
   const [showCatMgr, setShowCatMgr]     = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -3752,6 +4237,7 @@ function App() {
   const [privacy, setPrivacy]         = useLocalStorage('budget_privacy', false);
   const [theme, setTheme]             = useLocalStorage('budget_theme', 'light');
   const [budgets, setBudgets]         = useLocalStorage('budget_budgets', {});
+  const [dueDays, setDueDays]         = useLocalStorage('budget_due_days', {});
 
   // Migrate flat { cat: amt } → { 'YYYY-MM': { cat: amt } }
   useEffect(() => {
@@ -3769,6 +4255,16 @@ function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = 'Have you exported your data? Unsaved changes may be lost.';
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
   }, []);
 
   const monthKeys = useMemo(() =>
@@ -3790,6 +4286,10 @@ function App() {
       : Object.fromEntries(Object.entries(base).filter(([k]) => k !== cat));
     return { ...prev, [planMonthKey]: updated };
   });
+
+  const setDueDay = (cat, day) => setDueDays(prev =>
+    day ? { ...prev, [cat]: day } : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== cat))
+  );
 
   const copyBudgetFromMonth = (sourceKey) => {
     setBudgets(prev => ({ ...prev, [planMonthKey]: { ...(prev[sourceKey] || {}) } }));
@@ -3813,51 +4313,99 @@ function App() {
   };
 
   const exportAll = async () => {
-    const settingsBlob = new Blob([JSON.stringify({
-      version: 2, theme,
-      categoryStructure: structure,
-      budgets,
-      importSettings: JSON.parse(localStorage.getItem('budget_import_settings') || '{}'),
-    }, null, 2)], { type: 'application/json' });
-    const exportTx = transactions.filter(t => !t.shadow);
-    const linkedCount = exportTx.filter(t => t.duplicateOf).length;
-    const exportNote = linkedCount > 0 ? ` (incl. ${linkedCount} linked hidden)` : '';
-    const csvBlob = exportTx.length > 0
-      ? new Blob([exportCSV(exportTx)], { type: 'text/csv' })
-      : null;
+    try {
+      const settingsBlob = new Blob([JSON.stringify({
+        version: 2, theme,
+        categoryStructure: structure,
+        budgets,
+        importSettings: JSON.parse(localStorage.getItem('budget_import_settings') || '{}'),
+      }, null, 2)], { type: 'application/json' });
+      const exportTx = transactions.filter(t => !t.shadow);
+      const linkedCount = exportTx.filter(t => t.duplicateOf).length;
+      const exportNote = linkedCount > 0 ? ` (incl. ${linkedCount} linked hidden)` : '';
+      const csvBlob = exportTx.length > 0
+        ? new Blob([exportCSV(exportTx)], { type: 'text/csv' })
+        : null;
 
-    if (!window.showDirectoryPicker) {
-      const dl = (blob, name) => {
-        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
-        a.click(); URL.revokeObjectURL(a.href);
+      if (!window.showDirectoryPicker) {
+        const dl = (blob, name) => {
+          const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+          a.click(); URL.revokeObjectURL(a.href);
+        };
+        dl(settingsBlob, 'budget_settings.json');
+        if (csvBlob) dl(csvBlob, 'budget_transactions.csv');
+        showToast(`Exported ${exportTx.length} rows${exportNote} to Downloads`);
+        return;
+      }
+
+      let dirHandle = await getExportDirHandle();
+      if (dirHandle) {
+        const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') dirHandle = null;
+      }
+      if (!dirHandle) {
+        try {
+          dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+          await setExportDirHandle(dirHandle);
+        } catch (e) {
+          if (e.name !== 'AbortError') showToast('Export cancelled — folder access denied.', 'error');
+          return;
+        }
+      }
+
+      const writeFile = async (filename, blob) => {
+        const fh = await dirHandle.getFileHandle(filename, { create: true });
+        const w  = await fh.createWritable();
+        await w.write(blob); await w.close();
       };
-      dl(settingsBlob, 'budget_settings.json');
-      if (csvBlob) dl(csvBlob, 'budget_transactions.csv');
-      showToast(`Exported ${exportTx.length} rows${exportNote} to Downloads`);
-      return;
+      await writeFile('budget_settings.json', settingsBlob);
+      if (csvBlob) await writeFile('budget_transactions.csv', csvBlob);
+      showToast(`Exported ${exportTx.length} rows${exportNote} to ${dirHandle.name}`);
+    } catch (err) {
+      showToast(`Export failed: ${err.message || 'unknown error'}`, 'error');
     }
-
-    let dirHandle = await getExportDirHandle();
-    if (dirHandle) {
-      const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
-      if (perm !== 'granted') dirHandle = null;
-    }
-    if (!dirHandle) {
-      try {
-        dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        await setExportDirHandle(dirHandle);
-      } catch { return; }
-    }
-
-    const writeFile = async (filename, blob) => {
-      const fh = await dirHandle.getFileHandle(filename, { create: true });
-      const w  = await fh.createWritable();
-      await w.write(blob); await w.close();
-    };
-    await writeFile('budget_settings.json', settingsBlob);
-    if (csvBlob) await writeFile('budget_transactions.csv', csvBlob);
-    showToast(`Exported ${exportTx.length} rows${exportNote} to ${dirHandle.name}`);
   };
+
+  const silentExport = useCallback(async () => {
+    try {
+      let dirHandle = await getExportDirHandle();
+      if (!dirHandle) return;
+      const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') return;
+
+      const settingsBlob = new Blob([JSON.stringify({
+        version: 2, theme,
+        categoryStructure: catStructure,
+        budgets,
+        importSettings: JSON.parse(localStorage.getItem('budget_import_settings') || '{}'),
+      }, null, 2)], { type: 'application/json' });
+
+      const exportTx = transactions.filter(t => !t.shadow);
+      const csvBlob = exportTx.length > 0
+        ? new Blob([exportCSV(exportTx)], { type: 'text/csv' })
+        : null;
+
+      const writeFile = async (filename, blob) => {
+        const fh = await dirHandle.getFileHandle(filename, { create: true });
+        const w  = await fh.createWritable();
+        await w.write(blob); await w.close();
+      };
+      await writeFile('budget_settings.json', settingsBlob);
+      if (csvBlob) await writeFile('budget_transactions.csv', csvBlob);
+      setLastSaved(new Date());
+    } catch {
+      // silent — don't interrupt the user
+    }
+  }, [transactions, budgets, catStructure, theme]);
+
+  const AUTO_SAVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+  useEffect(() => {
+    if (!autoSave) return;
+    silentExport(); // save immediately on enable
+    const id = setInterval(silentExport, AUTO_SAVE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [autoSave, silentExport]);
 
   const importSettings = async (file) => {
     if (!file) return;
@@ -3967,7 +4515,7 @@ function App() {
   const reconcile = (accountName, diff) => {
     addTx({
       id: crypto.randomUUID(),
-      description: `Reconciliation — ${accountName}`,
+      merchant: `Reconciliation — ${accountName}`,
       amount: diff,
       category: RECONCILE_CAT,
       date: today(),
@@ -4038,7 +4586,7 @@ function App() {
 
   return (
     <div className="app">
-      {toast && <div className="toast">{toast}</div>}
+      {toast && <div className={`toast${toast.type === 'error' ? ' toast-error' : ''}`}>{toast.msg}</div>}
       <div className="sticky-top">
       <header className="app-header">
         <img src="https://rdatasquared.com/02/images/rbs_icon.png" alt="" className="app-icon" />
@@ -4059,6 +4607,21 @@ function App() {
           <button className="export-btn" onClick={exportAll}>
             ↓ Export
           </button>
+          <button className={`export-btn${autoSave ? ' active' : ''}`}
+            style={autoSave ? {borderColor:'var(--accent)',color:'var(--accent)',background:'var(--accent-light)'} : {}}
+            onClick={async () => {
+              if (!autoSave) {
+                let dh = await getExportDirHandle();
+                if (!dh) {
+                  try { dh = await window.showDirectoryPicker({ mode:'readwrite' }); await setExportDirHandle(dh); }
+                  catch { return; }
+                }
+              }
+              setAutoSave(s => !s);
+            }}
+            title={autoSave ? `Auto-save on — every 5 min${lastSaved ? ` · last saved ${lastSaved.toLocaleTimeString()}` : ''}` : 'Enable auto-save'}>
+            {autoSave ? '💾 Auto' : '💾 Auto'}
+          </button>
           <button className="export-btn" onClick={() => setShowSettings(true)} title="Settings">
             ⚙
           </button>
@@ -4067,7 +4630,7 @@ function App() {
         </div>
       </header>
       <nav className="tab-nav" style={{position:'static'}}>
-        {[['dashboard','Dashboard'],['planning','Planning'],['transactions','Transactions']].map(([key,label]) => (
+        {[['dashboard','Dashboard'],['planning','Planning'],['transactions','Transactions'],['table','Table']].map(([key,label]) => (
           <button key={key} className={`tab-btn ${activeTab === key ? 'active' : ''}`}
             onClick={() => setActiveTab(key)}>{label}</button>
         ))}
@@ -4092,6 +4655,16 @@ function App() {
             onNavigate={navigateToTx}
             budgetMonthKeys={monthKeys}
             onCopyBudget={copyBudgetFromMonth}
+            dueDays={dueDays}
+            onSetDueDay={setDueDay}
+          />
+        )}
+        {activeTab === 'table' && (
+          <TableView
+            transactions={transactions.filter(t => !t.shadow)}
+            onEdit={editTx}
+            categories={categories}
+            privacy={privacy}
           />
         )}
         {activeTab === 'transactions' && (<>
