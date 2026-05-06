@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Budget</title>
-  <link rel="icon" type="image/png" href="/02/images/rbs_icon.png" />
+  <link rel="icon" type="image/png" href="https://rdatasquared.com/02/images/rbs_icon.png" />
   <style>
 /* ── reset & base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -50,8 +50,10 @@ body {
 /* ── layout ───────────────────────────────────────────────────────────────── */
 .app { min-height: 100vh; }
 
-.app-header {
+.sticky-top {
   position: sticky; top: 0; z-index: 100;
+}
+.app-header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 14px 24px;
@@ -60,6 +62,7 @@ body {
   gap: 12px;
 }
 
+.app-icon  { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
 .app-title { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
 .app-sub   { color: var(--muted); font-size: 13px; }
 
@@ -165,12 +168,20 @@ input:focus, select:focus { border-color: var(--accent); }
 .tx-count { font-size: 12px; color: var(--muted); }
 
 .filters {
-  display: flex; gap: 8px; padding: 12px 16px;
+  display: flex; flex-direction: column;
   border-bottom: 1px solid var(--border); background: var(--surface-alt);
 }
-.search-input { flex: 2; min-width: 180px; }
+.filter-row {
+  display: flex; flex-wrap: nowrap; align-items: center; gap: 8px;
+  padding: 10px 16px;
+}
+.filter-row + .filter-row { border-top: 1px solid var(--border); padding-top: 8px; padding-bottom: 10px; }
+.filter-row-1 .filter-wrap,
+.filter-row-2 .filter-wrap { flex: 1; min-width: 0; }
+.filter-row-3 .date-filter-wrap { flex: 1; min-width: 0; }
+.search-input { width: 100%; }
 
-.filter-wrap       { position: relative; display: flex; align-items: center; }
+.filter-wrap       { position: relative; display: flex; align-items: center; min-width: 130px; }
 .filter-clear      {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   width: 16px; height: 16px; border: none; background: var(--muted); color: var(--surface);
@@ -192,7 +203,60 @@ input:focus, select:focus { border-color: var(--accent); }
   cursor: pointer; white-space: nowrap; padding: 0 4px; flex-shrink: 0;
 }
 .filter-reset:hover { text-decoration: underline; }
+.date-filter-wrap { gap: 0; min-width: unset; align-items: stretch; }
+.date-filter-wrap .date-filter-all,
+.date-filter-wrap .date-filter-inner { width: 100%; }
+.date-filter-all {
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 0 12px; font-size: 13px; color: var(--muted);
+  background: var(--surface); cursor: pointer; white-space: nowrap; height: 32px;
+}
+.date-filter-all:hover { background: var(--surface-alt); color: var(--text); }
+.date-filter-inner {
+  display: flex; align-items: stretch;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); overflow: hidden; height: 32px;
+}
+.date-nav-btn {
+  background: none; border: none; width: 28px;
+  font-size: 15px; color: var(--muted);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .1s, color .1s;
+}
+.date-nav-btn:hover { background: var(--surface-alt); color: var(--text); }
+.date-nav-label { font-size: 13px; font-weight: 500; min-width: 118px; flex: 1; text-align: center; padding: 0 4px; display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+.date-mode-toggle {
+  background: none; border: none; border-left: 1px solid var(--border);
+  padding: 0 9px; font-size: 11px; color: var(--muted);
+  cursor: pointer; flex-shrink: 0; white-space: nowrap;
+}
+.date-mode-toggle:hover { color: var(--accent); }
+.date-filter-clear {
+  background: none; border: none; border-left: 1px solid var(--border);
+  padding: 0 9px; font-size: 14px; color: var(--muted);
+  cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+}
+.date-filter-clear:hover { color: var(--neg); }
+.date-range-input {
+  width: 118px; font-size: 12px; padding: 0 8px;
+  border: none; background: transparent; outline: none; color: var(--text);
+}
+.date-range-input:first-child { border-right: 1px solid var(--border); }
+.date-range-sep { font-size: 12px; color: var(--muted); flex-shrink: 0; padding: 0 6px; display: flex; align-items: center; }
 .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--text); color: var(--bg); border-radius: 8px;
+  padding: 10px 20px; font-size: 13px; font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25); z-index: 999;
+  pointer-events: none;
+  animation: toast-in .2s ease;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 
 /* ── transaction row ──────────────────────────────────────────────────────── */
 .tx-row {
@@ -208,9 +272,42 @@ input:focus, select:focus { border-color: var(--accent); }
 .tx-transfer  .tx-accent { background: #cbd5e1; }
 .tx-transfer  .tx-amount { color: var(--muted); }
 .tx-transfer  .tx-desc   { color: var(--muted); }
+.tx-fuzzy        .tx-accent { background: #d97706; }
+.tx-linked-hidden .tx-accent { background: var(--border); }
+.tx-linked-hidden { opacity: 0.6; }
+
+.hidden-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:600;
+  background:var(--surface-alt); color:var(--muted); border:1px solid var(--border);
+  border-radius:4px; padding:1px 6px; letter-spacing:.3px; }
+
+.fuzzy-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700;
+  background:#fef3c7; color:#92400e; border-radius:4px; padding:1px 6px; letter-spacing:.3px; }
+[data-theme="dark"] .fuzzy-badge { background:#451a03; color:#fcd34d; }
+
+.fuzzy-actions { display:flex; gap:6px; margin-top:6px; }
+.fuzzy-link-btn { font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #d97706;
+  background:transparent; color:#d97706; cursor:pointer; font-weight:600; }
+.fuzzy-link-btn:hover { background:#fef3c7; }
+[data-theme="dark"] .fuzzy-link-btn { border-color:#f59e0b; color:#f59e0b; }
+[data-theme="dark"] .fuzzy-link-btn:hover { background:#451a03; }
+.fuzzy-keep-btn { font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); cursor:pointer; }
+.fuzzy-keep-btn:hover { background:var(--surface-alt); color:var(--text); }
+
+.dup-linker-pair { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--border);
+  border-radius:8px; overflow:hidden; margin-bottom:4px; }
+.dup-linker-side { padding:14px 16px; cursor:pointer; transition:background .15s; }
+.dup-linker-side:first-child { border-right:1px solid var(--border); }
+.dup-linker-side:hover { background:var(--surface-alt); }
+.dup-linker-side.selected { background:var(--accent-light); outline:2px solid var(--accent); outline-offset:-2px; }
+.dup-linker-radio { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:600; font-size:13px; }
+.dup-linker-desc { font-size:13px; font-weight:500; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dup-linker-sub  { font-size:11px; color:var(--muted); margin-bottom:4px; }
+.dup-linker-meta { font-size:12px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; }
+.dup-linker-note { font-size:12px; color:var(--muted); margin-top:10px; text-align:center; }
 
 .tx-body { flex: 1; padding: 12px 14px; min-width: 0; }
-.tx-top  { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.tx-top  { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 
 .tx-desc-wrap { display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
 .tx-desc   { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -227,6 +324,37 @@ input:focus, select:focus { border-color: var(--accent); }
   cursor: pointer; transition: border-color .1s, color .1s;
 }
 .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── multi-select filter ──────────────────────────────────────────────────── */
+.ms-filter { position: relative; width: 100%; }
+.ms-filter-btn {
+  width: 100%; height: 32px; padding: 0 8px 0 10px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--text); font-size: 13px;
+  cursor: pointer; text-align: left;
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+}
+.ms-filter-btn .ms-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.ms-filter-btn .ms-arrow { font-size: 9px; color: var(--muted); flex-shrink: 0; }
+.ms-filter-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.ms-filter-btn.active .ms-arrow { color: var(--accent); }
+.ms-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0;
+  min-width: 100%; width: max-content; max-width: 280px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  z-index: 300; display: flex; flex-direction: column; max-height: 280px;
+}
+.ms-search { padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.ms-search input { width: 100%; }
+.ms-list { overflow-y: auto; flex: 1; padding: 4px 0; }
+.ms-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px; cursor: pointer; font-size: 13px; user-select: none;
+}
+.ms-item:hover { background: var(--surface-alt); }
+.ms-item.ms-select-all { font-weight: 500; border-bottom: 1px solid var(--border); margin-bottom: 2px; white-space: nowrap; }
+.ms-item input[type="checkbox"] { flex-shrink: 0; cursor: pointer; width: 14px; height: 14px; margin: 0; }
 .cat-select-inline { height: 24px; font-size: 11px; padding: 0 6px; border-radius: 6px; }
 
 .cat-combo { position: relative; width: 100%; }
@@ -238,6 +366,7 @@ input:focus, select:focus { border-color: var(--accent); }
   border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
   max-height: 200px; overflow-y: auto;
 }
+.cat-dropdown.drop-up { top: auto; bottom: calc(100% + 3px); }
 .cat-dropdown-item {
   display: block; width: 100%; padding: 7px 12px;
   border: none; background: none; text-align: left;
@@ -328,7 +457,8 @@ input:focus, select:focus { border-color: var(--accent); }
 .review-side  { padding: 12px 14px; border-right: 1px solid var(--border); }
 .review-side:last-child { border-right: none; }
 .review-side-label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 5px; }
-.review-side-desc  { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.review-side-desc  { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+.review-side-sub   { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
 .review-side-meta  { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
 .review-side-amt   { font-weight: 600; }
 .review-actions    { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--border); background: var(--surface-alt); justify-content: flex-end; }
@@ -527,6 +657,7 @@ input:focus, select:focus { border-color: var(--accent); }
 .budget-over      { color:var(--neg); }
 .budget-warn      { color:#d97706; }
 .budget-under     { color:var(--pos); }
+.budget-on-target { color:#15803d; }
 
 .cat-add-row { display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 .cat-add-row input { flex: 1; }
@@ -564,7 +695,6 @@ input:focus, select:focus { border-color: var(--accent); }
   display: flex; gap: 0;
   border-bottom: 2px solid var(--border);
   background: var(--surface);
-  position: sticky; top: 57px; z-index: 99;
   padding: 0 24px;
 }
 .tab-btn {
@@ -632,6 +762,12 @@ input:focus, select:focus { border-color: var(--accent); }
   opacity: .7; transition: opacity .15s;
 }
 .acct-reconcile-btn:hover { opacity: 1; }
+
+.nav-link {
+  cursor: pointer;
+  transition: color .15s;
+}
+.nav-link:hover { color: var(--accent); text-decoration: underline; }
 
 /* category bars */
 .cat-bar-row {
@@ -838,7 +974,8 @@ input:focus, select:focus { border-color: var(--accent); }
   .f-merchant    { grid-column: 1 / -1; }
   .f-desc        { grid-column: 1 / -1; }
   .f-account     { grid-column: 1 / -1; }
-  .filters       { flex-wrap: wrap; }
+  .filter-row    { flex-wrap: wrap; }
+  .filter-row-2 .filter-wrap { flex: 1 1 120px; }
   .mapping-row   { grid-template-columns: 1fr; }
   .result-grid   { grid-template-columns: 1fr; }
   .cat-bar-row   { grid-template-columns: 90px 1fr 64px 64px; }
@@ -854,7 +991,7 @@ input:focus, select:focus { border-color: var(--accent); }
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script type="text/babel">
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
 const DEFAULT_CATEGORIES = [
   'Food & Dining','Housing','Transport','Entertainment',
@@ -977,10 +1114,12 @@ function parseAmount(str) {
 
 function autoDetect(headers) {
   const find = (pats) => headers.find(h => pats.some(p => p.test(h))) || '';
+  const merchantCol = find([/^merchant$/i, /^payee$/i, /^vendor$/i, /merchant.?name/i, /payee.?name/i, /^store$/i, /^retailer$/i, /^business$/i, /^recipient$/i, /transaction.?name/i]);
+  const descCol     = find([/^description$/i, /^name$/i, /^memo$/i, /transaction.?desc/i, /narrative/i]);
   return {
     dateCol:     find([/^date$/i, /transaction.?date/i, /posted.?date/i, /posting.?date/i, /trans.?date/i]),
-    merchantCol: find([/^merchant$/i, /^payee$/i, /^vendor$/i]),
-    descCol:     find([/^description$/i, /^name$/i, /^memo$/i, /transaction.?desc/i, /narrative/i]),
+    merchantCol: merchantCol || descCol,
+    descCol:     merchantCol ? descCol : '',
     amountCol:   find([/^amount$/i, /transaction.?amount/i]),
     debitCol:    find([/^debit$/i, /debit.?amount/i, /withdrawal/i]),
     creditCol:   find([/^credit$/i, /credit.?amount/i, /deposit/i]),
@@ -1006,7 +1145,7 @@ function applyMapping(row, mapping) {
   const txNum = mapping.txNumCol
     ? (parseInt(row[mapping.txNumCol], 10) || null)
     : null;
-  const valid = !!date && (!!merchant || !!description) && amount !== null && !isNaN(amount);
+  const valid = !!date && amount !== null && !isNaN(amount) && !!merchant;
   return { date, merchant, description, amount, txNum, valid };
 }
 
@@ -1091,18 +1230,23 @@ function MapStep({ csvData, fileName, mapping, setMap, previewRows, onChangeFile
             <ColSelect value={mapping.txNumCol} onChange={v => setMap('txNumCol', v)} opts={opts} />
           </MappingRow>
           <MappingRow label="Account name">
-            <input value={mapping.accountName}
-              onChange={e => setMap('accountName', e.target.value)}
-              placeholder="e.g. Checking" />
+            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+              <input value={mapping.accountName}
+                onChange={e => setMap('accountName', e.target.value)}
+                placeholder="e.g. Checking" />
+              {mapping.accountName && (
+                <button type="button" className="field-clear-btn" onClick={() => setMap('accountName', '')} title="Clear account">×</button>
+              )}
+            </div>
           </MappingRow>
           <MappingRow label="Default category">
             <select value={mapping.defaultCategory} onChange={e => setMap('defaultCategory', e.target.value)}>
               {categories.map(c => <option key={c}>{c}</option>)}
             </select>
           </MappingRow>
-          <MappingRow label="On duplicates">
+          <MappingRow label="Import mode">
             <div className="radio-group">
-              {[['skip','Skip'], ['update','Update existing'], ['replace','Replace ALL data']].map(([val, lbl]) => (
+              {[['append','Append'], ['replace','Replace All']].map(([val, lbl]) => (
                 <label key={val} style={val === 'replace' ? {color:'var(--neg)',fontWeight:600} : {}}>
                   <input type="radio" name="importMode" value={val}
                     checked={mapping.importMode === val}
@@ -1144,6 +1288,7 @@ function MapStep({ csvData, fileName, mapping, setMap, previewRows, onChangeFile
 
 // ── DoneStep ──────────────────────────────────────────────────────────────────
 function DoneStep({ result }) {
+  const [showExact, setShowExact] = React.useState(false);
   const cards = result.replaced != null
     ? [
         { num: result.imported,  label: 'Imported',  color: result.imported > 0 ? 'var(--pos)' : 'var(--muted)' },
@@ -1152,22 +1297,49 @@ function DoneStep({ result }) {
       ]
     : [
         { num: result.imported,    label: 'Imported',           color: result.imported > 0 ? 'var(--pos)' : 'var(--muted)' },
-        result.matched != null
-          ? { num: result.matched, label: 'Matched & Cleared',  color: result.matched > 0 ? 'var(--pos)' : 'var(--muted)' }
-          : { num: result.updated ?? result.duplicates,
-              label: result.updated != null ? 'Updated' : 'Duplicates skipped',
-              color: result.updated > 0 ? 'var(--accent)' : 'var(--muted)' },
+        result.flagged != null
+          ? { num: result.flagged,    label: 'Flagged for review',  color: result.flagged > 0 ? '#d97706' : 'var(--muted)' }
+          : { num: result.duplicates, label: 'Auto-skipped (exact)', color: 'var(--muted)' },
         { num: result.errors,      label: 'Rows skipped',       color: result.errors > 0 ? 'var(--neg)' : 'var(--muted)' },
       ];
   return (
-    <div className="result-grid">
-      {cards.map(c => (
-        <div key={c.label} className="result-card">
-          <div className="result-num" style={{color: c.color}}>{c.num}</div>
-          <div className="result-lbl">{c.label}</div>
+    <>
+      <div className="result-grid">
+        {cards.map(c => (
+          <div key={c.label} className="result-card">
+            <div className="result-num" style={{color: c.color}}>{c.num}</div>
+            <div className="result-lbl">{c.label}</div>
+          </div>
+        ))}
+      </div>
+      {result.exactSkips?.length > 0 && (
+        <div style={{marginTop:'12px'}}>
+          <button onClick={() => setShowExact(s => !s)}
+            style={{fontSize:'12px',color:'var(--accent)',background:'none',border:'none',cursor:'pointer',padding:0,fontWeight:600}}>
+            {showExact ? '▲ Hide' : '▼ Show'} {result.exactSkips.length} auto-skipped (already in database)
+          </button>
+          {showExact && (
+            <div style={{marginTop:'8px',maxHeight:'180px',overflowY:'auto'}}>
+              {result.exactSkips.map((r, i) => (
+                <p key={i} style={{fontSize:'11px',color:'var(--muted)',fontFamily:'monospace',marginBottom:'3px'}}>
+                  {r.date} | {r.amount >= 0 ? '+' : ''}{r.amount} | {r.merchant || '—'} | {r.description || '—'} | {r.accountName || '—'}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
-      ))}
-    </div>
+      )}
+      {result.skippedRows?.length > 0 && (
+        <div style={{marginTop:'12px'}}>
+          <p style={{fontSize:'12px',color:'var(--neg)',marginBottom:'6px',fontWeight:600}}>Rows skipped (missing date or unparseable amount):</p>
+          {result.skippedRows.map((r, i) => (
+            <p key={i} style={{fontSize:'11px',color:'var(--muted)',fontFamily:'monospace'}}>
+              date="{r.date}" amount={r.amount} merchant="{r.merchant}" desc="{r.description}"
+            </p>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1175,7 +1347,7 @@ function DoneStep({ result }) {
 const DEFAULT_MAPPING = {
   dateCol:'', merchantCol:'', descCol:'', amountMode:'single',
   amountCol:'', negateAmount:false, debitCol:'', creditCol:'',
-  txNumCol:'', accountName:'', defaultCategory:'Other', importMode:'skip'
+  txNumCol:'', accountName:'', defaultCategory:'Other', importMode:'append'
 };
 
 function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categories, externalFile, onExternalFileConsumed }) {
@@ -1186,9 +1358,6 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
   const [fileName, setFileName] = useState('');
   const [mapping, setMapping] = useState(DEFAULT_MAPPING);
   const [result, setResult]         = useState(null);
-  const [pendingReview, setPendingReview]   = useState([]);
-  const [decisions, setDecisions]           = useState({});
-  const [pendingCounts, setPendingCounts]   = useState({});
   const [pendingReplace, setPendingReplace] = useState(null);
   const [importSettings, setImportSettings] = useLocalStorage('budget_import_settings', {});
 
@@ -1212,8 +1381,9 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
     setCsvData(parsed);
     setMapping({
       ...DEFAULT_MAPPING,
-      dateCol:         col(auto.dateCol,  'dateCol'),
-      descCol:         col(auto.descCol,  'descCol'),
+      dateCol:         col(auto.dateCol,     'dateCol'),
+      merchantCol:     col(auto.merchantCol, 'merchantCol'),
+      descCol:         col(auto.descCol,     'descCol'),
       amountCol:       col(auto.amountCol,'amountCol'),
       debitCol:        col(auto.debitCol, 'debitCol'),
       creditCol:       col(auto.creditCol,'creditCol'),
@@ -1221,7 +1391,7 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
       amountMode,
       negateAmount:    s.negateAmount    ?? false,
       defaultCategory: s.defaultCategory || 'Other',
-      importMode:      s.importMode      || 'skip',
+      importMode:      s.importMode      || 'append',
       accountName:     name,
     });
     setStep('map');
@@ -1247,16 +1417,25 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
     setStep('done');
   };
 
+  const parseCleared = (raw) => {
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    const v = String(raw).trim().toLowerCase();
+    if (v === 'true'  || v === '1' || v === 'yes' || v === 'y') return true;
+    if (v === 'false' || v === '0' || v === 'no'  || v === 'n') return false;
+    return undefined;
+  };
+
   const handleImport = () => {
+    // Build a case-insensitive lookup for CSV columns
+    const getCol = (row, name) => {
+      const key = csvData.headers.find(h => h.toLowerCase() === name.toLowerCase());
+      return key != null ? row[key] : undefined;
+    };
+
     // Replace-all mode: parse rows then go to confirmation step
     if (mapping.importMode === 'replace') {
       let errors = 0;
       const rows = [];
-      // Build a case-insensitive lookup for CSV columns
-      const getCol = (row, name) => {
-        const key = csvData.headers.find(h => h.toLowerCase() === name.toLowerCase());
-        return key != null ? row[key] : undefined;
-      };
       for (const row of csvData.rows) {
         const mapped = applyMapping(row, mapping);
         if (!mapped.valid) { errors++; continue; }
@@ -1272,7 +1451,7 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
           date:        mapped.date,
           category:    getCol(row, 'category')    || mapping.defaultCategory,
           accountName: getCol(row, 'accountName') || mapping.accountName || '',
-          cleared:     rawCleared === 'true' ? true : rawCleared === 'false' ? false : undefined,
+          cleared:     parseCleared(rawCleared),
           tags:        rawTags ? rawTags.split(';').filter(Boolean) : [],
           ...(rawTransId ? { transferId: rawTransId } : {}),
         });
@@ -1282,123 +1461,78 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
       return;
     }
 
-    let imported = 0, updated = 0, skipped = 0, errors = 0;
+    let imported = 0, skipped = 0, flagged = 0, errors = 0;
     const newTx = [];
-    const patches = [];
-    const reviewPairs = [];
+    const skippedRows = [];
+    const exactSkips = [];
 
     for (const row of csvData.rows) {
       const mapped = applyMapping(row, mapping);
-      if (!mapped.valid) { errors++; continue; }
-
-      // Exact match: same txNum, or same date + amount + description
-      const exactMatch = mapped.txNum
-        ? transactions.find(t => t.txNum === mapped.txNum)
-        : transactions.find(t =>
-            t.date === mapped.date &&
-            Math.abs(t.amount - mapped.amount) < 0.005 &&
-            t.description.toLowerCase() === mapped.description.toLowerCase()
-          );
-
-      if (exactMatch) {
-        if (mapping.importMode === 'update') {
-          patches.push({ id: exactMatch.id, data: {
-            description: mapped.description,
-            amount: mapped.amount,
-            date: mapped.date,
-            ...(mapping.accountName ? { accountName: mapping.accountName } : {}),
-          }});
-          updated++;
-        } else {
-          skipped++;
-        }
+      if (!mapped.valid) {
+        errors++;
+        skippedRows.push({ date: mapped.date, amount: mapped.amount, merchant: mapped.merchant, description: mapped.description });
         continue;
       }
 
-      // Fuzzy match: same amount, date within 3 days (description may differ) → needs review
-      const fuzzyMatch = !mapped.txNum && transactions.find(t => {
+      // Exact match: ALL fields must match — date, amount, merchant, description, accountName
+      // txNum is an additional confirmation but requires date+amount to also match (prevents
+      // false matches when a user copies a row and changes its content but leaves the txNum)
+      const acct = (mapping.accountName || '').toLowerCase();
+      const exactMatch = transactions.find(t =>
+        t.date === mapped.date &&
+        Math.abs(t.amount - mapped.amount) < 0.005 &&
+        (t.merchant || '').toLowerCase() === (mapped.merchant || '').toLowerCase() &&
+        (t.description || '').toLowerCase() === (mapped.description || '').toLowerCase() &&
+        (t.accountName || '').toLowerCase() === acct
+      ) || (mapped.txNum
+        ? transactions.find(t =>
+            t.txNum === mapped.txNum &&
+            t.date === mapped.date &&
+            Math.abs(t.amount - mapped.amount) < 0.005
+          )
+        : null);
+
+      if (exactMatch) {
+        skipped++;
+        exactSkips.push({ date: mapped.date, amount: mapped.amount, merchant: mapped.merchant, description: mapped.description, accountName: mapping.accountName });
+        continue;
+      }
+
+      // Fuzzy match: same amount, date within 3 days — import it but stamp fuzzyMatchId for in-list review
+      const fuzzyMatch = transactions.find(t => {
+        if (t.duplicateOf || t.fuzzyMatchId) return false;
         const dayDiff = Math.abs(new Date(t.date) - new Date(mapped.date)) / 86400000;
         return dayDiff <= 3 && Math.abs(t.amount - mapped.amount) < 0.005;
       });
 
-      if (fuzzyMatch) {
-        reviewPairs.push({
-          incoming: { merchant: mapped.merchant, description: mapped.description, amount: mapped.amount, date: mapped.date, accountName: mapping.accountName, category: mapping.defaultCategory },
-          existing: fuzzyMatch,
-        });
-        continue;
-      }
-
-      newTx.push({
+      const rawCleared = getCol(row, 'cleared');
+      const tx = {
         id: crypto.randomUUID(),
         ...(mapped.txNum ? { txNum: mapped.txNum } : {}),
         merchant:    mapped.merchant,
         description: mapped.description,
         amount:      mapped.amount,
         date:        mapped.date,
-        category:    mapping.defaultCategory,
-        accountName: mapping.accountName,
-        cleared:     true,
-      });
+        category:    getCol(row, 'category') || mapping.defaultCategory,
+        accountName: getCol(row, 'accountName') || mapping.accountName || '',
+        cleared:     parseCleared(rawCleared) ?? true,
+        tags:        (() => { const tg = getCol(row, 'tags'); return tg ? tg.split(';').filter(Boolean) : []; })(),
+        ...(fuzzyMatch ? { fuzzyMatchId: fuzzyMatch.txNum } : {}),
+      };
+      newTx.push(tx);
       imported++;
+      if (fuzzyMatch) flagged++;
     }
 
     const { accountName: _omit, ...settingsToSave } = mapping;
     setImportSettings(settingsToSave);
-    if (newTx.length > 0)   onImport(newTx);
-    if (patches.length > 0) onUpdate(patches);
-
-    if (reviewPairs.length > 0) {
-      setPendingReview(reviewPairs);
-      setDecisions({});
-      setPendingCounts({ imported, updated, skipped, errors });
-      setStep('review');
-    } else {
-      const result = mapping.importMode === 'update'
-        ? { imported, updated, errors }
-        : { imported, duplicates: skipped, errors };
-      setResult(result);
-      setStep('done');
-    }
-  };
-
-  const handleConfirmReview = () => {
-    const toImport = [];
-    const toMark   = [];
-    let matched = 0, reviewImported = 0;
-
-    pendingReview.forEach((pair, idx) => {
-      if ((decisions[idx] ?? 'match') === 'import') {
-        toImport.push({
-          id: crypto.randomUUID(),
-          description: pair.incoming.description,
-          amount: pair.incoming.amount,
-          date: pair.incoming.date,
-          category: pair.incoming.category,
-          accountName: pair.incoming.accountName,
-          cleared: true,
-        });
-        reviewImported++;
-      } else {
-        toMark.push({ id: pair.existing.id, data: { cleared: true } });
-        matched++;
-      }
-    });
-
-    if (toImport.length > 0) onImport(toImport);
-    if (toMark.length > 0)   onUpdate(toMark);
-
-    setResult({
-      imported: (pendingCounts.imported || 0) + reviewImported,
-      matched,
-      duplicates: pendingCounts.skipped || 0,
-      errors: pendingCounts.errors || 0,
-    });
+    if (newTx.length > 0) onImport(newTx);
+    setResult({ imported, flagged, duplicates: skipped, errors, skippedRows, exactSkips });
     setStep('done');
   };
 
   const close = () => { setOpen(false); setStep('map'); setResult(null); };
-  const canImport = mapping.dateCol && (mapping.merchantCol || mapping.descCol) &&
+  const canImport = mapping.dateCol && mapping.merchantCol &&
     (mapping.amountMode === 'single' ? mapping.amountCol : (mapping.debitCol || mapping.creditCol));
 
   return (
@@ -1411,7 +1545,7 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
           <div className="modal">
             <div className="modal-header">
               <span className="modal-title">
-                {step === 'done' ? 'Import Complete' : step === 'review' ? 'Review Duplicates' : step === 'confirm-replace' ? 'Confirm Replace' : 'Import CSV'}
+                {step === 'done' ? 'Import Complete' : step === 'confirm-replace' ? 'Confirm Replace All' : 'Import CSV'}
               </span>
               <button className="modal-close" onClick={close}>×</button>
             </div>
@@ -1437,53 +1571,6 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
                   )}
                 </div>
               )}
-              {step === 'review' && (
-                <div className="review-step">
-                  <p className="review-note">
-                    {pendingReview.length} potential duplicate{pendingReview.length !== 1 ? 's' : ''} found — same amount, dates within 3 days.
-                    Default is <strong>Match & Clear</strong>. Switch any to <strong>Import Anyway</strong> to keep both.
-                  </p>
-                  {pendingReview.map((pair, idx) => {
-                    const dec = decisions[idx] ?? 'match';
-                    return (
-                      <div key={idx} className={`review-pair decided-${dec}`}>
-                        <div className="review-sides">
-                          <div className="review-side">
-                            <div className="review-side-label">Existing</div>
-                            <div className="review-side-desc" title={pair.existing.description}>{pair.existing.description}</div>
-                            <div className="review-side-meta">
-                              <span>{pair.existing.date}</span>
-                              <span className={`review-side-amt ${pair.existing.amount >= 0 ? 'pos' : 'neg'}`}>
-                                {pair.existing.amount >= 0 ? '+' : '−'}{fmt(pair.existing.amount)}
-                              </span>
-                              {pair.existing.category && <span>{pair.existing.category}</span>}
-                            </div>
-                          </div>
-                          <div className="review-side">
-                            <div className="review-side-label">Incoming (CSV)</div>
-                            <div className="review-side-desc" title={pair.incoming.description}>{pair.incoming.description}</div>
-                            <div className="review-side-meta">
-                              <span>{pair.incoming.date}</span>
-                              <span className={`review-side-amt ${pair.incoming.amount >= 0 ? 'pos' : 'neg'}`}>
-                                {pair.incoming.amount >= 0 ? '+' : '−'}{fmt(pair.incoming.amount)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="review-actions">
-                          <span className={`review-badge ${dec}`}>
-                            {dec === 'match' ? '✓ Match & Clear' : '+ Import Anyway'}
-                          </span>
-                          {dec === 'match'
-                            ? <button className="btn-secondary" onClick={() => setDecisions(d => ({...d, [idx]: 'import'}))}>Import Anyway</button>
-                            : <button className="btn-secondary" onClick={() => setDecisions(d => ({...d, [idx]: 'match'}))}>Match & Clear</button>
-                          }
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
               {step === 'done' && result && <DoneStep result={result} />}
             </div>
 
@@ -1500,12 +1587,6 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
                   Yes, Replace All Data
                 </button>
               </>}
-              {step === 'review' && <>
-                <button className="btn-secondary" onClick={close}>Cancel</button>
-                <button className="btn-primary" onClick={handleConfirmReview}>
-                  Confirm {pendingReview.length} {pendingReview.length === 1 ? 'Decision' : 'Decisions'} →
-                </button>
-              </>}
               {step === 'done' && <>
                 <button className="btn-secondary"
                   onClick={() => { setStep('map'); setResult(null); fileRef.current.click(); }}>
@@ -1518,6 +1599,78 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
         </div>
       )}
     </>
+  );
+}
+
+// ── DuplicateLinker ───────────────────────────────────────────────────────────
+function DuplicateLinker({ tx, transactions, onLink, onClose }) {
+  const matchedTx = transactions.find(t => t.txNum === tx.fuzzyMatchId && !t.duplicateOf);
+  const [masterId, setMasterId] = useState(matchedTx?.id ?? tx.id);
+
+  if (!matchedTx) {
+    return (
+      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal" style={{maxWidth:'400px'}}>
+          <div className="modal-header">
+            <span className="modal-title">Link Duplicate</span>
+            <button className="modal-close" onClick={onClose}>×</button>
+          </div>
+          <div className="modal-body">
+            <p style={{color:'var(--muted)',fontSize:'13px'}}>The matched transaction no longer exists. You can dismiss the flag instead.</p>
+          </div>
+          <div className="modal-footer">
+            <button className="btn-secondary" onClick={onClose}>Cancel</button>
+            <button className="btn-primary" onClick={() => { onLink(null, tx.id); onClose(); }}>Dismiss Flag</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const handleLink = () => {
+    const secondaryId = masterId === tx.id ? matchedTx.id : tx.id;
+    onLink(masterId, secondaryId);
+    onClose();
+  };
+
+  const Side = ({ t, isFuzzy }) => (
+    <div className={`dup-linker-side${masterId === t.id ? ' selected' : ''}`} onClick={() => setMasterId(t.id)}>
+      <div className="dup-linker-radio">
+        <input type="radio" readOnly checked={masterId === t.id} style={{accentColor:'var(--accent)'}} />
+        Master
+        {isFuzzy && <span className="fuzzy-badge">~ bank import</span>}
+      </div>
+      <div className="dup-linker-desc">{t.merchant || t.description || '—'}</div>
+      {t.merchant && t.description && <div className="dup-linker-sub">{t.description}</div>}
+      <div className="dup-linker-meta">
+        <span>{t.date}</span>
+        <span className={t.amount >= 0 ? 'pos' : 'neg'}>{t.amount >= 0 ? '+' : '−'}{fmt(t.amount)}</span>
+        {t.accountName && <span>{t.accountName}</span>}
+        {t.category && <span>{t.category}</span>}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{maxWidth:'560px'}}>
+        <div className="modal-header">
+          <span className="modal-title">Link Duplicate Transactions</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="dup-linker-pair">
+            <Side t={matchedTx} isFuzzy={false} />
+            <Side t={tx} isFuzzy={true} />
+          </div>
+          <p className="dup-linker-note">Select the <strong>Master</strong> to keep visible. The other will be hidden but stored for future duplicate detection.</p>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={handleLink}>Link Pair</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1763,7 +1916,7 @@ function Summary({ transactions, privacy }) {
   const expenses  = budgetTx.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0);
   const balance   = income + expenses;
   const mask = (val, cls, prefix = '') => privacy
-    ? <span className="s-amount" style={{color:'var(--muted)',letterSpacing:'2px'}}>••••••</span>
+    ? <span className={`s-amount ${cls}`} style={{letterSpacing:'2px'}}>••••••</span>
     : <span className={`s-amount ${cls}`}>{prefix}{fmt(val)}</span>;
   return (
     <div className="summary">
@@ -1788,7 +1941,9 @@ function CategoryCombobox({ value, categories, structure, onChange, autoFocus, o
   const [query, setQuery]       = useState('');
   const [open, setOpen]         = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [dropUp, setDropUp]     = useState(false);
   const inputRef = useRef(null);
+  const wrapRef  = useRef(null);
 
   const displayItems = useMemo(() => {
     if (query) {
@@ -1853,18 +2008,22 @@ function CategoryCombobox({ value, categories, structure, onChange, autoFocus, o
   };
 
   return (
-    <div className={`cat-combo${inline ? ' cat-combo-inline' : ''}`}>
+    <div ref={wrapRef} className={`cat-combo${inline ? ' cat-combo-inline' : ''}`}>
       <input
         ref={inputRef}
         value={open ? query : value}
         onChange={e => { setQuery(e.target.value); setOpen(true); }}
-        onFocus={() => { setQuery(''); setOpen(true); }}
+        onFocus={() => {
+          setQuery(''); setOpen(true);
+          const rect = wrapRef.current?.getBoundingClientRect();
+          if (rect) setDropUp(window.innerHeight - rect.bottom < 220);
+        }}
         onBlur={() => setTimeout(() => { setOpen(false); setQuery(''); onDone?.(); }, 150)}
         onKeyDown={handleKeyDown}
         placeholder={value}
       />
       {open && displayItems.length > 0 && (
-        <div className="cat-dropdown">
+        <div className={`cat-dropdown${dropUp ? ' drop-up' : ''}`}>
           {displayItems.map((item, i) =>
             item.type === 'header'
               ? <div key={`h-${item.name}-${i}`} className="cat-dropdown-header">{item.name}</div>
@@ -1886,7 +2045,9 @@ function AccountCombobox({ value, accounts, onChange, placeholder = 'Account' })
   const [query, setQuery]   = useState('');
   const [open, setOpen]     = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [dropUp, setDropUp] = useState(false);
   const inputRef = useRef(null);
+  const wrapRef  = useRef(null);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -1905,18 +2066,22 @@ function AccountCombobox({ value, accounts, onChange, placeholder = 'Account' })
   };
 
   return (
-    <div className="cat-combo">
+    <div ref={wrapRef} className="cat-combo">
       <input
         ref={inputRef}
         value={open ? query : value}
         onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true); }}
-        onFocus={() => { setQuery(''); setOpen(true); }}
+        onFocus={() => {
+          setQuery(''); setOpen(true);
+          const rect = wrapRef.current?.getBoundingClientRect();
+          if (rect) setDropUp(window.innerHeight - rect.bottom < 220);
+        }}
         onBlur={() => setTimeout(() => { setOpen(false); setQuery(''); }, 150)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
       />
       {open && filtered.length > 0 && (
-        <div className="cat-dropdown">
+        <div className={`cat-dropdown${dropUp ? ' drop-up' : ''}`}>
           {filtered.map((a, i) => (
             <button key={a}
               className={`cat-dropdown-item${i === activeIdx ? ' active' : ''}`}
@@ -1988,12 +2153,93 @@ function FilterCombobox({ value, options, onChange, allLabel = 'All' }) {
   );
 }
 
+// ── MultiSelectFilter ─────────────────────────────────────────────────────────
+function MultiSelectFilter({ excluded, options, onChange, allLabel }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) { setOpen(false); setSearch(''); }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (e.key === 'Escape') { setOpen(false); setSearch(''); } };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
+
+  const visible = search ? options.filter(o => o.toLowerCase().includes(search.toLowerCase())) : options;
+  const allChecked = excluded.size === 0;
+  const numSelected = options.length - excluded.size;
+
+  const label = allChecked
+    ? allLabel
+    : numSelected === 1
+      ? (options.find(o => !excluded.has(o)) ?? allLabel)
+      : `${numSelected} of ${options.length} selected`;
+
+  const toggleItem = (item) => {
+    const next = new Set(excluded);
+    next.has(item) ? next.delete(item) : next.add(item);
+    onChange(next);
+  };
+
+  const toggleAll = () => onChange(allChecked ? new Set(options) : new Set());
+
+  return (
+    <div className="ms-filter" ref={wrapRef}>
+      <button className={`ms-filter-btn${!allChecked ? ' active' : ''}`} onClick={() => setOpen(o => !o)}>
+        <span className="ms-label">{label}</span>
+        <span className="ms-arrow">▾</span>
+      </button>
+      {open && (
+        <div className="ms-dropdown">
+          <div className="ms-search">
+            <input autoFocus placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && search) {
+                  onChange(new Set(options.filter(o => !visible.includes(o))));
+                  setSearch('');
+                  setOpen(false);
+                }
+              }} />
+          </div>
+          <div className="ms-list">
+            {!search && (
+              <label className="ms-item ms-select-all">
+                <input type="checkbox" checked={allChecked}
+                  onChange={toggleAll} ref={el => el && (el.indeterminate = !allChecked && numSelected > 0)} />
+                (Select All)
+              </label>
+            )}
+            {visible.map(o => (
+              <label key={o} className="ms-item">
+                <input type="checkbox" checked={!excluded.has(o)} onChange={() => toggleItem(o)} />
+                {o}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── TagInput ──────────────────────────────────────────────────────────────────
 function TagInput({ value = [], onChange, allTags = [] }) {
   const [input, setInput] = useState('');
   const [open, setOpen]   = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [dropPos, setDropPos] = useState(null);
   const inputRef = useRef(null);
+  const wrapRef  = useRef(null);
 
   const suggestions = allTags.filter(t =>
     !value.includes(t) && t.toLowerCase().includes(input.toLowerCase())
@@ -2026,18 +2272,30 @@ function TagInput({ value = [], onChange, allTags = [] }) {
           <button type="button" onClick={e => { e.stopPropagation(); remove(tag); }}>×</button>
         </span>
       ))}
-      <div className="tag-combo-input">
+      <div ref={wrapRef} className="tag-combo-input">
         <input
           ref={inputRef}
           value={input}
           placeholder={value.length === 0 ? 'Add tags…' : ''}
           onChange={e => { setInput(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true);
+            const rect = wrapRef.current?.getBoundingClientRect();
+            if (rect) {
+              const spaceBelow = window.innerHeight - rect.bottom;
+              setDropPos({ left: rect.left, width: rect.width, top: rect.bottom + 3, bottom: window.innerHeight - rect.top + 3, up: spaceBelow < 220 });
+            }
+          }}
           onBlur={() => setTimeout(() => { setOpen(false); setInput(''); }, 150)}
           onKeyDown={handleKeyDown}
         />
-        {open && suggestions.length > 0 && (
-          <div className="cat-dropdown">
+        {open && suggestions.length > 0 && dropPos && (
+          <div className="cat-dropdown" style={{
+            position: 'fixed',
+            left: dropPos.left,
+            width: dropPos.width,
+            ...(dropPos.up ? { bottom: dropPos.bottom } : { top: dropPos.top }),
+          }}>
             {suggestions.map((s, i) => (
               <button key={s}
                 className={`cat-dropdown-item${i === activeIdx ? ' active' : ''}`}
@@ -2103,7 +2361,7 @@ function AddTransaction({ onAdd, categories, structure, transactions, accounts, 
       tags: form.tags,
       cleared: false,
     });
-    setForm(f => ({ ...EMPTY, type: f.type, date: f.date, category: f.category, accountName: f.accountName }));
+    setForm(f => ({ ...EMPTY, type: f.type, date: f.date }));
     setCategoryLocked(false);
     setSuggestedCat(null);
   };
@@ -2173,7 +2431,7 @@ function EditTransactionModal({ t, categories, structure, accounts, allTags, onS
   const submit = (e) => {
     e.preventDefault();
     const amt = parseFloat(form.amount);
-    if (!form.description.trim()) return setError('Description is required.');
+    if (!form.merchant.trim() && !form.description.trim()) return setError('Merchant or description is required.');
     if (isNaN(amt) || amt <= 0)   return setError('Enter a valid positive amount.');
     onSave({
       description: form.description.trim(),
@@ -2205,10 +2463,21 @@ function EditTransactionModal({ t, categories, structure, accounts, allTags, onS
                 </button>
               ))}
             </div>
-            <input autoFocus placeholder="Description" value={form.description}
-              onChange={e => set('description', e.target.value)} />
-            <input placeholder="Merchant (optional)" value={form.merchant}
+            <input autoFocus placeholder="Merchant" value={form.merchant}
               onChange={e => set('merchant', e.target.value)} />
+            <input placeholder="Description (optional)" value={form.description}
+              onChange={e => set('description', e.target.value)} />
+            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+              <AccountCombobox
+                value={form.accountName}
+                accounts={accounts}
+                onChange={v => set('accountName', v)}
+                placeholder="Account (optional)"
+              />
+              {form.accountName && (
+                <button type="button" className="field-clear-btn" onClick={() => set('accountName', '')} title="Clear account">×</button>
+              )}
+            </div>
             <input type="number" placeholder="0.00" min="0" step="0.01"
               value={form.amount} onChange={e => set('amount', e.target.value)} />
             <CategoryCombobox
@@ -2216,12 +2485,6 @@ function EditTransactionModal({ t, categories, structure, accounts, allTags, onS
               onChange={v => set('category', v)} />
             <input type="date" value={form.date}
               onChange={e => set('date', e.target.value)} />
-            <AccountCombobox
-              value={form.accountName}
-              accounts={accounts}
-              onChange={v => set('accountName', v)}
-              placeholder="Account (optional)"
-            />
             <TagInput value={form.tags} onChange={tags => set('tags', tags)} allTags={allTags || []} />
             {error && <p className="form-error">{error}</p>}
           </div>
@@ -2236,7 +2499,7 @@ function EditTransactionModal({ t, categories, structure, accounts, allTags, onS
 }
 
 // ── TransactionRow ────────────────────────────────────────────────────────────
-function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, categories, structure, privacy, accounts, allTags }) {
+function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, onLinkDuplicate, onDismissFuzzy, categories, structure, privacy, accounts, allTags, onFilterTag }) {
   const [editingCat, setEditingCat] = useState(false);
   const [showEdit, setShowEdit]         = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -2252,16 +2515,16 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, categori
 
   return (
     <>
-    <div className={`tx-row ${t.category === TRANSFER_CAT ? 'tx-transfer' : t.amount >= 0 ? 'tx-income' : 'tx-expense'}`}>
+    <div className={`tx-row ${t.duplicateOf ? 'tx-linked-hidden' : t.fuzzyMatchId ? 'tx-fuzzy' : t.category === TRANSFER_CAT ? 'tx-transfer' : t.amount >= 0 ? 'tx-income' : 'tx-expense'}`}>
       <div className="tx-accent" />
       <div className="tx-body">
         <div className="tx-top">
           <div className="tx-desc-wrap">
-            <span className="tx-desc">{t.description}</span>
-            {t.merchant && <span className="tx-merchant">{t.merchant}</span>}
+            <span className="tx-desc">{t.merchant || t.description}</span>
+            {t.merchant && t.description && <span className="tx-merchant">{t.description}</span>}
           </div>
-          <span className={`tx-amount ${privacy ? '' : t.amount >= 0 ? 'pos' : 'neg'}`}
-            style={privacy ? {color:'var(--muted)',letterSpacing:'2px'} : {}}>
+          <span className={`tx-amount ${t.amount >= 0 ? 'pos' : 'neg'}`}
+            style={privacy ? {letterSpacing:'2px'} : {}}>
             {privacy ? '••••••' : `${t.amount >= 0 ? '+' : '−'}${fmt(t.amount)}`}
           </span>
         </div>
@@ -2284,10 +2547,25 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, categori
               </button>
           }
           {t.transferId && <span className="linked-badge">↔ linked</span>}
+          {t.fuzzyMatchId && <span className="fuzzy-badge">~ possible duplicate</span>}
+          {t.duplicateOf && <span className="hidden-badge">hidden · linked to #{t.duplicateOf}</span>}
         </div>
+        {t.fuzzyMatchId && (
+          <div className="fuzzy-actions">
+            <button className="fuzzy-link-btn" onClick={() => onLinkDuplicate(t)}>🔗 Link to existing</button>
+            <button className="fuzzy-keep-btn" onClick={() => onDismissFuzzy(t.id)}>Keep as new</button>
+          </div>
+        )}
         {t.tags?.length > 0 && (
           <div className="tx-tags">
-            {t.tags.map(tag => <span key={tag} className="tx-tag">{tag}</span>)}
+            {t.tags.map(tag => (
+              <span key={tag} className="tx-tag"
+                style={onFilterTag ? {cursor:'pointer'} : {}}
+                onClick={onFilterTag ? () => onFilterTag(tag) : undefined}
+                title={onFilterTag ? `Filter by "${tag}"` : undefined}>
+                {tag}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -2302,7 +2580,7 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, categori
             <button className="del-confirm-yes" onClick={() => onDelete(t.id)}>Delete</button>
             <button className="del-confirm-no"  onClick={() => setConfirmDelete(false)}>Cancel</button>
           </>
-        : <button className="del-btn" onClick={() => setConfirmDelete(true)} title="Delete">×</button>
+        : <button className="del-btn" onClick={() => setConfirmDelete(true)} title={t.duplicateOf ? 'Remove hidden record' : 'Delete'}>×</button>
       }
     </div>
     {showEdit && (
@@ -2321,26 +2599,147 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, categori
 }
 
 // ── TransactionList ───────────────────────────────────────────────────────────
-function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnlink, categories, structure, privacy }) {
-  const [search, setSearch]   = useState('');
-  const [catFilter, setCat]   = useState('All categories');
-  const [typeFilter, setType] = useState('All types');
-  const [acctFilter, setAcct] = useState('All accounts');
+function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnlink, onLinkDuplicate, onDismissFuzzy, categories, structure, privacy, jumpTo }) {
+  const [search, setSearch]         = useState('');
+  const [catExcluded, setCat]       = useState(() => new Set());
+  const [typeExcluded, setType]     = useState(() => new Set());
+  const [acctExcluded, setAcct]     = useState(() => new Set());
+  const [tagExcluded, setTag]       = useState(() => new Set());
+  const [clearedExcluded, setCleared] = useState(() => new Set());
+  const [showLinked, setShowLinked] = useState(false);
+  const [dateMode, setDateMode]   = useState('all'); // 'all' | 'month' | 'custom'
+  const _now = new Date();
+  const [navYear, setNavYear]     = useState(_now.getFullYear());
+  const [navMonth, setNavMonth]   = useState(_now.getMonth());
+  const [dateFrom, setDateFrom]   = useState('');
+  const [dateTo, setDateTo]       = useState('');
 
+  const prevNavMonth = () => { if (navMonth === 0) { setNavMonth(11); setNavYear(y => y - 1); } else setNavMonth(m => m - 1); };
+  const nextNavMonth = () => { if (navMonth === 11) { setNavMonth(0); setNavYear(y => y + 1); } else setNavMonth(m => m + 1); };
+  const navLabel = new Date(navYear, navMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const activeDateFrom = dateMode === 'month'
+    ? `${navYear}-${String(navMonth + 1).padStart(2, '0')}-01`
+    : dateMode === 'custom' ? dateFrom : '';
+  const activeDateTo = dateMode === 'month'
+    ? `${navYear}-${String(navMonth + 1).padStart(2, '0')}-${String(new Date(navYear, navMonth + 1, 0).getDate()).padStart(2, '0')}`
+    : dateMode === 'custom' ? dateTo : '';
+  const dateActive = dateMode !== 'all';
+
+  useEffect(() => {
+    if (!jumpTo) return;
+    if (jumpTo.catFilter  != null) setCat(new Set(categories.filter(c => c !== jumpTo.catFilter)));
+    if (jumpTo.acctFilter != null) setAcct(new Set(accounts.filter(a => a !== jumpTo.acctFilter)));
+    if (jumpTo.typeFilter != null) setType(new Set(['Income','Expense'].filter(t => t !== jumpTo.typeFilter)));
+    if (jumpTo.tagFilter  != null) setTag(new Set(allTags.filter(t => t !== jumpTo.tagFilter)));
+    if (jumpTo.dateMode === 'month') {
+      setDateMode('month');
+      setNavYear(jumpTo.navYear);
+      setNavMonth(jumpTo.navMonth);
+    } else if (jumpTo.dateMode === 'custom') {
+      setDateMode('custom');
+      setDateFrom(jumpTo.dateFrom || '');
+      setDateTo(jumpTo.dateTo || '');
+    } else if (jumpTo.dateMode === 'all') {
+      setDateMode('all');
+    }
+  }, [jumpTo]);
+
+  // Shared search predicate (used in all available-options memos)
+  const passSearch = (t, q) => !q
+    || t.description.toLowerCase().includes(q)
+    || (t.merchant && t.merchant.toLowerCase().includes(q))
+    || t.date.includes(q)
+    || t.category.toLowerCase().includes(q)
+    || (t.accountName && t.accountName.toLowerCase().includes(q))
+    || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(q)))
+    || String(Math.abs(t.amount)).includes(q)
+    || (t.txNum && String(t.txNum).includes(q.replace(/^#/, '')));
+
+  const passCleared = (t, excl) => excl.size === 0 || (
+    (!excl.has('Cleared')   && t.cleared) ||
+    (!excl.has('Uncleared') && !t.cleared && !t.fuzzyMatchId) ||
+    (!excl.has('Flagged')   && !!t.fuzzyMatchId)
+  );
+
+  // Available options for each filter = transactions passing all OTHER filters
   const accounts = useMemo(() => {
-    const names = [...new Set(transactions.map(t => t.accountName).filter(Boolean))].sort();
-    return names;
-  }, [transactions]);
+    const q = search.toLowerCase();
+    return [...new Set(transactions.filter(t =>
+      (showLinked || !t.duplicateOf) && passSearch(t, q) &&
+      (catExcluded.size === 0     || !catExcluded.has(t.category)) &&
+      (typeExcluded.size === 0    || !typeExcluded.has(t.amount > 0 ? 'Income' : 'Expense')) &&
+      passCleared(t, clearedExcluded) &&
+      (tagExcluded.size === 0     || (t.tags && t.tags.some(g => !tagExcluded.has(g)))) &&
+      (!activeDateFrom || t.date >= activeDateFrom) && (!activeDateTo || t.date <= activeDateTo)
+    ).map(t => t.accountName).filter(Boolean))].sort();
+  }, [transactions, showLinked, search, catExcluded, typeExcluded, clearedExcluded, tagExcluded, activeDateFrom, activeDateTo]);
+
+  const availableCategories = useMemo(() => {
+    const q = search.toLowerCase();
+    return [...new Set(transactions.filter(t =>
+      (showLinked || !t.duplicateOf) && passSearch(t, q) &&
+      (acctExcluded.size === 0    || !acctExcluded.has(t.accountName || '')) &&
+      (typeExcluded.size === 0    || !typeExcluded.has(t.amount > 0 ? 'Income' : 'Expense')) &&
+      passCleared(t, clearedExcluded) &&
+      (tagExcluded.size === 0     || (t.tags && t.tags.some(g => !tagExcluded.has(g)))) &&
+      (!activeDateFrom || t.date >= activeDateFrom) && (!activeDateTo || t.date <= activeDateTo)
+    ).map(t => t.category).filter(Boolean))].sort();
+  }, [transactions, showLinked, search, acctExcluded, typeExcluded, clearedExcluded, tagExcluded, activeDateFrom, activeDateTo]);
 
   const allTags = useMemo(() => {
-    const tags = new Set(transactions.flatMap(t => t.tags || []));
-    return [...tags].sort();
-  }, [transactions]);
+    const q = search.toLowerCase();
+    return [...new Set(transactions.filter(t =>
+      (showLinked || !t.duplicateOf) && passSearch(t, q) &&
+      (acctExcluded.size === 0    || !acctExcluded.has(t.accountName || '')) &&
+      (catExcluded.size === 0     || !catExcluded.has(t.category)) &&
+      (typeExcluded.size === 0    || !typeExcluded.has(t.amount > 0 ? 'Income' : 'Expense')) &&
+      passCleared(t, clearedExcluded) &&
+      (!activeDateFrom || t.date >= activeDateFrom) && (!activeDateTo || t.date <= activeDateTo)
+    ).flatMap(t => t.tags || []))].sort();
+  }, [transactions, showLinked, search, acctExcluded, catExcluded, typeExcluded, clearedExcluded, activeDateFrom, activeDateTo]);
+
+  const availableTypes = useMemo(() => {
+    const q = search.toLowerCase();
+    const types = new Set();
+    transactions.forEach(t => {
+      if (!(showLinked || !t.duplicateOf)) return;
+      if (!passSearch(t, q)) return;
+      if (acctExcluded.size > 0    && acctExcluded.has(t.accountName || '')) return;
+      if (catExcluded.size > 0     && catExcluded.has(t.category)) return;
+      if (!passCleared(t, clearedExcluded)) return;
+      if (tagExcluded.size > 0     && !(t.tags && t.tags.some(g => !tagExcluded.has(g)))) return;
+      if (activeDateFrom && t.date < activeDateFrom) return;
+      if (activeDateTo   && t.date > activeDateTo)   return;
+      types.add(t.amount > 0 ? 'Income' : 'Expense');
+    });
+    return ['Income','Expense'].filter(t => types.has(t));
+  }, [transactions, showLinked, search, acctExcluded, catExcluded, clearedExcluded, tagExcluded, activeDateFrom, activeDateTo]);
+
+  const availableStatuses = useMemo(() => {
+    const q = search.toLowerCase();
+    const statuses = new Set();
+    transactions.forEach(t => {
+      if (!(showLinked || !t.duplicateOf)) return;
+      if (!passSearch(t, q)) return;
+      if (acctExcluded.size > 0 && acctExcluded.has(t.accountName || '')) return;
+      if (catExcluded.size > 0  && catExcluded.has(t.category)) return;
+      if (typeExcluded.size > 0 && typeExcluded.has(t.amount > 0 ? 'Income' : 'Expense')) return;
+      if (tagExcluded.size > 0  && !(t.tags && t.tags.some(g => !tagExcluded.has(g)))) return;
+      if (activeDateFrom && t.date < activeDateFrom) return;
+      if (activeDateTo   && t.date > activeDateTo)   return;
+      if (t.cleared)       statuses.add('Cleared');
+      if (!t.cleared)      statuses.add('Uncleared');
+      if (t.fuzzyMatchId)  statuses.add('Flagged');
+    });
+    return ['Cleared','Uncleared','Flagged'].filter(s => statuses.has(s));
+  }, [transactions, showLinked, search, acctExcluded, catExcluded, typeExcluded, tagExcluded, activeDateFrom, activeDateTo]);
 
   const filtered = useMemo(() =>
     [...transactions]
       .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
       .filter(t => {
+        if (t.duplicateOf && !showLinked) return false;
         const q = search.toLowerCase();
         const matchSearch = !q
           || t.description.toLowerCase().includes(q)
@@ -2351,63 +2750,161 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
           || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(q)))
           || String(Math.abs(t.amount)).includes(q)
           || (t.txNum && String(t.txNum).includes(q.replace(/^#/, '')));
-        const matchCat    = catFilter === 'All categories' || catFilter === 'All' || t.category === catFilter;
-        const matchAcct   = acctFilter === 'All accounts'  || acctFilter === 'All' || t.accountName === acctFilter;
-        const matchType   = typeFilter === 'All types'     || typeFilter === 'All'
-          || (typeFilter === 'Income'  && t.amount > 0)
-          || (typeFilter === 'Expense' && t.amount < 0);
-        return matchSearch && matchCat && matchAcct && matchType;
+        const matchCat     = catExcluded.size === 0 || !catExcluded.has(t.category);
+        const matchAcct    = acctExcluded.size === 0 || !acctExcluded.has(t.accountName || '');
+        const matchType    = typeExcluded.size === 0 || !typeExcluded.has(t.amount > 0 ? 'Income' : 'Expense');
+        const matchCleared = clearedExcluded.size === 0 || (
+          (!clearedExcluded.has('Cleared')   && t.cleared) ||
+          (!clearedExcluded.has('Uncleared') && !t.cleared && !t.fuzzyMatchId) ||
+          (!clearedExcluded.has('Flagged')   && !!t.fuzzyMatchId)
+        );
+        const matchTag     = tagExcluded.size === 0 || (t.tags && t.tags.some(tag => !tagExcluded.has(tag)));
+        const matchDate = (!activeDateFrom || t.date >= activeDateFrom) && (!activeDateTo || t.date <= activeDateTo);
+        return matchSearch && matchCat && matchAcct && matchType && matchCleared && matchTag && matchDate;
       }),
-    [transactions, search, catFilter, acctFilter, typeFilter]
+    [transactions, search, catExcluded, acctExcluded, typeExcluded, clearedExcluded, tagExcluded, showLinked, activeDateFrom, activeDateTo]
   );
 
   return (
     <div className="tx-section">
       <div className="tx-header">
         <h2 className="section-title">Transactions</h2>
-        <span className="tx-count">{filtered.length} of {transactions.length}</span>
+        <span className="tx-count">
+          {filtered.length} of {transactions.filter(t => showLinked || !t.duplicateOf).length}
+          {(() => {
+            const net = filtered.reduce((s, t) => s + t.amount, 0);
+            return (
+              <span style={{marginLeft:'10px', color: net >= 0 ? 'var(--pos)' : 'var(--neg)', fontWeight:500}}>
+                {privacy ? '••••••' : `${net >= 0 ? '+' : '−'}${fmt(net)}`}
+              </span>
+            );
+          })()}
+        </span>
       </div>
       <div className="filters">
-        <div className="filter-wrap" style={{flex:2,minWidth:'180px'}}>
-          <input className="search-input" style={{width:'100%'}} placeholder="Search…"
-            value={search} onChange={e => setSearch(e.target.value)} />
-          {search && <button className="filter-clear" onClick={() => setSearch('')}>×</button>}
-        </div>
-        {accounts.length > 0 && (
+        {/* Row 1: search, account, category */}
+        <div className="filter-row filter-row-1">
           <div className="filter-wrap">
-            <FilterCombobox value={acctFilter} options={accounts} onChange={setAcct} allLabel="All accounts" />
-            {acctFilter !== 'All accounts' && <button className="filter-clear" onClick={() => setAcct('All accounts')}>×</button>}
+            <input className="search-input" style={{width:'100%'}} placeholder="Search…"
+              value={search} onChange={e => setSearch(e.target.value)} />
+            {search && <button className="filter-clear" onClick={() => setSearch('')}>×</button>}
           </div>
-        )}
-        <div className="filter-wrap">
-          <FilterCombobox value={catFilter} options={categories} onChange={setCat} allLabel="All categories" />
-          {catFilter !== 'All categories' && <button className="filter-clear" onClick={() => setCat('All categories')}>×</button>}
+          {accounts.length > 0 && (
+            <div className="filter-wrap">
+              <MultiSelectFilter excluded={acctExcluded} options={accounts} onChange={setAcct} allLabel="All accounts" />
+            </div>
+          )}
+          <div className="filter-wrap">
+            <MultiSelectFilter excluded={catExcluded} options={availableCategories} onChange={setCat} allLabel="All categories" />
+          </div>
+          {(search || acctExcluded.size > 0 || catExcluded.size > 0 || tagExcluded.size > 0 || typeExcluded.size > 0 || clearedExcluded.size > 0 || dateActive || showLinked) && (
+            <button className="filter-reset" onClick={() => { setSearch(''); setAcct(new Set()); setCat(new Set()); setTag(new Set()); setType(new Set()); setCleared(new Set()); setDateMode('all'); setDateFrom(''); setDateTo(''); setShowLinked(false); }}>
+              Reset all
+            </button>
+          )}
         </div>
-        <div className="filter-wrap">
-          <FilterCombobox value={typeFilter} options={['Income','Expense']} onChange={setType} allLabel="All types" />
-          {typeFilter !== 'All types' && <button className="filter-clear" onClick={() => setType('All types')}>×</button>}
+        {/* Row 2: tags, type, cleared */}
+        <div className="filter-row filter-row-2">
+          {allTags.length > 0 && (
+            <div className="filter-wrap">
+              <MultiSelectFilter excluded={tagExcluded} options={allTags} onChange={setTag} allLabel="All tags" />
+            </div>
+          )}
+          <div className="filter-wrap">
+            <MultiSelectFilter excluded={typeExcluded} options={availableTypes} onChange={setType} allLabel="All types" />
+          </div>
+          <div className="filter-wrap">
+            <MultiSelectFilter excluded={clearedExcluded} options={availableStatuses} onChange={setCleared} allLabel="Status" />
+          </div>
         </div>
-        {(search || acctFilter !== 'All accounts' || catFilter !== 'All categories' || typeFilter !== 'All types') && (
-          <button className="filter-reset" onClick={() => { setSearch(''); setAcct('All accounts'); setCat('All categories'); setType('All types'); }}>
-            Reset all
-          </button>
-        )}
+        {/* Row 3: date, linked */}
+        <div className="filter-row filter-row-3">
+          <div className="filter-wrap date-filter-wrap">
+            {dateMode === 'all' && (
+              <button className="date-filter-all" onClick={() => setDateMode('month')}>All dates</button>
+            )}
+            {dateMode === 'month' && (
+              <div className="date-filter-inner">
+                <button className="date-nav-btn" onClick={prevNavMonth}>‹</button>
+                <span className="date-nav-label">{navLabel}</span>
+                <button className="date-nav-btn" onClick={nextNavMonth}>›</button>
+                <button className="date-mode-toggle" onClick={() => setDateMode('custom')}>custom</button>
+                <button className="date-filter-clear" onClick={() => setDateMode('all')}>×</button>
+              </div>
+            )}
+            {dateMode === 'custom' && (
+              <div className="date-filter-inner">
+                <input type="date" className="date-range-input" value={dateFrom} onChange={e => setDateFrom(e.target.value)} title="From date" />
+                <span className="date-range-sep">–</span>
+                <input type="date" className="date-range-input" value={dateTo} onChange={e => setDateTo(e.target.value)} title="To date" />
+                <button className="date-mode-toggle" onClick={() => setDateMode('month')}>month</button>
+                <button className="date-filter-clear" onClick={() => { setDateFrom(''); setDateTo(''); setDateMode('all'); }}>×</button>
+              </div>
+            )}
+          </div>
+          <div className="filter-wrap" style={{flex:'0 0 auto'}}>
+            <button
+              onClick={() => setShowLinked(s => !s)}
+              style={{width:'100%', fontSize:'12px', padding:'5px 10px', borderRadius:'6px', border:'1px solid var(--border)',
+                background: showLinked ? 'var(--accent-light)' : 'transparent',
+                color: showLinked ? 'var(--accent)' : 'var(--muted)', cursor:'pointer', whiteSpace:'nowrap'}}>
+              {showLinked ? '● Linked' : '○ Linked'}
+            </button>
+          </div>
+        </div>
       </div>
       {filtered.length === 0
         ? <p className="empty">No transactions match your filters.</p>
         : filtered.map(t => (
             <TransactionRow key={t.id} t={t} onDelete={onDelete} onEdit={onEdit}
               onRequestLink={onRequestLink} onUnlink={onUnlink}
-              categories={categories} structure={structure} privacy={privacy} accounts={accounts} allTags={allTags} />
+              onLinkDuplicate={onLinkDuplicate} onDismissFuzzy={onDismissFuzzy}
+              categories={categories} structure={structure} privacy={privacy} accounts={accounts} allTags={allTags}
+              onFilterTag={(tag) => setTag(new Set(allTags.filter(t => t !== tag)))} />
           ))
       }
     </div>
   );
 }
 
+// ── Export directory handle (IndexedDB) ──────────────────────────────────────
+const _exportDb = (() => {
+  let db = null;
+  return () => db
+    ? Promise.resolve(db)
+    : new Promise((res, rej) => {
+        const req = indexedDB.open('budget_app_meta', 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore('meta');
+        req.onsuccess = e => { db = e.target.result; res(db); };
+        req.onerror   = e => rej(e.target.error);
+      });
+})();
+
+async function getExportDirHandle() {
+  try {
+    const db  = await _exportDb();
+    return new Promise(res => {
+      const req = db.transaction('meta','readonly').objectStore('meta').get('exportDir');
+      req.onsuccess = e => res(e.target.result ?? null);
+      req.onerror   = () => res(null);
+    });
+  } catch { return null; }
+}
+
+async function setExportDirHandle(handle) {
+  try {
+    const db = await _exportDb();
+    await new Promise((res, rej) => {
+      const tx = db.transaction('meta','readwrite');
+      tx.objectStore('meta').put(handle, 'exportDir');
+      tx.oncomplete = res; tx.onerror = rej;
+    });
+  } catch {}
+}
+
 // ── CSV export ────────────────────────────────────────────────────────────────
 function exportCSV(transactions) {
-  const cols = ['txNum','date','merchant','description','amount','category','accountName','transferId','cleared','tags'];
+  const cols = ['txNum','date','merchant','description','amount','category','accountName','transferId','cleared','tags','duplicateOf','fuzzyMatchId'];
   const escape = (v) => {
     const s = String(v ?? '');
     return s.includes(',') || s.includes('"') || s.includes('\n')
@@ -2515,10 +3012,44 @@ function getDateRange(key) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function Dashboard({ transactions, privacy, budgets, onReconcile }) {
+function Dashboard({ transactions, privacy, getBudgetsForMonth, onReconcile, onNavigate }) {
   const [range, setRange] = useState('month');
 
   const { start, end } = useMemo(() => getDateRange(range), [range]);
+
+  const getMonthsInRange = () => {
+    const now = new Date();
+    const y = now.getFullYear(), mo = now.getMonth();
+    const pad = (n) => String(n).padStart(2,'0');
+    if (range === 'month') return [`${y}-${pad(mo+1)}`];
+    if (range === 'last-month') {
+      const d = new Date(y, mo-1, 1);
+      return [`${d.getFullYear()}-${pad(d.getMonth()+1)}`];
+    }
+    const count = range === '3m' ? 3 : range === '6m' ? 6 : range === 'year' ? 12 : 0;
+    return Array.from({length: count}, (_, i) => {
+      const d = new Date(y, mo - (count-1-i), 1);
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+    });
+  };
+
+  const getPeriodBudget = (cat) => {
+    const months = getMonthsInRange();
+    if (!months.length) return null;
+    const total = months.reduce((s, key) => s + (getBudgetsForMonth(key)[cat] || 0), 0);
+    return total || null;
+  };
+
+  const rangeToDateJump = () => {
+    const now = new Date();
+    if (range === 'month') return { dateMode: 'month', navYear: now.getFullYear(), navMonth: now.getMonth() };
+    if (range === 'last-month') {
+      const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return { dateMode: 'month', navYear: d.getFullYear(), navMonth: d.getMonth() };
+    }
+    if (range === 'all') return { dateMode: 'all' };
+    return { dateMode: 'custom', dateFrom: start, dateTo: end || '' };
+  };
 
   const filtered = useMemo(() =>
     transactions.filter(t =>
@@ -2555,7 +3086,6 @@ function Dashboard({ transactions, privacy, budgets, onReconcile }) {
 
   const totalExp = catBreakdown.reduce((s,[,v]) => s + v, 0);
 
-  const budgetMonths = { month:1, 'last-month':1, '3m':3, '6m':6, year:12 }[range] ?? null;
 
   const monthlyData = useMemo(() => {
     const now = new Date();
@@ -2579,7 +3109,7 @@ function Dashboard({ transactions, privacy, budgets, onReconcile }) {
   const maxBar = Math.max(...monthlyData.flatMap(m => [m.income, m.expenses]), 1);
 
   const mask = (n, sign = false) => {
-    if (privacy) return <span style={{color:'var(--muted)',letterSpacing:'2px'}}>••••••</span>;
+    if (privacy) return <span style={{letterSpacing:'2px'}}>••••••</span>;
     return <>{sign && n < 0 ? '−' : ''}{fmt(n)}</>;
   };
 
@@ -2598,7 +3128,7 @@ function Dashboard({ transactions, privacy, budgets, onReconcile }) {
           <div className="acct-grid">
             {accountSummaries.map(a => (
               <div key={a.name} className="acct-card">
-                <span className="acct-name">{a.name}</span>
+                <span className="acct-name nav-link" onClick={() => onNavigate({ acctFilter: a.name })}>{a.name}</span>
                 <span className={`acct-balance ${a.balance >= 0 ? 'pos' : 'neg'}`}>
                   {privacy ? '••••••' : `${a.balance < 0 ? '−' : ''}${fmt(a.balance)}`}
                 </span>
@@ -2639,8 +3169,9 @@ function Dashboard({ transactions, privacy, budgets, onReconcile }) {
         {catBreakdown.length === 0
           ? <p className="empty" style={{padding:'16px 0'}}>No expense data for this period.</p>
           : catBreakdown.map(([cat, amt], i) => {
-              const monthlyBudget = budgets[cat];
-              const periodBudget  = monthlyBudget && budgetMonths ? monthlyBudget * budgetMonths : null;
+              const periodBudget = getPeriodBudget(cat);
+
+              const catJump = () => onNavigate({ catFilter: cat, ...rangeToDateJump() });
 
               if (periodBudget) {
                 const usedPct  = (amt / periodBudget) * 100;
@@ -2651,7 +3182,7 @@ function Dashboard({ transactions, privacy, budgets, onReconcile }) {
                 const diff     = Math.abs(periodBudget - amt);
                 return (
                   <div key={cat} className="cat-bar-row">
-                    <span className="cat-bar-label">{cat}</span>
+                    <span className="cat-bar-label nav-link" onClick={catJump}>{cat}</span>
                     <div className="cat-bar-track">
                       <div className="cat-bar-fill" style={{width:`${barPct}%`, background:barColor}} />
                     </div>
@@ -2666,7 +3197,7 @@ function Dashboard({ transactions, privacy, budgets, onReconcile }) {
               const pct = totalExp > 0 ? (amt / totalExp) * 100 : 0;
               return (
                 <div key={cat} className="cat-bar-row">
-                  <span className="cat-bar-label">{cat}</span>
+                  <span className="cat-bar-label nav-link" onClick={catJump}>{cat}</span>
                   <div className="cat-bar-track">
                     <div className="cat-bar-fill"
                       style={{width:`${pct}%`, background: CAT_PALETTE[i % CAT_PALETTE.length]}} />
@@ -2682,21 +3213,25 @@ function Dashboard({ transactions, privacy, budgets, onReconcile }) {
       <div className="dash-card">
         <p className="dash-title">Monthly Trend</p>
         <div className="monthly-chart">
-          {monthlyData.map(m => (
-            <div key={m.key} className="month-col">
-              <div className="month-bars">
-                <div className="month-bar-wrap">
-                  <div className="month-bar income-bar"
-                    style={{height:`${(m.income / maxBar) * 100}%`}} />
+          {monthlyData.map(m => {
+            const [my, mm] = m.key.split('-').map(Number);
+            const monthJump = () => onNavigate({ dateMode: 'month', navYear: my, navMonth: mm - 1 });
+            return (
+              <div key={m.key} className="month-col nav-link" onClick={monthJump} title={m.key}>
+                <div className="month-bars">
+                  <div className="month-bar-wrap">
+                    <div className="month-bar income-bar"
+                      style={{height:`${(m.income / maxBar) * 100}%`}} />
+                  </div>
+                  <div className="month-bar-wrap">
+                    <div className="month-bar expense-bar"
+                      style={{height:`${(m.expenses / maxBar) * 100}%`}} />
+                  </div>
                 </div>
-                <div className="month-bar-wrap">
-                  <div className="month-bar expense-bar"
-                    style={{height:`${(m.expenses / maxBar) * 100}%`}} />
-                </div>
+                <span className="month-label">{m.label}</span>
               </div>
-              <span className="month-label">{m.label}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className="chart-legend">
           <span className="legend-dot" style={{background:'var(--pos)'}} />
@@ -2891,13 +3426,15 @@ function PlanBudgetCell({ budget, privacy, onSet }) {
   );
 }
 
-function Planning({ transactions, budgets, onSetBudget, categories, structure, onReorderStructure, privacy }) {
-  const now = new Date();
-  const [year, setYear]   = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
+function Planning({ transactions, budgets, onSetBudget, categories, structure, onReorderStructure, privacy, year, month, onYearChange, onMonthChange, onNavigate, budgetMonthKeys, onCopyBudget }) {
+  const now      = new Date();
+  const setYear  = onYearChange;
+  const setMonth = onMonthChange;
 
   const planDragIdxRef  = useRef(null);
   const [planDragging, setPlanDragging] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const [importSource, setImportSource] = useState('');
 
   const planClearDrag = () => { planDragIdxRef.current = null; setPlanDragging(null); };
 
@@ -2969,10 +3506,12 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
     const budget  = budgets[cat] || 0;
     const spent   = spending[cat] || 0;
     const hasBudget = budget > 0;
-    const pct     = hasBudget ? Math.min((spent / budget) * 100, 100) : 0;
-    const isOver  = hasBudget && spent > budget;
-    const isWarn  = hasBudget && !isOver && pct >= 80;
-    const barColor = isOver ? 'var(--neg)' : isWarn ? '#d97706' : 'var(--pos)';
+    const rawPct  = hasBudget ? (spent / budget) * 100 : 0;
+    const pct     = hasBudget ? Math.min(rawPct, 100) : 0;
+    const isOver     = hasBudget && spent > budget;
+    const isOnTarget = hasBudget && spent === budget;
+    const isWarn     = hasBudget && !isOver && !isOnTarget && rawPct >= 80;
+    const barColor = isOver ? 'var(--neg)' : isOnTarget ? '#15803d' : isWarn ? '#22c55e' : 'var(--pos)';
     const delta   = hasBudget ? budget - spent : null;
     const isDragging = planDragging === structureIdx;
 
@@ -2985,12 +3524,13 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
         onDragEnd={planClearDrag}
       >
         <span className="drag-handle">⠿</span>
-        <span className="plan-cat-name">{cat}</span>
+        <span className="plan-cat-name nav-link" onClick={() => onNavigate({ catFilter: cat, dateMode: 'month', navYear: year, navMonth: month })}>{cat}</span>
         <PlanBudgetCell budget={budget} privacy={privacy} onSet={v => onSetBudget(cat, v)} />
-        <span className={`plan-spent ${spent > 0 ? 'neg' : ''}`}>
+        <span className={`plan-spent ${spent > 0 ? 'neg nav-link' : ''}`}
+          onClick={spent > 0 ? () => onNavigate({ catFilter: cat, dateMode: 'month', navYear: year, navMonth: month }) : undefined}>
           {spent > 0 ? (privacy ? '••••••' : fmt(spent)) : '—'}
         </span>
-        <span className={`plan-delta ${delta === null ? '' : delta < 0 ? 'budget-over' : delta === 0 ? '' : 'budget-under'}`}>
+        <span className={`plan-delta ${delta === null ? '' : delta < 0 ? 'budget-over' : delta === 0 ? 'budget-on-target' : 'budget-under'}`}>
           {delta === null ? '—'
             : privacy ? '••••••'
             : delta < 0 ? `−${fmt(Math.abs(delta))}`
@@ -3036,20 +3576,49 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
       <div className="dash-card" style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'12px'}}>
         <div className="plan-month-nav">
           <button onClick={prevMonth}>‹</button>
-          <span className="plan-month-label">{monthLabel}</span>
+          <span className="plan-month-label nav-link" onClick={() => onNavigate({ dateMode: 'month', navYear: year, navMonth: month })}>{monthLabel}</span>
           <button onClick={nextMonth} disabled={isCurrentMonth}>›</button>
         </div>
-        {!isCurrentMonth && (
-          <button className="btn-secondary" style={{fontSize:'12px',padding:'4px 12px'}}
-            onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); }}>
-            Back to current month
-          </button>
-        )}
+        <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
+          {!isCurrentMonth && (
+            <button className="btn-secondary" style={{fontSize:'12px',padding:'4px 12px'}}
+              onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); }}>
+              Back to current month
+            </button>
+          )}
+          {showImport ? (
+            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+              <select value={importSource} onChange={e => setImportSource(e.target.value)}
+                style={{fontSize:'12px',padding:'4px 8px',borderRadius:'6px',border:'1px solid var(--border)',background:'var(--surface)',color:'var(--text)'}}>
+                <option value="">Pick a month…</option>
+                {(budgetMonthKeys || []).filter(k => k !== monthKey).map(k => {
+                  const [y, m] = k.split('-').map(Number);
+                  const label = new Date(y, m-1).toLocaleDateString('en-US', {month:'long', year:'numeric'});
+                  return <option key={k} value={k}>{label}</option>;
+                })}
+              </select>
+              <button className="btn-primary" style={{fontSize:'12px',padding:'4px 12px'}}
+                disabled={!importSource}
+                onClick={() => { onCopyBudget(importSource); setShowImport(false); setImportSource(''); }}>
+                Copy
+              </button>
+              <button className="btn-secondary" style={{fontSize:'12px',padding:'4px 12px'}}
+                onClick={() => { setShowImport(false); setImportSource(''); }}>
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button className="btn-secondary" style={{fontSize:'12px',padding:'4px 12px'}}
+              onClick={() => setShowImport(true)}>
+              ↓ Import from month
+            </button>
+          )}
+        </div>
       </div>
 
       {/* KPI cards */}
       <div className="plan-kpi-grid">
-        <div className="plan-kpi">
+        <div className="plan-kpi nav-link" onClick={() => onNavigate({ typeFilter: 'Income', dateMode: 'month', navYear: year, navMonth: month })}>
           <span className="plan-kpi-label">Income</span>
           <span className="plan-kpi-value pos">{mask(income)}</span>
         </div>
@@ -3058,7 +3627,7 @@ function Planning({ transactions, budgets, onSetBudget, categories, structure, o
           <span className="plan-kpi-value">{mask(totalBudgeted)}</span>
           {income > 0 && !privacy && <span className="plan-kpi-sub">{Math.round((totalBudgeted/income)*100)}% of income</span>}
         </div>
-        <div className="plan-kpi">
+        <div className="plan-kpi nav-link" onClick={() => onNavigate({ typeFilter: 'Expense', dateMode: 'month', navYear: year, navMonth: month })}>
           <span className="plan-kpi-label">Spent</span>
           <span className={`plan-kpi-value ${totalSpent > totalBudgeted ? 'neg' : ''}`}>{mask(totalSpent)}</span>
           {totalBudgeted > 0 && !privacy && <span className="plan-kpi-sub">{budgetUsedPct}% of budget used</span>}
@@ -3162,19 +3731,69 @@ function App() {
     [structure]
   );
   const [activeTab, setActiveTab]       = useLocalStorage('budget_active_tab', 'dashboard');
+  const [planYear, setPlanYear]         = useState(() => new Date().getFullYear());
+  const [planMonth, setPlanMonth]       = useState(() => new Date().getMonth());
+  const [toast, setToast]               = useState(null);
+  const toastTimer = useRef(null);
+  const showToast = (msg) => {
+    clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
   const [showCatMgr, setShowCatMgr]     = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [reconcilingAcct, setReconciling] = useState(null);
+  const [txJump, setTxJump] = useState(null);
+  const navigateToTx = (filters) => {
+    setActiveTab('transactions');
+    setTxJump({ version: Date.now(), ...filters });
+  };
   const [linkingTxId, setLinkingTxId] = useState(null);
   const [privacy, setPrivacy]         = useLocalStorage('budget_privacy', false);
   const [theme, setTheme]             = useLocalStorage('budget_theme', 'light');
   const [budgets, setBudgets]         = useLocalStorage('budget_budgets', {});
 
-  const setBudget = (cat, amt) => setBudgets(prev =>
-    amt != null && !isNaN(amt) && amt > 0
-      ? { ...prev, [cat]: amt }
-      : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== cat))
+  // Migrate flat { cat: amt } → { 'YYYY-MM': { cat: amt } }
+  useEffect(() => {
+    if (!budgets || typeof budgets !== 'object') return;
+    const vals = Object.values(budgets);
+    if (vals.length === 0 || typeof vals[0] !== 'number') return;
+    const now = new Date();
+    const key = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    setBudgets({ [key]: budgets });
+  }, []); // eslint-disable-line
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.ctrlKey && e.key === 'h') { e.preventDefault(); setPrivacy(p => !p); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const monthKeys = useMemo(() =>
+    Object.keys(budgets).filter(k => /^\d{4}-\d{2}$/.test(k)).sort(),
+    [budgets]
   );
+
+  const getBudgetsForMonth = useCallback((key) => {
+    return budgets[key] || {};
+  }, [budgets]);
+
+  const planMonthKey = `${planYear}-${String(planMonth + 1).padStart(2, '0')}`;
+  const planBudgets  = useMemo(() => getBudgetsForMonth(planMonthKey), [getBudgetsForMonth, planMonthKey]);
+
+  const setBudget = (cat, amt) => setBudgets(prev => {
+    const base = prev[planMonthKey] || {};
+    const updated = amt != null && !isNaN(amt) && amt > 0
+      ? { ...base, [cat]: amt }
+      : Object.fromEntries(Object.entries(base).filter(([k]) => k !== cat));
+    return { ...prev, [planMonthKey]: updated };
+  });
+
+  const copyBudgetFromMonth = (sourceKey) => {
+    setBudgets(prev => ({ ...prev, [planMonthKey]: { ...(prev[sourceKey] || {}) } }));
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -3193,25 +3812,51 @@ function App() {
     }
   };
 
-  const exportAll = () => {
-    const dl = (href, name) => {
-      const a = Object.assign(document.createElement('a'), { href, download: name });
-      a.click();
-      URL.revokeObjectURL(href);
+  const exportAll = async () => {
+    const settingsBlob = new Blob([JSON.stringify({
+      version: 2, theme,
+      categoryStructure: structure,
+      budgets,
+      importSettings: JSON.parse(localStorage.getItem('budget_import_settings') || '{}'),
+    }, null, 2)], { type: 'application/json' });
+    const exportTx = transactions.filter(t => !t.shadow);
+    const linkedCount = exportTx.filter(t => t.duplicateOf).length;
+    const exportNote = linkedCount > 0 ? ` (incl. ${linkedCount} linked hidden)` : '';
+    const csvBlob = exportTx.length > 0
+      ? new Blob([exportCSV(exportTx)], { type: 'text/csv' })
+      : null;
+
+    if (!window.showDirectoryPicker) {
+      const dl = (blob, name) => {
+        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+        a.click(); URL.revokeObjectURL(a.href);
+      };
+      dl(settingsBlob, 'budget_settings.json');
+      if (csvBlob) dl(csvBlob, 'budget_transactions.csv');
+      showToast(`Exported ${exportTx.length} rows${exportNote} to Downloads`);
+      return;
+    }
+
+    let dirHandle = await getExportDirHandle();
+    if (dirHandle) {
+      const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') dirHandle = null;
+    }
+    if (!dirHandle) {
+      try {
+        dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        await setExportDirHandle(dirHandle);
+      } catch { return; }
+    }
+
+    const writeFile = async (filename, blob) => {
+      const fh = await dirHandle.getFileHandle(filename, { create: true });
+      const w  = await fh.createWritable();
+      await w.write(blob); await w.close();
     };
-    dl(
-      URL.createObjectURL(new Blob([JSON.stringify({
-        version: 2, theme,
-        categoryStructure: structure,
-        budgets,
-        importSettings: JSON.parse(localStorage.getItem('budget_import_settings') || '{}'),
-      }, null, 2)], { type: 'application/json' })),
-      'budget_settings.json'
-    );
-    if (transactions.length > 0) dl(
-      URL.createObjectURL(new Blob([exportCSV(transactions)], { type: 'text/csv' })),
-      'budget_transactions.csv'
-    );
+    await writeFile('budget_settings.json', settingsBlob);
+    if (csvBlob) await writeFile('budget_transactions.csv', csvBlob);
+    showToast(`Exported ${exportTx.length} rows${exportNote} to ${dirHandle.name}`);
   };
 
   const importSettings = async (file) => {
@@ -3224,7 +3869,17 @@ function App() {
       } else if (Array.isArray(s.categories)) {
         setCatStructure(s.categories.map(name => ({ kind: 'cat', name })));
       }
-      if (s.budgets) setBudgets(s.budgets);
+      if (s.budgets) {
+        const vals = Object.values(s.budgets);
+        if (vals.length > 0 && typeof vals[0] === 'number') {
+          // Old flat format — import as current month
+          const now = new Date();
+          const key = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+          setBudgets({ [key]: s.budgets });
+        } else {
+          setBudgets(s.budgets);
+        }
+      }
       if (s.importSettings) localStorage.setItem('budget_import_settings', JSON.stringify(s.importSettings));
       setShowSettings(false);
     } catch {
@@ -3245,10 +3900,44 @@ function App() {
     setNextTxNum(prev => Math.max(prev, maxNum + 1));
   }, []); // eslint-disable-line
 
+  // Remove legacy shadow transactions (old import-review flow artifacts)
+  useEffect(() => {
+    if (transactions.some(t => t.shadow)) {
+      setTx(prev => prev.filter(t => !t.shadow));
+    }
+  }, []); // eslint-disable-line
+
+  // Migrate duplicateOf and fuzzyMatchId from UUID to txNum
+  useEffect(() => {
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const needsMigration = transactions.some(t =>
+      (t.duplicateOf && uuidRe.test(t.duplicateOf)) ||
+      (t.fuzzyMatchId && uuidRe.test(String(t.fuzzyMatchId)))
+    );
+    if (!needsMigration) return;
+    setTx(prev => prev.map(t => {
+      let updated = { ...t };
+      if (t.duplicateOf && uuidRe.test(t.duplicateOf)) {
+        const master = prev.find(m => m.id === t.duplicateOf);
+        if (master?.txNum) updated.duplicateOf = master.txNum;
+      }
+      if (t.fuzzyMatchId && uuidRe.test(String(t.fuzzyMatchId))) {
+        const matched = prev.find(m => m.id === t.fuzzyMatchId);
+        updated.fuzzyMatchId = matched?.txNum ?? undefined;
+      }
+      return updated;
+    }));
+  }, []); // eslint-disable-line
+
   const addTx = (t) => {
     const num = nextTxNum;
     setNextTxNum(n => n + 1);
-    setTx(prev => [{ ...t, txNum: num }, ...prev]);
+    const fuzzyMatch = transactions.find(m => {
+      if (m.duplicateOf || m.fuzzyMatchId) return false;
+      const dayDiff = Math.abs(new Date(m.date) - new Date(t.date)) / 86400000;
+      return dayDiff <= 3 && Math.abs(m.amount - t.amount) < 0.005;
+    });
+    setTx(prev => [{ ...t, txNum: num, ...(fuzzyMatch ? { fuzzyMatchId: fuzzyMatch.txNum } : {}) }, ...prev]);
   };
 
   const addMany = (txs) => {
@@ -3258,7 +3947,16 @@ function App() {
     let counter = start;
     setTx(prev => [...txs.map(t => t.txNum ? t : { ...t, txNum: counter++ }), ...prev]);
   };
-  const deleteTx     = (id)          => setTx(prev => prev.filter(t => t.id !== id));
+  const deleteTx = (id) => setTx(prev => {
+    const target = prev.find(t => t.id === id);
+    return prev
+      .filter(t => t.id !== id)
+      .map(t => {
+        // If deleting a transaction, clear fuzzyMatchId from any transaction that was pointing to it
+        if (target?.txNum !== undefined && t.fuzzyMatchId === target.txNum) return { ...t, fuzzyMatchId: undefined };
+        return t;
+      });
+  });
   const truncateTx   = (beforeDate)  => setTx(prev => prev.filter(t => t.date >= beforeDate));
   const replaceAllTx = (txs) => {
     setTx(txs);
@@ -3317,11 +4015,33 @@ function App() {
     });
   };
 
+  const activeTx = useMemo(() => transactions.filter(t => !t.shadow && !t.duplicateOf), [transactions]);
+
+  const [linkingDuplicate, setLinkingDuplicate] = useState(null);
+
+  const linkDuplicate = (masterId, secondaryId) => {
+    if (!masterId) {
+      setTx(prev => prev.map(t => t.id === secondaryId ? { ...t, fuzzyMatchId: undefined } : t));
+      return;
+    }
+    const masterTxNum = transactions.find(t => t.id === masterId)?.txNum ?? masterId;
+    setTx(prev => prev.map(t => {
+      if (t.id === secondaryId) return { ...t, duplicateOf: masterTxNum, fuzzyMatchId: undefined };
+      if (t.id === masterId)    return { ...t, fuzzyMatchId: undefined };
+      return t;
+    }));
+  };
+
+  const dismissFuzzy = (id) => setTx(prev => prev.map(t => t.id === id ? { ...t, fuzzyMatchId: undefined } : t));
+
   const linkingTx = linkingTxId ? transactions.find(t => t.id === linkingTxId) : null;
 
   return (
     <div className="app">
+      {toast && <div className="toast">{toast}</div>}
+      <div className="sticky-top">
       <header className="app-header">
+        <img src="https://rdatasquared.com/02/images/rbs_icon.png" alt="" className="app-icon" />
         <h1 className="app-title">Budget</h1>
         <span className="app-sub">
           {new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' })}
@@ -3346,44 +4066,52 @@ function App() {
             externalFile={pendingCsvFile} onExternalFileConsumed={() => setPendingCsvFile(null)} />
         </div>
       </header>
-      <nav className="tab-nav">
+      <nav className="tab-nav" style={{position:'static'}}>
         {[['dashboard','Dashboard'],['planning','Planning'],['transactions','Transactions']].map(([key,label]) => (
           <button key={key} className={`tab-btn ${activeTab === key ? 'active' : ''}`}
             onClick={() => setActiveTab(key)}>{label}</button>
         ))}
       </nav>
+      </div>
       <main className="app-main">
         {activeTab === 'dashboard' && (
-          <Dashboard transactions={transactions} privacy={privacy}
-            budgets={budgets} onReconcile={setReconciling} />
+          <Dashboard transactions={activeTx} privacy={privacy}
+            getBudgetsForMonth={getBudgetsForMonth} onReconcile={setReconciling} onNavigate={navigateToTx} />
         )}
         {activeTab === 'planning' && (
           <Planning
-            transactions={transactions}
-            budgets={budgets}
+            transactions={activeTx}
+            budgets={planBudgets}
             onSetBudget={setBudget}
             categories={categories}
             structure={structure}
             onReorderStructure={reorderStructure}
             privacy={privacy}
+            year={planYear} month={planMonth}
+            onYearChange={setPlanYear} onMonthChange={setPlanMonth}
+            onNavigate={navigateToTx}
+            budgetMonthKeys={monthKeys}
+            onCopyBudget={copyBudgetFromMonth}
           />
         )}
         {activeTab === 'transactions' && (<>
-          <Summary transactions={transactions} privacy={privacy} />
-          <AddTransaction onAdd={addTx} categories={categories} structure={structure} transactions={transactions}
-            accounts={[...new Set(transactions.map(t => t.accountName).filter(Boolean))].sort()}
-            allTags={[...new Set(transactions.flatMap(t => t.tags || []))].sort()} />
+          <Summary transactions={activeTx} privacy={privacy} />
+          <AddTransaction onAdd={addTx} categories={categories} structure={structure} transactions={activeTx}
+            accounts={[...new Set(activeTx.map(t => t.accountName).filter(Boolean))].sort()}
+            allTags={[...new Set(activeTx.flatMap(t => t.tags || []))].sort()} />
           <TransactionList
-            transactions={transactions} onDelete={deleteTx} onEdit={editTx}
+            transactions={transactions.filter(t => !t.shadow)} onDelete={deleteTx} onEdit={editTx}
             onRequestLink={requestLink} onUnlink={unlinkTransfer}
+            onLinkDuplicate={setLinkingDuplicate} onDismissFuzzy={dismissFuzzy}
             categories={categories} structure={structure} privacy={privacy}
+            jumpTo={txJump}
           />
         </>)}
       </main>
       {showCatMgr && (
         <CategoryManager
           structure={structure}
-          budgets={budgets}
+          budgets={planBudgets}
           onSetBudget={setBudget}
           onAddCat={addCategory}
           onRenameCat={renameCategory}
@@ -3408,7 +4136,7 @@ function App() {
           onManageCategories={() => { setShowSettings(false); setShowCatMgr(true); }}
           onImportSettings={importSettings}
           onTruncate={truncateTx}
-          transactions={transactions}
+          transactions={activeTx}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -3418,6 +4146,14 @@ function App() {
           transactions={transactions}
           onLink={linkTransfers}
           onClose={() => setLinkingTxId(null)}
+        />
+      )}
+      {linkingDuplicate && (
+        <DuplicateLinker
+          tx={linkingDuplicate}
+          transactions={transactions.filter(t => !t.shadow)}
+          onLink={linkDuplicate}
+          onClose={() => setLinkingDuplicate(null)}
         />
       )}
     </div>
