@@ -821,7 +821,11 @@ input:focus, select:focus { border-color: var(--accent); }
 }
 
 /* ── dashboard ────────────────────────────────────────────────────────────── */
-.dashboard { display: flex; flex-direction: column; gap: 20px; }
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
 .range-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .range-tab {
@@ -837,39 +841,39 @@ input:focus, select:focus { border-color: var(--accent); }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px 20px;
+  padding: 22px 26px;
   box-shadow: var(--shadow);
 }
 .dash-title {
-  font-size: 12px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .5px; color: var(--muted); margin-bottom: 14px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted); margin-bottom: 18px;
 }
 
 /* account cards */
 .acct-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
 }
 .acct-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex; flex-direction: column; gap: 0;
   box-shadow: var(--shadow);
 }
-.acct-name    { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: 12px; }
-.acct-sub     { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.acct-name    { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: 14px; }
+.acct-sub     { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 12px; }
 .acct-status-row {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 0;
+  padding: 10px 0;
 }
 .acct-status-row + .acct-status-row { border-top: 1px solid var(--border); }
 .acct-status-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
-.acct-status-amount { font-size: 15px; font-weight: 700; letter-spacing: -.3px; }
+.acct-status-amount { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
 .acct-footer  { display: flex; align-items: center; justify-content: space-between; }
-.acct-net     { font-size: 12px; font-weight: 700; }
+.acct-net     { font-size: 13px; font-weight: 700; }
 .acct-sub-label  { display: none; }
 .acct-sub-amount { display: none; }
 .acct-divider    { display: none; }
@@ -877,28 +881,23 @@ input:focus, select:focus { border-color: var(--accent); }
 
 .acct-reconcile-btn {
   background: none; border: none;
-  color: var(--accent); font-size: 11px;
+  color: var(--accent); font-size: 12px;
   cursor: pointer; text-align: left; padding: 0;
   opacity: .6; transition: opacity .15s;
 }
 .acct-reconcile-btn:hover { opacity: 1; }
 
-/* KPI cards */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 14px;
-}
-.kpi-rows { display: flex; flex-direction: column; gap: 8px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.kpi-rows { display: flex; flex-direction: column; gap: 12px; }
 .kpi-row  { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.kpi-label { font-size: 12px; color: var(--muted); }
-.kpi-value { font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
+.kpi-label { font-size: 13px; color: var(--muted); }
+.kpi-value { font-size: 16px; font-weight: 700; letter-spacing: -.2px; }
 .kpi-cat-name { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kpi-cat-bar-track { height: 3px; border-radius: 2px; background: var(--border); margin-top: 3px; }
-.kpi-cat-bar-fill  { height: 3px; border-radius: 2px; background: var(--accent); }
-.kpi-budget-track { height: 7px; border-radius: 4px; background: var(--border); overflow: hidden; margin-bottom: 4px; }
+.kpi-cat-bar-track { height: 4px; border-radius: 2px; background: var(--border); margin-top: 4px; }
+.kpi-cat-bar-fill  { height: 4px; border-radius: 2px; background: var(--accent); }
+.kpi-budget-track { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; margin-bottom: 6px; }
 .kpi-budget-fill  { height: 100%; border-radius: 4px; transition: width .3s; }
-.kpi-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+.kpi-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
 
 .nav-link {
   cursor: pointer;
@@ -3755,20 +3754,26 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
     const budgetPct     = totalBudgeted > 0 ? Math.min((totalSpent / totalBudgeted) * 100, 100) : 0;
     const budgetOver    = totalBudgeted > 0 && totalSpent > totalBudgeted;
 
-    // Next 3 bills due — wraps into next month if this month's bills have passed
+    // Next 3 bills due — wraps into next month if passed or already paid (≥90% of budget spent)
     const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const nextBills = Object.entries(dueDays || {})
+    const allBills = Object.entries(dueDays || {})
       .map(([cat, day]) => {
         const thisMonth = new Date(now.getFullYear(), now.getMonth(), day);
-        const due = thisMonth >= today0 ? thisMonth : new Date(now.getFullYear(), now.getMonth() + 1, day);
+        const budgeted = monthBudgets[cat] || 0;
+        const spent = spendMap[cat] || 0;
+        const paidThisMonth = budgeted > 0 && spent >= budgeted * 0.9;
+        const due = (thisMonth >= today0 && !paidThisMonth)
+          ? thisMonth
+          : new Date(now.getFullYear(), now.getMonth() + 1, day);
         const daysUntil = Math.round((due - today0) / 86400000);
         const isNextMonth = due.getMonth() !== now.getMonth() || due.getFullYear() !== now.getFullYear();
         return { cat, day, daysUntil, isNextMonth };
       })
-      .sort((a, b) => a.daysUntil - b.daysUntil)
-      .slice(0, 3);
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+    const nextBills = allBills.slice(0, 3);
+    const hiddenSoon = allBills.slice(3).filter(b => b.daysUntil <= 4).length;
 
-    return { topCats, maxSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills };
+    return { topCats, maxSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills, hiddenSoon };
   }, [transactions, monthKey, budgets, dueDays]);
 
   const accountSummaries = useMemo(() => {
@@ -3805,7 +3810,7 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
     }).sort((a, b) => b.balance - a.balance);
   }, [transactions]);
 
-  const { topCats, maxSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills } = kpis;
+  const { topCats, maxSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills, hiddenSoon } = kpis;
   const showKpis = topCats.length > 0 || totalBudgeted > 0 || nextBills.length > 0;
 
   return (
@@ -3908,7 +3913,14 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
 
           {nextBills.length > 0 && (
             <div className="dash-card">
-              <p className="dash-title">Upcoming Bills</p>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'18px'}}>
+                <p className="dash-title" style={{margin:0}}>Upcoming Bills</p>
+                {hiddenSoon > 0 && (
+                  <span style={{fontSize:'11px',fontWeight:700,color:'#f59e0b',background:'rgba(245,158,11,0.12)',padding:'2px 8px',borderRadius:'999px'}}>
+                    +{hiddenSoon} due soon
+                  </span>
+                )}
+              </div>
               <div className="kpi-rows">
                 {nextBills.map((b, i) => (
                   <div key={b.cat}>
@@ -4084,7 +4096,7 @@ function ReconcileModal({ account, transactions, onConfirm, onClose }) {
 }
 
 // ── SettingsModal ─────────────────────────────────────────────────────────────
-function SettingsModal({ theme, onThemeChange, onManageCategories, onImportSettings, onTruncate, transactions, onClose }) {
+function SettingsModal({ theme, onThemeChange, onManageCategories, onImportSettings, onTruncate, transactions, exportDirName, onChangeExportDir, onClose }) {
   const fileRef = useRef(null);
   const [truncateDate, setTruncateDate] = useState('');
   const [confirming, setConfirming]     = useState(false);
@@ -4154,6 +4166,20 @@ function SettingsModal({ theme, onThemeChange, onManageCategories, onImportSetti
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="setting-section">
+            <p className="block-title">Auto Export</p>
+            <div style={{display:'flex', alignItems:'center', gap:'10px', flexWrap:'wrap'}}>
+              <button className="btn-secondary" onClick={onChangeExportDir}>
+                📁 {exportDirName ? 'Change Folder' : 'Choose Folder'}
+              </button>
+              {exportDirName && (
+                <span style={{fontSize:'12px', color:'var(--muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'180px'}} title={exportDirName}>
+                  {exportDirName}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="setting-section">
@@ -4696,6 +4722,7 @@ function App() {
   const [toast, setToast]               = useState(null); // { msg, type }
   const [autoSave, setAutoSave]         = useLocalStorage('budget_autosave', false);
   const [lastSaved, setLastSaved]       = useState(null); // Date
+  const [exportDirName, setExportDirName] = useState('');
   const toastTimer = useRef(null);
   const showToast = (msg, type = 'info') => {
     clearTimeout(toastTimer.current);
@@ -4886,6 +4913,21 @@ function App() {
       // silent — don't interrupt the user
     }
   }, [transactions, budgets, dueDays, catStructure, theme]);
+
+  useEffect(() => {
+    getExportDirHandle().then(h => { if (h) setExportDirName(h.name); });
+  }, []);
+
+  const changeExportDir = async () => {
+    try {
+      const dh = await window.showDirectoryPicker({ mode: 'readwrite' });
+      await setExportDirHandle(dh);
+      setExportDirName(dh.name);
+      showToast(`Auto-export folder changed to "${dh.name}"`);
+    } catch (e) {
+      if (e.name !== 'AbortError') showToast('Folder change cancelled.', 'error');
+    }
+  };
 
   const AUTO_SAVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -5150,7 +5192,7 @@ function App() {
         ))}
       </nav>
       </div>
-      <main className={`app-main${activeTab === 'table' ? ' app-main--wide' : ''}`}>
+      <main className={`app-main${(activeTab === 'table' || activeTab === 'dashboard') ? ' app-main--wide' : ''}`}>
         {activeTab === 'dashboard' && (
           <Dashboard transactions={activeTx} privacy={privacy}
             onReconcile={setReconciling} onNavigate={navigateToTx}
@@ -5229,6 +5271,8 @@ function App() {
           onImportSettings={importSettings}
           onTruncate={truncateTx}
           transactions={activeTx}
+          exportDirName={exportDirName}
+          onChangeExportDir={changeExportDir}
           onClose={() => setShowSettings(false)}
         />
       )}
