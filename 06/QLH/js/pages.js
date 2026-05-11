@@ -21,12 +21,13 @@ var Pages = {
   linkCard(link, categories, kids, parentTitle) {
     kids = kids || 0;
     var e      = UI.esc;
-    var fav    = UI.faviconUrl(link.url);
+    var fav    = link.iconUrl || UI.faviconUrl(link.url);
     var color  = UI.catColor(link.category, categories);
     var target = link.openInNewTab ? '_blank' : '_self';
     var rel    = link.openInNewTab ? 'noopener noreferrer' : '';
 
-    return '<div class="link-card" data-id="' + e(link.id) + '">' +
+    return '<div class="link-card" data-id="' + e(link.id) + '" draggable="true">' +
+      '<span class="drag-handle" title="Drag to reorder">⠿</span>' +
       (parentTitle ? '<div class="link-card-parent">↳ nested in <a class="link-parent-ref" href="#/link/' + e(link.parentId) + '">' + e(parentTitle) + '</a></div>' : '') +
       '<div class="link-card-top">' +
         (fav ? '<img class="link-favicon" src="' + e(fav) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
@@ -65,6 +66,8 @@ var Pages = {
     var view       = state.activeView    || 'all';
     var selCat     = state.selectedCategory || 'all';
     var selTag     = state.selectedTag   || '';
+    var cols       = (Data.getSettings().gridColumns) | 0;
+    var gridStyle  = cols > 0 ? ' style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))"' : '';
 
     // child counts
     var kids = {};
@@ -164,7 +167,7 @@ var Pages = {
               '<span class="section-title">★ Favorites</span>' +
               '<span class="count-badge">' + favItems.length + '</span>' +
             '</div>' +
-            '<div class="links-grid">' + favItems.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>' +
+            '<div class="links-grid"' + gridStyle + '>' + favItems.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>' +
           '</div>'
         : '';
       content = favSection + groups.map(function (cat) {
@@ -175,11 +178,11 @@ var Pages = {
             '<span class="section-title">' + e(cat) + '</span>' +
             '<span class="count-badge">' + items.length + '</span>' +
           '</div>' +
-          '<div class="links-grid">' + items.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>' +
+          '<div class="links-grid"' + gridStyle + '>' + items.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0); }).join('') + '</div>' +
           '</div>';
       }).join('');
     } else {
-      content = '<div class="links-grid">' +
+      content = '<div class="links-grid"' + gridStyle + '>' +
         filtered.map(function (l) { return self.linkCard(l, categories, kids[l.id] || 0, l.parentId ? linkTitles[l.parentId] : null); }).join('') +
         '</div>';
     }
@@ -205,9 +208,13 @@ var Pages = {
       }
     }
 
+    var exportConfigured = Data.getSettings().exportConfigured;
     return '<div class="page-header">' +
         '<div><h1 class="page-title">Quick Links Hub</h1><p class="page-subtitle">Your personal link management dashboard</p></div>' +
-        '<button class="btn btn-primary" data-action="add-link">+ Add Link</button>' +
+        '<div style="display:flex;gap:.5rem;align-items:center;">' +
+          '<button class="btn btn-secondary" data-action="export-json" title="' + (exportConfigured ? 'Save backup to configured location' : 'Export backup') + '">⬇ ' + (exportConfigured ? 'Save Backup' : 'Export') + '</button>' +
+          '<button class="btn btn-primary" data-action="add-link">+ Add Link</button>' +
+        '</div>' +
       '</div>' +
 
       '<div class="search-wrap">' +
@@ -346,6 +353,15 @@ var Pages = {
             '<button class="theme-opt' + (s.theme === 'system' ? ' active' : '') + '" data-action="set-theme" data-value="system">💻 System</button>' +
           '</div>' +
         '</div>' +
+        '<div class="setting-row">' +
+          '<div><div class="setting-label">Grid Columns</div><div class="setting-desc">Number of link cards per row (Auto adjusts to screen width)</div></div>' +
+          '<div class="theme-options">' +
+            [['0','Auto'],['2','2'],['3','3'],['4','4'],['5','5'],['6','6']].map(function(o) {
+              var cols = s.gridColumns || 0;
+              return '<button class="theme-opt' + (cols === parseInt(o[0]) ? ' active' : '') + '" data-action="set-columns" data-value="' + o[0] + '">' + o[1] + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
       '</div>' +
 
       '<div class="settings-section"><h3>Link Behavior</h3>' +
@@ -461,6 +477,8 @@ var Pages = {
           '<input class="form-input" name="title" value="' + e(f.title) + '" placeholder="My Link" required></div>' +
         '<div class="form-group"><label class="form-label">URL <span class="form-required">*</span></label>' +
           '<input class="form-input" name="url" type="url" value="' + e(f.url) + '" placeholder="https://example.com" required></div>' +
+        '<div class="form-group"><label class="form-label">Custom Icon URL <span style="font-weight:400;color:var(--text-muted);">(optional — overrides auto favicon)</span></label>' +
+          '<input class="form-input" name="iconUrl" type="url" value="' + e(f.iconUrl || '') + '" placeholder="https://example.com/icon.png"></div>' +
         '<div class="form-group"><label class="form-label">Description</label>' +
           '<input class="form-input" name="description" value="' + e(f.description) + '" placeholder="Short description"></div>' +
         '<div class="form-group"><label class="form-label">Notes</label>' +

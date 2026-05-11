@@ -25,6 +25,7 @@ const Storage = {
         defaultOpenInNewTab: true,
         theme: 'system',
         exportConfigured: false,
+        gridColumns: 0,
       },
       categories: [
         { id: 'c1', name: 'Work',      color: '#3b82f6' },

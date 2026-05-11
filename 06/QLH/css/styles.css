@@ -232,6 +232,17 @@ body {
 }
 .link-card:hover { box-shadow: var(--shadow); border-color: #a5b4fc; }
 .link-card { cursor: pointer; }
+.link-card.dragging { opacity: 0.35; box-shadow: none; }
+.link-card.drop-before { box-shadow: 0 -3px 0 0 var(--primary), var(--shadow); }
+.link-card.drop-after  { box-shadow: 0  3px 0 0 var(--primary), var(--shadow); }
+.drag-handle {
+  position: absolute; top: 0.6rem; right: 0.6rem;
+  color: var(--text-subtle); font-size: 1rem; line-height: 1;
+  cursor: grab; opacity: 0; transition: opacity var(--ease);
+  z-index: 2; user-select: none;
+}
+.link-card:hover .drag-handle { opacity: 1; }
+.drag-handle:active { cursor: grabbing; }
 .link-title::after { content: ''; position: absolute; inset: 0; z-index: 0; }
 .link-card-parent {
   font-size: 0.75rem; color: var(--text-subtle);
@@ -520,7 +531,11 @@ tr:hover td { background: var(--bg); }
   display: flex; justify-content: space-between;
   align-items: flex-start; gap: 1rem; flex-wrap: wrap;
 }
+.parent-card-top > div:first-child { min-width: 0; overflow: hidden; }
 .parent-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.35rem; }
+.parent-card .link-url {
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ── DIVIDER ── */
 .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }

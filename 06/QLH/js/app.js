@@ -11,6 +11,7 @@ var App = {
   },
 
   _pendingConfirm: null,
+  _dragId: null,
 
   // ── INIT ─────────────────────────────────────────────────────────
   init: function () {
@@ -19,11 +20,16 @@ var App = {
 
     window.addEventListener('hashchange', function () { App.route(); });
 
-    document.addEventListener('click',   function (e) { App.handleClick(e);   });
-    document.addEventListener('change',  function (e) { App.handleChange(e);  });
-    document.addEventListener('submit',  function (e) { App.handleSubmit(e);  });
-    document.addEventListener('input',   function (e) { App.handleInput(e);   });
-    document.addEventListener('keydown', function (e) { App.handleKeydown(e); });
+    document.addEventListener('click',     function (e) { App.handleClick(e);     });
+    document.addEventListener('change',    function (e) { App.handleChange(e);    });
+    document.addEventListener('submit',    function (e) { App.handleSubmit(e);    });
+    document.addEventListener('input',     function (e) { App.handleInput(e);     });
+    document.addEventListener('keydown',   function (e) { App.handleKeydown(e);   });
+    document.addEventListener('dragstart', function (e) { App.handleDragStart(e); });
+    document.addEventListener('dragover',  function (e) { App.handleDragOver(e);  });
+    document.addEventListener('dragleave', function (e) { App.handleDragLeave(e); });
+    document.addEventListener('drop',      function (e) { App.handleDrop(e);      });
+    document.addEventListener('dragend',   function (e) { App.handleDragEnd(e);   });
 
     document.getElementById('import-file-input').addEventListener('change', function (e) { App.handleImportFile(e); });
 
@@ -216,6 +222,12 @@ var App = {
         this.render();
         break;
 
+      case 'set-columns':
+        e.preventDefault();
+        Data.updateSettings({ gridColumns: parseInt(value) || 0 });
+        this.render();
+        break;
+
       case 'export-json':
         e.preventDefault();
         Storage.exportJSON().then(function (saved) {
@@ -354,6 +366,17 @@ var App = {
       e.preventDefault();
       this.addTagFromInput();
     }
+    if (e.target.id === 'search-input' && e.key === 'Enter') {
+      e.preventDefault();
+      var firstCard = document.querySelector('.link-card[data-id]');
+      if (firstCard) {
+        var link = Data.getLink(firstCard.dataset.id);
+        if (link) {
+          Data.recordUsage(link.id);
+          window.open(link.url, link.openInNewTab ? '_blank' : '_self', link.openInNewTab ? 'noopener,noreferrer' : '');
+        }
+      }
+    }
     if (e.key === 'Escape') {
       UI.hideModal();
       this._pendingConfirm = null;
@@ -387,6 +410,7 @@ var App = {
     var attrs = {
       title:        (fd.get('title')       || '').trim(),
       url:          (fd.get('url')         || '').trim(),
+      iconUrl:      (fd.get('iconUrl')     || '').trim(),
       description:  (fd.get('description') || '').trim(),
       notes:        (fd.get('notes')       || '').trim(),
       category:     fd.get('category')     || '',
@@ -526,6 +550,56 @@ var App = {
   openConfirm: function (msg, label, danger, onConfirm) {
     this._pendingConfirm = onConfirm;
     UI.showModal(Pages.confirmModal(msg, label, danger));
+  },
+
+  // ── DRAG AND DROP ────────────────────────────────────────────────
+  handleDragStart: function (e) {
+    var card = e.target.closest('.link-card');
+    if (!card) return;
+    this._dragId = card.dataset.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', this._dragId);
+    setTimeout(function () { card.classList.add('dragging'); }, 0);
+  },
+
+  handleDragOver: function (e) {
+    var card = e.target.closest('.link-card');
+    if (!card || card.dataset.id === this._dragId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var rect   = card.getBoundingClientRect();
+    var before = e.clientY < rect.top + rect.height / 2;
+    document.querySelectorAll('.link-card.drop-before, .link-card.drop-after').forEach(function (c) {
+      c.classList.remove('drop-before', 'drop-after');
+    });
+    card.classList.add(before ? 'drop-before' : 'drop-after');
+  },
+
+  handleDragLeave: function (e) {
+    var card = e.target.closest('.link-card');
+    if (!card || card.contains(e.relatedTarget)) return;
+    card.classList.remove('drop-before', 'drop-after');
+  },
+
+  handleDrop: function (e) {
+    var card = e.target.closest('.link-card');
+    if (!card || !this._dragId) return;
+    e.preventDefault();
+    var targetId = card.dataset.id;
+    if (targetId === this._dragId) return;
+    var before  = card.classList.contains('drop-before');
+    var scrollY = window.scrollY;
+    Data.reorderLink(this._dragId, targetId, before);
+    this._dragId = null;
+    this.render();
+    window.scrollTo(0, scrollY);
+  },
+
+  handleDragEnd: function (e) {
+    this._dragId = null;
+    document.querySelectorAll('.link-card').forEach(function (c) {
+      c.classList.remove('dragging', 'drop-before', 'drop-after');
+    });
   },
 
   // ── IMPORT FILE ──────────────────────────────────────────────────

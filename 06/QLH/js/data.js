@@ -39,6 +39,7 @@ const Data = {
       id:          this.uid(),
       title:       attrs.title       || '',
       url:         attrs.url         || '',
+      iconUrl:     attrs.iconUrl     || '',
       description: attrs.description || '',
       notes:       attrs.notes       || '',
       category:    attrs.category    || '',
@@ -93,6 +94,17 @@ const Data = {
     return this.get().links.filter(function (l) { return l.parentId === id; }).length;
   },
 
+  reorderLink(draggedId, targetId, before) {
+    const d    = this.get();
+    const from = d.links.findIndex(function (l) { return l.id === draggedId; });
+    const to   = d.links.findIndex(function (l) { return l.id === targetId;  });
+    if (from === -1 || to === -1 || from === to) return;
+    const [item] = d.links.splice(from, 1);
+    const dest   = d.links.findIndex(function (l) { return l.id === targetId; });
+    d.links.splice(before ? dest : dest + 1, 0, item);
+    this.save();
+  },
+
   // ── Categories ─────────────────────────────────────
   getCategories() { return this.get().categories; },
 
@@ -143,6 +155,7 @@ const Data = {
         id:           self.uid(),
         title:        attrs.title        || '',
         url:          attrs.url          || '',
+        iconUrl:      attrs.iconUrl      || '',
         description:  attrs.description  || '',
         notes:        attrs.notes        || '',
         category:     attrs.category     || '',
