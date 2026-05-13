@@ -123,19 +123,6 @@ function saveDetailFieldPrefs() {
 }
 
 // ---------------------------------------------------------------------------
-// Collapsed parents
-// ---------------------------------------------------------------------------
-
-function loadCollapsedParents() {
-  try { collapsedParents = new Set(JSON.parse(localStorage.getItem("wt-collapsed") || "[]")); }
-  catch { collapsedParents = new Set(); }
-}
-
-function saveCollapsedParents() {
-  localStorage.setItem("wt-collapsed", JSON.stringify([...collapsedParents]));
-}
-
-// ---------------------------------------------------------------------------
 // Custom category order
 // ---------------------------------------------------------------------------
 

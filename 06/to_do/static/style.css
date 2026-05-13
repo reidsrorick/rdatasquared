@@ -1726,6 +1726,29 @@ input.date-format-input.filter-select {
   z-index: 9999;
 }
 .snooze-row { display: flex; align-items: center; gap: 6px; }
+.snooze-preset-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.snooze-preset-btn:hover { background: var(--bg-surface-3); }
+.snooze-preset-hint {
+  font-size: 11px;
+  color: var(--text-subtle);
+  font-weight: 400;
+}
 /* Status pill */
 .status-pill {
   display: inline-block;
@@ -2777,6 +2800,23 @@ input.date-format-input.filter-select {
   align-items: center;
 }
 .subtask-new-input { flex: 1; }
+.checklist-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.checklist-label { font-size: 13px; }
+.checklist-label.subtask-done {
+  text-decoration: line-through;
+  color: var(--text-subtle);
+}
+.checklist-ts {
+  font-size: 10.5px;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+}
 
 /* Grid — subtask indicators */
 .item-subtask-prefix {
@@ -2809,6 +2849,13 @@ input.date-format-input.filter-select {
   font-family: var(--font-mono);
   font-weight: 600;
   color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.desc-more-tag {
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  color: var(--text-subtle);
   flex-shrink: 0;
   white-space: nowrap;
 }

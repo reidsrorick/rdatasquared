@@ -81,11 +81,6 @@
     </div>
     <div class="toolbar-right">
       <!-- Wrap text toggle -->
-      <button id="btn-collapse-all" class="btn btn-ghost btn-sm" title="Collapse all parent rows">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 9 12 17 20 9"/></svg>
-        Collapse All
-      </button>
-
       <button id="btn-wrap-text" class="btn btn-ghost btn-sm" title="Wrap text in Item and Description columns">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
         Wrap
@@ -191,19 +186,15 @@
           Snooze
         </button>
         <div id="bulk-snooze-popover" class="snooze-popover" style="display:none">
-          <div class="snooze-row">
-            <input type="datetime-local" id="bulk-snooze-until-dt" class="detail-input" style="font-size:12px" />
-          </div>
-          <button id="btn-bulk-snooze-confirm" class="btn btn-sm btn-warning" style="width:100%">Snooze Selected</button>
+          <button class="snooze-preset-btn bulk-snooze-preset" data-preset="1h">1 hour</button>
+          <button class="snooze-preset-btn bulk-snooze-preset" data-preset="2h">2 hours</button>
+          <button class="snooze-preset-btn bulk-snooze-preset" data-preset="eod">End of day <span class="snooze-preset-hint">4 PM</span></button>
+          <button class="snooze-preset-btn bulk-snooze-preset" data-preset="tomorrow">Tomorrow <span class="snooze-preset-hint">7 AM</span></button>
         </div>
       </div>
       <button id="btn-bulk-move-today" class="btn btn-sm btn-secondary">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Move to Today
-      </button>
-      <button id="btn-bulk-set-parent"  class="btn btn-sm btn-ghost">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-        Set Parent
       </button>
       <button id="btn-bulk-delete"     class="btn btn-sm btn-danger">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
@@ -669,34 +660,6 @@
   </div>
 </div>
 
-<!-- Set Parent (bulk) -->
-<div id="modal-set-parent" class="modal-overlay hidden">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <h2>Set Parent Task</h2>
-      <button class="btn btn-ghost btn-sm icon-btn" data-close="modal-set-parent">✕</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
-      <p id="set-parent-desc" style="font-size:13px;color:var(--text-muted)"></p>
-      <div style="position:relative">
-        <input type="text" id="set-parent-search" class="detail-input" placeholder="Search for parent task…" autocomplete="off" />
-        <div id="set-parent-dropdown" class="parent-dropdown" style="display:none"></div>
-      </div>
-      <div id="set-parent-selected" style="display:none">
-        <div class="parent-selected">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-          <span id="set-parent-chosen-name" style="flex:1;font-size:13px;font-weight:500;color:var(--text)"></span>
-          <button type="button" id="btn-set-parent-clear" class="btn btn-ghost btn-sm icon-btn" title="Clear selection">✕</button>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" data-close="modal-set-parent">Cancel</button>
-      <button id="btn-set-parent-confirm" class="btn btn-primary" disabled>Apply to Selected</button>
-    </div>
-  </div>
-</div>
-
 <!-- Confirm -->
 <div id="modal-confirm" class="modal-overlay hidden">
   <div class="modal modal-sm">
@@ -743,14 +706,13 @@
         <div class="detail-customize-title">Visible Fields</div>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="status" /> Status</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="category" /> Category</label>
-        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="parent_task" /> Parent Task</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="date" /> Date</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="time" /> Time</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="sort" /> Sort</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="date_completed" /> Date Completed</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="recurrence" /> Recurrence</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="link" /> Link / URL</label>
-        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="subtasks" /> Subtasks</label>
+        <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="checklist" /> Checklist</label>
         <label class="detail-customize-item"><input type="checkbox" class="detail-field-cb" data-field="followup" /> Follow-up Log</label>
       </div>
       <button id="btn-detail-delete" class="btn btn-sm btn-danger" title="Delete this item">
@@ -794,22 +756,6 @@
             <input type="text" id="detail-category-input" class="cat-tag-input" placeholder="Add category…" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="cat-combo-list" />
           </div>
           <ul id="cat-combo-list" class="cat-combo-list" role="listbox" aria-label="Categories"></ul>
-        </div>
-      </div>
-
-      <div class="detail-field" data-detail-field="parent_task">
-        <label class="detail-label">Parent Task</label>
-        <input type="hidden" id="detail-parent-id" value="" />
-        <div id="detail-parent-selected" class="parent-selected" style="display:none">
-          <button type="button" id="btn-open-parent" class="parent-open-btn" title="Click to open parent task">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-            <span id="detail-parent-name"></span>
-          </button>
-          <button type="button" id="btn-clear-parent" class="btn btn-ghost btn-sm icon-btn" title="Remove parent">✕</button>
-        </div>
-        <div id="detail-parent-search-wrap" class="parent-search-wrap">
-          <input type="text" id="detail-parent-search" class="detail-input" placeholder="Search for parent task…" autocomplete="off" />
-          <div id="detail-parent-dropdown" class="parent-dropdown" style="display:none"></div>
         </div>
       </div>
 
@@ -893,16 +839,16 @@
         <textarea id="detail-description" class="detail-input detail-textarea" placeholder="Notes, details…" rows="5"></textarea>
       </div>
 
-      <!-- Subtasks -->
-      <div class="detail-field" id="detail-subtasks-section" data-detail-field="subtasks">
+      <!-- Checklist -->
+      <div class="detail-field" id="detail-checklist-section" data-detail-field="checklist">
         <div class="detail-subtasks-header">
-          <label class="detail-label">Subtasks</label>
-          <span id="detail-subtasks-progress" class="subtasks-progress"></span>
+          <label class="detail-label">Checklist</label>
+          <span id="detail-checklist-progress" class="subtasks-progress"></span>
         </div>
-        <div id="detail-subtasks-list" class="detail-subtasks-list"></div>
+        <div id="detail-checklist-list" class="detail-subtasks-list"></div>
         <div class="subtask-add-row">
-          <input type="text" id="subtask-new-name" class="detail-input subtask-new-input" placeholder="Add a subtask…" autocomplete="off" />
-          <button type="button" id="btn-add-subtask" class="btn btn-ghost btn-sm">Add</button>
+          <input type="text" id="checklist-new-item" class="detail-input subtask-new-input" placeholder="Add a checklist item…" autocomplete="off" />
+          <button type="button" id="btn-add-checklist-item" class="btn btn-ghost btn-sm">Add</button>
         </div>
       </div>
 
@@ -948,10 +894,10 @@
         Snooze
       </button>
       <div id="snooze-popover" class="snooze-popover" style="display:none">
-        <div class="snooze-row">
-          <input type="datetime-local" id="snooze-until-dt" class="detail-input" style="font-size:12px" />
-        </div>
-        <button id="btn-snooze-confirm" class="btn btn-sm btn-warning" style="width:100%">Snooze</button>
+        <button class="snooze-preset-btn detail-snooze-preset" data-preset="1h">1 hour</button>
+        <button class="snooze-preset-btn detail-snooze-preset" data-preset="2h">2 hours</button>
+        <button class="snooze-preset-btn detail-snooze-preset" data-preset="eod">End of day <span class="snooze-preset-hint">4 PM</span></button>
+        <button class="snooze-preset-btn detail-snooze-preset" data-preset="tomorrow">Tomorrow <span class="snooze-preset-hint">7 AM</span></button>
       </div>
     </div>
     <span id="detail-snooze-until" class="detail-snooze-until" style="display:none"></span>

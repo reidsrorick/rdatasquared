@@ -199,45 +199,21 @@ function buildColumnDefs() {
         ? { whiteSpace: "normal", lineHeight: "1.5", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "flex-start" }
         : { display: "flex", alignItems: "center", justifyContent: "flex-start" },
       cellRenderer: p => {
-        const isSubtask  = !!(p.data?.parent_id);
-        const children   = rowData.filter(r => r.parent_id === p.data?.id && !r.deleted);
-        const isSnoozed  = showSnoozedInGrid && isSnoozeActive(p.data?.id);
-        if (!isSubtask && !children.length && !isSnoozed) return esc(p.value || "");
+        const checklist = (() => { try { return JSON.parse(p.data?.checklist || "[]"); } catch { return []; } })();
+        const isSnoozed = showSnoozedInGrid && isSnoozeActive(p.data?.id);
+        const doneCount = checklist.filter(i => i.done).length;
+        const showBadge = checklist.length > 0 && doneCount < checklist.length;
+        if (!isSnoozed && !showBadge) return esc(p.value || "");
         const wrap = document.createElement("div");
         wrap.style.cssText = "display:flex;align-items:center;gap:5px;width:100%;height:100%";
-        if (isSubtask) {
-          const pfx = document.createElement("span");
-          pfx.className   = "item-subtask-prefix";
-          pfx.textContent = "↳";
-          wrap.appendChild(pfx);
-        }
-        if (children.length > 0) {
-          const isCollapsed = collapsedParents.has(p.data.id);
-          const chevron = document.createElement("span");
-          chevron.className   = "item-collapse-toggle";
-          chevron.textContent = isCollapsed ? "▶" : "▾";
-          chevron.title       = isCollapsed ? "Show subtasks" : "Hide subtasks";
-          chevron.addEventListener("click", e => {
-            e.stopPropagation();
-            if (collapsedParents.has(p.data.id)) collapsedParents.delete(p.data.id);
-            else collapsedParents.add(p.data.id);
-            saveCollapsedParents();
-            gridApi.onFilterChanged();
-            gridApi.refreshCells({ force: true });
-          });
-          wrap.appendChild(chevron);
-        }
         const txt = document.createElement("span");
         txt.style.flex  = "1";
         txt.textContent = p.value || "";
         wrap.appendChild(txt);
-        if (children.length > 0) {
-          const done        = children.filter(r => r.completed).length;
-          const isCollapsed = collapsedParents.has(p.data.id);
+        if (showBadge) {
           const badge = document.createElement("span");
           badge.className   = "item-subtask-badge";
-          if (done === children.length) return wrap;
-          badge.textContent = `${done}/${children.length}`;
+          badge.textContent = `${doneCount}/${checklist.length}`;
           wrap.appendChild(badge);
         }
         if (isSnoozed) {
@@ -299,8 +275,28 @@ function buildColumnDefs() {
       field: "description", headerName: "Description", minWidth: 200, flex: 3, editable: true,
       wrapText: wrapText, autoHeight: wrapText,
       cellStyle: wrapText
-        ? { whiteSpace: "normal", lineHeight: "1.5", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "flex-start" }
-        : { display: "flex", alignItems: "center", justifyContent: "flex-start" },
+        ? { whiteSpace: "pre-wrap", lineHeight: "1.5", padding: "8px 10px", display: "block", alignItems: "center", justifyContent: "flex-start" }
+        : { display: "flex", alignItems: "center", justifyContent: "flex-start", overflow: "hidden" },
+      cellRenderer: wrapText ? undefined : p => {
+        if (!p.value) return "";
+        const lines = p.value.split("\n");
+        const first = lines[0];
+        const extra = lines.length - 1;
+        const wrap  = document.createElement("div");
+        wrap.style.cssText = "display:flex;align-items:center;gap:6px;width:100%;overflow:hidden";
+        const txt = document.createElement("span");
+        txt.style.cssText  = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1";
+        txt.textContent    = first;
+        wrap.appendChild(txt);
+        if (extra > 0) {
+          const tag = document.createElement("span");
+          tag.className   = "desc-more-tag";
+          tag.textContent = `↵ ${extra}`;
+          tag.title       = `${extra} more line${extra !== 1 ? "s" : ""}`;
+          wrap.appendChild(tag);
+        }
+        return wrap;
+      },
     },
     {
       field: "completed", headerName: "Done?", width: 84,
@@ -367,8 +363,7 @@ function passesDateFilter(row) {
 
 function isExternalFilterPresent() {
   return activePreset !== "all" || !catFilterShowAll || activeCategoryFilters.length > 0
-    || activeDateFilter !== "all" || Object.keys(snoozedItems).length > 0
-    || collapsedParents.size > 0;
+    || activeDateFilter !== "all" || Object.keys(snoozedItems).length > 0;
 }
 
 function doesExternalFilterPass(node) {
@@ -377,19 +372,6 @@ function doesExternalFilterPass(node) {
   const row = node.data;
 
   if (!showSnoozedInGrid && isSnoozeActive(row.id)) return false;
-
-  // Hide if any ancestor is collapsed (handles arbitrary nesting depth)
-  if (row.parent_id) {
-    let pid = row.parent_id;
-    const visited = new Set();
-    while (pid) {
-      if (visited.has(pid)) break; // break circular parent chain
-      visited.add(pid);
-      if (collapsedParents.has(pid)) return false;
-      const parent = rowData.find(r => r.id === pid);
-      pid = parent?.parent_id ?? null;
-    }
-  }
 
   const today    = fmtDate(new Date());
   const tomorrow = fmtDate(new Date(Date.now() + 86_400_000));
@@ -557,86 +539,6 @@ function initGrid() {
     onRowClicked: p => {
       // Single-click only selects; use the sidebar icon button or double-click to open the detail panel
     },
-    postSortRows: params => {
-      const nodes = params.nodes;
-      // Build child map from all visible nodes
-      const childMap = {};
-      nodes.forEach(n => {
-        const pid = n.data?.parent_id;
-        if (pid) {
-          if (!childMap[pid]) childMap[pid] = [];
-          childMap[pid].push(n);
-        }
-      });
-
-      // Root nodes: no parent_id, or parent not present in this visible set
-      const nodeIdSet = new Set(nodes.map(n => n.data?.id));
-      const roots = nodes.filter(n => !n.data?.parent_id || !nodeIdSet.has(n.data.parent_id));
-
-      // Depth-first insertion so children always follow their parent at any depth
-      const result = [];
-      const visited = new Set();
-      function appendTree(n) {
-        if (visited.has(n)) return;
-        visited.add(n);
-        result.push(n);
-        (childMap[n.data?.id] || []).forEach(appendTree);
-      }
-      roots.forEach(appendTree);
-      // Safety net: any node not yet visited (shouldn't happen)
-      nodes.forEach(n => { if (!visited.has(n)) result.push(n); });
-
-      nodes.length = 0;
-      result.forEach(n => nodes.push(n));
-    },
-
-    onRowDragMove: e => {
-      document.querySelectorAll(".row-drop-target").forEach(el => el.classList.remove("row-drop-target"));
-      if (e.overNode && e.overNode !== e.node && e.overNode.data) {
-        const overRowId = e.overNode.data.id;
-        const dragRowId = e.node.data?.id;
-        // Don't highlight if dropping onto own child
-        const isOwnChild = e.overNode.data.parent_id === dragRowId;
-        if (!isOwnChild) {
-          gridApi.forEachNode(node => {
-            if (node.data?.id === overRowId) {
-              const rowEl = document.querySelector(`.ag-row[row-id="${node.id}"]`);
-              if (rowEl) rowEl.classList.add("row-drop-target");
-            }
-          });
-        }
-      }
-    },
-
-    onRowDragLeave: () => {
-      document.querySelectorAll(".row-drop-target").forEach(el => el.classList.remove("row-drop-target"));
-    },
-
-    onRowDragEnd: async e => {
-      document.querySelectorAll(".row-drop-target").forEach(el => el.classList.remove("row-drop-target"));
-      if (!e.overNode || e.overNode === e.node) return;
-      const dragRow = e.node.data;
-      const overRow = e.overNode.data;
-      if (!dragRow || !overRow) return;
-      if (dragRow.id === overRow.id) return;
-      // Prevent circular: can't drop onto any descendant
-      let pid = overRow.parent_id;
-      while (pid) {
-        if (pid === dragRow.id) return;
-        const ancestor = rowData.find(r => r.id === pid);
-        pid = ancestor?.parent_id ?? null;
-      }
-
-      dragRow.parent_id = overRow.id;
-      dragRow.last_modified = fmtDateTime(new Date());
-      await saveRow(dragRow);
-      gridApi.applyTransaction({ update: [dragRow] });
-      gridApi.onFilterChanged();
-      gridApi.refreshCells({ force: true });
-      updateRowCount();
-      toast(`"${dragRow.item || "Item"}" attached to "${overRow.item || "Item"}"`, "success");
-    },
-
     onCellValueChanged:  onCellValueChanged,
     onSelectionChanged:  onSelectionChanged,
     onRowDoubleClicked:  p => openDetailPanel(p.data),

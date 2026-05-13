@@ -28,7 +28,6 @@ let snoozedItems          = {};
 let condFmtRules          = [];
 let customCategories      = [];
 let statusOptions         = [];   // loaded from localStorage; falls back to DEFAULT_STATUS_OPTIONS
-let collapsedParents      = new Set();  // parent row IDs whose children are hidden in grid
 let showSnoozedInGrid     = false;      // when true, snoozed items appear in the main grid
 let hiddenDetailFields    = new Set();  // field keys hidden in the detail panel
 let displayDateFormat     = "YYYY-MM-DD"; // display format for date columns (stored values stay ISO)
@@ -383,128 +382,6 @@ function _updateExportButtonLabel() {
 }
 
 // ---------------------------------------------------------------------------
-// Subtask helpers
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Create a new parent task (used by both parent pickers)
-// ---------------------------------------------------------------------------
-
-async function createParentTask(name) {
-  const now = fmtDateTime(new Date());
-  const newRow = {
-    item: name, category: "", date: "", time: "", sort: 0,
-    description: "", completed: false, date_completed: "",
-    last_modified: now, created_at: now, deleted: false,
-    link: "", recur_rule: "", follow_ups: "[]",
-  };
-  const saved = await saveRow(newRow);
-  if (saved) {
-    rowData.push(newRow);
-    gridApi?.applyTransaction({ add: [newRow] });
-  }
-  return saved || null;
-}
-
-// ---------------------------------------------------------------------------
-// Bulk set parent
-// ---------------------------------------------------------------------------
-
-let _bulkSetParentId = null;
-
-function openBulkSetParentModal() {
-  const sel = gridApi?.getSelectedRows() || [];
-  if (!sel.length) return;
-
-  _bulkSetParentId = null;
-
-  const descEl = document.getElementById("set-parent-desc");
-  if (descEl) descEl.textContent = `Assign ${sel.length} selected task${sel.length !== 1 ? "s" : ""} as subtasks of:`;
-
-  // Reset UI
-  document.getElementById("set-parent-search").value        = "";
-  document.getElementById("set-parent-dropdown").style.display = "none";
-  document.getElementById("set-parent-selected").style.display  = "none";
-  document.getElementById("set-parent-chosen-name").textContent = "";
-  document.getElementById("btn-set-parent-confirm").disabled    = true;
-
-  showModal("modal-set-parent");
-  setTimeout(() => document.getElementById("set-parent-search")?.focus(), 80);
-}
-
-async function bulkSetParent() {
-  if (!_bulkSetParentId) return;
-  const sel = gridApi?.getSelectedRows() || [];
-  if (!sel.length) return;
-
-  // Prevent assigning a task as its own parent or creating a direct cycle
-  const selectedIds = new Set(sel.map(r => r.id));
-  if (selectedIds.has(_bulkSetParentId)) {
-    toast("Cannot set a task as its own parent.", "error");
-    return;
-  }
-
-  let count = 0;
-  for (const row of sel) {
-    row.parent_id = _bulkSetParentId;
-    await saveRow(row);
-    gridApi?.forEachNode(node => {
-      if (node.data?.id === row.id) {
-        Object.assign(node.data, row);
-        gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
-      }
-    });
-    count++;
-  }
-
-  // Refresh parent row badge
-  gridApi?.forEachNode(node => {
-    if (node.data?.id === _bulkSetParentId)
-      gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
-  });
-
-  // Refresh detail panel if open and affected
-  if (detailRowData && (selectedIds.has(detailRowData.id) || detailRowData.id === _bulkSetParentId)) {
-    populateDetailPanel(detailRowData);
-  }
-
-  hideModal("modal-set-parent");
-  toast(`${count} task${count !== 1 ? "s" : ""} assigned as subtasks.`, "success");
-}
-
-async function addSubtask() {
-  if (!detailRowData?.id) return;
-  const inp  = document.getElementById("subtask-new-name");
-  const name = inp?.value.trim();
-  if (!name) return;
-
-  const now    = fmtDateTime(new Date());
-  const newRow = {
-    item: name, category: detailRowData.category || "",
-    date: detailRowData.date || "", time: detailRowData.time || "", sort: 0,
-    description: "", completed: false, date_completed: "",
-    last_modified: now, deleted: false,
-    parent_id: detailRowData.id,
-  };
-
-  const saved = await saveRow(newRow);
-  if (saved) {
-    rowData.push(saved);
-    gridApi?.applyTransaction({ add: [saved] });
-    gridApi?.onFilterChanged();
-    updateRowCount();
-    if (inp) inp.value = "";
-    renderSubtasksList(detailRowData);
-    // Refresh parent row Item column badge
-    gridApi?.forEachNode(node => {
-      if (node.data?.id === detailRowData.id)
-        gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
-    });
-    toast(`Subtask "${name}" added.`, "success");
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Bootstrap — wire all UI events after DOM is ready
 // ---------------------------------------------------------------------------
 
@@ -513,7 +390,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadWrapText();
   loadColumnVisibility();
   loadSnoozedItems();
-  loadCollapsedParents();
   loadDetailFieldPrefs();
   loadDateFormat();
   loadCondFmt();
@@ -614,9 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-bulk-complete").addEventListener("click",    () => bulkAction("complete"));
   document.getElementById("btn-bulk-incomplete").addEventListener("click",  () => bulkAction("incomplete"));
   document.getElementById("btn-bulk-snooze")?.addEventListener("click", e => { e.stopPropagation(); bulkSnooze(); });
-  document.getElementById("btn-bulk-snooze-confirm")?.addEventListener("click", bulkSnoozeConfirm);
   document.getElementById("btn-bulk-move-today")?.addEventListener("click", bulkMoveToToday);
-  document.getElementById("btn-bulk-set-parent")?.addEventListener("click", openBulkSetParentModal);
   document.getElementById("btn-bulk-delete").addEventListener("click",      bulkDelete);
   document.getElementById("btn-deselect").addEventListener("click",         () => gridApi?.deselectAll());
 
@@ -737,174 +611,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-log-followup")?.addEventListener("click", logFollowUp);
   document.getElementById("btn-log-followup-snooze")?.addEventListener("click", e => { e.stopPropagation(); logFollowUpAndSnooze(e.currentTarget); });
 
-  // ── Parent task picker ────────────────────────────────────────────────────
-  document.getElementById("detail-parent-search")?.addEventListener("input", e => {
-    const raw      = e.target.value.trim();
-    const q        = raw.toLowerCase();
-    const dropdown = document.getElementById("detail-parent-dropdown");
-    if (!dropdown) return;
-    if (!q) { dropdown.style.display = "none"; return; }
-
-    // Exclude self and direct children of current row
-    const childIds = new Set(rowData.filter(r => r.parent_id === detailRowData?.id).map(r => r.id));
-    const isIdSearch = /^#?\d+$/.test(raw);
-    const matches  = rowData.filter(r => {
-      if (r.deleted || r.id === detailRowData?.id || childIds.has(r.id)) return false;
-      if (isIdSearch) return String(r.id) === raw.replace(/^#/, "");
-      return (r.item || "").toLowerCase().includes(q);
-    }).slice(0, 10);
-
-    const createHtml = `<div class="parent-dropdown-item parent-dropdown-create" data-create="1" data-name="${esc(raw)}">
-      <span class="parent-dropdown-id" style="color:var(--primary)">＋</span>
-      <span class="parent-dropdown-name">Create "<strong>${esc(raw)}</strong>"</span>
-    </div>`;
-
-    dropdown.innerHTML = matches.map(r =>
-      `<div class="parent-dropdown-item" data-id="${r.id}" data-name="${esc(r.item || "")}">
-        <span class="parent-dropdown-id">#${r.id}</span>
-        <span class="parent-dropdown-name">${esc(r.item || "(no name)")}</span>
-      </div>`
-    ).join("") + createHtml;
-
-    dropdown.style.display = "";
-    // Position fixed to escape overflow:hidden/auto on detail-panel body
-    requestAnimationFrame(() => {
-      const inp  = document.getElementById("detail-parent-search");
-      const rect = inp?.getBoundingClientRect();
-      if (rect) {
-        dropdown.style.top   = (rect.bottom + 2) + "px";
-        dropdown.style.left  = rect.left + "px";
-        dropdown.style.width = rect.width + "px";
-      }
-    });
-
-    dropdown.querySelectorAll(".parent-dropdown-item").forEach(item => {
-      item.addEventListener("mousedown", async ev => {
-        ev.preventDefault();
-        if (item.dataset.create) {
-          const created = await createParentTask(item.dataset.name);
-          if (!created) return;
-          document.getElementById("detail-parent-id").value         = created.id;
-          document.getElementById("detail-parent-name").textContent = created.item;
-        } else {
-          const parentId   = parseInt(item.dataset.id);
-          const parentName = item.dataset.name;
-          document.getElementById("detail-parent-id").value         = parentId;
-          document.getElementById("detail-parent-name").textContent = parentName || `#${parentId}`;
-        }
-        document.getElementById("detail-parent-selected").style.display   = "";
-        document.getElementById("detail-parent-search-wrap").style.display = "none";
-        document.getElementById("detail-parent-search").value = "";
-        dropdown.style.display = "none";
-      });
-    });
-  });
-
-  document.getElementById("detail-parent-search")?.addEventListener("blur", () => {
-    setTimeout(() => {
-      const dd = document.getElementById("detail-parent-dropdown");
-      if (dd) dd.style.display = "none";
-    }, 150);
-  });
-
-  document.getElementById("btn-clear-parent")?.addEventListener("click", () => {
-    document.getElementById("detail-parent-id").value = "";
-    document.getElementById("detail-parent-selected").style.display   = "none";
-    document.getElementById("detail-parent-search-wrap").style.display = "";
-    document.getElementById("detail-parent-search").value = "";
-    const dd = document.getElementById("detail-parent-dropdown");
-    if (dd) dd.style.display = "none";
-  });
-
-  document.getElementById("btn-open-parent")?.addEventListener("click", () => {
-    const parentId = parseInt(document.getElementById("detail-parent-id")?.value);
-    if (!parentId) return;
-    const parentRow = rowData.find(r => r.id === parentId && !r.deleted);
-    if (parentRow) openDetailPanel(parentRow);
-    else toast("Parent task not found.", "warning");
-  });
-
-  // ── Bulk set parent modal search ─────────────────────────────────────────
-  document.getElementById("set-parent-search")?.addEventListener("input", e => {
-    const raw      = e.target.value.trim();
-    const q        = raw.toLowerCase();
-    const dropdown = document.getElementById("set-parent-dropdown");
-    if (!dropdown) return;
-    if (!q) { dropdown.style.display = "none"; return; }
-
-    const selectedIds = new Set((gridApi?.getSelectedRows() || []).map(r => r.id));
-    const isIdSearch  = /^#?\d+$/.test(raw);
-    const matches = rowData.filter(r => {
-      if (r.deleted || selectedIds.has(r.id)) return false;
-      if (isIdSearch) return String(r.id) === raw.replace(/^#/, "");
-      return (r.item || "").toLowerCase().includes(q);
-    }).slice(0, 10);
-
-    const createHtml = `<div class="parent-dropdown-item parent-dropdown-create" data-create="1" data-name="${esc(raw)}">
-      <span class="parent-dropdown-id" style="color:var(--primary)">＋</span>
-      <span class="parent-dropdown-name">Create "<strong>${esc(raw)}</strong>"</span>
-    </div>`;
-
-    dropdown.innerHTML = matches.map(r =>
-      `<div class="parent-dropdown-item" data-id="${r.id}" data-name="${esc(r.item || "")}">
-        <span class="parent-dropdown-id">#${r.id}</span>
-        <span class="parent-dropdown-name">${esc(r.item || "(no name)")}</span>
-      </div>`
-    ).join("") + createHtml;
-
-    dropdown.style.display = "";
-    requestAnimationFrame(() => {
-      const inp  = document.getElementById("set-parent-search");
-      const rect = inp?.getBoundingClientRect();
-      if (rect) {
-        dropdown.style.top   = (rect.bottom + 2) + "px";
-        dropdown.style.left  = rect.left + "px";
-        dropdown.style.width = rect.width + "px";
-      }
-    });
-
-    dropdown.querySelectorAll(".parent-dropdown-item").forEach(item => {
-      item.addEventListener("mousedown", async ev => {
-        ev.preventDefault();
-        if (item.dataset.create) {
-          const created = await createParentTask(item.dataset.name);
-          if (!created) return;
-          _bulkSetParentId = created.id;
-          document.getElementById("set-parent-chosen-name").textContent = created.item;
-        } else {
-          _bulkSetParentId = parseInt(item.dataset.id);
-          document.getElementById("set-parent-chosen-name").textContent = item.dataset.name || `#${_bulkSetParentId}`;
-        }
-        document.getElementById("set-parent-selected").style.display  = "";
-        document.getElementById("set-parent-search").value = "";
-        document.getElementById("set-parent-dropdown").style.display = "none";
-        document.getElementById("btn-set-parent-confirm").disabled = false;
-      });
-    });
-  });
-
-  document.getElementById("set-parent-search")?.addEventListener("blur", () => {
-    setTimeout(() => {
-      const dd = document.getElementById("set-parent-dropdown");
-      if (dd) dd.style.display = "none";
-    }, 150);
-  });
-
-  document.getElementById("btn-set-parent-clear")?.addEventListener("click", () => {
-    _bulkSetParentId = null;
-    document.getElementById("set-parent-selected").style.display  = "none";
-    document.getElementById("set-parent-chosen-name").textContent = "";
-    document.getElementById("btn-set-parent-confirm").disabled    = true;
-    document.getElementById("set-parent-search").value = "";
-    document.getElementById("set-parent-search").focus();
-  });
-
-  document.getElementById("btn-set-parent-confirm")?.addEventListener("click", bulkSetParent);
-
-  // ── Subtask add ───────────────────────────────────────────────────────────
-  document.getElementById("btn-add-subtask")?.addEventListener("click", addSubtask);
-  document.getElementById("subtask-new-name")?.addEventListener("keydown", e => {
-    if (e.key === "Enter") { e.preventDefault(); addSubtask(); }
+  // ── Checklist add ─────────────────────────────────────────────────────────
+  document.getElementById("btn-add-checklist-item")?.addEventListener("click", addChecklistItem);
+  document.getElementById("checklist-new-item")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); addChecklistItem(); }
   });
   document.getElementById("followup-note-input")?.addEventListener("keydown", e => {
     if (e.key === "Enter") { e.preventDefault(); logFollowUp(); }
@@ -1230,23 +940,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document.getElementById("btn-collapse-all")?.addEventListener("click", () => {
-    const parentIds = new Set(
-      rowData.filter(r => !r.deleted && rowData.some(c => c.parent_id === r.id && !c.deleted))
-             .map(r => r.id)
-    );
-    const allCollapsed = parentIds.size > 0 && [...parentIds].every(id => collapsedParents.has(id));
-    if (allCollapsed) {
-      parentIds.forEach(id => collapsedParents.delete(id));
-    } else {
-      parentIds.forEach(id => collapsedParents.add(id));
-    }
-    saveCollapsedParents();
-    gridApi?.onFilterChanged();
-    gridApi?.refreshCells({ force: true });
-    updateCollapseAllBtn();
-  });
-
   document.getElementById("btn-show-snoozed")?.addEventListener("click", () => {
     showSnoozedInGrid = !showSnoozedInGrid;
     document.getElementById("btn-show-snoozed").classList.toggle("active", showSnoozedInGrid);
@@ -1295,7 +988,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("ctx-snooze-row")?.addEventListener("click", () => {
     if (ctxRowData?.id) {
       if (isSnoozeActive(ctxRowData.id)) unsnoozeRow(ctxRowData.id);
-      else snoozeRow(ctxRowData.id, 1);
+      else snoozeRow(ctxRowData.id, computeSnoozeUntil("tomorrow"));
       updateSnoozeBadge();
       if (detailRowData?.id === ctxRowData.id) populateDetailPanel(detailRowData);
     }
@@ -1330,17 +1023,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("btn-snooze-confirm")?.addEventListener("click", () => {
-    if (!detailRowData?.id) return;
-    const dtVal = document.getElementById("snooze-until-dt")?.value;
-    if (!dtVal) { toast("Please pick a date/time.", "error"); return; }
-    snoozedItems[detailRowData.id] = dtVal.replace("T", " ");
-    saveSnoozedItems();
-    gridApi?.onFilterChanged(); gridApi?.redrawRows(); updateRowCount();
-    document.getElementById("snooze-popover").style.display = "none";
-    updateSnoozeBadge();
-    populateDetailPanel(detailRowData);
-    toast(`Snoozed until ${dtVal.replace("T", " ")}.`, "success");
+  document.querySelectorAll(".detail-snooze-preset").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!detailRowData?.id) return;
+      const untilStr = computeSnoozeUntil(btn.dataset.preset);
+      if (!untilStr) return;
+      snoozedItems[detailRowData.id] = untilStr;
+      saveSnoozedItems();
+      gridApi?.onFilterChanged(); gridApi?.redrawRows(); updateRowCount();
+      document.getElementById("snooze-popover").style.display = "none";
+      updateSnoozeBadge();
+      populateDetailPanel(detailRowData);
+      toast(`Snoozed until ${untilStr}.`, "success");
+    });
+  });
+
+  document.querySelectorAll(".bulk-snooze-preset").forEach(btn => {
+    btn.addEventListener("click", () => bulkSnoozeConfirm(btn.dataset.preset));
   });
   document.addEventListener("click", e => {
     if (!e.target.closest(".snooze-wrap")) {

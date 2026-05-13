@@ -78,7 +78,8 @@ function initCategoryCombo() {
       const chip = document.createElement("span");
       chip.className = "cat-chip";
       chip.innerHTML = `<span>${esc(cat)}</span><button type="button" class="cat-chip-remove" aria-label="Remove ${esc(cat)}">×</button>`;
-      chip.querySelector(".cat-chip-remove").addEventListener("click", () => {
+      chip.querySelector(".cat-chip-remove").addEventListener("click", e => {
+        e.stopPropagation();
         _detailCategories.splice(i, 1);
         renderTags();
         renderList(input.value);
@@ -176,20 +177,6 @@ function initCategoryCombo() {
   });
 }
 
-function updateCollapseAllBtn() {
-  const btn = document.getElementById("btn-collapse-all");
-  if (!btn) return;
-  const parentIds = rowData.filter(r => !r.deleted && rowData.some(c => c.parent_id === r.id && !c.deleted)).map(r => r.id);
-  if (parentIds.length === 0) { btn.style.display = "none"; return; }
-  btn.style.display = "";
-  const allCollapsed = parentIds.every(id => collapsedParents.has(id));
-  const svg = allCollapsed
-    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 15 12 7 20 15"/></svg>'
-    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 9 12 17 20 9"/></svg>';
-  btn.innerHTML = svg + (allCollapsed ? " Expand All" : " Collapse All");
-  btn.title = allCollapsed ? "Expand all parent rows" : "Collapse all parent rows";
-}
-
 function updateRowCount() {
   if (!gridApi) return;
   let n = 0;
@@ -197,7 +184,6 @@ function updateRowCount() {
   document.getElementById("row-count").textContent = `${n} row${n !== 1 ? "s" : ""}`;
   updateFilterSummary();
   updatePastDueBadge();
-  updateCollapseAllBtn();
 }
 
 function updateFilterSummary() {
@@ -389,28 +375,7 @@ function populateDetailPanel(row) {
   document.getElementById("detail-created-at").textContent    = row.created_at    || "—";
   document.getElementById("detail-id").textContent            = row.id            || "—";
 
-  // Parent task
-  const parentId         = row.parent_id || null;
-  const parentIdInput    = document.getElementById("detail-parent-id");
-  const parentSelectedEl = document.getElementById("detail-parent-selected");
-  const parentNameEl     = document.getElementById("detail-parent-name");
-  const parentSearchWrap = document.getElementById("detail-parent-search-wrap");
-  const parentSearchEl   = document.getElementById("detail-parent-search");
-  if (parentIdInput) parentIdInput.value = parentId || "";
-  if (parentId) {
-    const parentRow = rowData.find(r => r.id === parentId && !r.deleted);
-    if (parentNameEl) parentNameEl.textContent = parentRow ? (parentRow.item || `#${parentId}`) : `#${parentId}`;
-    if (parentSelectedEl) parentSelectedEl.style.display = "";
-    if (parentSearchWrap) parentSearchWrap.style.display = "none";
-  } else {
-    if (parentSelectedEl) parentSelectedEl.style.display = "none";
-    if (parentSearchWrap) parentSearchWrap.style.display = "";
-    if (parentSearchEl)   parentSearchEl.value = "";
-    const dd = document.getElementById("detail-parent-dropdown");
-    if (dd) dd.style.display = "none";
-  }
-
-  renderSubtasksList(row);
+  renderChecklistItems(row);
   renderFollowupList(row);
 
   const doneBadge = document.getElementById("detail-done-badge");
@@ -474,8 +439,8 @@ async function saveDetailPanel(closeAfter = false) {
       return on ? `${count}:${unit}` : "";
     })(),
     status:         document.getElementById("detail-status").value,
-    parent_id:      parseInt(document.getElementById("detail-parent-id")?.value) || null,
     follow_ups:     detailRowData.follow_ups || "[]",
+    checklist:      detailRowData.checklist  || "[]",
     completed:      nowCompleted,
     date_completed: (() => {
       const dc = document.getElementById("detail-date-completed").value;
@@ -592,59 +557,87 @@ function renderFollowupList(row) {
 }
 
 // ---------------------------------------------------------------------------
-// Subtasks list
+// Checklist
 // ---------------------------------------------------------------------------
 
-function renderSubtasksList(row) {
-  const listEl     = document.getElementById("detail-subtasks-list");
-  const progressEl = document.getElementById("detail-subtasks-progress");
+function getChecklist(row) {
+  try { return JSON.parse(row.checklist || "[]"); }
+  catch { return []; }
+}
+
+function renderChecklistItems(row) {
+  const listEl     = document.getElementById("detail-checklist-list");
+  const progressEl = document.getElementById("detail-checklist-progress");
   if (!listEl) return;
 
-  const children  = rowData.filter(r => r.parent_id === row.id && !r.deleted);
-  const doneCount = children.filter(r => r.completed).length;
+  const items     = getChecklist(row);
+  const doneCount = items.filter(i => i.done).length;
 
-  if (progressEl) progressEl.textContent = children.length ? `${doneCount}/${children.length}` : "";
+  if (progressEl) progressEl.textContent = items.length ? `${doneCount}/${items.length}` : "";
 
-  if (!children.length) {
-    listEl.innerHTML = `<div class="subtasks-empty">No subtasks yet.</div>`;
+  if (!items.length) {
+    listEl.innerHTML = `<div class="subtasks-empty">No checklist items yet.</div>`;
     return;
   }
 
-  listEl.innerHTML = children.map(c => `
-    <div class="subtask-item">
-      <input type="checkbox" class="subtask-cb cell-checkbox" ${c.completed ? "checked" : ""} data-id="${c.id}" />
-      <button class="subtask-link${c.completed ? " subtask-done" : ""}" data-id="${c.id}">${esc(c.item || "(no name)")}</button>
+  listEl.innerHTML = items.map((item, idx) => `
+    <div class="subtask-item" data-idx="${idx}">
+      <input type="checkbox" class="checklist-cb cell-checkbox" ${item.done ? "checked" : ""} data-idx="${idx}" />
+      <div class="checklist-item-body">
+        <span class="checklist-label${item.done ? " subtask-done" : ""}">${esc(item.label || "")}</span>
+        ${item.done && item.completedAt ? `<span class="checklist-ts">${esc(item.completedAt)}</span>` : ""}
+      </div>
+      <button class="checklist-del btn btn-ghost btn-sm icon-btn" data-idx="${idx}" title="Remove">✕</button>
     </div>
   `).join("");
 
-  listEl.querySelectorAll(".subtask-cb").forEach(cb => {
-    cb.addEventListener("change", async () => {
-      const id = parseInt(cb.dataset.id);
-      const childRow = rowData.find(r => r.id === id);
-      if (!childRow) return;
-      childRow.completed = cb.checked;
-      if (cb.checked && !childRow.date_completed) childRow.date_completed = fmtDate(new Date());
-      if (!cb.checked) childRow.date_completed = "";
-      await saveRow(childRow);
-      gridApi?.forEachNode(node => {
-        if (node.data?.id === id) {
-          Object.assign(node.data, childRow);
-          gridApi.refreshCells({ rowNodes: [node], force: true });
-        }
-      });
-      // Also refresh parent row badge
+  listEl.querySelectorAll(".checklist-cb").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const idx  = parseInt(cb.dataset.idx);
+      const arr  = getChecklist(row);
+      if (!arr[idx]) return;
+      arr[idx].done = cb.checked;
+      if (cb.checked) arr[idx].completedAt = fmtDateTime(new Date());
+      else delete arr[idx].completedAt;
+      row.checklist = JSON.stringify(arr);
+      saveRow(row);
+      // Refresh grid badge
       gridApi?.forEachNode(node => {
         if (node.data?.id === row.id) gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
       });
-      renderSubtasksList(row);
+      renderChecklistItems(row);
     });
   });
 
-  listEl.querySelectorAll(".subtask-link").forEach(btn => {
+  listEl.querySelectorAll(".checklist-del").forEach(btn => {
     btn.addEventListener("click", () => {
-      navigateToRow(parseInt(btn.dataset.id));
+      const idx = parseInt(btn.dataset.idx);
+      const arr = getChecklist(row);
+      arr.splice(idx, 1);
+      row.checklist = JSON.stringify(arr);
+      saveRow(row);
+      gridApi?.forEachNode(node => {
+        if (node.data?.id === row.id) gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
+      });
+      renderChecklistItems(row);
     });
   });
+}
+
+function addChecklistItem() {
+  if (!detailRowData?.id) return;
+  const inp  = document.getElementById("checklist-new-item");
+  const label = inp?.value.trim();
+  if (!label) return;
+  const arr = getChecklist(detailRowData);
+  arr.push({ label, done: false });
+  detailRowData.checklist = JSON.stringify(arr);
+  saveRow(detailRowData);
+  gridApi?.forEachNode(node => {
+    if (node.data?.id === detailRowData.id) gridApi.refreshCells({ rowNodes: [node], colIds: ["item"], force: true });
+  });
+  if (inp) inp.value = "";
+  renderChecklistItems(detailRowData);
 }
 
 async function logFollowUp() {
@@ -665,19 +658,14 @@ function openSnoozePopover(anchorEl) {
   const btn = anchorEl || document.getElementById("btn-detail-snooze");
   const pop = document.getElementById("snooze-popover");
   if (!pop || !btn) return;
-  const dt = document.getElementById("snooze-until-dt");
-  if (dt && !dt.value) {
-    const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(8, 0, 0, 0);
-    dt.value = fmtDate(tmr) + "T08:00";
-  }
   pop.style.display = "flex";
   // #detail-panel has a CSS transform, which makes it the containing block for position:fixed children.
   // So fixed coords must be relative to the panel, not the viewport — subtract the panel's offset.
   requestAnimationFrame(() => {
     const rect      = btn.getBoundingClientRect();
     const panelRect = (document.getElementById("detail-panel") || document.body).getBoundingClientRect();
-    const popW = pop.offsetWidth  || 220;
-    const popH = pop.offsetHeight || 80;
+    const popW = pop.offsetWidth  || 200;
+    const popH = pop.offsetHeight || 140;
     pop.style.left = Math.max(0, (rect.right - popW) - panelRect.left) + "px";
     pop.style.top  = (rect.top - popH - 6 - panelRect.top) + "px";
   });
@@ -698,11 +686,35 @@ function isSnoozeActive(id) {
   return snoozedItems[id] >= fmtSnoozeNow();
 }
 
-function snoozeRow(id, days = 1) {
-  const until = new Date();
-  until.setDate(until.getDate() + days);
-  until.setHours(23, 59, 0, 0);
-  snoozedItems[id] = fmtDate(until) + " 23:59";
+function computeSnoozeUntil(preset) {
+  const now = new Date();
+  switch (preset) {
+    case "1h": {
+      const d = new Date(now.getTime() + 60 * 60 * 1000);
+      return fmtDateTime(d).slice(0, 16);
+    }
+    case "2h": {
+      const d = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      return fmtDateTime(d).slice(0, 16);
+    }
+    case "eod": {
+      const d = new Date(now);
+      d.setHours(16, 0, 0, 0);
+      return fmtDateTime(d).slice(0, 16);
+    }
+    case "tomorrow": {
+      const d = new Date(now);
+      d.setDate(d.getDate() + 1);
+      d.setHours(7, 0, 0, 0);
+      return fmtDateTime(d).slice(0, 16);
+    }
+    default: return null;
+  }
+}
+
+function snoozeRow(id, untilStr) {
+  if (!untilStr) return;
+  snoozedItems[id] = untilStr;
   saveSnoozedItems();
   gridApi?.onFilterChanged();
   gridApi?.redrawRows();
@@ -736,34 +748,25 @@ function bulkSnooze() {
   const btn = document.getElementById("btn-bulk-snooze");
   if (!pop || !btn) return;
 
-  // Pre-fill to tomorrow 08:00
-  const dt = document.getElementById("bulk-snooze-until-dt");
-  if (dt && !dt.value) {
-    const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(8, 0, 0, 0);
-    dt.value = fmtDate(tmr) + "T08:00";
-  }
-
   if (pop.style.display !== "none") { pop.style.display = "none"; return; }
 
   pop.style.display = "flex";
   requestAnimationFrame(() => {
     const rect = btn.getBoundingClientRect();
-    const popW = pop.offsetWidth || 220;
+    const popW = pop.offsetWidth || 200;
     pop.style.left = Math.max(4, rect.right - popW) + "px";
     pop.style.top  = (rect.bottom + 4) + "px";
   });
 }
 
-function bulkSnoozeConfirm() {
+function bulkSnoozeConfirm(preset) {
   const selected = gridApi?.getSelectedRows() || [];
   if (!selected.length) return;
-  const dtVal = document.getElementById("bulk-snooze-until-dt")?.value;
-  if (!dtVal) { toast("Please pick a date/time.", "error"); return; }
-  const untilStr = dtVal.replace("T", " ");
+  const untilStr = computeSnoozeUntil(preset);
+  if (!untilStr) return;
   selected.forEach(r => { if (r.id) snoozedItems[r.id] = untilStr; });
   saveSnoozedItems();
   document.getElementById("bulk-snooze-popover").style.display = "none";
-  document.getElementById("bulk-snooze-until-dt").value = "";
   gridApi?.deselectAll();
   gridApi?.onFilterChanged();
   gridApi?.redrawRows();

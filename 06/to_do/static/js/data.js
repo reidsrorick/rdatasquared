@@ -248,11 +248,6 @@ async function doImport() {
         if (r.id != null) idMap[r.id] = newId;
         return { ...r, id: newId, created_at: r.created_at || now };
       });
-      // Remap parent_id to new IDs so parent-child links stay valid after ID reassignment
-      newItems.forEach(r => {
-        if (r.parent_id != null && idMap[r.parent_id] != null) r.parent_id = idMap[r.parent_id];
-        else if (r.parent_id != null && !existing.some(e => e.id === r.parent_id)) r.parent_id = null;
-      });
       _saveAllItems([...existing, ...newItems]);
       // Merge snoozed: translate old IDs to new IDs, don't overwrite existing snoozes
       const now2 = fmtSnoozeNow();
@@ -571,7 +566,7 @@ async function spawnRecurringOccurrence(sourceRow) {
     item: sourceRow.item, category: sourceRow.category,
     date: nextDate, time: sourceRow.time, sort: sourceRow.sort,
     description: sourceRow.description, link: sourceRow.link || "",
-    recur_rule: sourceRow.recur_rule, follow_ups: "[]",
+    recur_rule: sourceRow.recur_rule, follow_ups: "[]", checklist: "[]",
     completed: false, date_completed: "", last_modified: now, deleted: false,
   };
   const saved = await saveRow(newRow);
@@ -580,37 +575,9 @@ async function spawnRecurringOccurrence(sourceRow) {
   if (newRow.id) setNotifOff(newRow.id, true);
   rowData.push(newRow);
   gridApi?.applyTransaction({ add: [newRow] });
-
-  // Spawn fresh copies of any children, parented to the new occurrence
-  const children = rowData.filter(r => r.parent_id === sourceRow.id && !r.deleted);
-  for (const child of children) {
-    // Preserve the child's date offset relative to the parent, if both had dates
-    let childDate = child.date ? nextDate : "";
-    if (child.date && sourceRow.date) {
-      const offsetMs = new Date(child.date).getTime() - new Date(sourceRow.date).getTime();
-      if (offsetMs !== 0) childDate = fmtDate(new Date(new Date(nextDate).getTime() + offsetMs));
-    }
-    const newChild = {
-      item: child.item, category: child.category,
-      date: childDate, time: child.time, sort: child.sort,
-      description: child.description, link: child.link || "",
-      recur_rule: "", follow_ups: "[]",            // children don't carry recurrence
-      completed: false, date_completed: "",
-      last_modified: now, deleted: false,
-      parent_id: newRow.id,
-    };
-    const savedChild = await saveRow(newChild);
-    if (savedChild) {
-      if (newChild.id) setNotifOff(newChild.id, true);
-      rowData.push(newChild);
-      gridApi?.applyTransaction({ add: [newChild] });
-    }
-  }
-
   gridApi?.onFilterChanged();
   updateRowCount();
-  const n = children.length;
-  toast(`Recurring task${n ? ` + ${n} subtask${n !== 1 ? "s" : ""}` : ""} created for ${nextDate}.`, "success");
+  toast(`Recurring task created for ${nextDate}.`, "success");
 }
 
 // ---------------------------------------------------------------------------
@@ -630,6 +597,7 @@ async function duplicateRow(sourceRow) {
     link:           sourceRow.link || "",
     recur_rule:     sourceRow.recur_rule || "",
     follow_ups:     "[]",
+    checklist:      "[]",
     completed:      false,
     date_completed: "",
     last_modified:  now,
