@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RDX1 — Outreach</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231E40D4'/%3E%3Cstop offset='35%25' stop-color='%232DD4BF'/%3E%3Cstop offset='55%25' stop-color='%2310B981'/%3E%3Cstop offset='80%25' stop-color='%23F59E0B'/%3E%3Cstop offset='100%25' stop-color='%23F97316'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 2 L3 26' stroke='url(%23g)' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M3 2 L14 2 Q21 2 21 10 Q21 17 14 17 L3 17' stroke='url(%23g)' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M11 17 L21 26' stroke='url(%23g)' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <a class="topbar__logo" href="#" aria-label="RDX1 home" id="logo-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" width="24" height="28" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1E40D4"/>
+            <stop offset="35%" stop-color="#2DD4BF"/>
+            <stop offset="55%" stop-color="#10B981"/>
+            <stop offset="80%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#F97316"/>
+          </linearGradient>
+        </defs>
+        <path d="M3 2 L3 26" stroke="url(#hg)" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M3 2 L14 2 Q21 2 21 10 Q21 17 14 17 L3 17" stroke="url(#hg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M11 17 L21 26" stroke="url(#hg)" stroke-width="3.5" stroke-linecap="round"/>
+      </svg>
+      <span class="topbar__wordmark">RDX1</span>
+    </a>
+
+    <nav class="topbar__nav" role="navigation" aria-label="Main">
+      <button class="nav-tab nav-tab--active" data-view="dashboard" aria-current="page">Dashboard</button>
+      <button class="nav-tab" data-view="upcoming">Upcoming</button>
+      <button class="nav-tab" data-view="calendar">Calendar</button>
+      <button class="nav-tab" data-view="people">People</button>
+      <button class="nav-tab" data-view="map">Map</button>
+    </nav>
+
+    <div class="topbar__right" id="topbar-right">
+      <span class="save-status" id="save-status" aria-live="polite"></span>
+      <button class="btn btn--primary btn--icon" id="add-btn" aria-label="Add contact" title="Add contact">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add</span>
+      </button>
+      <button class="topbar-gear" id="settings-btn" title="Settings" aria-label="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content" id="main" role="main">
+    <div class="loading-state"><div class="loading-spinner"></div></div>
+  </main>
+
+<script type="module">
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function daysDiff(from, to) {
+  return Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00')) / 86400000);
+}
+function cap(s) { return s[0].toUpperCase() + s.slice(1); }
+
+// ── ID generation ─────────────────────────────────────────────────────────────
+function nextId(existingPeople) {
+  const max = existingPeople.reduce((m, p) => {
+    const n = parseInt(p.id);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return String(max + 1);
+}
+
+// ── CSV ───────────────────────────────────────────────────────────────────────
+const COLUMNS = ['id','name','tier','company','tags','cadence_days','last_contact','next_due',
+                 'override_due','override_reason',
+                 'phone','email','location','notes','important_dates','log'];
+
+function resolveTier(val) {
+  if (!val) return settings.tiers[0]?.id || 'casual';
+  const byId    = settings.tiers.find(t => t.id    === val);
+  if (byId) return byId.id;
+  const byLabel = settings.tiers.find(t => t.label.toLowerCase() === val.toLowerCase());
+  if (byLabel) return byLabel.id;
+  return val; // unknown tier — keep as-is
+}
+
+function parseCSV(text) {
+  const r = Papa.parse(text, { header:true, skipEmptyLines:true, transformHeader: h => h.trim() });
+  let autoId = 0;
+  return (r.data || []).map(row => ({
+    id: row.id || String(++autoId),
+    name: row.name || '',
+    tier: resolveTier(row.tier),
+    company: row.company || '',
+    tags: row.tags || '',
+    cadence_days: parseInt(row.cadence_days) || 90,
+    last_contact: row.last_contact || '',
+    next_due: row.next_due || '',
+    override_due: row.override_due || '',
+    override_reason: row.override_reason || '',
+    phone: row.phone || '',
+    email: row.email || '',
+    location: row.location || '',
+    notes: row.notes || '',
+    important_dates: row.important_dates || '',
+    log: row.log || '',
+  }));
+}
+
+function serializeCSV(people) {
+  return Papa.unparse(people.map(p => {
+    const row = {};
+    for (const c of COLUMNS) row[c] = p[c] ?? '';
+    row.tier = getTierLabel(p.tier); // store human-readable label
+    return row;
+  }), { columns: COLUMNS, newline: '\n' });
+}
+
+function computeNextDue(lastContact, cadenceDays) {
+  if (!lastContact) return '';
+  const d = new Date(lastContact + 'T00:00:00');
+  d.setDate(d.getDate() + parseInt(cadenceDays));
+  return d.toISOString().slice(0, 10);
+}
+
+function effectiveNextDue(person) {
+  return person.override_due || person.next_due;
+}
+
+function parseTags(tagStr) {
+  return (tagStr || '').split('|').map(t => t.trim()).filter(Boolean);
+}
+
+function parseImportantDatesRaw(str) {
+  if (!str) return [];
+  return (str).split('|').map(s => s.trim()).filter(Boolean).map(entry => {
+    const colon = entry.indexOf(':');
+    if (colon === -1) return null;
+    return { label: entry.slice(0, colon).trim(), date: entry.slice(colon + 1).trim() };
+  }).filter(Boolean);
+}
+
+function formatImportantDate(date) {
+  const d = new Date(date + 'T00:00:00');
+  return isNaN(d) ? date : d.toLocaleDateString('default', { month: 'short', day: 'numeric' });
+}
+
+function parseLog(logStr) {
+  if (!logStr) return [];
+  return logStr.split('\n').filter(l => l.trim()).map(line => {
+    const m = line.match(/^(\d{4}-\d{2}-\d{2}):\s*(.*)$/);
+    return m ? { date: m[1], notes: m[2] } : { date: '', notes: line };
+  });
+}
+
+function prependLogEntry(existing, date, notes) {
+  const entry = `${date}: ${notes.trim()}`;
+  return existing ? `${entry}\n${existing}` : entry;
+}
+
+function serializeLog(entries) {
+  return entries.map(e => `${e.date}: ${e.notes.trim()}`).join('\n');
+}
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+const DB_NAME = 'rdx1', DB_STORE = 'handles', HANDLE_KEY = 'csvHandle', LS_KEY = 'rdx1_data';
+const hasFSA = 'showOpenFilePicker' in window;
+let fileHandle = null;
+let saveTimer = null, lastSaved = null;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE);
+    req.onsuccess = e => res(e.target.result);
+    req.onerror = e => rej(e.target.error);
+  });
+}
+async function saveHandle(h) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put(h, HANDLE_KEY);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+async function loadHandle() {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(DB_STORE, 'readonly');
+    const req = tx.objectStore(DB_STORE).get(HANDLE_KEY);
+    req.onsuccess = e => res(e.target.result || null);
+    req.onerror = e => rej(e.target.error);
+  });
+}
+async function clearHandle() {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete(HANDLE_KEY);
+    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+  });
+}
+
+// Returns { people, fileConnected, pendingHandle }
+// Always loads from localStorage first. If a file handle is persisted:
+//   - permission already granted → load from file
+//   - permission needs a gesture → return pendingHandle so UI can prompt the user
+async function initStorage() {
+  const localRaw = localStorage.getItem(LS_KEY);
+  const localPeople = localRaw ? parseCSV(localRaw) : [];
+
+  if (!hasFSA) return { people: localPeople, fileConnected: false, pendingHandle: null };
+
+  const withTimeout = (p, ms) =>
+    Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms))]);
+  const handle = await withTimeout(loadHandle(), 3000).catch(() => null);
+  if (handle) {
+    try {
+      // queryPermission doesn't require a user gesture
+      const state = await handle.queryPermission({ mode: 'readwrite' });
+      if (state === 'granted') {
+        fileHandle = handle;
+        const text = await (await handle.getFile()).text();
+        return { people: parseCSV(text), fileConnected: true, pendingHandle: null };
+      }
+      if (state === 'prompt') {
+        // Need a user gesture to call requestPermission — surface a reconnect button
+        return { people: localPeople, fileConnected: false, pendingHandle: handle };
+      }
+      // state === 'denied' — forget it
+      await clearHandle();
+    } catch { await clearHandle(); }
+  }
+  return { people: localPeople, fileConnected: false, pendingHandle: null };
+}
+
+async function pickOrCreateFile() {
+  if (!hasFSA) return null;
+  try {
+    const [h] = await window.showOpenFilePicker({
+      types: [{ description:'CSV', accept:{'text/csv':['.csv']} }], multiple: false
+    });
+    fileHandle = h; await saveHandle(h);
+    return parseCSV(await (await h.getFile()).text());
+  } catch { return null; }
+}
+
+async function createNewFile(existingPeople = []) {
+  if (!hasFSA) return null;
+  try {
+    const h = await window.showSaveFilePicker({
+      suggestedName: 'rdx1-contacts.csv',
+      types: [{ description:'CSV', accept:{'text/csv':['.csv']} }],
+    });
+    fileHandle = h; await saveHandle(h);
+    const w = await h.createWritable();
+    // Write current in-memory data (or empty header) into the new file
+    await w.write(existingPeople.length ? serializeCSV(existingPeople) : COLUMNS.join(',') + '\n');
+    await w.close();
+    return existingPeople;
+  } catch { return null; }
+}
+
+function scheduleSave(people) {
+  clearTimeout(saveTimer);
+  setSaveText('Saving…', true);
+  saveTimer = setTimeout(() => flushSave(people), 500);
+}
+async function flushSave(people) {
+  const csv = serializeCSV(people);
+  localStorage.setItem(LS_KEY, csv);
+  if (!hasFSA || !fileHandle) {
+    setSaveText('Saved locally', false);
+    return;
+  }
+  try {
+    const w = await fileHandle.createWritable();
+    await w.write(csv); await w.close();
+    lastSaved = new Date();
+    setSaveText('Saved', false);
+    startSavedAgo();
+  } catch(e) {
+    if (e.name === 'NotAllowedError' || e.name === 'NotFoundError') {
+      fileHandle = null; await clearHandle();
+      document.dispatchEvent(new CustomEvent('rdx1:file-disconnected'));
+    }
+  }
+}
+let savedAgoTimer = null;
+function savedAgoLabel() {
+  const sec = Math.round((Date.now() - lastSaved) / 1000);
+  if (sec < 60)   return 'Saved · < 1 min ago';
+  if (sec < 300)  return 'Saved · 5 min ago';
+  if (sec < 600)  return 'Saved · 10 min ago';
+  if (sec < 1800) return 'Saved · 30 min ago';
+  if (sec < 3600) return 'Saved · 1 hr ago';
+  return 'Saved · 1+ hr ago';
+}
+function startSavedAgo() {
+  clearInterval(savedAgoTimer);
+  setSaveText(savedAgoLabel(), false);
+  savedAgoTimer = setInterval(() => {
+    if (!lastSaved) return;
+    setSaveText(savedAgoLabel(), false);
+  }, 60000);
+}
+function setSaveText(text, pulsing) {
+  const el = document.getElementById('save-status');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle('save-status--saving', pulsing);
+}
+
+function importCSVFile(onLoad) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.csv,text/csv';
+  input.onchange = async () => {
+    const text = await input.files[0].text();
+    localStorage.setItem(LS_KEY, text);
+    onLoad(parseCSV(text));
+  };
+  input.click();
+}
+function exportCSVFile(people) {
+  const blob = new Blob([serializeCSV(people)], { type:'text/csv' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download:'rdx1-contacts.csv' });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+const DEFAULT_SETTINGS = {
+  tiers: [
+    { id: 'inner',  label: 'Inner',  color: '#F97316', defaultCadence: 30  },
+    { id: 'close',  label: 'Close',  color: '#1E40D4', defaultCadence: 60  },
+    { id: 'casual', label: 'Casual', color: '#2DD4BF', defaultCadence: 90  },
+  ],
+  cadencePresets: [30, 60, 90, 180, 365],
+};
+
+let settings = DEFAULT_SETTINGS;
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('rdx1_settings');
+    if (raw) settings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch { settings = { ...DEFAULT_SETTINGS }; }
+}
+function saveSettings() {
+  localStorage.setItem('rdx1_settings', JSON.stringify(settings));
+}
+
+// ── Components ────────────────────────────────────────────────────────────────
+function getTierColor(id) {
+  return settings.tiers.find(t => t.id === id)?.color ?? '#9CA3AF';
+}
+function getTierLabel(id) {
+  return settings.tiers.find(t => t.id === id)?.label ?? id;
+}
+function tierDotHTML(tier) {
+  return `<span class="tier-dot" style="--dot-color:${getTierColor(tier)}" title="${tier}"></span>`;
+}
+
+function dueBadgeHTML(nextDue) {
+  if (!nextDue) return '';
+  const diff = daysDiff(todayStr(), nextDue);
+  if (diff < 0) return `<span class="due-badge due-badge--overdue">${Math.abs(diff) === 1 ? '1 day overdue' : `${Math.abs(diff)} days overdue`}</span>`;
+  if (diff === 0) return `<span class="due-badge due-badge--today">Due today</span>`;
+  if (diff <= 7)  return `<span class="due-badge due-badge--soon">in ${diff}d</span>`;
+  return `<span class="due-badge due-badge--ok">in ${diff}d</span>`;
+}
+
+function openModal(contentHTML, { onConfirm, onCancel, wide=false } = {}) {
+  document.getElementById('rdx-modal-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'rdx-modal-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal-box${wide?' modal-wide':''}">${contentHTML}</div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(onCancel); });
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('modal-visible'));
+  const first = overlay.querySelector('input,textarea,select');
+  if (first) setTimeout(() => first.focus(), 80);
+  function close(cb) {
+    overlay.classList.remove('modal-visible');
+    overlay.addEventListener('transitionend', () => overlay.remove(), { once:true });
+    if (cb) cb();
+  }
+  overlay.querySelector('[data-modal-confirm]')?.addEventListener('click', () => close(onConfirm));
+  overlay.querySelector('[data-modal-cancel]')?.addEventListener('click',  () => close(onCancel));
+  overlay.querySelectorAll('[data-modal-close]').forEach(el => el.addEventListener('click', () => close(onCancel)));
+  return { close };
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('toast--visible'));
+  setTimeout(() => { t.classList.remove('toast--visible'); t.addEventListener('transitionend', () => t.remove(), {once:true}); }, 1800);
+}
+
+// ── Tag chip input ────────────────────────────────────────────────────────────
+function wireTagInput(container, hidden) {
+  if (!container || !hidden) return;
+  const field = container.querySelector('.tag-input__field');
+
+  function getTags() { return parseTags(hidden.value); }
+  function setTags(arr) {
+    hidden.value = arr.join('|');
+    container.querySelectorAll('.tag-chip').forEach(c => c.remove());
+    arr.forEach(t => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `${esc(t)}<button type="button" class="tag-chip__del" data-tag="${esc(t)}">×</button>`;
+      container.insertBefore(chip, field);
+    });
+    field.placeholder = arr.length ? '' : 'Add tag…';
+  }
+
+  function commit() {
+    const val = field.value.trim();
+    if (!val) return;
+    const tags = getTags();
+    if (!tags.includes(val)) setTags([...tags, val]);
+    field.value = '';
+  }
+
+  field.addEventListener('keydown', e => {
+    if (e.key === 'Tab' || e.key === 'Enter') {
+      if (field.value.trim()) { e.preventDefault(); commit(); }
+    } else if (e.key === 'Backspace' && !field.value) {
+      const tags = getTags();
+      if (tags.length) setTags(tags.slice(0, -1));
+    }
+  });
+  field.addEventListener('commit', commit);
+  field.addEventListener('blur', commit);
+
+  container.addEventListener('click', e => {
+    const del = e.target.closest('.tag-chip__del');
+    if (del) { setTags(getTags().filter(t => t !== del.dataset.tag)); return; }
+    field.focus();
+  });
+}
+
+// ── Important dates chip input ────────────────────────────────────────────────
+function wireImportantDatesInput(container, hidden) {
+  if (!container || !hidden) return;
+  const labelField = container.querySelector('.idate-input__label');
+  const dateField  = container.querySelector('.idate-input__date');
+
+  function getEntries() { return parseImportantDatesRaw(hidden.value); }
+  function setEntries(arr) {
+    hidden.value = arr.map(e => `${e.label}:${e.date}`).join('|');
+    container.querySelectorAll('.idate-chip').forEach(c => c.remove());
+    arr.forEach(({ label, date }) => {
+      const chip = document.createElement('span');
+      chip.className = 'idate-chip tag-chip';
+      chip.innerHTML = `${esc(label)} · ${formatImportantDate(date)}<button type="button" class="tag-chip__del" data-label="${esc(label)}" data-date="${esc(date)}">×</button>`;
+      container.insertBefore(chip, labelField);
+    });
+    labelField.placeholder = arr.length ? '' : 'Label…';
+  }
+
+  function commit() {
+    const label = labelField.value.trim();
+    const date  = dateField.value;
+    if (!label || !date) return;
+    const entries = getEntries();
+    if (!entries.some(e => e.label === label && e.date === date)) setEntries([...entries, { label, date }]);
+    labelField.value = '';
+    dateField.value  = '';
+    labelField.focus();
+  }
+
+  labelField.addEventListener('keydown', e => {
+    if ((e.key === 'Tab' || e.key === 'Enter') && labelField.value.trim() && dateField.value) {
+      e.preventDefault(); commit();
+    } else if (e.key === 'Backspace' && !labelField.value && !dateField.value) {
+      const entries = getEntries(); if (entries.length) setEntries(entries.slice(0, -1));
+    }
+  });
+  dateField.addEventListener('keydown', e => {
+    if ((e.key === 'Tab' || e.key === 'Enter') && labelField.value.trim() && dateField.value) {
+      e.preventDefault(); commit();
+    }
+  });
+  labelField.addEventListener('commit', commit);
+
+  container.addEventListener('click', e => {
+    const del = e.target.closest('.tag-chip__del');
+    if (del) { setEntries(getEntries().filter(en => !(en.label === del.dataset.label && en.date === del.dataset.date))); return; }
+    if (!e.target.closest('.idate-input__date')) labelField.focus();
+  });
+
+  // Render any pre-existing value as chips
+  setEntries(getEntries());
+}
+
+// ── Inline-field display helpers ─────────────────────────────────────────────
+function tagsChipsHTML(tagStr) {
+  const tags = parseTags(tagStr);
+  return tags.map(t =>
+    `<span class="tag tag--edit">${esc(t)}<button type="button" class="tag-del" data-tag="${esc(t)}">×</button></span>`
+  ).join('') + `<input type="text" class="tag-adder" placeholder="Add tag…" autocomplete="off">`;
+}
+
+function importantDatesDisplayHTML(str) {
+  if (!str) return `<span class="field-empty">Add important dates…</span>`;
+  const entries = str.split('|').map(s => s.trim()).filter(Boolean);
+  if (!entries.length) return `<span class="field-empty">Add important dates…</span>`;
+  return entries.map(entry => {
+    const colon = entry.indexOf(':');
+    const label = colon > -1 ? entry.slice(0, colon).trim() : entry;
+    const date  = colon > -1 ? entry.slice(colon + 1).trim() : '';
+    return `<span class="date-chip"><span class="date-chip__label">${esc(label)}</span>${date ? `<span class="date-chip__date">${esc(date)}</span>` : ''}</span>`;
+  }).join('');
+}
+
+// ── Cadence presets HTML helper ───────────────────────────────────────────────
+function cadencePresetsHTML(currentVal) {
+  return `<div class="cadence-presets">${settings.cadencePresets.map(n =>
+    `<button type="button" class="chip chip--sm cadence-chip${currentVal==n?' chip--active':''}" data-days="${n}">${n}d</button>`
+  ).join('')}</div>`;
+}
+
+// ── Relative time ─────────────────────────────────────────────────────────────
+function formatPhone(raw) {
+  if (!raw) return '';
+  const d = raw.replace(/\D/g, '');
+  if (d.length === 10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  if (d.length === 11 && d[0] === '1') return `+1 (${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;
+  return raw;
+}
+
+function formatRelative(dateStr) {
+  if (!dateStr) return '—';
+  const diff = daysDiff(dateStr, todayStr());
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7)   return `${diff} days ago`;
+  if (diff < 14)  return '1 week ago';
+  if (diff < 30)  return `${Math.floor(diff/7)} weeks ago`;
+  if (diff < 60)  return '1 month ago';
+  if (diff < 365) return `${Math.floor(diff/30)} months ago`;
+  return `${Math.floor(diff/365)}y ago`;
+}
+function formatRelativeDue(dateStr) {
+  const diff = daysDiff(todayStr(), dateStr);
+  if (diff < 0)   return `${Math.abs(diff)}d overdue`;
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff < 7)   return `in ${diff} days`;
+  if (diff < 14)  return 'in 1 week';
+  if (diff < 30)  return `in ${Math.floor(diff/7)} weeks`;
+  return `in ${Math.floor(diff/30)}mo`;
+}
+
+function daysUntilDate(dateStr) {
+  const parts = dateStr.split('-').map(Number);
+  const month = parts.length === 3 ? parts[1] - 1 : parts[0] - 1;
+  const day   = parts.length === 3 ? parts[2]     : parts[1];
+  if (isNaN(month) || isNaN(day)) return '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  let next = new Date(today.getFullYear(), month, day);
+  if (next < today) next = new Date(today.getFullYear() + 1, month, day);
+  const diff = Math.round((next - today) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff <= 14) return `in ${diff} days`;
+  if (diff <= 60) return `in ${Math.round(diff/7)} weeks`;
+  return `in ${Math.round(diff/30)} months`;
+}
+
+// ── Log follow-up modal ───────────────────────────────────────────────────────
+function openLogModal(person, onSave) {
+  const today = todayStr();
+  const modal = openModal(`
+    <div class="modal-header">
+      <h3>Log follow-up · ${esc(person.name)}</h3>
+      <button class="modal-close" data-modal-close aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="form-label">Date
+        <input type="date" id="log-date" class="form-input" value="${today}" max="${today}">
+      </label>
+      <label class="form-label">Notes
+        <textarea id="log-notes" class="form-input form-textarea" rows="4" placeholder="What did you talk about?"></textarea>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--ghost" data-modal-cancel>Cancel</button>
+      <button class="btn btn--primary" id="log-save-btn">Save</button>
+    </div>
+  `);
+  function trySave() {
+    const date = document.getElementById('log-date').value;
+    const notes = document.getElementById('log-notes').value.trim();
+    if (!notes) { document.getElementById('log-notes').focus(); return; }
+    modal.close(() => onSave({
+      ...person,
+      last_contact: date,
+      next_due: computeNextDue(date, person.cadence_days),
+      override_due: '',
+      override_reason: '',
+      log: prependLogEntry(person.log, date, notes),
+    }));
+  }
+  document.getElementById('log-save-btn').addEventListener('click', trySave);
+  document.getElementById('log-date').addEventListener('keydown', e => { if (e.key === 'Enter') trySave(); });
+  document.getElementById('log-notes').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); trySave(); }
+  });
+}
+
+// ── Geocoding ─────────────────────────────────────────────────────────────────
+const GEO_CACHE_KEY = 'rdx1_geocache';
+let lastGeoFetch = 0;
+
+function loadGeoCache() {
+  try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || '{}'); } catch { return {}; }
+}
+function saveGeoCache(cache) {
+  try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache)); } catch {}
+}
+
+async function geocodeLocation(location) {
+  const cache = loadGeoCache();
+  const key = location.trim().toLowerCase();
+  if (key in cache) return cache[key];
+
+  const wait = Math.max(0, 1200 - (Date.now() - lastGeoFetch));
+  if (wait > 0) await new Promise(r => setTimeout(r, wait));
+  lastGeoFetch = Date.now();
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`);
+    const data = await res.json();
+    const result = data[0] ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null;
+    cache[key] = result;
+    saveGeoCache(cache);
+    return result;
+  } catch {
+    cache[key] = null;
+    saveGeoCache(cache);
+    return null;
+  }
+}
+
+// ── Map view ──────────────────────────────────────────────────────────────────
+const MAP_STYLES = [
+  { id: 'streets',   label: 'Streets',   url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 },
+  { id: 'light',     label: 'Light',     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', attr: '© <a href="https://carto.com/">CARTO</a>', maxZoom: 19 },
+  { id: 'dark',      label: 'Dark',      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  attr: '© <a href="https://carto.com/">CARTO</a>', maxZoom: 19 },
+  { id: 'satellite', label: 'Satellite', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: '© <a href="https://www.esri.com/">Esri</a>', maxZoom: 18 },
+  { id: 'topo',      label: 'Topo',      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attr: '© <a href="https://www.esri.com/">Esri</a>', maxZoom: 18 },
+];
+let activeMapStyle = localStorage.getItem('rdx1_mapstyle') || 'streets';
+
+function renderMap(people, onNavigate) {
+  const withLoc = people.filter(p => p.location);
+  const el = document.createElement('div');
+  el.className = 'view-map';
+  el.innerHTML = `
+    <div id="rdx-map" class="rdx-map"></div>
+    <div class="map-status" id="map-status"></div>
+    <div class="map-style-switcher" id="map-style-switcher">
+      ${MAP_STYLES.map(s => `<button class="map-style-btn${s.id === activeMapStyle ? ' map-style-btn--active' : ''}" data-style="${s.id}">${s.label}</button>`).join('')}
+    </div>
+    ${!withLoc.length ? `<div class="map-empty"><p>No contacts have a location set.</p></div>` : ''}
+  `;
+
+  if (!withLoc.length) return el;
+
+  setTimeout(async () => {
+    const mapEl = document.getElementById('rdx-map');
+    if (!mapEl || !window.L) return;
+
+    const map = L.map('rdx-map', { zoomControl: true }).setView([39.5, -98.35], 4);
+
+    let currentStyle = MAP_STYLES.find(s => s.id === activeMapStyle) || MAP_STYLES[0];
+    let tileLayer = L.tileLayer(currentStyle.url, { attribution: currentStyle.attr, maxZoom: currentStyle.maxZoom }).addTo(map);
+
+    document.getElementById('map-style-switcher')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-style]');
+      if (!btn) return;
+      const style = MAP_STYLES.find(s => s.id === btn.dataset.style);
+      if (!style || style.id === activeMapStyle) return;
+      tileLayer.remove();
+      tileLayer = L.tileLayer(style.url, { attribution: style.attr, maxZoom: style.maxZoom }).addTo(map);
+      activeMapStyle = style.id;
+      localStorage.setItem('rdx1_mapstyle', activeMapStyle);
+      document.querySelectorAll('.map-style-btn').forEach(b => b.classList.toggle('map-style-btn--active', b.dataset.style === activeMapStyle));
+    });
+
+    const statusEl = document.getElementById('map-status');
+    const bounds = [];
+
+    // Group people by location string so shared cities get one marker
+    const byLocation = {};
+    withLoc.forEach(p => {
+      const key = p.location.trim().toLowerCase();
+      (byLocation[key] = byLocation[key] || { location: p.location, people: [] }).people.push(p);
+    });
+    const groups = Object.values(byLocation);
+
+    for (let i = 0; i < groups.length; i++) {
+      const { location, people: grp } = groups[i];
+      if (statusEl) statusEl.textContent = `Locating ${i + 1} of ${groups.length}…`;
+      const coords = await geocodeLocation(location);
+      if (!coords) continue;
+
+      const isMulti = grp.length > 1;
+      // Use the "most urgent" person's tier color for the dot
+      const sorted = [...grp].sort((a, b) => (effectiveNextDue(a) || '9999') < (effectiveNextDue(b) || '9999') ? -1 : 1);
+      const color = isMulti ? '#1E40D4' : getTierColor(sorted[0].tier);
+
+      const marker = L.circleMarker([coords.lat, coords.lng], {
+        radius: isMulti ? 11 : 9,
+        fillColor: color, color: '#fff',
+        weight: 2, opacity: 1, fillOpacity: 0.9,
+      }).addTo(map);
+
+      if (isMulti) {
+        const icon = L.divIcon({
+          className: '',
+          html: `<div class="map-cluster-label">${grp.length}</div>`,
+          iconSize: [22, 22], iconAnchor: [11, 11],
+        });
+        L.marker([coords.lat, coords.lng], { icon, interactive: false }).addTo(map);
+      }
+
+      const popupContent = `
+        <div class="map-popup">
+          <div class="map-popup__loc">${esc(location)}</div>
+          ${sorted.map(p => {
+            const due = effectiveNextDue(p);
+            return `
+              <div class="map-popup__person" data-id="${p.id}">
+                ${tierDotHTML(p.tier)}
+                <div class="map-popup__person-info">
+                  <span class="map-popup__name">${esc(p.name)}</span>
+                  ${p.company ? `<span class="map-popup__company">${esc(p.company)}</span>` : ''}
+                </div>
+                ${due ? `<span class="map-popup__due-inline">${dueBadgeHTML(due)}</span>` : ''}
+              </div>`;
+          }).join('')}
+        </div>`;
+
+      marker.bindPopup(popupContent, { minWidth: 180 });
+      marker.on('popupopen', e => {
+        e.popup.getElement()?.querySelectorAll('.map-popup__person').forEach(row => {
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', () => onNavigate('person', row.dataset.id));
+        });
+      });
+
+      bounds.push([coords.lat, coords.lng]);
+    }
+
+    if (statusEl) statusEl.textContent = '';
+    if (bounds.length > 1) map.fitBounds(bounds, { padding: [48, 48] });
+    else if (bounds.length === 1) map.setView(bounds[0], 10);
+  }, 250);
+
+  return el;
+}
+
+// ── Calendar view ─────────────────────────────────────────────────────────────
+function renderCalendar(people, onNavigate) {
+  const now = new Date();
+  let year = now.getFullYear(), month = now.getMonth();
+  const el = document.createElement('div');
+  el.className = 'view-calendar';
+
+  function parseImportantDates(person) {
+    if (!person.important_dates) return [];
+    return person.important_dates.split('|').map(s => s.trim()).filter(Boolean).map(entry => {
+      const colon = entry.indexOf(':');
+      if (colon === -1) return null;
+      const label = entry.slice(0, colon).trim();
+      const raw   = entry.slice(colon + 1).trim();
+      const parts = raw.split('-').map(Number);
+      if (parts.length === 3) return { label, month: parts[1] - 1, day: parts[2] };
+      if (parts.length === 2) return { label, month: parts[0] - 1, day: parts[1] };
+      return null;
+    }).filter(Boolean);
+  }
+
+  function buildEventMap(y, m) {
+    const map = {};
+    const add = (dateStr, ev) => { (map[dateStr] = map[dateStr] || []).push(ev); };
+    people.forEach(p => {
+      const due = effectiveNextDue(p);
+      if (due) {
+        const d = new Date(due + 'T00:00:00');
+        if (d.getFullYear() === y && d.getMonth() === m) add(due, { type: 'due', person: p });
+      }
+      parseImportantDates(p).forEach(({ label, month: em, day: ed }) => {
+        if (em !== m) return;
+        const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(ed).padStart(2,'0')}`;
+        add(dateStr, { type: 'date', person: p, label });
+      });
+    });
+    return map;
+  }
+
+  function render() {
+    const today = todayStr();
+    const events = buildEventMap(year, month);
+    const firstDow = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const monthLabel = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    const DOWS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    const cells = [];
+    for (let i = 0; i < firstDow; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    el.innerHTML = `
+      <div class="cal-header">
+        <button class="btn btn--ghost btn--sm cal-nav" id="cal-prev">‹</button>
+        <h2 class="cal-title">${monthLabel}</h2>
+        <button class="btn btn--ghost btn--sm cal-nav" id="cal-next">›</button>
+        <button class="btn btn--ghost btn--sm" id="cal-today" style="margin-left:8px">Today</button>
+      </div>
+      <div class="cal-grid">
+        ${DOWS.map(d => `<div class="cal-dow">${d}</div>`).join('')}
+        ${cells.map(d => {
+          if (!d) return `<div class="cal-cell cal-cell--empty"></div>`;
+          const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const isToday = dateStr === today;
+          const isPast  = dateStr < today;
+          const dayEvs  = events[dateStr] || [];
+          const shown   = dayEvs.slice(0, 3);
+          const more    = dayEvs.length - shown.length;
+          return `
+            <div class="cal-cell${isToday?' cal-cell--today':''}${isPast?' cal-cell--past':''}">
+              <span class="cal-day-num${isToday?' cal-day-num--today':''}">${d}</span>
+              <div class="cal-events">
+                ${shown.map(e => `
+                  <div class="cal-event cal-event--${e.type}" data-id="${e.person.id}" title="${esc(e.person.name)}${e.type==='date'?' · '+esc(e.label):''}">
+                    ${e.type==='due'
+                      ? `<span class="cal-event__dot" style="background:${getTierColor(e.person.tier)}"></span>`
+                      : `<span class="cal-event__icon">★</span>`}
+                    <span class="cal-event__name">${esc(e.person.name)}</span>
+                    ${e.type==='date' ? `<span class="cal-event__sub">${esc(e.label)}</span>` : ''}
+                  </div>
+                `).join('')}
+                ${more ? `<div class="cal-more">+${more} more</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    el.querySelector('#cal-prev').addEventListener('click', () => { month--; if (month<0){month=11;year--;} render(); });
+    el.querySelector('#cal-next').addEventListener('click', () => { month++; if (month>11){month=0;year++;} render(); });
+    el.querySelector('#cal-today').addEventListener('click', () => { year=now.getFullYear(); month=now.getMonth(); render(); });
+    el.querySelectorAll('.cal-event[data-id]').forEach(ev =>
+      ev.addEventListener('click', e => { e.stopPropagation(); onNavigate('person', ev.dataset.id); })
+    );
+  }
+
+  render();
+  return el;
+}
+
+// ── Upcoming view ─────────────────────────────────────────────────────────────
+function renderUpcoming(people, onUpdate, onNavigate) {
+  const today = todayStr();
+  const withDue = people.filter(p => effectiveNextDue(p)).sort((a,b) => effectiveNextDue(a).localeCompare(effectiveNextDue(b)));
+  const noDue   = people.filter(p => !effectiveNextDue(p));
+
+  const overdue   = withDue.filter(p => effectiveNextDue(p) <  today);
+  const thisWeek  = withDue.filter(p => effectiveNextDue(p) >= today && daysDiff(today, effectiveNextDue(p)) <= 7);
+  const thisMonth = withDue.filter(p => daysDiff(today, effectiveNextDue(p)) > 7  && daysDiff(today, effectiveNextDue(p)) <= 30);
+  const later     = withDue.filter(p => daysDiff(today, effectiveNextDue(p)) > 30);
+
+  // Gather upcoming important dates (next 30 days)
+  const todayMs = new Date(); todayMs.setHours(0,0,0,0);
+  const upcomingDates = [];
+  people.forEach(p => {
+    parseImportantDatesRaw(p.important_dates).forEach(({label, date}) => {
+      const parts = date.split('-').map(Number);
+      const m = parts.length === 3 ? parts[1] - 1 : parts[0] - 1;
+      const d = parts.length === 3 ? parts[2] : parts[1];
+      if (isNaN(m) || isNaN(d)) return;
+      let next = new Date(todayMs.getFullYear(), m, d);
+      if (next < todayMs) next = new Date(todayMs.getFullYear() + 1, m, d);
+      const diff = Math.round((next - todayMs) / 86400000);
+      if (diff <= 30) upcomingDates.push({ person: p, label, diff });
+    });
+  });
+  upcomingDates.sort((a, b) => a.diff - b.diff);
+
+  const el = document.createElement('div');
+  el.className = 'view-upcoming';
+
+  const COUNT_COLORS = { 'Overdue': 'count--red', 'This week': 'count--amber', 'This month': 'count--blue', 'Later': 'count--subtle' };
+  function buildGroup(title, items, showLog) {
+    if (!items.length) return '';
+    const cls = COUNT_COLORS[title] || '';
+    return `<section class="dash-section"><h2 class="section-title">${title} <span class="section-count ${cls}">${items.length}</span></h2><div class="contact-list" data-group="${title}"></div></section>`;
+  }
+
+  const datesHTML = upcomingDates.length ? `
+    <section class="dash-section">
+      <h2 class="section-title">Important dates <span class="section-count count--emerald">${upcomingDates.length}</span></h2>
+      <div class="idate-upcoming-list">
+        ${upcomingDates.map(({person, label, diff}) => `
+          <div class="idate-upcoming-row" data-id="${person.id}" role="button" tabindex="0">
+            ${tierDotHTML(person.tier)}
+            <span class="idate-upcoming__icon">★</span>
+            <span class="idate-upcoming__name">${esc(person.name)}</span>
+            <span class="idate-upcoming__label">${esc(label)}</span>
+            <span class="idate-upcoming__when">${diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : `in ${diff} days`}</span>
+          </div>
+        `).join('')}
+      </div>
+    </section>` : '';
+
+  el.innerHTML = `
+    ${datesHTML}
+    ${buildGroup('Overdue', overdue, true)}
+    ${buildGroup('This week', thisWeek, true)}
+    ${buildGroup('This month', thisMonth, false)}
+    ${buildGroup('Later', later, false)}
+    ${noDue.length ? `<section class="dash-section"><h2 class="section-title">No due date <span class="section-count">${noDue.length}</span></h2><div class="contact-list" data-group="No due date"></div></section>` : ''}
+    ${!withDue.length && !noDue.length && !upcomingDates.length ? `<div class="empty-state"><p>No contacts yet.</p></div>` : ''}
+  `;
+
+  el.querySelectorAll('.idate-upcoming-row').forEach(row => {
+    row.addEventListener('click', () => onNavigate('person', row.dataset.id));
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') onNavigate('person', row.dataset.id); });
+  });
+
+  function appendRows(group, items, showLog) {
+    const container = el.querySelector(`[data-group="${group}"]`);
+    if (!container) return;
+    items.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'contact-row';
+      const tags = parseTags(p.tags).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+      row.innerHTML = `
+        <div class="contact-row__main" role="button" tabindex="0">
+          ${tierDotHTML(p.tier)}
+          <div class="contact-row__name-block">
+            <span class="contact-row__name">${esc(p.name)}</span>
+            ${p.company ? `<span class="contact-row__company">${esc(p.company)}</span>` : ''}
+          </div>
+          ${dueBadgeHTML(effectiveNextDue(p))}
+          ${p.override_due ? `<span class="override-indicator" title="Override: ${esc(p.override_reason||'manual date')}">📌</span>` : ''}
+          <span class="contact-row__tags">${tags}</span>
+        </div>
+        ${showLog ? `<button class="btn btn--sm btn--primary log-btn">Log follow-up</button>` : ''}
+      `;
+      row.querySelector('.contact-row__main').addEventListener('click', () => onNavigate('person', p.id));
+      row.querySelector('.contact-row__main').addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') onNavigate('person',p.id); });
+      row.querySelector('.log-btn')?.addEventListener('click', e => {
+        e.stopPropagation();
+        openLogModal(p, updated => onUpdate(updated));
+      });
+      container.appendChild(row);
+    });
+  }
+
+  appendRows('Overdue',    overdue,   true);
+  appendRows('This week',  thisWeek,  true);
+  appendRows('This month', thisMonth, false);
+  appendRows('Later',      later,     false);
+  appendRows('No due date', noDue,    false);
+
+  return el;
+}
+
+// ── Dashboard view ────────────────────────────────────────────────────────────
+function renderDashboard(people, onUpdate, onNavigate) {
+  const today = todayStr();
+  const overdue  = people.filter(p => effectiveNextDue(p) && effectiveNextDue(p) <= today).sort((a,b)=>effectiveNextDue(a).localeCompare(effectiveNextDue(b)));
+  const upcoming = people.filter(p => effectiveNextDue(p) && effectiveNextDue(p) > today && daysDiff(today, effectiveNextDue(p)) <= 7).sort((a,b)=>effectiveNextDue(a).localeCompare(effectiveNextDue(b)));
+  const longest  = people.reduce((acc,p) => {
+    if (!p.last_contact) return acc;
+    const d = daysDiff(p.last_contact, today);
+    return d > acc.days ? {days:d, name:p.name} : acc;
+  }, {days:0, name:''});
+
+  const el = document.createElement('div');
+  el.className = 'view-dashboard';
+  el.innerHTML = `
+    <div class="stats-strip">
+      <div class="stat-card">
+        <span class="stat-value">${people.length}</span>
+        <span class="stat-label">Contacts</span>
+      </div>
+      <div class="stat-card${overdue.length ? ' stat-card--warn' : ''}">
+        <span class="stat-value">${overdue.length}</span>
+        <span class="stat-label">Overdue</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">${longest.days || '—'}</span>
+        <span class="stat-label">Longest gap${longest.name ? ` · ${esc(longest.name)}` : ''}</span>
+      </div>
+    </div>
+    ${overdue.length ? `<section class="dash-section"><h2 class="section-title">Due now <span class="section-count">${overdue.length}</span></h2><div class="contact-list" id="overdue-list"></div></section>` : `<section class="dash-section"><div class="empty-state"><p>You're all caught up — no one is overdue.</p></div></section>`}
+    ${upcoming.length ? `<section class="dash-section"><h2 class="section-title">Coming up this week</h2><div class="contact-list" id="upcoming-list"></div></section>` : ''}
+    ${(() => {
+      const companyCounts = Object.entries(people.filter(p=>p.company).reduce((a,p)=>{a[p.company]=(a[p.company]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]);
+      const tagCounts     = Object.entries(people.flatMap(p=>parseTags(p.tags)).reduce((a,t)=>{a[t]=(a[t]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]);
+      const locCounts     = Object.entries(people.filter(p=>p.location).reduce((a,p)=>{a[p.location]=(a[p.location]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]);
+      if (!companyCounts.length && !tagCounts.length && !locCounts.length) return '';
+      const card = (title, rows, attr) => `
+        <div class="breakdown-card card">
+          <h3 class="breakdown-title">${title}</h3>
+          <div class="breakdown-list">
+            ${rows.slice(0,10).map(([name,count])=>`
+              <div class="breakdown-row" data-${attr}="${esc(name)}" role="button" tabindex="0">
+                <span class="breakdown-name">${esc(name)}</span>
+                <span class="breakdown-count">${count}</span>
+              </div>`).join('')}
+            ${rows.length > 10 ? `<div class="breakdown-more">+${rows.length-10} more</div>` : ''}
+          </div>
+        </div>`;
+      return `<section class="dash-section">
+        <h2 class="section-title">Breakdown</h2>
+        <div class="breakdown-grid">
+          ${companyCounts.length ? card('Companies', companyCounts, 'search') : ''}
+          ${tagCounts.length     ? card('Tags',      tagCounts,     'tag')    : ''}
+          ${locCounts.length     ? card('Locations', locCounts,     'search') : ''}
+        </div>
+      </section>`;
+    })()}
+  `;
+
+  function buildRow(p, showLog) {
+    const row = document.createElement('div');
+    row.className = 'contact-row';
+    const tags = parseTags(p.tags).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+    row.innerHTML = `
+      <div class="contact-row__main" role="button" tabindex="0">
+        ${tierDotHTML(p.tier)}
+        <span class="contact-row__name">${esc(p.name)}</span>
+        ${dueBadgeHTML(effectiveNextDue(p))}
+        ${p.override_due ? `<span class="override-indicator" title="Override: ${esc(p.override_reason || 'manual date')}">📌</span>` : ''}
+        <span class="contact-row__tags">${tags}</span>
+      </div>
+      ${showLog ? `<button class="btn btn--sm btn--primary log-btn">Log follow-up</button>` : ''}
+    `;
+    row.querySelector('.contact-row__main').addEventListener('click', () => onNavigate('person', p.id));
+    row.querySelector('.contact-row__main').addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') onNavigate('person',p.id); });
+    row.querySelector('.log-btn')?.addEventListener('click', e => {
+      e.stopPropagation();
+      openLogModal(p, updated => { onUpdate(updated); });
+    });
+    return row;
+  }
+
+  el.querySelector('#overdue-list') && overdue.forEach(p => el.querySelector('#overdue-list').appendChild(buildRow(p, true)));
+  el.querySelector('#upcoming-list') && upcoming.forEach(p => el.querySelector('#upcoming-list').appendChild(buildRow(p, false)));
+
+  el.querySelectorAll('.breakdown-row[data-search]').forEach(row => {
+    row.addEventListener('click', () => { pendingPeopleFilter = { search: row.dataset.search }; onNavigate('people'); });
+    row.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { pendingPeopleFilter = { search: row.dataset.search }; onNavigate('people'); } });
+  });
+  el.querySelectorAll('.breakdown-row[data-tag]').forEach(row => {
+    row.addEventListener('click', () => { pendingPeopleFilter = { tag: row.dataset.tag }; onNavigate('people'); });
+    row.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { pendingPeopleFilter = { tag: row.dataset.tag }; onNavigate('people'); } });
+  });
+
+  return el;
+}
+
+// ── People view ───────────────────────────────────────────────────────────────
+function renderPeople(people, onNavigate) {
+  const allTags = [...new Set(people.flatMap(p => parseTags(p.tags)))].sort();
+  const el = document.createElement('div');
+  el.className = 'view-people';
+
+  const savedSort = JSON.parse(localStorage.getItem('rdx1_people_sort') || 'null');
+  let sortCol = savedSort?.col || 'next_due';
+  let sortDir = savedSort?.dir || 'asc';
+
+  const COLS = [
+    { key: 'tier',         label: '' },
+    { key: 'name',         label: 'Name' },
+    { key: 'company',      label: 'Company' },
+    { key: 'location',     label: 'Location' },
+    { key: 'last_contact', label: 'Last contact' },
+    { key: 'next_due',     label: 'Next due' },
+    { key: 'tags',         label: 'Tags', noSort: true },
+  ];
+
+  function thHTML() {
+    return COLS.map(c => {
+      if (c.noSort) return `<th>${c.label}</th>`;
+      const active = sortCol === c.key;
+      const arrow = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '';
+      return `<th class="th-sort${active ? ' th-sort--active' : ''}" data-col="${c.key}">${c.label}${arrow}</th>`;
+    }).join('');
+  }
+
+  el.innerHTML = `
+    <div class="people-toolbar">
+      <input type="search" id="people-search" class="form-input search-input" placeholder="Search contacts…" aria-label="Search contacts">
+      <div class="filter-chips" id="tier-chips">
+        ${`<button class="chip chip--active" data-tier="">All</button>` +
+        settings.tiers.map(t => `<button class="chip" data-tier="${esc(t.id)}">${esc(t.label)}</button>`).join('')}
+      </div>
+      ${allTags.length ? `<div class="filter-chips" id="tag-chips">${allTags.map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
+    </div>
+    <div class="people-table-wrap">
+      <table class="people-table">
+        <thead><tr id="people-thead">${thHTML()}</tr></thead>
+        <tbody id="people-tbody"></tbody>
+      </table>
+      <div id="people-empty" class="empty-state" style="display:none"><p>No contacts match your filters.</p></div>
+    </div>
+  `;
+
+  const filter = pendingPeopleFilter; pendingPeopleFilter = null;
+  let activeTier = '', activeTags = new Set(filter?.tag ? [filter.tag] : []), searchQ = filter?.search || '';
+  const tbody = el.querySelector('#people-tbody');
+  const thead = el.querySelector('#people-thead');
+  const emptyEl = el.querySelector('#people-empty');
+  if (searchQ) { const inp = el.querySelector('#people-search'); if (inp) inp.value = searchQ; }
+  if (filter?.tag) { el.querySelector(`[data-tag="${CSS.escape(filter.tag)}"]`)?.classList.add('chip--active'); }
+
+  function sortedPeople(arr) {
+    return [...arr].sort((a, b) => {
+      let av, bv;
+      const emptyLast = (va, vb) => {
+        if (!va && !vb) return 0;
+        if (!va) return 1;
+        if (!vb) return -1;
+        return null;
+      };
+      switch (sortCol) {
+        case 'tier': {
+          av = settings.tiers.findIndex(t => t.id === a.tier);
+          bv = settings.tiers.findIndex(t => t.id === b.tier);
+          break;
+        }
+        case 'name':     av = a.name.toLowerCase();              bv = b.name.toLowerCase();              break;
+        case 'company':  av = (a.company||'').toLowerCase();     bv = (b.company||'').toLowerCase();     break;
+        case 'location': av = (a.location||'').toLowerCase();    bv = (b.location||'').toLowerCase();    break;
+        case 'last_contact': {
+          const e = emptyLast(a.last_contact, b.last_contact);
+          if (e !== null) return e;
+          av = a.last_contact; bv = b.last_contact; break;
+        }
+        case 'next_due': {
+          const da = effectiveNextDue(a), db = effectiveNextDue(b);
+          const e = emptyLast(da, db);
+          if (e !== null) return e;
+          av = da; bv = db; break;
+        }
+        default: return 0;
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  function render() {
+    const filtered = people.filter(p => {
+      if (searchQ) {
+        const tierLabel = getTierLabel(p.tier).toLowerCase();
+        const tags = parseTags(p.tags).join(' ').toLowerCase();
+        const haystack = [p.name, p.company, p.location, p.email, p.phone, p.notes, tierLabel, tags]
+          .map(v => (v || '').toLowerCase()).join(' ');
+        if (!haystack.includes(searchQ)) return false;
+      }
+      if (activeTier && p.tier !== activeTier) return false;
+      if (activeTags.size) { const pt = new Set(parseTags(p.tags)); for (const t of activeTags) if (!pt.has(t)) return false; }
+      return true;
+    });
+    thead.innerHTML = thHTML();
+    tbody.innerHTML = '';
+    emptyEl.style.display = filtered.length ? 'none' : '';
+    sortedPeople(filtered).forEach(p => {
+      const tr = document.createElement('tr');
+      tr.className = 'people-row'; tr.tabIndex = 0;
+      const tags = parseTags(p.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+      tr.innerHTML = `
+        <td>${tierDotHTML(p.tier)}</td>
+        <td class="people-row__name">${esc(p.name)}</td>
+        <td class="people-row__company">${esc(p.company) || '—'}</td>
+        <td class="people-row__location">${esc(p.location) || '—'}</td>
+        <td class="tabnum">${p.last_contact ? formatRelative(p.last_contact) : '—'}</td>
+        <td class="tabnum">${dueBadgeHTML(effectiveNextDue(p)) || (effectiveNextDue(p) ? formatRelativeDue(effectiveNextDue(p)) : '—')}${p.override_due ? ` <span class="override-indicator" title="Override: ${esc(p.override_reason || 'manual date')}">📌</span>` : ''}</td>
+        <td>${tags}</td>
+      `;
+      tr.addEventListener('click', () => onNavigate('person', p.id));
+      tr.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') onNavigate('person',p.id); });
+      tbody.appendChild(tr);
+    });
+  }
+
+  thead.addEventListener('click', e => {
+    const th = e.target.closest('.th-sort'); if (!th) return;
+    const col = th.dataset.col;
+    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = col; sortDir = 'asc'; }
+    localStorage.setItem('rdx1_people_sort', JSON.stringify({ col: sortCol, dir: sortDir }));
+    render();
+  });
+
+  el.querySelector('#people-search').addEventListener('input', e => { searchQ = e.target.value.toLowerCase().trim(); render(); });
+  el.querySelector('#tier-chips').addEventListener('click', e => {
+    const btn = e.target.closest('[data-tier]'); if (!btn) return;
+    activeTier = btn.dataset.tier;
+    el.querySelectorAll('#tier-chips .chip').forEach(c => c.classList.toggle('chip--active', c===btn));
+    render();
+  });
+  el.querySelector('#tag-chips')?.addEventListener('click', e => {
+    const btn = e.target.closest('[data-tag]'); if (!btn) return;
+    const tag = btn.dataset.tag;
+    if (activeTags.has(tag)) { activeTags.delete(tag); btn.classList.remove('chip--active'); }
+    else { activeTags.add(tag); btn.classList.add('chip--active'); }
+    render();
+  });
+
+  render();
+  return el;
+}
+
+// ── Log entry element (view + inline edit) ────────────────────────────────────
+function buildLogEntryEl(entry, index, person, allEntries) {
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.style.setProperty('--i', index);
+
+  function renderView() {
+    el.innerHTML = `
+      <div class="log-entry__view">
+        <div class="log-entry__meta">
+          <span class="log-entry__date tabnum">${esc(entry.date)}</span>
+          <div class="log-entry__actions">
+            <button class="log-action-btn" data-action="edit" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="log-action-btn log-action-btn--delete" data-action="delete" title="Delete">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </button>
+          </div>
+        </div>
+        <p class="log-entry__notes">${esc(entry.notes)}</p>
+      </div>
+    `;
+    el.querySelector('[data-action="edit"]').addEventListener('click', renderEdit);
+    el.querySelector('[data-action="delete"]').addEventListener('click', () => {
+      const updated = allEntries.filter((_, i) => i !== index);
+      saveLogEdits(updated);
+    });
+  }
+
+  function renderEdit() {
+    el.innerHTML = `
+      <div class="log-entry__edit">
+        <input type="date" class="form-input log-edit-date" value="${esc(entry.date)}">
+        <textarea class="form-input form-textarea log-edit-notes" rows="3">${esc(entry.notes)}</textarea>
+        <div class="log-edit-actions">
+          <button class="btn btn--primary btn--sm" id="log-edit-save">Save</button>
+          <button class="btn btn--ghost btn--sm" id="log-edit-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    el.querySelector('#log-edit-cancel').addEventListener('click', renderView);
+    el.querySelector('#log-edit-save').addEventListener('click', () => {
+      const newDate  = el.querySelector('.log-edit-date').value;
+      const newNotes = el.querySelector('.log-edit-notes').value.trim();
+      if (!newNotes) { el.querySelector('.log-edit-notes').focus(); return; }
+      const updated = allEntries.map((e, i) =>
+        i === index ? { date: newDate, notes: newNotes } : e
+      );
+      saveLogEdits(updated);
+    });
+    el.querySelector('.log-edit-notes').focus();
+  }
+
+  function saveLogEdits(updatedEntries) {
+    // Recompute last_contact from the most recent entry
+    const dates = updatedEntries.map(e => e.date).filter(Boolean).sort().reverse();
+    const newLastContact = dates[0] || '';
+    const updated = {
+      ...person,
+      log: serializeLog(updatedEntries),
+      last_contact: newLastContact,
+      next_due: computeNextDue(newLastContact, person.cadence_days),
+      override_due: '',
+      override_reason: '',
+    };
+    // Rebuild the whole detail to reflect changes
+    const detailEl = el.closest('.view-person');
+    if (detailEl && detailEl._rebuild) detailEl._rebuild(updated);
+    // Persist via the onUpdate callback stored on the element
+    if (detailEl && detailEl._onUpdate) detailEl._onUpdate(updated);
+  }
+
+  renderView();
+  return el;
+}
+
+// ── Person detail view ────────────────────────────────────────────────────────
+function renderPersonDetail(person, onUpdate, onDelete, onBack) {
+  const el = document.createElement('div');
+  el.className = 'view-person';
+  // Exposed so buildLogEntryEl can call back without circular dep
+  el._onUpdate = onUpdate;
+
+  function rebuild(p) {
+    el._rebuild = rebuild;
+    el._onUpdate = (updated) => { onUpdate(updated); };
+    el._currentPerson = p;
+    const tags = parseTags(p.tags);
+    const logEntries = parseLog(p.log);
+    el.innerHTML = `
+      <div class="person-header">
+        <button class="btn btn--ghost btn--back" id="back-btn">← Back</button>
+        <div class="person-header__info">
+          ${tierDotHTML(p.tier)}
+          <div class="person-name-block">
+            <h1 class="person-name">${esc(p.name)}</h1>
+            ${p.company ? `<span class="person-company">${esc(p.company)}</span>` : ''}
+          </div>
+          ${dueBadgeHTML(effectiveNextDue(p))}
+          ${p.override_due ? `<span class="override-indicator override-indicator--header" title="Contact-by override: ${esc(p.override_reason || 'manual date')}">📌 override</span>` : ''}
+        </div>
+        <div class="person-header__actions">
+          <button class="btn btn--ghost" id="log-followup-btn">Log follow-up</button>
+          <button type="button" class="btn btn--primary" id="save-btn">Save changes</button>
+          <button type="button" class="btn btn--danger btn--ghost-danger" id="delete-btn">Delete</button>
+        </div>
+      </div>
+      <div class="person-body">
+        <section class="person-section card">
+          <h2 class="section-title">Details</h2>
+          <form id="person-form" class="person-form" autocomplete="off">
+            <div class="form-grid">
+              <label class="form-label">Name<input type="text" name="name" class="form-input" value="${esc(p.name)}" required></label>
+              <label class="form-label">Tier
+                <select name="tier" class="form-input">
+                  ${settings.tiers.map(t=>`<option value="${esc(t.id)}"${p.tier===t.id?' selected':''}>${esc(t.label)}</option>`).join('')}
+                </select>
+              </label>
+              <label class="form-label">Phone<input type="tel" name="phone" class="form-input" value="${esc(formatPhone(p.phone))}"></label>
+              <label class="form-label">Email<input type="email" name="email" class="form-input" value="${esc(p.email)}"></label>
+              <label class="form-label">Company<input type="text" name="company" class="form-input" value="${esc(p.company)}" placeholder="Acme Corp"></label>
+              <label class="form-label">Location<input type="text" name="location" class="form-input" value="${esc(p.location)}" placeholder="City, State"></label>
+              <div class="form-label">
+                <span>Tags</span>
+                <div class="tag-input" id="tag-input">
+                  ${parseTags(p.tags).map(t=>`<span class="tag-chip">${esc(t)}<button type="button" class="tag-chip__del" data-tag="${esc(t)}">×</button></span>`).join('')}
+                  <input type="text" class="tag-input__field" placeholder="${parseTags(p.tags).length ? '' : 'Add tag…'}">
+                </div>
+                <input type="hidden" name="tags" id="tags-hidden" value="${esc(p.tags)}">
+              </div>
+              <label class="form-label span-2">Notes<textarea name="notes" class="form-input form-textarea form-textarea--auto" rows="1" placeholder="Anything worth remembering…">${esc(p.notes)}</textarea></label>
+              <label class="form-label span-2" id="cadence-label-detail">Cadence (days)<input type="number" name="cadence_days" class="form-input" value="${p.cadence_days}" min="1" max="3650">${cadencePresetsHTML(p.cadence_days)}</label>
+              <label class="form-label">Last contact<input type="date" name="last_contact" class="form-input" value="${p.last_contact}"></label>
+              <label class="form-label">Contact-by override
+                <div class="input-clearable">
+                  <input type="date" name="override_due" class="form-input" value="${p.override_due}" id="override-due-input">
+                  <button type="button" class="input-clear-btn" id="override-clear-btn" title="Clear override"${p.override_due ? '' : ' style="display:none"'}>✕</button>
+                </div>
+              </label>
+              <label class="form-label span-2" id="override-reason-label" style="${p.override_due ? '' : 'display:none'}">Override reason<input type="text" name="override_reason" class="form-input" value="${esc(p.override_reason)}" placeholder="e.g. their birthday trip"></label>
+            </div>
+          </form>
+        </section>
+        <div class="person-body__right">
+        <section class="person-section" id="idate-section">
+          ${(() => {
+            const entries = parseImportantDatesRaw(p.important_dates);
+            if (!entries.length) return '';
+            return `<div class="idate-list">${entries.map(({label, date}) => `
+              <div class="idate-row">
+                <span class="idate-row__icon">★</span>
+                <span class="idate-row__label">${esc(label)}</span>
+                <span class="idate-row__date">${formatImportantDate(date)}</span>
+                <span class="idate-row__countdown">${daysUntilDate(date)}</span>
+                <button type="button" class="idate-row__del" data-label="${esc(label)}" data-date="${esc(date)}" title="Remove">×</button>
+              </div>`).join('')}
+            </div>`;
+          })()}
+          <div class="idate-add-row">
+            <input type="text" class="form-input idate-add__label" placeholder="Important date label…">
+            <input type="date" class="form-input idate-add__date">
+            <button type="button" class="btn btn--ghost btn--sm" id="idate-add-btn">Add</button>
+          </div>
+        </section>
+        <section class="person-section">
+          <h2 class="section-title">Activity log ${p.last_contact ? `<span class="section-subtitle">Last: ${formatRelative(p.last_contact)}</span>` : ''}</h2>
+          <div class="log-list" id="log-list">
+            ${logEntries.length ? '' : `<div class="empty-state empty-state--sm"><p>No log entries yet.</p></div>`}
+          </div>
+        </section>
+        </div>
+      </div>
+    `;
+
+    // Render editable log entries
+    const logList = el.querySelector('#log-list');
+    if (logList && logEntries.length) {
+      logEntries.forEach((entry, i) => {
+        logList.appendChild(buildLogEntryEl(entry, i, p, logEntries));
+      });
+    }
+
+    // Wire cadence preset chips in detail form
+    el.querySelector('#cadence-label-detail')?.addEventListener('click', e => {
+      const chip = e.target.closest('.cadence-chip');
+      if (!chip) return;
+      el.querySelectorAll('#cadence-label-detail .cadence-chip').forEach(c => c.classList.remove('chip--active'));
+      chip.classList.add('chip--active');
+      const cadenceInput = el.querySelector('[name="cadence_days"]');
+      if (cadenceInput) {
+        cadenceInput.value = chip.dataset.days;
+        cadenceInput.dispatchEvent(new Event('input'));
+      }
+    });
+    // Keep chips in sync when input is typed manually
+    el.querySelector('[name="cadence_days"]')?.addEventListener('input', e => {
+      el.querySelectorAll('#cadence-label-detail .cadence-chip').forEach(c =>
+        c.classList.toggle('chip--active', c.dataset.days == e.target.value)
+      );
+    });
+
+    // Tag chip input
+    wireTagInput(el.querySelector('#tag-input'), el.querySelector('#tags-hidden'));
+
+    // Auto-resize notes textarea
+    el.querySelectorAll('.form-textarea--auto').forEach(ta => {
+      function resize() { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+      requestAnimationFrame(resize);
+      ta.addEventListener('input', resize);
+    });
+
+    el.querySelector('#override-due-input')?.addEventListener('input', e => {
+      el.querySelector('#override-clear-btn').style.display = e.target.value ? '' : 'none';
+      el.querySelector('#override-reason-label').style.display = e.target.value ? '' : 'none';
+      if (!e.target.value) el.querySelector('[name="override_reason"]').value = '';
+    });
+    el.querySelector('#override-clear-btn')?.addEventListener('click', () => {
+      el.querySelector('#override-due-input').value = '';
+      el.querySelector('[name="override_reason"]').value = '';
+      el.querySelector('#override-clear-btn').style.display = 'none';
+      el.querySelector('#override-reason-label').style.display = 'none';
+    });
+
+    // Important dates section
+    function saveImportantDates(entries) {
+      const updated = { ...p, important_dates: entries.map(e => `${e.label}:${e.date}`).join('|') };
+      onUpdate(updated); rebuild(updated);
+    }
+    el.querySelector('#idate-section')?.addEventListener('click', e => {
+      const del = e.target.closest('.idate-row__del');
+      if (!del) return;
+      saveImportantDates(parseImportantDatesRaw(p.important_dates)
+        .filter(en => !(en.label === del.dataset.label && en.date === del.dataset.date)));
+    });
+    function commitIdate() {
+      const labelEl = el.querySelector('.idate-add__label');
+      const dateEl  = el.querySelector('.idate-add__date');
+      const label = labelEl?.value.trim(), date = dateEl?.value;
+      if (!label || !date) return;
+      const entries = parseImportantDatesRaw(p.important_dates);
+      if (!entries.some(en => en.label === label && en.date === date))
+        saveImportantDates([...entries, { label, date }]);
+    }
+    el.querySelector('#idate-add-btn')?.addEventListener('click', commitIdate);
+    el.querySelector('.idate-add__label')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && el.querySelector('.idate-add__label').value.trim() && el.querySelector('.idate-add__date').value)
+        { e.preventDefault(); commitIdate(); }
+    });
+    el.querySelector('.idate-add__date')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && el.querySelector('.idate-add__label').value.trim() && el.querySelector('.idate-add__date').value)
+        { e.preventDefault(); commitIdate(); }
+    });
+
+    el.querySelector('#back-btn').addEventListener('click', onBack);
+    function saveForm() {
+      el.querySelector('.tag-input__field')?.dispatchEvent(new Event('commit'));
+      el.querySelector('#person-form').requestSubmit();
+    }
+    el.querySelector('#save-btn').addEventListener('click', saveForm);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) saveForm(); });
+    el.querySelector('#log-followup-btn').addEventListener('click', () => {
+      openLogModal(p, updated => { onUpdate(updated); rebuild(updated); });
+    });
+    el.querySelector('[name="phone"]')?.addEventListener('blur', e => {
+      e.target.value = formatPhone(e.target.value);
+    });
+    el.querySelector('#person-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const lc = fd.get('last_contact'), cd = parseInt(fd.get('cadence_days')) || p.cadence_days;
+      const overrideDue = fd.get('override_due') || '';
+      const updated = { ...p, name:fd.get('name'), company:fd.get('company'), tier:fd.get('tier'), cadence_days:cd,
+        last_contact:lc, next_due:computeNextDue(lc,cd),
+        override_due: overrideDue,
+        override_reason: overrideDue ? (fd.get('override_reason') || '') : '',
+        phone:fd.get('phone'), email:fd.get('email'), location:fd.get('location'),
+        tags:fd.get('tags'), notes:fd.get('notes') };
+      onUpdate(updated); rebuild(updated); showToast('Saved');
+    });
+    el.querySelector('#delete-btn').addEventListener('click', () => {
+      openModal(`
+        <div class="modal-header"><h3>Delete ${esc(p.name)}?</h3></div>
+        <div class="modal-body"><p>This will permanently remove them. This cannot be undone.</p></div>
+        <div class="modal-footer">
+          <button class="btn btn--ghost" data-modal-cancel>Cancel</button>
+          <button class="btn btn--danger" data-modal-confirm>Delete</button>
+        </div>
+      `, { onConfirm: () => onDelete(p.id) });
+    });
+  }
+
+  rebuild(person);
+  return el;
+}
+
+// ── Add person modal ──────────────────────────────────────────────────────────
+function openAddPersonModal(onAdd) {
+  const today = todayStr();
+  const modal = openModal(`
+    <div class="modal-header">
+      <h3>Add contact</h3>
+      <button class="modal-close" data-modal-close aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="add-person-form" class="person-form" autocomplete="off" novalidate>
+        <div class="form-grid">
+          <label class="form-label">Name *<input type="text" name="name" class="form-input" placeholder="Full name" required></label>
+          <label class="form-label">Tier
+            <select name="tier" class="form-input">
+              ${settings.tiers.map(t=>`<option value="${esc(t.id)}">${esc(t.label)}</option>`).join('')}
+            </select>
+          </label>
+          <label class="form-label">Phone<input type="tel" name="phone" class="form-input"></label>
+          <label class="form-label">Email<input type="email" name="email" class="form-input"></label>
+          <label class="form-label">Company<input type="text" name="company" class="form-input" placeholder="Acme Corp"></label>
+          <label class="form-label">Location<input type="text" name="location" class="form-input" placeholder="City, State"></label>
+          <div class="form-label span-2">
+            <span>Tags</span>
+            <div class="tag-input" id="add-tag-input">
+              <input type="text" class="tag-input__field" placeholder="Add tag…">
+            </div>
+            <input type="hidden" name="tags" id="add-tags-hidden" value="">
+          </div>
+          <div class="form-label span-2">
+            <span>Important dates</span>
+            <div class="tag-input" id="add-idate-input">
+              <input type="text" class="idate-input__label tag-input__field" placeholder="Label…">
+              <input type="date" class="idate-input__date">
+            </div>
+            <input type="hidden" name="important_dates" id="add-idate-hidden" value="">
+          </div>
+          <label class="form-label span-2">Notes<textarea name="notes" class="form-input form-textarea" rows="3" placeholder="Anything worth remembering…"></textarea></label>
+          <label class="form-label span-2" id="cadence-label-add">Cadence (days)<input type="number" name="cadence_days" class="form-input" value="90" min="1" max="3650">${cadencePresetsHTML(90)}</label>
+          <label class="form-label">Last contact<input type="date" name="last_contact" class="form-input" value="${today}"></label>
+          <label class="form-label">Next due<input type="date" name="next_due_display" class="form-input" id="next-due-input" readonly tabindex="-1"></label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--ghost" data-modal-cancel>Cancel</button>
+      <button type="submit" form="add-person-form" class="btn btn--primary">Add contact</button>
+    </div>
+  `, { wide: true });
+
+  const form = document.getElementById('add-person-form');
+  const nextDueInput = document.getElementById('next-due-input');
+  function updateNextDue() {
+    nextDueInput.value = computeNextDue(form.elements.last_contact.value, parseInt(form.elements.cadence_days.value)||90);
+  }
+  function applyTierDefaults(tierId) {
+    const tier = settings.tiers.find(t => t.id === tierId);
+    if (!tier?.defaultCadence) return;
+    form.elements.cadence_days.value = tier.defaultCadence;
+    form.elements.cadence_days.dispatchEvent(new Event('input'));
+  }
+  applyTierDefaults(form.elements.tier.value);
+  form.elements.tier.addEventListener('change', e => applyTierDefaults(e.target.value));
+
+  updateNextDue();
+  form.elements.last_contact.addEventListener('input', updateNextDue);
+  form.elements.cadence_days.addEventListener('input', updateNextDue);
+
+  // Wire cadence preset chips in add modal
+  wireTagInput(document.getElementById('add-tag-input'), document.getElementById('add-tags-hidden'));
+  wireImportantDatesInput(document.getElementById('add-idate-input'), document.getElementById('add-idate-hidden'));
+
+  document.getElementById('cadence-label-add')?.addEventListener('click', e => {
+    const chip = e.target.closest('.cadence-chip');
+    if (!chip) return;
+    document.querySelectorAll('#cadence-label-add .cadence-chip').forEach(c => c.classList.remove('chip--active'));
+    chip.classList.add('chip--active');
+    form.elements.cadence_days.value = chip.dataset.days;
+    updateNextDue();
+  });
+  // Keep chips in sync when input is typed manually
+  form.elements.cadence_days.addEventListener('input', e => {
+    document.querySelectorAll('#cadence-label-add .cadence-chip').forEach(c =>
+      c.classList.toggle('chip--active', c.dataset.days == e.target.value)
+    );
+  });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    form.querySelector('.tag-input__field')?.dispatchEvent(new Event('commit'));
+    form.querySelector('.idate-input__label')?.dispatchEvent(new Event('commit'));
+    const fd = new FormData(form);
+    const name = fd.get('name').trim();
+    if (!name) { form.elements.name.focus(); return; }
+    const lc = fd.get('last_contact'), cd = parseInt(fd.get('cadence_days'))||90;
+    modal.close(() => onAdd({
+      id: nextId(people), name, company:fd.get('company'), tier:fd.get('tier'), tags:fd.get('tags'),
+      cadence_days:cd, last_contact:lc, next_due:computeNextDue(lc,cd),
+      override_due: '', override_reason: '',
+      phone:fd.get('phone'), email:fd.get('email'), location:fd.get('location'),
+      notes:fd.get('notes'), important_dates:fd.get('important_dates'), log:'',
+    }));
+  });
+
+  // Enter on any single-line input submits the form (skip idate fields — they commit chips instead)
+  form.querySelectorAll('input:not(.idate-input__label):not(.idate-input__date)').forEach(inp => {
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); } });
+  });
+
+  // Ctrl+Enter submits from anywhere in the modal
+  document.querySelector('.modal-overlay')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      form.querySelector('.tag-input__field')?.dispatchEvent(new Event('commit'));
+      form.querySelector('.idate-input__label')?.dispatchEvent(new Event('commit'));
+      form.requestSubmit();
+    }
+  });
+}
+
+// ── Settings view ─────────────────────────────────────────────────────────────
+function renderSettings(people, onPeopleUpdate) {
+  const el = document.createElement('div');
+  el.className = 'view-settings';
+  el.innerHTML = `<h1 class="settings-title">Settings</h1>`;
+  el.appendChild(buildTiersSection());
+  el.appendChild(buildCadenceSection());
+  el.appendChild(buildTagsSection(people, onPeopleUpdate));
+  el.appendChild(buildDataSection());
+  return el;
+}
+
+function buildTiersSection() {
+  const section = document.createElement('section');
+  section.className = 'settings-section card';
+  function render() {
+    section.innerHTML = `
+      <h2 class="section-title">Tiers</h2>
+      <p class="settings-desc">Rename tiers, change their colors, and set the default cadence for each tier.</p>
+      <div class="tier-rows" id="tier-rows">
+        ${settings.tiers.map((t, i) => {
+          const inUse = people.filter(p => p.tier === t.id).length;
+          return `
+            <div class="tier-row" data-idx="${i}">
+              <input type="color" class="color-swatch" value="${t.color}" data-idx="${i}">
+              <input type="text" class="form-input tier-label-input" value="${esc(t.label)}" data-idx="${i}">
+              <span class="tier-id-badge">${esc(t.id)}</span>
+              <label class="tier-cadence-label">Default cadence
+                <input type="number" class="form-input tier-cadence-input" value="${t.defaultCadence || 90}" min="1" max="3650" data-idx="${i}" style="width:72px">
+                <span class="tier-cadence-unit">days</span>
+              </label>
+              <span class="tier-in-use">${inUse} contact${inUse !== 1 ? 's' : ''}</span>
+              <button class="btn btn--ghost btn--sm tier-delete-btn" data-idx="${i}" ${inUse > 0 ? 'disabled title="In use by '+inUse+' contact(s)"' : ''}>Remove</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="tier-add-row" id="tier-add-row">
+        <input type="color" class="color-swatch" id="new-tier-color" value="#6366F1">
+        <input type="text" class="form-input tier-label-input" id="new-tier-label" placeholder="New tier name…">
+        <label class="tier-cadence-label">Cadence
+          <input type="number" class="form-input" id="new-tier-cadence" value="90" min="1" max="3650" style="width:72px">
+          <span class="tier-cadence-unit">days</span>
+        </label>
+        <button class="btn btn--primary btn--sm" id="add-tier-btn">Add tier</button>
+      </div>
+    `;
+
+    section.querySelectorAll('input[type="color"]').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (!isNaN(idx)) { settings.tiers[idx].color = e.target.value; saveSettings(); }
+      });
+    });
+    section.querySelectorAll('.tier-label-input[data-idx]').forEach(inp => {
+      inp.addEventListener('change', e => {
+        const idx = parseInt(e.target.dataset.idx);
+        if (!isNaN(idx) && e.target.value.trim()) { settings.tiers[idx].label = e.target.value.trim(); saveSettings(); }
+      });
+    });
+    section.querySelectorAll('.tier-cadence-input').forEach(inp => {
+      inp.addEventListener('change', e => {
+        const idx = parseInt(e.target.dataset.idx);
+        const val = parseInt(e.target.value);
+        if (!isNaN(idx) && val > 0) { settings.tiers[idx].defaultCadence = val; saveSettings(); }
+      });
+    });
+    section.querySelectorAll('.tier-delete-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const idx = parseInt(e.target.dataset.idx);
+        openModal(`
+          <div class="modal-header"><h3>Remove tier "${esc(settings.tiers[idx].label)}"?</h3></div>
+          <div class="modal-body"><p>This will remove the tier from settings. Contacts currently assigned to it will keep the raw ID in their data.</p></div>
+          <div class="modal-footer">
+            <button class="btn btn--ghost" data-modal-cancel>Cancel</button>
+            <button class="btn btn--danger" data-modal-confirm>Remove</button>
+          </div>
+        `, { onConfirm: () => { settings.tiers.splice(idx, 1); saveSettings(); render(); } });
+      });
+    });
+    section.querySelector('#add-tier-btn').addEventListener('click', () => {
+      const label = section.querySelector('#new-tier-label').value.trim();
+      const color = section.querySelector('#new-tier-color').value;
+      if (!label) { section.querySelector('#new-tier-label').focus(); return; }
+      const id = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      if (!id || settings.tiers.some(t => t.id === id)) {
+        showToast('Tier ID already exists or invalid name'); return;
+      }
+      const newCadence = parseInt(section.querySelector('#new-tier-cadence').value) || 90;
+      settings.tiers.push({ id, label, color, defaultCadence: newCadence });
+      saveSettings();
+      render();
+    });
+  }
+  render();
+  return section;
+}
+
+function buildCadenceSection() {
+  const section = document.createElement('section');
+  section.className = 'settings-section card';
+  function render() {
+    section.innerHTML = `
+      <h2 class="section-title">Cadence presets</h2>
+      <p class="settings-desc">Quick-pick values shown on cadence inputs. Click × to remove, or add a new value.</p>
+      <div class="preset-chips">
+        ${settings.cadencePresets.map((n, i) => `
+          <span class="preset-chip">
+            ${n}d
+            <button class="preset-chip-del" data-idx="${i}" aria-label="Remove ${n}">×</button>
+          </span>
+        `).join('')}
+      </div>
+      <div class="preset-add-row">
+        <input type="number" id="new-preset-val" class="form-input preset-add-input" placeholder="e.g. 45" min="1" max="3650">
+        <button class="btn btn--primary btn--sm" id="add-preset-btn">Add</button>
+      </div>
+    `;
+    section.querySelectorAll('.preset-chip-del').forEach(btn => {
+      btn.addEventListener('click', e => {
+        settings.cadencePresets.splice(parseInt(e.target.dataset.idx), 1);
+        saveSettings(); render();
+      });
+    });
+    section.querySelector('#add-preset-btn').addEventListener('click', () => {
+      const val = parseInt(section.querySelector('#new-preset-val').value);
+      if (!val || val < 1) return;
+      if (!settings.cadencePresets.includes(val)) {
+        settings.cadencePresets.push(val);
+        settings.cadencePresets.sort((a, b) => a - b);
+        saveSettings();
+      }
+      render();
+    });
+    section.querySelector('#new-preset-val').addEventListener('keydown', e => {
+      if (e.key === 'Enter') section.querySelector('#add-preset-btn').click();
+    });
+  }
+  render();
+  return section;
+}
+
+function buildTagsSection(people, onPeopleUpdate) {
+  const section = document.createElement('section');
+  section.className = 'settings-section card';
+  function getTagCounts() {
+    const counts = {};
+    people.forEach(p => parseTags(p.tags).forEach(t => { counts[t] = (counts[t]||0)+1; }));
+    return Object.entries(counts).sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0]));
+  }
+  function renameTag(oldTag, newTag) {
+    if (!newTag || newTag === oldTag) return;
+    const updated = people.map(p => {
+      const tags = parseTags(p.tags);
+      const idx = tags.indexOf(oldTag);
+      if (idx === -1) return p;
+      tags[idx] = newTag;
+      const deduped = [...new Set(tags)];
+      return { ...p, tags: deduped.join('|') };
+    });
+    onPeopleUpdate(updated);
+    render();
+  }
+  function deleteTag(tag) {
+    const updated = people.map(p => {
+      const tags = parseTags(p.tags).filter(t => t !== tag);
+      return { ...p, tags: tags.join('|') };
+    });
+    onPeopleUpdate(updated);
+    render();
+  }
+  function render() {
+    const counts = getTagCounts();
+    section.innerHTML = `
+      <h2 class="section-title">Tags <span class="section-count">${counts.length}</span></h2>
+      <p class="settings-desc">Rename a tag to merge it with another. Changes apply to all contacts.</p>
+      ${counts.length ? `
+        <div class="tag-mgmt-list">
+          ${counts.map(([tag, count]) => `
+            <div class="tag-mgmt-row" data-tag="${esc(tag)}">
+              <span class="tag-mgmt-name">${esc(tag)}</span>
+              <span class="tag-mgmt-count">${count} contact${count!==1?'s':''}</span>
+              <button class="btn btn--ghost btn--sm tag-rename-btn" data-tag="${esc(tag)}">Rename</button>
+              <button class="btn btn--ghost btn--sm tag-delete-btn" data-tag="${esc(tag)}">Delete</button>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<div class="empty-state empty-state--sm"><p>No tags yet.</p></div>`}
+    `;
+    section.querySelectorAll('.tag-rename-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const tag = e.target.dataset.tag;
+        const row = section.querySelector(`.tag-mgmt-row[data-tag="${CSS.escape(tag)}"]`);
+        row.innerHTML = `
+          <input type="text" class="form-input tag-rename-input" value="${esc(tag)}" style="flex:1">
+          <button class="btn btn--primary btn--sm" id="tag-rename-save">Save</button>
+          <button class="btn btn--ghost btn--sm" id="tag-rename-cancel">Cancel</button>
+        `;
+        const input = row.querySelector('.tag-rename-input');
+        input.focus(); input.select();
+        row.querySelector('#tag-rename-save').addEventListener('click', () => renameTag(tag, input.value.trim()));
+        row.querySelector('#tag-rename-cancel').addEventListener('click', render);
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter') renameTag(tag, input.value.trim());
+          if (e.key === 'Escape') render();
+        });
+      });
+    });
+    section.querySelectorAll('.tag-delete-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const tag = e.target.dataset.tag;
+        openModal(`
+          <div class="modal-header"><h3>Delete tag "${esc(tag)}"?</h3></div>
+          <div class="modal-body"><p>This removes the tag from all contacts. The contacts themselves are not deleted.</p></div>
+          <div class="modal-footer">
+            <button class="btn btn--ghost" data-modal-cancel>Cancel</button>
+            <button class="btn btn--danger" data-modal-confirm>Delete tag</button>
+          </div>
+        `, { onConfirm: () => deleteTag(tag) });
+      });
+    });
+  }
+  render();
+  return section;
+}
+
+function buildDataSection() {
+  const section = document.createElement('section');
+  section.className = 'settings-section card';
+  section.innerHTML = `
+    <h2 class="section-title">Data</h2>
+    <div class="data-actions">
+      <div class="data-action-row">
+        <div>
+          <div class="data-action-label">Export CSV</div>
+          <div class="data-action-desc">Download all your contacts as a CSV file.</div>
+        </div>
+        <button class="btn btn--ghost" id="settings-export-btn">Export CSV</button>
+      </div>
+      ${hasFSA ? `
+      <div class="data-action-row">
+        <div>
+          <div class="data-action-label">CSV file sync</div>
+          <div class="data-action-desc">${fileHandle ? 'Currently syncing to a file on disk.' : 'Not connected to a file — saving to browser only.'}</div>
+        </div>
+        <button class="btn btn--ghost" id="settings-file-btn">${fileHandle ? 'Change file' : 'Connect file…'}</button>
+      </div>` : ''}
+      <div class="data-action-row data-action-row--danger">
+        <div>
+          <div class="data-action-label">Clear all contacts</div>
+          <div class="data-action-desc">Permanently delete all contacts. This cannot be undone.</div>
+        </div>
+        <button class="btn btn--danger" id="settings-clear-btn">Clear all</button>
+      </div>
+    </div>
+  `;
+  section.querySelector('#settings-export-btn').addEventListener('click', () => exportCSVFile(people));
+  section.querySelector('#settings-file-btn')?.addEventListener('click', () => openFileModal());
+  section.querySelector('#settings-clear-btn').addEventListener('click', () => {
+    openModal(`
+      <div class="modal-header"><h3>Clear all contacts?</h3></div>
+      <div class="modal-body"><p>This will permanently delete all ${people.length} contact${people.length!==1?'s':''}. Export first if you want a backup.</p></div>
+      <div class="modal-footer">
+        <button class="btn btn--ghost" data-modal-cancel>Cancel</button>
+        <button class="btn btn--danger" data-modal-confirm>Delete everything</button>
+      </div>
+    `, { onConfirm: () => {
+      people = [];
+      scheduleSave(people);
+      navigate('dashboard');
+    }});
+  });
+  return section;
+}
+
+// ── App / router ──────────────────────────────────────────────────────────────
+let people = [];
+let currentView = 'dashboard', currentPersonId = null;
+let pendingPeopleFilter = null; // { search?, tag? } — consumed once by renderPeople
+const mainEl = document.getElementById('main');
+
+function navigate(view, id = null) {
+  currentView = view; currentPersonId = id;
+  location.hash = id ? `${view}/${id}` : view;
+  renderView(); updateNav();
+}
+
+function readHash() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  const [view, id] = hash.split('/');
+  if (['dashboard','upcoming','calendar','people','map','settings'].includes(view)) {
+    currentView = view;
+  } else if (view === 'person' && id) {
+    currentView = 'person'; currentPersonId = id;
+  }
+}
+
+function updateNav() {
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    const active = (currentView==='dashboard'&&t.dataset.view==='dashboard')
+      || (currentView==='upcoming'&&t.dataset.view==='upcoming')
+      || ((currentView==='people'||currentView==='person')&&t.dataset.view==='people')
+      || (currentView==='calendar'&&t.dataset.view==='calendar')
+      || (currentView==='map'&&t.dataset.view==='map');
+    t.classList.toggle('nav-tab--active', active);
+    t.setAttribute('aria-current', active ? 'page' : '');
+  });
+  const gearBtn = document.getElementById('settings-btn');
+  if (gearBtn) gearBtn.classList.toggle('topbar-gear--active', currentView === 'settings');
+}
+
+function renderView() {
+  mainEl.classList.add('view-exit');
+  setTimeout(() => {
+    mainEl.innerHTML = '';
+    mainEl.classList.remove('view-exit');
+    mainEl.classList.add('view-enter');
+    let el;
+    if (currentView === 'dashboard') el = renderDashboard(people, updatePerson, navigate);
+    else if (currentView === 'upcoming') el = renderUpcoming(people, updatePerson, navigate);
+    else if (currentView === 'calendar') el = renderCalendar(people, navigate);
+    else if (currentView === 'map') el = renderMap(people, navigate);
+    else if (currentView === 'people') el = renderPeople(people, navigate);
+    else if (currentView === 'person') {
+      const p = people.find(x => x.id === currentPersonId);
+      if (!p) { navigate('people'); return; }
+      el = renderPersonDetail(p, updatePerson, deletePerson, () => navigate('people'));
+    }
+    else if (currentView === 'settings') {
+      el = renderSettings(people, (updatedPeople) => {
+        people = updatedPeople;
+        scheduleSave(people);
+      });
+    }
+    if (el) mainEl.appendChild(el);
+    requestAnimationFrame(() => mainEl.classList.remove('view-enter'));
+  }, 150);
+}
+
+function updatePerson(updated) {
+  const idx = people.findIndex(p => p.id === updated.id);
+  if (idx === -1) people.push(updated); else people[idx] = updated;
+  scheduleSave(people);
+}
+function deletePerson(id) {
+  people = people.filter(p => p.id !== id);
+  scheduleSave(people); navigate('people');
+}
+
+document.querySelectorAll('.nav-tab').forEach(tab =>
+  tab.addEventListener('click', () => navigate(tab.dataset.view))
+);
+document.getElementById('settings-btn').addEventListener('click', () => navigate('settings'));
+document.getElementById('logo-btn').addEventListener('click', e => { e.preventDefault(); navigate('dashboard'); });
+window.addEventListener('popstate', () => { readHash(); renderView(); updateNav(); });
+document.getElementById('add-btn').addEventListener('click', () => openAddPersonModal(p => {
+  people.push(p); scheduleSave(people); navigate('person', p.id);
+}));
+document.addEventListener('keydown', e => {
+  if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (document.querySelector('.modal-overlay')) return;
+    e.preventDefault();
+    openAddPersonModal(p => { people.push(p); scheduleSave(people); navigate('person', p.id); });
+  }
+});
+
+document.addEventListener('rdx1:file-disconnected', () => {
+  fileHandle = null;
+  updateSaveIndicator();
+});
+
+// ── Topbar file actions (always shown) ───────────────────────────────────────
+function mountTopbarFileActions() {
+  document.getElementById('topbar-file-actions')?.remove();
+  if (!hasFSA || fileHandle) return; // only show when FSA supported but no file connected
+  const bar = document.getElementById('topbar-right');
+  const wrap = document.createElement('div');
+  wrap.id = 'topbar-file-actions';
+  const syncBtn = Object.assign(document.createElement('button'), {
+    className: 'btn btn--ghost btn--sm', textContent: 'Enable autosave',
+    title: 'Sync to a CSV file for automatic saving'
+  });
+  syncBtn.addEventListener('click', () => openFileModal());
+  wrap.appendChild(syncBtn);
+  bar.insertBefore(wrap, bar.firstChild);
+}
+
+function updateSaveIndicator() {
+  // Refresh the topbar autosave button (appears only when no file connected)
+  mountTopbarFileActions();
+  const status = document.getElementById('save-status');
+  if (status && !fileHandle) {
+    status.textContent = 'Saved locally';
+    status.classList.remove('save-status--saving');
+  }
+}
+
+// ── File sync modal ───────────────────────────────────────────────────────────
+function openFileModal() {
+  const hasData = people.length > 0;
+  const modal = openModal(`
+    <div class="modal-header">
+      <h3>${fileHandle ? 'File sync' : 'Sync to a CSV file'}</h3>
+      <button class="modal-close" data-modal-close aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:0">Connect a CSV file for auto-save to disk. Your data is already saved in the browser — this just adds a file backup.</p>
+    </div>
+    <div class="modal-footer" style="flex-direction:column;align-items:stretch;gap:8px">
+      <button class="btn btn--primary" id="fmodal-open">Open existing CSV</button>
+      <button class="btn btn--ghost" id="fmodal-new">${hasData ? 'Save current data to new file…' : 'Create new empty file…'}</button>
+      ${fileHandle ? `<button class="btn btn--danger" id="fmodal-disconnect">Disconnect file</button>` : ''}
+    </div>
+  `);
+
+  document.getElementById('fmodal-open').addEventListener('click', async () => {
+    const data = await pickOrCreateFile();
+    if (data !== null) {
+      modal.close();
+      people = data;
+      renderView(); updateNav(); updateSaveIndicator();
+      setSaveText('File connected', false);
+    }
+  });
+  document.getElementById('fmodal-new').addEventListener('click', async () => {
+    const data = await createNewFile(people);
+    if (data !== null) {
+      modal.close();
+      updateSaveIndicator();
+      setSaveText('File connected', false);
+    }
+  });
+  document.getElementById('fmodal-disconnect')?.addEventListener('click', async () => {
+    fileHandle = null;
+    await clearHandle();
+    modal.close();
+    updateSaveIndicator();
+  });
+}
+
+// ── Reconnect banner ──────────────────────────────────────────────────────────
+function showReconnectBanner(handle) {
+  const banner = document.createElement('div');
+  banner.id = 'reconnect-banner';
+  banner.className = 'reconnect-banner';
+  banner.innerHTML = `
+    <span>Your CSV file needs permission to reconnect.</span>
+    <button class="btn btn--primary btn--sm" id="reconnect-btn">Reconnect file</button>
+    <button class="btn btn--ghost btn--sm" id="reconnect-dismiss">Dismiss</button>
+  `;
+  document.body.insertBefore(banner, document.getElementById('main'));
+
+  document.getElementById('reconnect-btn').addEventListener('click', async () => {
+    try {
+      const perm = await handle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        fileHandle = handle;
+        await saveHandle(handle);
+        const text = await (await handle.getFile()).text();
+        people = parseCSV(text);
+        renderView(); updateNav(); updateSaveIndicator();
+        setSaveText('File reconnected', false);
+      } else {
+        await clearHandle();
+      }
+    } catch { await clearHandle(); }
+    banner.remove();
+  });
+
+  document.getElementById('reconnect-dismiss').addEventListener('click', async () => {
+    await clearHandle();
+    banner.remove();
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+async function boot() {
+  loadSettings();
+  try {
+    const { people: loaded, fileConnected, pendingHandle } = await initStorage();
+    people = loaded;
+    readHash();
+    renderView();
+    updateNav();
+    mountTopbarFileActions();
+    if (fileConnected) {
+      setSaveText('File connected', false);
+    } else if (pendingHandle) {
+      showReconnectBanner(pendingHandle);
+    }
+  } catch(err) {
+    console.error('[RDX1] boot error:', err);
+    people = [];
+    renderView();
+    updateNav();
+    mountTopbarFileActions();
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
