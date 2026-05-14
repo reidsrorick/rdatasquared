@@ -92,6 +92,18 @@ function resolveTier(val) {
 }
 
 function parseCSV(text) {
+  // Extract embedded settings from leading comment line
+  const lines = text.split('\n');
+  if (lines[0].startsWith('#rdx1_settings:')) {
+    try {
+      const embedded = JSON.parse(lines[0].slice('#rdx1_settings:'.length));
+      if (embedded.tiers) {
+        settings = { ...settings, tiers: embedded.tiers, cadencePresets: embedded.cadencePresets ?? settings.cadencePresets };
+        saveSettings();
+      }
+    } catch {}
+    text = lines.slice(1).join('\n');
+  }
   const r = Papa.parse(text, { header:true, skipEmptyLines:true, transformHeader: h => h.trim() });
   let autoId = 0;
   return (r.data || []).map(row => ({
@@ -115,12 +127,14 @@ function parseCSV(text) {
 }
 
 function serializeCSV(people) {
-  return Papa.unparse(people.map(p => {
+  const settingsComment = '#rdx1_settings:' + JSON.stringify({ tiers: settings.tiers, cadencePresets: settings.cadencePresets });
+  const csv = Papa.unparse(people.map(p => {
     const row = {};
     for (const c of COLUMNS) row[c] = p[c] ?? '';
-    row.tier = getTierLabel(p.tier); // store human-readable label
+    row.tier = getTierLabel(p.tier);
     return row;
   }), { columns: COLUMNS, newline: '\n' });
+  return settingsComment + '\n' + csv;
 }
 
 function computeNextDue(lastContact, cadenceDays) {
@@ -1896,6 +1910,20 @@ function buildDataSection() {
         </div>
         <button class="btn btn--ghost" id="settings-file-btn">${fileHandle ? 'Change file' : 'Connect file…'}</button>
       </div>` : ''}
+      <div class="data-action-row">
+        <div>
+          <div class="data-action-label">Export settings</div>
+          <div class="data-action-desc">Download your tiers and cadence presets as a JSON file.</div>
+        </div>
+        <button class="btn btn--ghost" id="settings-export-settings-btn">Export settings</button>
+      </div>
+      <div class="data-action-row">
+        <div>
+          <div class="data-action-label">Import settings</div>
+          <div class="data-action-desc">Restore tiers and cadence presets from a previously exported file.</div>
+        </div>
+        <button class="btn btn--ghost" id="settings-import-settings-btn">Import settings</button>
+      </div>
       <div class="data-action-row data-action-row--danger">
         <div>
           <div class="data-action-label">Clear all contacts</div>
@@ -1907,6 +1935,36 @@ function buildDataSection() {
   `;
   section.querySelector('#settings-export-btn').addEventListener('click', () => exportCSVFile(people));
   section.querySelector('#settings-file-btn')?.addEventListener('click', () => openFileModal());
+  section.querySelector('#settings-export-settings-btn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'rdx1-settings.json' });
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  section.querySelector('#settings-import-settings-btn').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json,application/json';
+    input.onchange = async () => {
+      const file = input.files[0]; if (!file) return;
+      try {
+        const imported = JSON.parse(await file.text());
+        if (!imported.tiers || !Array.isArray(imported.tiers)) { showToast('Invalid settings file'); return; }
+        openModal(`
+          <div class="modal-header"><h3>Import settings?</h3></div>
+          <div class="modal-body"><p>This will replace your current tiers and cadence presets with the imported values. Your contacts will not be affected.</p></div>
+          <div class="modal-footer">
+            <button class="btn btn--ghost" data-modal-cancel>Cancel</button>
+            <button class="btn btn--primary" data-modal-confirm>Import</button>
+          </div>
+        `, { onConfirm: () => {
+          settings = { ...settings, tiers: imported.tiers, cadencePresets: imported.cadencePresets ?? settings.cadencePresets };
+          saveSettings();
+          navigate('settings');
+          showToast('Settings imported');
+        }});
+      } catch { showToast('Could not read file'); }
+    };
+    input.click();
+  });
   section.querySelector('#settings-clear-btn').addEventListener('click', () => {
     openModal(`
       <div class="modal-header"><h3>Clear all contacts?</h3></div>
