@@ -146,6 +146,12 @@ input, select {
   transition: border-color .15s; width: 100%;
 }
 input:focus, select:focus { border-color: var(--accent); }
+input[type="radio"], input[type="checkbox"] {
+  width: auto; height: auto; padding: 0; margin: 0;
+  border: none; border-radius: 0; background: transparent;
+  flex-shrink: 0;
+  -webkit-appearance: auto; appearance: auto;
+}
 
 .add-btn {
   height: 38px; padding: 0 18px;
@@ -384,6 +390,27 @@ input:focus, select:focus { border-color: var(--accent); }
 .tx-transfer  .tx-amount { color: var(--muted); }
 .tx-transfer  .tx-desc   { color: var(--muted); }
 .tx-fuzzy        .tx-accent { background: #d97706; }
+.tx-needs-cat    .tx-accent { background: #a855f7; }
+
+.tx-review-alert {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 20px; background: var(--surface-alt);
+  border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.tx-review-icon  { font-size: 14px; }
+.tx-review-label { color: var(--muted); font-weight: 600; }
+.tx-review-pill  {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px;
+  border-radius: 4px; cursor: pointer; border: 1px solid;
+  transition: opacity .12s, transform .08s;
+}
+.tx-review-pill:hover  { opacity: .8; }
+.tx-review-pill:active { transform: scale(.97); }
+.tx-review-flagged  { background:#fef3c7; color:#92400e; border-color:#fcd34d; }
+.tx-review-needscat { background:#f3e8ff; color:#7c3aed; border-color:#d8b4fe; }
+[data-theme="dark"] .tx-review-flagged  { background:#451a03; color:#fcd34d; border-color:#92400e; }
+[data-theme="dark"] .tx-review-needscat { background:#2e1065; color:#c4b5fd; border-color:#7c3aed; }
 .tx-linked-hidden .tx-accent { background: var(--border); }
 .tx-linked-hidden { opacity: 0.6; }
 
@@ -394,6 +421,15 @@ input:focus, select:focus { border-color: var(--accent); }
 .fuzzy-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700;
   background:#fef3c7; color:#92400e; border-radius:4px; padding:1px 6px; letter-spacing:.3px; }
 [data-theme="dark"] .fuzzy-badge { background:#451a03; color:#fcd34d; }
+
+.needs-cat-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700;
+  background:#f3e8ff; color:#7c3aed; border-radius:4px; padding:1px 6px; letter-spacing:.3px; }
+[data-theme="dark"] .needs-cat-badge { background:#2e1065; color:#c4b5fd; }
+
+.cat-pill.cat-pill-empty { border-style:dashed; border-color:#a855f7; color:#7c3aed; font-style:italic; }
+.cat-pill.cat-pill-empty:hover { background:#f3e8ff; }
+[data-theme="dark"] .cat-pill.cat-pill-empty { color:#c4b5fd; }
+[data-theme="dark"] .cat-pill.cat-pill-empty:hover { background:#2e1065; }
 
 .fuzzy-actions { display:flex; gap:6px; margin-top:6px; }
 .fuzzy-link-btn { font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #d97706;
@@ -416,6 +452,57 @@ input:focus, select:focus { border-color: var(--accent); }
 .dup-linker-sub  { font-size:11px; color:var(--muted); margin-bottom:4px; }
 .dup-linker-meta { font-size:12px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; }
 .dup-linker-note { font-size:12px; color:var(--muted); margin-top:10px; text-align:center; }
+
+.dup-source-line { display:flex; align-items:center; gap:8px; padding:8px 10px;
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  font-size:12px; }
+.dup-source-tag  { font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.04em; color:var(--muted); }
+.dup-source-num  { font-family:monospace; font-size:11px; color:var(--muted); }
+.dup-source-name { flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dup-source-amt  { font-weight:700; flex-shrink:0; }
+.dup-source-amt.pos { color:#16a34a; }
+.dup-source-amt.neg { color:#dc2626; }
+.dup-source-date { color:var(--muted); flex-shrink:0; font-variant-numeric:tabular-nums; }
+
+.dup-search { width:100%; padding:6px 10px; font-size:12px;
+  border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--text);
+  box-sizing:border-box; }
+.dup-candidate-list { max-height:260px; overflow-y:auto; overflow-x:hidden; border:1px solid var(--border); border-radius:6px; }
+.dup-empty { padding:14px; text-align:center; color:var(--muted); font-size:12px; }
+.dup-candidate { display:flex; align-items:center; gap:8px; padding:7px 10px; cursor:pointer;
+  border-bottom:1px solid var(--border); transition:background .12s; font-size:12px; }
+.dup-candidate:last-child { border-bottom:none; }
+.dup-candidate:hover      { background:var(--surface-alt); }
+.dup-candidate.selected   { background:var(--accent-light); }
+.dup-candidate-radio  { width:14px; height:14px; border-radius:50%; border:2px solid var(--border);
+  background:transparent; flex-shrink:0; transition:border-color .12s, background .12s;
+  box-sizing:border-box; position:relative; }
+.dup-candidate:hover .dup-candidate-radio   { border-color:var(--muted); }
+.dup-candidate.selected .dup-candidate-radio { border-color:var(--accent); background:var(--accent); }
+.dup-candidate.selected .dup-candidate-radio::after {
+  content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:4px; height:4px; border-radius:50%; background:var(--surface);
+}
+.dup-candidate-num    { font-family:monospace; font-size:11px; color:var(--muted); flex-shrink:0; min-width:32px; }
+.dup-candidate-name   { flex:1; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.dup-candidate-amt    { font-weight:600; flex-shrink:0; font-variant-numeric:tabular-nums; }
+.dup-candidate-amt.pos { color:#16a34a; }
+.dup-candidate-amt.neg { color:#dc2626; }
+.dup-candidate-date   { color:var(--muted); flex-shrink:0; font-variant-numeric:tabular-nums; }
+.dup-auto-tag { font-size:10px; font-weight:600; padding:1px 6px; border-radius:3px;
+  background:var(--accent-light); color:var(--accent); flex-shrink:0; }
+.dup-show-more { align-self:flex-start; padding:0; font-size:11px;
+  background:none; border:none; color:var(--accent); cursor:pointer; }
+.dup-show-more:hover { text-decoration:underline; }
+
+.dup-master-toggle { display:flex; align-items:center; gap:8px; padding:8px 10px;
+  background:var(--bg); border:1px solid var(--border); border-radius:6px; }
+.dup-master-label  { font-size:12px; color:var(--muted); }
+.dup-master-btn    { padding:4px 12px; font-size:12px; font-weight:500; cursor:pointer;
+  border:1px solid var(--border); border-radius:4px; background:var(--surface); color:var(--text); }
+.dup-master-btn:hover  { background:var(--surface-alt); }
+.dup-master-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
 
 .tx-body { flex: 1; padding: 12px 14px; min-width: 0; }
 .tx-top  { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -870,6 +957,9 @@ input:focus, select:focus { border-color: var(--accent); }
   padding: 10px 0;
 }
 .acct-status-row + .acct-status-row { border-top: 1px solid var(--border); }
+.acct-status-clickable { cursor: pointer; transition: background .12s; border-radius: 4px; margin: 0 -6px; padding-left: 6px; padding-right: 6px; }
+.acct-status-clickable:hover { background: var(--surface-alt); }
+.acct-status-clickable:hover .acct-status-label { color: var(--accent); }
 .acct-status-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
 .acct-status-amount { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
 .acct-footer  { display: flex; align-items: center; justify-content: space-between; }
@@ -1213,6 +1303,7 @@ function guessCategory(desc, transactions) {
   // Build frequency map: normalized description → { category: count }
   const freq = {};
   for (const t of transactions) {
+    if (!t.category) continue;
     const key = (t.merchant || t.description || '').toLowerCase().trim();
     if (!freq[key]) freq[key] = {};
     freq[key][t.category] = (freq[key][t.category] || 0) + 1;
@@ -1465,11 +1556,6 @@ function MapStep({ csvData, fileName, mapping, setMap, previewRows, onChangeFile
               )}
             </div>
           </MappingRow>
-          <MappingRow label="Default category">
-            <select value={mapping.defaultCategory} onChange={e => setMap('defaultCategory', e.target.value)}>
-              {categories.map(c => <option key={c}>{c}</option>)}
-            </select>
-          </MappingRow>
           <MappingRow label="Import mode">
             <div className="radio-group">
               {[['append','Append'], ['replace','Replace All']].map(([val, lbl]) => (
@@ -1553,6 +1639,25 @@ function DoneStep({ result }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+      {(result.missingCats > 0 || (result.unknownCats && Object.keys(result.unknownCats).length > 0)) && (
+        <div style={{marginTop:'12px'}}>
+          <p style={{fontSize:'12px',color:'#d97706',marginBottom:'6px',fontWeight:600}}>
+            Flagged as missing category — needs review:
+          </p>
+          {result.missingCats > 0 && (
+            <p style={{fontSize:'11px',color:'var(--muted)',marginBottom:'2px'}}>
+              {result.missingCats} {result.missingCats === 1 ? 'row had no category' : 'rows had no category'} in the CSV
+            </p>
+          )}
+          {result.unknownCats && Object.entries(result.unknownCats)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, count]) => (
+              <p key={name} style={{fontSize:'11px',color:'var(--muted)',fontFamily:'monospace',marginBottom:'2px'}}>
+                "{name}" (unknown category) — {count} {count === 1 ? 'row' : 'rows'}
+              </p>
+            ))}
         </div>
       )}
       {result.skippedRows?.length > 0 && (
@@ -1658,6 +1763,21 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
       return key != null ? row[key] : undefined;
     };
 
+    // Resolve CSV-provided category against the user's existing list (case-insensitive).
+    // Anything we can't confidently match is flagged (empty category) for user review.
+    const knownCats = new Map(
+      [...categories, TRANSFER_CAT, RECONCILE_CAT].map(c => [c.toLowerCase(), c])
+    );
+    const unknownCats = {};
+    let missingCats = 0;
+    const resolveCategory = (raw) => {
+      if (!raw) { missingCats++; return ''; }
+      const canonical = knownCats.get(raw.toLowerCase());
+      if (canonical) return canonical;
+      unknownCats[raw] = (unknownCats[raw] || 0) + 1;
+      return '';
+    };
+
     // Replace-all mode: parse rows then go to confirmation step
     if (mapping.importMode === 'replace') {
       let errors = 0;
@@ -1679,7 +1799,7 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
           description: mapped.description,
           amount:      mapped.amount,
           date:        mapped.date,
-          category:    getCol(row, 'category')    || mapping.defaultCategory,
+          category:    resolveCategory(getCol(row, 'category')),
           accountName: getCol(row, 'accountName') || mapping.accountName || '',
           cleared:     parseCleared(rawCleared),
           tags:        rawTags ? rawTags.split(';').filter(Boolean) : [],
@@ -1747,7 +1867,7 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
         description: mapped.description,
         amount:      mapped.amount,
         date:        mapped.date,
-        category:    getCol(row, 'category') || mapping.defaultCategory,
+        category:    resolveCategory(getCol(row, 'category')),
         accountName: getCol(row, 'accountName') || mapping.accountName || '',
         cleared:     parseCleared(rawCleared) ?? true,
         tags:        (() => { const tg = getCol(row, 'tags'); return tg ? tg.split(';').filter(Boolean) : []; })(),
@@ -1761,7 +1881,7 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
     const { accountName: _omit, ...settingsToSave } = mapping;
     setImportSettings(settingsToSave);
     if (newTx.length > 0) onImport(newTx);
-    setResult({ imported, flagged, duplicates: skipped, errors, skippedRows, exactSkips });
+    setResult({ imported, flagged, duplicates: skipped, errors, skippedRows, exactSkips, unknownCats, missingCats });
     setStep('done');
   };
 
@@ -1838,70 +1958,158 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
 
 // ── DuplicateLinker ───────────────────────────────────────────────────────────
 function DuplicateLinker({ tx, transactions, onLink, onClose }) {
-  const matchedTx = transactions.find(t => t.txNum === tx.fuzzyMatchId && !t.duplicateOf);
-  const [masterId, setMasterId] = useState(matchedTx?.id ?? tx.id);
+  const autoMatch = tx.fuzzyMatchId
+    ? transactions.find(t => t.txNum === tx.fuzzyMatchId && !t.duplicateOf)
+    : null;
 
-  if (!matchedTx) {
-    return (
-      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-        <div className="modal" style={{maxWidth:'400px'}}>
-          <div className="modal-header">
-            <span className="modal-title">Link Duplicate</span>
-            <button className="modal-close" onClick={onClose}>×</button>
-          </div>
-          <div className="modal-body">
-            <p style={{color:'var(--muted)',fontSize:'13px'}}>The matched transaction no longer exists. You can dismiss the flag instead.</p>
-          </div>
-          <div className="modal-footer">
-            <button className="btn-secondary" onClick={onClose}>Cancel</button>
-            <button className="btn-primary" onClick={() => { onLink(null, tx.id); onClose(); }}>Dismiss Flag</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const scored = useMemo(() => {
+    const txMerchant = (tx.merchant || tx.description || '').toLowerCase();
+    return transactions
+      .filter(c => c.id !== tx.id && !c.duplicateOf)
+      .map(c => {
+        const amtDiff = Math.abs((c.amount || 0) - (tx.amount || 0));
+        const dayDiff = Math.abs(new Date(c.date) - new Date(tx.date)) / 86400000;
+        let score = 0;
+        if (amtDiff < 0.005) score += 100;
+        else if (amtDiff < 1)  score += 25;
+        else if (amtDiff < 5)  score += 8;
+        if (dayDiff <= 3)       score += 50;
+        else if (dayDiff <= 7)  score += 20;
+        else if (dayDiff <= 30) score += 5;
+        if ((c.accountName || '') === (tx.accountName || '')) score += 10;
+        const cm = (c.merchant || c.description || '').toLowerCase();
+        if (cm && txMerchant) {
+          if (cm === txMerchant) score += 40;
+          else if (cm.includes(txMerchant) || txMerchant.includes(cm)) score += 20;
+          else {
+            const cw = cm.split(/\s+/)[0];
+            const tw = txMerchant.split(/\s+/)[0];
+            if (cw && tw && cw === tw) score += 10;
+          }
+        }
+        return { c, score };
+      })
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score);
+  }, [transactions, tx]);
+
+  const [selectedId, setSelectedId] = useState(autoMatch?.id ?? scored[0]?.c.id ?? null);
+  // For fuzzy-flagged imports, default master to the existing (candidate) row.
+  // For manual links, default to the source the user opened the linker from.
+  const [keepSource, setKeepSource] = useState(!tx.fuzzyMatchId);
+  const [search, setSearch]         = useState('');
+  const [showAll, setShowAll]       = useState(false);
+
+  const displayed = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (q) {
+      const stripHash = q.replace(/^#/, '');
+      return transactions
+        .filter(c => c.id !== tx.id && !c.duplicateOf)
+        .filter(c =>
+          (c.merchant || '').toLowerCase().includes(q) ||
+          (c.description || '').toLowerCase().includes(q) ||
+          String(c.amount).includes(q) ||
+          (c.date || '').includes(q) ||
+          (c.accountName || '').toLowerCase().includes(q) ||
+          (c.category || '').toLowerCase().includes(q) ||
+          (c.txNum != null && String(c.txNum).includes(stripHash))
+        )
+        .slice(0, 50);
+    }
+    const list = scored.map(s => s.c);
+    return showAll ? list : list.slice(0, 5);
+  }, [search, scored, showAll, transactions, tx]);
+
+  const selected = transactions.find(t => t.id === selectedId);
 
   const handleLink = () => {
-    const secondaryId = masterId === tx.id ? matchedTx.id : tx.id;
+    if (!selected) return;
+    const masterId    = keepSource ? tx.id      : selected.id;
+    const secondaryId = keepSource ? selected.id : tx.id;
     onLink(masterId, secondaryId);
     onClose();
   };
 
-  const Side = ({ t, isFuzzy }) => (
-    <div className={`dup-linker-side${masterId === t.id ? ' selected' : ''}`} onClick={() => setMasterId(t.id)}>
-      <div className="dup-linker-radio">
-        <input type="radio" readOnly checked={masterId === t.id} style={{accentColor:'var(--accent)'}} />
-        Master
-        {isFuzzy && <span className="fuzzy-badge">~ bank import</span>}
-      </div>
-      <div className="dup-linker-desc">{t.merchant || t.description || '—'}</div>
-      {t.merchant && t.description && <div className="dup-linker-sub">{t.description}</div>}
-      <div className="dup-linker-meta">
-        <span>{t.date}</span>
-        <span className={t.amount >= 0 ? 'pos' : 'neg'}>{t.amount >= 0 ? '+' : '−'}{fmt(t.amount)}</span>
-        {t.accountName && <span>{t.accountName}</span>}
-        {t.category && <span>{t.category}</span>}
-      </div>
-    </div>
-  );
-
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{maxWidth:'560px'}}>
+      <div className="modal" style={{maxWidth:'520px'}}>
         <div className="modal-header">
-          <span className="modal-title">Link Duplicate Transactions</span>
+          <span className="modal-title">Link Duplicate</span>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
-        <div className="modal-body">
-          <div className="dup-linker-pair">
-            <Side t={matchedTx} isFuzzy={false} />
-            <Side t={tx} isFuzzy={true} />
+        <div className="modal-body" style={{gap:'10px'}}>
+          <div className="dup-source-line">
+            <span className="dup-source-tag">Linking</span>
+            {tx.txNum != null && <span className="dup-source-num">#{tx.txNum}</span>}
+            <span className="dup-source-name">{tx.merchant || tx.description || '—'}</span>
+            <span className={`dup-source-amt ${tx.amount >= 0 ? 'pos' : 'neg'}`}>
+              {tx.amount >= 0 ? '+' : '−'}{fmt(tx.amount)}
+            </span>
+            <span className="dup-source-date">{tx.date}</span>
           </div>
-          <p className="dup-linker-note">Select the <strong>Master</strong> to keep visible. The other will be hidden but stored for future duplicate detection.</p>
+
+          <input
+            type="text"
+            className="dup-search"
+            placeholder="Search by merchant, amount, date, #txNum…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+
+          <div className="dup-candidate-list">
+            {displayed.length === 0 ? (
+              <div className="dup-empty">{search.trim() ? 'No matches.' : 'No likely candidates — try searching.'}</div>
+            ) : displayed.map(c => {
+              const isAuto = autoMatch && c.id === autoMatch.id;
+              return (
+                <div key={c.id}
+                  className={`dup-candidate${selectedId === c.id ? ' selected' : ''}`}
+                  onClick={() => setSelectedId(c.id)}>
+                  <span className="dup-candidate-radio" aria-hidden="true" />
+                  {c.txNum != null && <span className="dup-candidate-num">#{c.txNum}</span>}
+                  <span className="dup-candidate-name">{c.merchant || c.description || '—'}</span>
+                  <span className={`dup-candidate-amt ${c.amount >= 0 ? 'pos' : 'neg'}`}>
+                    {c.amount >= 0 ? '+' : '−'}{fmt(c.amount)}
+                  </span>
+                  <span className="dup-candidate-date">{c.date}</span>
+                  {isAuto && <span className="dup-auto-tag">auto</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          {!search.trim() && scored.length > 5 && (
+            <button type="button" className="dup-show-more" onClick={() => setShowAll(s => !s)}>
+              {showAll ? 'Show top 5 only' : `Show all ${scored.length} candidates`}
+            </button>
+          )}
+
+          {selected && (
+            <div className="dup-master-toggle">
+              <span className="dup-master-label">Keep visible:</span>
+              <button type="button"
+                className={`dup-master-btn${keepSource ? ' active' : ''}`}
+                onClick={() => setKeepSource(true)}>
+                {tx.txNum != null ? `#${tx.txNum}` : 'Source'}
+              </button>
+              <button type="button"
+                className={`dup-master-btn${!keepSource ? ' active' : ''}`}
+                onClick={() => setKeepSource(false)}>
+                {selected.txNum != null ? `#${selected.txNum}` : 'Linked'}
+              </button>
+            </div>
+          )}
         </div>
         <div className="modal-footer">
+          {tx.fuzzyMatchId && (
+            <button type="button" className="btn-secondary" style={{marginRight:'auto'}}
+              onClick={() => { onLink(null, tx.id); onClose(); }}>
+              Dismiss Flag
+            </button>
+          )}
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn-primary" onClick={handleLink}>Link Pair</button>
+          <button className="btn-primary" onClick={handleLink} disabled={!selected}>Link Pair</button>
         </div>
       </div>
     </div>
@@ -2084,11 +2292,11 @@ function CategoryManager({ structure, budgets, onSetBudget, onAddCat, onRenameCa
                   <div
                     data-drag-idx={idx}
                     className={`cat-row cat-row-indent${isDragging ? ' dragging' : ''}`}
-                    draggable={!isProtected}
+                    draggable
                     onDragStart={e => handleDragStart(e, idx)}
                     onDragEnd={handleDragEnd}
                   >
-                    {!isProtected && <span className="drag-handle">⠿</span>}
+                    <span className="drag-handle">⠿</span>
                     {isEditingThis
                       ? <input autoFocus value={editingCat.value}
                           onChange={e => setEditingCat(c => ({ ...c, value: e.target.value }))}
@@ -2176,8 +2384,43 @@ function CategoryCombobox({ value, categories, structure, onChange, autoFocus, o
   const [open, setOpen]         = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const [dropUp, setDropUp]     = useState(false);
+  const [dropStyle, setDropStyle] = useState({});
   const inputRef = useRef(null);
   const wrapRef  = useRef(null);
+  const dropRef  = useRef(null);
+
+  const recomputeDropPos = () => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const flip = spaceBelow < 220 && spaceAbove > spaceBelow;
+    setDropUp(flip);
+    setDropStyle({
+      position: 'fixed',
+      left: rect.left,
+      right: 'auto',
+      width: rect.width,
+      top:    flip ? 'auto' : rect.bottom + 3,
+      bottom: flip ? window.innerHeight - rect.top + 3 : 'auto',
+      maxHeight: flip ? Math.min(200, spaceAbove - 8) : Math.min(200, spaceBelow - 8),
+    });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = (e) => {
+      // Don't close when scrolling inside the dropdown itself
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', recomputeDropPos);
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', recomputeDropPos);
+    };
+  }, [open]);
 
   const displayItems = useMemo(() => {
     if (query) {
@@ -2249,15 +2492,14 @@ function CategoryCombobox({ value, categories, structure, onChange, autoFocus, o
         onChange={e => { setQuery(e.target.value); setOpen(true); }}
         onFocus={() => {
           setQuery(''); setOpen(true);
-          const rect = wrapRef.current?.getBoundingClientRect();
-          if (rect) setDropUp(window.innerHeight - rect.bottom < 220);
+          recomputeDropPos();
         }}
         onBlur={() => setTimeout(() => { setOpen(false); setQuery(''); onDone?.(); }, 150)}
         onKeyDown={handleKeyDown}
         placeholder={value}
       />
       {open && displayItems.length > 0 && (
-        <div className={`cat-dropdown${dropUp ? ' drop-up' : ''}`}>
+        <div ref={dropRef} className={`cat-dropdown${dropUp ? ' drop-up' : ''}`} style={dropStyle}>
           {displayItems.map((item, i) =>
             item.type === 'header'
               ? <div key={`h-${item.name}-${i}`} className="cat-dropdown-header">{item.name}</div>
@@ -2713,7 +2955,7 @@ function AddTransaction({ onAdd, categories, structure, transactions, accounts, 
 }
 
 // ── EditTransactionModal ──────────────────────────────────────────────────────
-function EditTransactionModal({ t, categories, structure, accounts, allTags, onSave, onClose }) {
+function EditTransactionModal({ t, categories, structure, accounts, allTags, onSave, onClose, onLinkDuplicate }) {
   const [form, setForm] = useState({
     description: t.description || '',
     amount:      String(Math.abs(t.amount)),
@@ -2792,6 +3034,13 @@ function EditTransactionModal({ t, categories, structure, accounts, allTags, onS
             {error && <p className="form-error">{error}</p>}
           </div>
           <div className="modal-footer">
+            {onLinkDuplicate && !t.duplicateOf && (
+              <button type="button" className="btn-secondary" style={{marginRight:'auto'}}
+                onClick={() => { onClose(); onLinkDuplicate(t); }}
+                title="Find a duplicate transaction to link this with">
+                🔗 Link as duplicate
+              </button>
+            )}
             <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn-primary">Save Changes</button>
           </div>
@@ -2818,7 +3067,7 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, onLinkDu
 
   return (
     <>
-    <div className={`tx-row ${t.duplicateOf ? 'tx-linked-hidden' : t.fuzzyMatchId ? 'tx-fuzzy' : t.category === TRANSFER_CAT ? 'tx-transfer' : t.amount >= 0 ? 'tx-income' : 'tx-expense'}`}>
+    <div className={`tx-row ${t.duplicateOf ? 'tx-linked-hidden' : !t.category ? 'tx-needs-cat' : t.fuzzyMatchId ? 'tx-fuzzy' : t.category === TRANSFER_CAT ? 'tx-transfer' : t.amount >= 0 ? 'tx-income' : 'tx-expense'}`}>
       <div className="tx-accent" />
       <div className="tx-body">
         <div className="tx-top">
@@ -2845,12 +3094,14 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, onLinkDu
                 onDone={() => setEditingCat(false)}
                 inline
               />
-            : <button className="cat-pill" onClick={() => setEditingCat(true)} title="Edit category">
-                {t.category}
+            : <button className={`cat-pill${!t.category ? ' cat-pill-empty' : ''}`} onClick={() => setEditingCat(true)}
+                title={t.category ? 'Edit category' : 'Set category'}>
+                {t.category || '+ category'}
               </button>
           }
           {t.transferId && <span className="linked-badge">↔ linked</span>}
           {t.fuzzyMatchId && <span className="fuzzy-badge">~ possible duplicate</span>}
+          {!t.category && !t.duplicateOf && <span className="needs-cat-badge">needs category</span>}
           {t.duplicateOf && <span className="hidden-badge">hidden · linked to #{t.duplicateOf}</span>}
         </div>
         {t.fuzzyMatchId && (
@@ -2895,6 +3146,7 @@ function TransactionRow({ t, onDelete, onEdit, onRequestLink, onUnlink, onLinkDu
         allTags={allTags || []}
         onSave={patch => onEdit(t.id, patch)}
         onClose={() => setShowEdit(false)}
+        onLinkDuplicate={onLinkDuplicate}
       />
     )}
     </>
@@ -2950,7 +3202,7 @@ function TableView({ transactions, onEdit, categories, privacy }) {
       .filter(t => !t.duplicateOf)
       .filter(t => !q
         || (t.merchant || t.description || '').toLowerCase().includes(q)
-        || t.category.toLowerCase().includes(q)
+        || (t.category || '').toLowerCase().includes(q)
         || (t.accountName || '').toLowerCase().includes(q)
         || t.date.includes(q)
         || String(Math.abs(t.amount)).includes(q)
@@ -3342,10 +3594,11 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
     const txCats  = [...new Set(transactions.map(t => t.category).filter(Boolean))];
     const txAccts = [...new Set(transactions.map(t => t.accountName).filter(Boolean))];
     const txTags  = [...new Set(transactions.flatMap(t => t.tags || []))];
-    if (jumpTo.catFilter  != null) setCat(new Set(txCats.filter(c => c !== jumpTo.catFilter)));
-    if (jumpTo.acctFilter != null) setAcct(new Set(txAccts.filter(a => a !== jumpTo.acctFilter)));
-    if (jumpTo.typeFilter != null) setType(new Set(['Income','Expense'].filter(t => t !== jumpTo.typeFilter)));
-    if (jumpTo.tagFilter  != null) setTag(new Set(txTags.filter(t => t !== jumpTo.tagFilter)));
+    if (jumpTo.catFilter    != null) setCat(new Set(txCats.filter(c => c !== jumpTo.catFilter)));
+    if (jumpTo.acctFilter   != null) setAcct(new Set(txAccts.filter(a => a !== jumpTo.acctFilter)));
+    if (jumpTo.typeFilter   != null) setType(new Set(['Income','Expense'].filter(t => t !== jumpTo.typeFilter)));
+    if (jumpTo.tagFilter    != null) setTag(new Set(txTags.filter(t => t !== jumpTo.tagFilter)));
+    if (jumpTo.statusFilter != null) setCleared(new Set(['Posted','Pending','Flagged','Needs cat'].filter(s => s !== jumpTo.statusFilter)));
     if (jumpTo.dateMode === 'month') {
       setDateMode('month');
       setNavYear(jumpTo.navYear);
@@ -3364,16 +3617,17 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
     || (t.description || '').toLowerCase().includes(q)
     || (t.merchant || '').toLowerCase().includes(q)
     || t.date.includes(q)
-    || t.category.toLowerCase().includes(q)
+    || (t.category || '').toLowerCase().includes(q)
     || (t.accountName && t.accountName.toLowerCase().includes(q))
     || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(q)))
     || String(Math.abs(t.amount)).includes(q)
     || (t.txNum && String(t.txNum).includes(q.replace(/^#/, '')));
 
   const passCleared = (t, excl) => excl.size === 0 || (
-    (!excl.has('Posted')  && t.cleared) ||
-    (!excl.has('Pending') && !t.cleared && !t.fuzzyMatchId) ||
-    (!excl.has('Flagged')   && !!t.fuzzyMatchId)
+    (!excl.has('Needs cat') && !t.category) ||
+    (!excl.has('Flagged')   && !!t.fuzzyMatchId) ||
+    (!excl.has('Posted')    && t.cleared) ||
+    (!excl.has('Pending')   && !t.cleared)
   );
 
   // Available options for each filter = transactions passing all OTHER filters
@@ -3442,11 +3696,12 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
       if (tagExcluded.size > 0  && !(t.tags && t.tags.some(g => !tagExcluded.has(g)))) return;
       if (activeDateFrom && t.date < activeDateFrom) return;
       if (activeDateTo   && t.date > activeDateTo)   return;
+      if (!t.category)     statuses.add('Needs cat');
+      if (t.fuzzyMatchId)  statuses.add('Flagged');
       if (t.cleared)       statuses.add('Posted');
       if (!t.cleared)      statuses.add('Pending');
-      if (t.fuzzyMatchId)  statuses.add('Flagged');
     });
-    return ['Posted','Pending','Flagged'].filter(s => statuses.has(s));
+    return ['Posted','Pending','Flagged','Needs cat'].filter(s => statuses.has(s));
   }, [transactions, showLinked, search, acctExcluded, catExcluded, typeExcluded, tagExcluded, activeDateFrom, activeDateTo]);
 
   const filtered = useMemo(() =>
@@ -3459,7 +3714,7 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
           || (t.description || '').toLowerCase().includes(q)
           || (t.merchant || '').toLowerCase().includes(q)
           || t.date.includes(q)
-          || t.category.toLowerCase().includes(q)
+          || (t.category || '').toLowerCase().includes(q)
           || (t.accountName && t.accountName.toLowerCase().includes(q))
           || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(q)))
           || String(Math.abs(t.amount)).includes(q)
@@ -3468,9 +3723,10 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
         const matchAcct    = acctExcluded.size === 0 || !acctExcluded.has(t.accountName || '');
         const matchType    = typeExcluded.size === 0 || !typeExcluded.has(t.amount > 0 ? 'Income' : 'Expense');
         const matchCleared = clearedExcluded.size === 0 || (
-          (!clearedExcluded.has('Posted')  && t.cleared) ||
-          (!clearedExcluded.has('Pending') && !t.cleared && !t.fuzzyMatchId) ||
-          (!clearedExcluded.has('Flagged')   && !!t.fuzzyMatchId)
+          (!clearedExcluded.has('Needs cat') && !t.category) ||
+          (!clearedExcluded.has('Flagged')   && !!t.fuzzyMatchId) ||
+          (!clearedExcluded.has('Posted')    && t.cleared) ||
+          (!clearedExcluded.has('Pending')   && !t.cleared)
         );
         const matchTag     = tagExcluded.size === 0 || (t.tags && t.tags.some(tag => !tagExcluded.has(tag)));
         const matchDate = (!activeDateFrom || t.date >= activeDateFrom) && (!activeDateTo || t.date <= activeDateTo);
@@ -3478,6 +3734,16 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
       }),
     [transactions, search, catExcluded, acctExcluded, typeExcluded, clearedExcluded, tagExcluded, showLinked, activeDateFrom, activeDateTo]
   );
+
+  const reviewCounts = useMemo(() => ({
+    flagged:  transactions.filter(t => t.fuzzyMatchId && !t.duplicateOf).length,
+    needsCat: transactions.filter(t => !t.category   && !t.duplicateOf).length,
+  }), [transactions]);
+
+  const showOnlyStatus = (status) => {
+    const all = ['Posted','Pending','Flagged','Needs cat'];
+    setCleared(new Set(all.filter(s => s !== status)));
+  };
 
   return (
     <div className="tx-section">
@@ -3495,6 +3761,24 @@ function TransactionList({ transactions, onDelete, onEdit, onRequestLink, onUnli
           })()}
         </span>
       </div>
+      {(reviewCounts.flagged > 0 || reviewCounts.needsCat > 0) && (
+        <div className="tx-review-alert">
+          <span className="tx-review-icon">⚠</span>
+          <span className="tx-review-label">Needs review:</span>
+          {reviewCounts.flagged > 0 && (
+            <button className="tx-review-pill tx-review-flagged" onClick={() => showOnlyStatus('Flagged')}
+              title="Show only flagged duplicates">
+              {reviewCounts.flagged} possible {reviewCounts.flagged === 1 ? 'duplicate' : 'duplicates'}
+            </button>
+          )}
+          {reviewCounts.needsCat > 0 && (
+            <button className="tx-review-pill tx-review-needscat" onClick={() => showOnlyStatus('Needs cat')}
+              title="Show only rows missing a category">
+              {reviewCounts.needsCat} missing {reviewCounts.needsCat === 1 ? 'category' : 'categories'}
+            </button>
+          )}
+        </div>
+      )}
       <div className="filters">
         {/* Row 1: search, account, category */}
         <div className="filter-row filter-row-1">
@@ -3746,6 +4030,17 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
     const topCats = Object.entries(spendMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const maxSpend = topCats[0]?.[1] || 1;
 
+    // Top spending tags (a tx can carry multiple tags — counted in each)
+    const tagSpend = {};
+    for (const t of monthTx) {
+      if (t.amount >= 0 || !t.tags?.length) continue;
+      for (const tag of t.tags) {
+        tagSpend[tag] = (tagSpend[tag] || 0) + Math.abs(t.amount);
+      }
+    }
+    const topTags = Object.entries(tagSpend).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const maxTagSpend = topTags[0]?.[1] || 1;
+
     // Budget vs actual
     const monthBudgets = (budgets || {})[monthKey] || {};
     const budgetedCats = Object.keys(monthBudgets).filter(c => !PROTECTED_CATS.has(c));
@@ -3773,7 +4068,7 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
     const nextBills = allBills.slice(0, 3);
     const hiddenSoon = allBills.slice(3).filter(b => b.daysUntil <= 4).length;
 
-    return { topCats, maxSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills, hiddenSoon };
+    return { topCats, maxSpend, topTags, maxTagSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills, hiddenSoon };
   }, [transactions, monthKey, budgets, dueDays]);
 
   const accountSummaries = useMemo(() => {
@@ -3810,8 +4105,8 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
     }).sort((a, b) => b.balance - a.balance);
   }, [transactions]);
 
-  const { topCats, maxSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills, hiddenSoon } = kpis;
-  const showKpis = topCats.length > 0 || totalBudgeted > 0 || nextBills.length > 0;
+  const { topCats, maxSpend, topTags, maxTagSpend, totalBudgeted, totalSpent, budgetPct, budgetOver, nextBills, hiddenSoon } = kpis;
+  const showKpis = topCats.length > 0 || topTags.length > 0 || totalBudgeted > 0 || nextBills.length > 0;
 
   return (
     <div className="dashboard">
@@ -3823,13 +4118,17 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
               <div key={a.name} className="acct-card">
                 <span className="acct-name nav-link" onClick={() => onNavigate({ acctFilter: a.name })}>{a.name}</span>
                 <div className="acct-sub">
-                  <div className="acct-status-row">
+                  <div className="acct-status-row acct-status-clickable"
+                    onClick={() => onNavigate({ acctFilter: a.name, statusFilter: 'Posted' })}
+                    title="View posted transactions for this account">
                     <span className="acct-status-label">Posted</span>
                     <span className={`acct-status-amount ${a.posted >= 0 ? 'pos' : 'neg'}`}>
                       {privacy ? '•••••' : `${a.posted < 0 ? '−' : ''}${fmt(a.posted)}`}
                     </span>
                   </div>
-                  <div className="acct-status-row">
+                  <div className="acct-status-row acct-status-clickable"
+                    onClick={() => onNavigate({ acctFilter: a.name, statusFilter: 'Pending' })}
+                    title="View pending transactions for this account">
                     <span className="acct-status-label">Pending</span>
                     <span className="acct-status-amount" style={{color: a.pending === 0 ? 'var(--muted)' : a.pending >= 0 ? 'var(--pos)' : 'var(--neg)', fontWeight: a.pending === 0 ? 400 : 700}}>
                       {privacy ? '•••••' : a.pending === 0 ? '—' : `${a.pending < 0 ? '−' : ''}${fmt(a.pending)}`}
@@ -3867,6 +4166,30 @@ function Dashboard({ transactions, privacy, onReconcile, onNavigate, budgets, du
                     </div>
                     <div className="kpi-cat-bar-track">
                       <div className="kpi-cat-bar-fill" style={{width:`${(amt/maxSpend)*100}%`}} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {topTags.length > 0 && (
+            <div className="dash-card">
+              <p className="dash-title">Top Tags — This Month</p>
+              <div className="kpi-rows">
+                {topTags.map(([tag, amt]) => (
+                  <div key={tag}>
+                    <div className="kpi-row">
+                      <span className="kpi-cat-name nav-link"
+                        onClick={() => onNavigate({ tagFilter: tag, dateMode: 'month', navYear: now.getFullYear(), navMonth: now.getMonth() })}>
+                        #{tag}
+                      </span>
+                      <span className="kpi-value" style={{color:'var(--neg)',flexShrink:0}}>
+                        {privacy ? '•••••' : `−${fmt(amt)}`}
+                      </span>
+                    </div>
+                    <div className="kpi-cat-bar-track">
+                      <div className="kpi-cat-bar-fill" style={{width:`${(amt/maxTagSpend)*100}%`}} />
                     </div>
                   </div>
                 ))}
@@ -4721,7 +5044,10 @@ function App() {
   const [planMonth, setPlanMonth]       = useState(() => new Date().getMonth());
   const [toast, setToast]               = useState(null); // { msg, type }
   const [autoSave, setAutoSave]         = useLocalStorage('budget_autosave', false);
-  const [lastSaved, setLastSaved]       = useState(null); // Date
+  const [lastSavedISO, setLastSavedISO] = useLocalStorage('budget_last_autosave', null);
+  const lastSaved    = lastSavedISO ? new Date(lastSavedISO) : null;
+  const setLastSaved = (d) => setLastSavedISO(d ? d.toISOString() : null);
+  const silentExportRef = useRef(null);
   const [exportDirName, setExportDirName] = useState('');
   const toastTimer = useRef(null);
   const showToast = (msg, type = 'info') => {
@@ -4762,6 +5088,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (autoSave) return;
     const handler = (e) => {
       e.preventDefault();
       e.returnValue = 'Have you exported your data? Unsaved changes may be lost.';
@@ -4769,7 +5096,7 @@ function App() {
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, []);
+  }, [autoSave]);
 
   const monthKeys = useMemo(() =>
     Object.keys(budgets).filter(k => /^\d{4}-\d{2}$/.test(k)).sort(),
@@ -4841,40 +5168,13 @@ function App() {
         ? new Blob([exportCSV(exportTx)], { type: 'text/csv' })
         : null;
 
-      if (!window.showDirectoryPicker) {
-        const dl = (blob, name) => {
-          const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
-          a.click(); URL.revokeObjectURL(a.href);
-        };
-        dl(settingsBlob, 'budget_settings.json');
-        if (csvBlob) dl(csvBlob, 'budget_transactions.csv');
-        showToast(`Exported ${exportTx.length} rows${exportNote} to Downloads`);
-        return;
-      }
-
-      let dirHandle = await getExportDirHandle();
-      if (dirHandle) {
-        const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
-        if (perm !== 'granted') dirHandle = null;
-      }
-      if (!dirHandle) {
-        try {
-          dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-          await setExportDirHandle(dirHandle);
-        } catch (e) {
-          if (e.name !== 'AbortError') showToast('Export cancelled — folder access denied.', 'error');
-          return;
-        }
-      }
-
-      const writeFile = async (filename, blob) => {
-        const fh = await dirHandle.getFileHandle(filename, { create: true });
-        const w  = await fh.createWritable();
-        await w.write(blob); await w.close();
+      const dl = (blob, name) => {
+        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+        a.click(); URL.revokeObjectURL(a.href);
       };
-      await writeFile('budget_settings.json', settingsBlob);
-      if (csvBlob) await writeFile('budget_transactions.csv', csvBlob);
-      showToast(`Exported ${exportTx.length} rows${exportNote} to ${dirHandle.name}`);
+      dl(settingsBlob, 'budget_settings.json');
+      if (csvBlob) dl(csvBlob, 'budget_transactions.csv');
+      showToast(`Exported ${exportTx.length} rows${exportNote}`);
     } catch (err) {
       showToast(`Export failed: ${err.message || 'unknown error'}`, 'error');
     }
@@ -4882,10 +5182,20 @@ function App() {
 
   const silentExport = useCallback(async () => {
     try {
-      let dirHandle = await getExportDirHandle();
-      if (!dirHandle) return;
-      const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
-      if (perm !== 'granted') return;
+      const dirHandle = await getExportDirHandle();
+      if (!dirHandle) {
+        showToast('Auto-save: no folder selected', 'error');
+        setAutoSave(false);
+        return;
+      }
+      // Use queryPermission (no user gesture needed) — requestPermission would
+      // fail in a setInterval callback. The toggle already grants permission when enabling.
+      const perm = await dirHandle.queryPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') {
+        showToast('Auto-save: folder permission lost — please re-enable', 'error');
+        setAutoSave(false);
+        return;
+      }
 
       const settingsBlob = new Blob([JSON.stringify({
         version: 2, theme,
@@ -4909,10 +5219,14 @@ function App() {
       await writeFile('budget_settings.json', settingsBlob);
       if (csvBlob) await writeFile('budget_transactions.csv', csvBlob);
       setLastSaved(new Date());
-    } catch {
-      // silent — don't interrupt the user
+    } catch (err) {
+      showToast(`Auto-save failed: ${err.message || err.name || 'unknown error'}`, 'error');
     }
-  }, [transactions, budgets, dueDays, catStructure, theme]);
+  }, [transactions, budgets, dueDays, catStructure, theme, reallocations]);
+
+  // Keep a ref to the latest silentExport so the interval can call it without
+  // needing to be in the effect deps (which would reset the timer on every edit).
+  useEffect(() => { silentExportRef.current = silentExport; }, [silentExport]);
 
   useEffect(() => {
     getExportDirHandle().then(h => { if (h) setExportDirName(h.name); });
@@ -4929,14 +5243,14 @@ function App() {
     }
   };
 
-  const AUTO_SAVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  const AUTO_SAVE_DEBOUNCE_MS = 1000; // batch rapid edits into one save
 
+  // Save on any change to transactions/settings (debounced).
   useEffect(() => {
     if (!autoSave) return;
-    silentExport(); // save immediately on enable
-    const id = setInterval(silentExport, AUTO_SAVE_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [autoSave, silentExport]);
+    const id = setTimeout(() => silentExportRef.current?.(), AUTO_SAVE_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [autoSave, transactions, budgets, dueDays, catStructure, theme, reallocations]);
 
   const importSettings = async (file) => {
     if (!file) return;
@@ -5128,10 +5442,19 @@ function App() {
       setTx(prev => prev.map(t => t.id === secondaryId ? { ...t, fuzzyMatchId: undefined } : t));
       return;
     }
-    const masterTxNum = transactions.find(t => t.id === masterId)?.txNum ?? masterId;
+    const master    = transactions.find(t => t.id === masterId);
+    const secondary = transactions.find(t => t.id === secondaryId);
+    const masterTxNum = master?.txNum ?? masterId;
+    // If the master lacks a category, inherit it from the secondary (the row being hidden).
+    const inheritedCategory = (!master?.category && secondary?.category) ? secondary.category : null;
     setTx(prev => prev.map(t => {
       if (t.id === secondaryId) return { ...t, duplicateOf: masterTxNum, fuzzyMatchId: undefined };
-      if (t.id === masterId)    return { ...t, fuzzyMatchId: undefined };
+      if (t.id === masterId)    return {
+        ...t,
+        fuzzyMatchId: undefined,
+        cleared: true,
+        ...(inheritedCategory ? { category: inheritedCategory } : {}),
+      };
       return t;
     }));
   };
@@ -5171,11 +5494,18 @@ function App() {
                 if (!dh) {
                   try { dh = await window.showDirectoryPicker({ mode:'readwrite' }); await setExportDirHandle(dh); }
                   catch { return; }
+                } else {
+                  // Re-grant permission on a handle restored from IndexedDB
+                  const perm = await dh.requestPermission({ mode: 'readwrite' });
+                  if (perm !== 'granted') {
+                    showToast('Auto-save: folder permission denied', 'error');
+                    return;
+                  }
                 }
               }
               setAutoSave(s => !s);
             }}
-            title={autoSave ? `Auto-save on — every 5 min${lastSaved ? ` · last saved ${lastSaved.toLocaleTimeString()}` : ''}` : 'Enable auto-save'}>
+            title={autoSave ? `Auto-save on — saves on every change${lastSaved ? ` · last saved ${lastSaved.toLocaleTimeString()}` : ''}` : 'Enable auto-save'}>
             {autoSave ? '💾 Auto' : '💾 Auto'}
           </button>
           <button className="export-btn" onClick={() => setShowSettings(true)} title="Settings">
