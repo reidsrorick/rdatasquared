@@ -1791,7 +1791,16 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
         const rawId       = getCol(row, 'id');
         const rawIsOB     = getCol(row, 'isOpeningBalance');
         const rawOBIds    = getCol(row, 'includedSameDayTxIds');
+        const rawDupOf    = getCol(row, 'duplicateOf');
+        const rawFuzzyId  = getCol(row, 'fuzzyMatchId');
         const isOpeningBalance = rawIsOB === 'true';
+        const parseRef = (raw) => {
+          if (raw == null || raw === '') return undefined;
+          const s = String(raw).trim();
+          if (!s) return undefined;
+          const n = Number(s);
+          return Number.isFinite(n) && /^\d+$/.test(s) ? n : s;
+        };
         rows.push({
           id:          rawId || crypto.randomUUID(),
           ...(mapped.txNum ? { txNum: mapped.txNum } : {}),
@@ -1804,6 +1813,8 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
           cleared:     parseCleared(rawCleared),
           tags:        rawTags ? rawTags.split(';').filter(Boolean) : [],
           ...(rawTransId ? { transferId: rawTransId } : {}),
+          ...(parseRef(rawDupOf)   != null ? { duplicateOf:  parseRef(rawDupOf) }   : {}),
+          ...(parseRef(rawFuzzyId) != null ? { fuzzyMatchId: parseRef(rawFuzzyId) } : {}),
           ...(isOpeningBalance ? {
             isOpeningBalance: true,
             includedSameDayTxIds: rawOBIds ? rawOBIds.split(';').filter(Boolean) : [],
@@ -1860,6 +1871,17 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
       });
 
       const rawCleared = getCol(row, 'cleared');
+      const rawDupOf   = getCol(row, 'duplicateOf');
+      const rawFuzzyId = getCol(row, 'fuzzyMatchId');
+      const parseRef = (raw) => {
+        if (raw == null || raw === '') return undefined;
+        const s = String(raw).trim();
+        if (!s) return undefined;
+        const n = Number(s);
+        return Number.isFinite(n) && /^\d+$/.test(s) ? n : s;
+      };
+      const csvDupOf   = parseRef(rawDupOf);
+      const csvFuzzyId = parseRef(rawFuzzyId);
       const tx = {
         id: crypto.randomUUID(),
         ...(mapped.txNum ? { txNum: mapped.txNum } : {}),
@@ -1871,11 +1893,15 @@ function CSVImporter({ transactions, onImport, onUpdate, onReplaceAll, categorie
         accountName: getCol(row, 'accountName') || mapping.accountName || '',
         cleared:     parseCleared(rawCleared) ?? true,
         tags:        (() => { const tg = getCol(row, 'tags'); return tg ? tg.split(';').filter(Boolean) : []; })(),
-        ...(fuzzyMatch ? { fuzzyMatchId: fuzzyMatch.txNum } : {}),
+        // CSV-provided linking takes precedence over computed fuzzy match
+        ...(csvDupOf   != null ? { duplicateOf:  csvDupOf  }
+          : csvFuzzyId != null ? { fuzzyMatchId: csvFuzzyId }
+          : fuzzyMatch         ? { fuzzyMatchId: fuzzyMatch.txNum }
+          : {}),
       };
       newTx.push(tx);
       imported++;
-      if (fuzzyMatch) flagged++;
+      if (fuzzyMatch && !csvDupOf && !csvFuzzyId) flagged++;
     }
 
     const { accountName: _omit, ...settingsToSave } = mapping;
