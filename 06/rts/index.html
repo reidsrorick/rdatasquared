@@ -109,9 +109,27 @@
   <!-- ═══ ALARM PANEL ═══ -->
   <div class="panel" id="panel-alarm">
     <div class="alarm-picker">
-      <input type="time" class="alarm-time-input" id="alarmTimeInput" value="07:00">
+      <div class="atp-wrap">
+        <div class="atp-group">
+          <button class="atp-arrow" onclick="atpAdj('h',1)">▲</button>
+          <input class="atp-input" type="number" id="atpH" min="1" max="12" value="7">
+          <button class="atp-arrow" onclick="atpAdj('h',-1)">▼</button>
+          <span class="atp-lbl">Hour</span>
+        </div>
+        <div class="atp-sep">:</div>
+        <div class="atp-group">
+          <button class="atp-arrow" onclick="atpAdj('m',5)">▲</button>
+          <input class="atp-input" type="number" id="atpM" min="0" max="59" value="0">
+          <button class="atp-arrow" onclick="atpAdj('m',-5)">▼</button>
+          <span class="atp-lbl">Min</span>
+        </div>
+        <div class="atp-ampm">
+          <button class="atp-ampm-btn active" id="atpAM" onclick="atpSetAmPm('AM')">AM</button>
+          <button class="atp-ampm-btn"         id="atpPM" onclick="atpSetAmPm('PM')">PM</button>
+        </div>
+      </div>
       <input type="text" class="alarm-label-input" id="alarmLabelInput" placeholder="Label (e.g. Wake up)">
-      <div class="sound-row" style="margin-top:14px;text-align:left">
+      <div class="sound-row">
         <label>Sound</label>
         <select id="alarmSound">
           <option value="alarm">Alarm</option>

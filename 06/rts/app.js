@@ -405,12 +405,41 @@ function renderSwLaps(sw) {
 }
 
 /* ============================================================
+   ALARM TIME PICKER
+   ============================================================ */
+function atpAdj(field, delta) {
+  if (field === 'h') {
+    const el = document.getElementById('atpH');
+    let v = (parseInt(el.value) || 12) + delta;
+    if (v < 1) v = 12; if (v > 12) v = 1;
+    el.value = v;
+  } else {
+    const el = document.getElementById('atpM');
+    let v = (parseInt(el.value) || 0) + delta;
+    if (v < 0) v = 55; if (v > 59) v = 0;
+    el.value = v;
+  }
+}
+function atpSetAmPm(val) {
+  document.getElementById('atpAM').classList.toggle('active', val === 'AM');
+  document.getElementById('atpPM').classList.toggle('active', val === 'PM');
+}
+function atpGetTime() {
+  let h = parseInt(document.getElementById('atpH').value) || 12;
+  const m = parseInt(document.getElementById('atpM').value) || 0;
+  const isAM = document.getElementById('atpAM').classList.contains('active');
+  if (isAM && h === 12) h = 0;
+  if (!isAM && h !== 12) h += 12;
+  return pad(h) + ':' + pad(m);
+}
+
+/* ============================================================
    ALARMS
    ============================================================ */
 let alarms = [], alarmChecker = null;
 
 function addAlarm() {
-  const t = document.getElementById('alarmTimeInput').value;
+  const t = atpGetTime();
   const l = document.getElementById('alarmLabelInput').value.trim() || 'Alarm';
   const s = document.getElementById('alarmSound').value;
   _addAlarm(t, l, s);
@@ -432,13 +461,18 @@ function renderAlarms() {
   const now = new Date();
   el.innerHTML = alarms.map(a => {
     const [hh, mm] = a.time.split(':'), h = parseInt(hh), ampm = h >= 12 ? 'PM' : 'AM', h12 = h % 12 || 12;
-    const disp = `${h12}:${mm} ${ampm}`;
+    const disp = `${h12}:${pad(parseInt(mm))} ${ampm}`;
     const next = new Date(); next.setHours(h, parseInt(mm), 0, 0); if (next <= now) next.setDate(next.getDate() + 1);
-    const d = Math.round((next - now) / 60000), inTxt = d < 60 ? `in ${d}m` : `in ${Math.floor(d / 60)}h ${d % 60}m`;
-    return `<div class="alarm-item">
+    const d = Math.round((next - now) / 60000);
+    const inTxt = d < 60 ? `in ${d}m` : `in ${Math.floor(d / 60)}h ${d % 60}m`;
+    const soon = d < 60;
+    return `<div class="alarm-item ${a.on ? 'is-on' : ''}">
       <div class="alarm-info">
-        <div class="alarm-time" style="${!a.on ? 'color:var(--dim)' : ''}">${disp}</div>
-        <div class="alarm-meta">${escH(a.label)} · ${a.on ? inTxt : 'Off'} · ${a.sound}</div>
+        <div class="alarm-time-row">
+          <span class="alarm-time ${!a.on ? 'off' : ''}">${disp}</span>
+          ${a.on ? `<span class="alarm-next ${soon ? 'soon' : ''}">${inTxt}</span>` : '<span class="alarm-next">Off</span>'}
+        </div>
+        <div class="alarm-lbl">${escH(a.label)} · ${a.sound}</div>
       </div>
       <button class="toggle ${a.on ? 'on' : ''}" onclick="toggleAlarm(${a.id})"></button>
       <button class="btn-icon" onclick="removeAlarm(${a.id})" title="Delete">✕</button>
