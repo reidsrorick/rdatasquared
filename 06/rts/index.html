@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimerX — Alarm · Timer · Stopwatch</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── ALERT BANNER ── -->
+<div id="alertBanner">
+  <span id="alertText" class="banner-text"></span>
+  <button class="banner-btn" id="snoozeBtn" onclick="snoozeAlarm()" style="display:none">Snooze 5m</button>
+  <button class="banner-btn" onclick="dismissAlert()">Dismiss</button>
+</div>
+
+<header>
+  <div class="app-name">⏱ TimerX</div>
+  <div id="liveClock"></div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('timer')">Timer</button>
+  <button class="tab" onclick="switchTab('alarm')">Alarm</button>
+  <button class="tab" onclick="switchTab('stopwatch')">Stopwatch</button>
+</div>
+
+<div class="main">
+
+  <!-- Permission notice -->
+  <div class="perm-notice" id="permNotice">
+    <span>🔔</span>
+    <span id="permMsg">Allow notifications so alerts work even when the tab is in the background.</span>
+    <button class="btn-xs" onclick="askNotifPerm()">Allow</button>
+  </div>
+
+  <!-- ═══ TIMER PANEL ═══ -->
+  <div class="panel active" id="panel-timer">
+
+    <div class="creator">
+      <div class="creator-row">
+        <input type="text" class="label-input" id="newTimerLabel" placeholder="Label (e.g. Laundry, Pomodoro)">
+      </div>
+      <div class="ti-wrap">
+        <div class="ti-group">
+          <label>Hours</label>
+          <button class="ti-arrow" onclick="tiAdj('tiH',1,23)">▲</button>
+          <input class="ti-input" type="number" id="tiH" min="0" max="23" value="0">
+          <button class="ti-arrow" onclick="tiAdj('tiH',-1,23)">▼</button>
+        </div>
+        <div class="ti-sep">:</div>
+        <div class="ti-group">
+          <label>Min</label>
+          <button class="ti-arrow" onclick="tiAdj('tiM',1,59)">▲</button>
+          <input class="ti-input" type="number" id="tiM" min="0" max="59" value="5">
+          <button class="ti-arrow" onclick="tiAdj('tiM',-1,59)">▼</button>
+        </div>
+        <div class="ti-sep">:</div>
+        <div class="ti-group">
+          <label>Sec</label>
+          <button class="ti-arrow" onclick="tiAdj('tiS',1,59)">▲</button>
+          <input class="ti-input" type="number" id="tiS" min="0" max="59" value="0">
+          <button class="ti-arrow" onclick="tiAdj('tiS',-1,59)">▼</button>
+        </div>
+      </div>
+      <div class="creator-row">
+        <select id="newTimerSound" style="flex:1">
+          <option value="alarm">Alarm</option>
+          <option value="beep">Beep</option>
+          <option value="chime">Chime</option>
+          <option value="bell">Bell</option>
+          <option value="buzz">Buzz</option>
+          <option value="none">Silent</option>
+        </select>
+        <button class="btn-xs" onclick="previewSound(document.getElementById('newTimerSound').value)">▶ Test</button>
+        <button class="btn btn-primary" onclick="createTimer()" style="padding:9px 22px">+ Start</button>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <span class="slbl" style="margin:0">Quick Start</span>
+      <button class="btn-xs" id="presetEditBtn" onclick="togglePresetEditor()">✎ Edit</button>
+    </div>
+    <div class="presets-row" id="presetsRow"></div>
+    <div class="preset-editor" id="presetEditor" style="display:none">
+      <div id="presetEditorRows"></div>
+      <button class="btn-xs" onclick="addPreset()" style="margin-top:4px">+ Add Preset</button>
+    </div>
+
+    <div class="t-cards" id="timerCards">
+      <div class="empty-state">No timers yet — set a duration above or tap a Quick Start preset.</div>
+    </div>
+
+    <p class="slbl" style="margin-top:22px">Settings</p>
+    <div class="sound-row">
+      <label>Volume</label>
+      <input type="range" id="volume" min="0" max="1" step="0.05" value="0.75" style="width:130px">
+    </div>
+    <div class="sound-row" style="justify-content:space-between">
+      <label>Test alert</label>
+      <button class="btn-xs" onclick="testAlert()" style="background:var(--accent);color:var(--accent-t)">🔔 Fire Test</button>
+    </div>
+    <div class="media-note">
+      ⚠️ Browser notifications require <strong>http://</strong> — they won't fire when opening as a local <code>file://</code>. The in-app banner always works.
+    </div>
+  </div>
+
+  <!-- ═══ ALARM PANEL ═══ -->
+  <div class="panel" id="panel-alarm">
+    <div class="alarm-picker">
+      <input type="time" class="alarm-time-input" id="alarmTimeInput" value="07:00">
+      <input type="text" class="alarm-label-input" id="alarmLabelInput" placeholder="Label (e.g. Wake up)">
+      <div class="sound-row" style="margin-top:14px;text-align:left">
+        <label>Sound</label>
+        <select id="alarmSound">
+          <option value="alarm">Alarm</option>
+          <option value="beep">Beep</option>
+          <option value="chime">Chime</option>
+          <option value="bell">Bell</option>
+          <option value="buzz">Buzz</option>
+          <option value="none">Silent</option>
+        </select>
+        <button class="btn-xs" onclick="previewSound(document.getElementById('alarmSound').value)">▶ Test</button>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:16px">
+        <button class="btn btn-primary" onclick="addAlarm()">+ Set Alarm</button>
+      </div>
+    </div>
+    <p class="slbl">Scheduled Alarms</p>
+    <div class="alarm-list" id="alarmList">
+      <div class="empty-state">No alarms set</div>
+    </div>
+  </div>
+
+  <!-- ═══ STOPWATCH PANEL ═══ -->
+  <div class="panel" id="panel-stopwatch">
+    <div class="creator" style="display:flex;gap:10px;align-items:center">
+      <input type="text" class="label-input" id="newSwLabel" placeholder="Label (optional)" style="margin-bottom:0">
+      <button class="btn btn-primary" onclick="createStopwatch()" style="padding:11px 20px;white-space:nowrap">+ New</button>
+    </div>
+    <div class="sw-cards" id="swCards">
+      <div class="empty-state">No stopwatches — tap + New to create one.</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div id="savedToast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
