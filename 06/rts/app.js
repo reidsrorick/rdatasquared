@@ -419,10 +419,12 @@ function atpAdj(field, delta) {
     if (v < 0) v = 55; if (v > 59) v = 0;
     el.value = v;
   }
+  saveAlarmPickerState();
 }
 function atpSetAmPm(val) {
   document.getElementById('atpAM').classList.toggle('active', val === 'AM');
   document.getElementById('atpPM').classList.toggle('active', val === 'PM');
+  saveAlarmPickerState();
 }
 function atpGetTime() {
   let h = parseInt(document.getElementById('atpH').value) || 12;
@@ -442,8 +444,27 @@ function addAlarm() {
   const t = atpGetTime();
   const l = document.getElementById('alarmLabelInput').value.trim() || 'Alarm';
   const s = document.getElementById('alarmSound').value;
+  saveAlarmPickerState();
   _addAlarm(t, l, s);
   document.getElementById('alarmLabelInput').value = '';
+}
+
+function saveAlarmPickerState() {
+  store.set('tx-alarm-picker', {
+    h: document.getElementById('atpH').value,
+    m: document.getElementById('atpM').value,
+    ampm: document.getElementById('atpAM').classList.contains('active') ? 'AM' : 'PM',
+    sound: document.getElementById('alarmSound').value
+  });
+}
+
+function restoreAlarmPickerState() {
+  const s = store.get('tx-alarm-picker');
+  if (!s) return;
+  if (s.h) document.getElementById('atpH').value = s.h;
+  if (s.m !== undefined) document.getElementById('atpM').value = s.m;
+  if (s.ampm) atpSetAmPm(s.ampm);
+  if (s.sound) document.getElementById('alarmSound').value = s.sound;
 }
 function _addAlarm(time, label, sound) {
   alarms.push({ id: Date.now() + Math.random(), time, label, sound, on: true, fired: false });
@@ -552,5 +573,14 @@ if (Array.isArray(savedAlarms) && savedAlarms.length) {
   alarms = savedAlarms.map(a => ({ ...a, fired: false }));
   renderAlarms(); ensureAlarmChecker();
 }
+
+restoreAlarmPickerState();
+document.getElementById('alarmSound').addEventListener('change', saveAlarmPickerState);
+
+const savedTimerSound = store.get('tx-timer-sound');
+if (savedTimerSound) document.getElementById('newTimerSound').value = savedTimerSound;
+document.getElementById('newTimerSound').addEventListener('change', function () {
+  store.set('tx-timer-sound', this.value);
+});
 
 setInterval(() => { if (alarms.length) renderAlarms(); }, 60000);
