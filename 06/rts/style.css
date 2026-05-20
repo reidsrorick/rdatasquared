@@ -44,6 +44,13 @@ html, body {
 header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0; }
 .app-name { font-size: 18px; font-weight: 800; color: var(--accent); letter-spacing: -.3px; }
 #liveClock { font-size: 14px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.btn-pip {
+  background: var(--surf2); border: none; color: var(--dim);
+  border-radius: 7px; padding: 5px 11px; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.btn-pip:hover { background: var(--accent); color: var(--accent-t); }
+.btn-pip.active { background: var(--accent); color: var(--accent-t); }
 
 /* ── TABS ── */
 .tabs {

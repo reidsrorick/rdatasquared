@@ -513,6 +513,111 @@ function checkAlarms() {
 function fireAlarm(a) { startAlertSound(a.sound); notify('⏰ ' + a.label, a.time); showAlert(`⏰ ${a.label}  —  ${a.time}`, true, a); }
 
 /* ============================================================
+   PICTURE IN PICTURE
+   ============================================================ */
+let pipWin = null, pipTick = null;
+
+const PIP_CSS = `
+:root{--bg:#0a0a0a;--surf:#111111;--surf2:#1a1a1a;--accent:#f5c200;--accent-t:#000;--red:#ff4d6a;--green:#22c55e;--dim:#777777;--text:#f0f0f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:12px;overflow:hidden}
+.pip-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pip-title{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.pip-clock{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.pip-row{display:flex;align-items:center;gap:10px;background:var(--surf);border-radius:10px;padding:9px 13px;margin-bottom:7px;border-left:3px solid transparent}
+.pip-row.timer{border-left-color:var(--accent)}
+.pip-row.sw{border-left-color:var(--green)}
+.pip-row.alarm{border-left-color:var(--dim)}
+.pip-lbl{flex:1;font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pip-time{font-size:26px;font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.pip-alarm-time{font-size:20px;font-weight:200;font-variant-numeric:tabular-nums}
+.pip-empty{text-align:center;color:var(--dim);font-size:13px;padding:20px 0}
+.pip-sub{font-size:10px;color:var(--dim);margin-top:2px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.pulsing{animation:pulse 1.1s ease-in-out infinite;color:var(--red)}
+`;
+
+async function openPip() {
+  if (!('documentPictureInPicture' in window)) {
+    showAlert('Picture-in-Picture needs Chrome 116+ or Edge 116+.', false);
+    return;
+  }
+  if (pipWin && !pipWin.closed) { pipWin.focus(); return; }
+
+  try {
+    pipWin = await documentPictureInPicture.requestWindow({ width: 300, height: 240, disallowReturnToOpener: false });
+  } catch (e) {
+    showAlert('Could not open PiP: ' + e.message, false);
+    return;
+  }
+
+  const style = pipWin.document.createElement('style');
+  style.textContent = PIP_CSS;
+  pipWin.document.head.appendChild(style);
+
+  pipWin.document.body.innerHTML =
+    '<div class="pip-header"><span class="pip-title">⏱ TimerX</span><span id="pip-clock"></span></div>' +
+    '<div id="pip-body"></div>';
+
+  updatePip();
+  pipTick = setInterval(updatePip, 500);
+
+  pipWin.addEventListener('pagehide', () => {
+    clearInterval(pipTick); pipTick = null; pipWin = null;
+    document.getElementById('pipBtn').classList.remove('active');
+  });
+  document.getElementById('pipBtn').classList.add('active');
+}
+
+function buildPipHTML() {
+  let html = '';
+
+  timers.filter(t => t.running || t.done).forEach(t => {
+    html += `<div class="pip-row timer">
+      <span class="pip-lbl">${escH(t.label)}</span>
+      <span class="pip-time${t.done ? ' pulsing' : ''}">${fmtSecs(t.remaining)}</span>
+    </div>`;
+  });
+
+  stopwatches.filter(s => s.running || s.elapsed > 0).forEach(sw => {
+    const ms = sw.elapsed + (sw.running ? Date.now() - sw.startTime : 0);
+    const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000);
+    html += `<div class="pip-row sw">
+      <span class="pip-lbl">${escH(sw.label)}</span>
+      <span class="pip-time">${pad(m)}:${pad(s)}</span>
+    </div>`;
+  });
+
+  const now = new Date();
+  const next = alarms.filter(a => a.on).map(a => {
+    const [hh, mm] = a.time.split(':');
+    const d = new Date(); d.setHours(+hh, +mm, 0, 0); if (d <= now) d.setDate(d.getDate() + 1);
+    return { ...a, _next: d };
+  }).sort((a, b) => a._next - b._next)[0];
+
+  if (next) {
+    const h = parseInt(next.time), ampm = h >= 12 ? 'PM' : 'AM', h12 = h % 12 || 12;
+    const [, mm] = next.time.split(':');
+    const d = Math.round((next._next - now) / 60000);
+    const inTxt = d < 60 ? `in ${d}m` : `in ${Math.floor(d / 60)}h ${d % 60}m`;
+    html += `<div class="pip-row alarm">
+      <span class="pip-lbl">${escH(next.label)}<div class="pip-sub">${inTxt}</div></span>
+      <span class="pip-alarm-time">${h12}:${pad(+mm)} ${ampm}</span>
+    </div>`;
+  }
+
+  return html || '<div class="pip-empty">Nothing active</div>';
+}
+
+function updatePip() {
+  if (!pipWin || pipWin.closed) { clearInterval(pipTick); pipTick = null; pipWin = null; return; }
+  const ck = pipWin.document.getElementById('pip-clock');
+  if (ck) ck.textContent = new Date().toLocaleTimeString();
+  const bd = pipWin.document.getElementById('pip-body');
+  if (bd) bd.innerHTML = buildPipHTML();
+}
+
+/* ============================================================
    UTILITIES
    ============================================================ */
 function escH(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
