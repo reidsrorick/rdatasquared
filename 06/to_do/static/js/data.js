@@ -274,28 +274,53 @@ async function doImport() {
   }
 }
 
-function _parseCSVLine(line) {
-  const vals = [];
-  let cur = "", inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') {
-      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
-      else inQ = !inQ;
-    } else if (c === "," && !inQ) {
-      vals.push(cur); cur = "";
-    } else {
-      cur += c;
+// RFC 4180-compliant CSV parser — handles quoted fields containing commas,
+// double-quotes (escaped as ""), and newlines. Processes the whole text in
+// one pass so a \n inside a quoted field is never mistaken for a row boundary.
+function _parseCSVRecords(text) {
+  const src     = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const records = [];
+  let i = 0;
+
+  while (i < src.length) {
+    const record = [];
+    // Parse one record
+    while (true) {
+      let field = "";
+      if (src[i] === '"') {
+        // Quoted field — newlines and commas inside are literal
+        i++;
+        while (i < src.length) {
+          if (src[i] === '"') {
+            if (src[i + 1] === '"') { field += '"'; i += 2; }  // escaped quote
+            else                    { i++; break; }             // closing quote
+          } else {
+            field += src[i++];
+          }
+        }
+      } else {
+        // Unquoted field — ends at comma or newline
+        while (i < src.length && src[i] !== "," && src[i] !== "\n") {
+          field += src[i++];
+        }
+      }
+      record.push(field);
+      if (src[i] === ",") { i++; continue; }  // more fields on this record
+      if (src[i] === "\n") { i++; }           // end of record
+      break;
     }
+    // Skip entirely-empty trailing records
+    if (record.length === 1 && record[0] === "" && i >= src.length) break;
+    records.push(record);
   }
-  vals.push(cur);
-  return vals;
+  return records;
 }
 
 function _parseCSV(text) {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  if (!lines.length) return [];
-  const headers = _parseCSVLine(lines[0]);
+  const records = _parseCSVRecords(text);
+  if (!records.length) return [];
+  const headers = records[0];
+
   const COL_MAP = {
     "id": "id",
     "item": "item", "category": "category", "date": "date", "time": "time",
@@ -310,20 +335,20 @@ function _parseCSV(text) {
     "follow_ups": "follow_ups", "follow ups": "follow_ups",
     "checklist": "checklist",
   };
-  return lines.slice(1).filter(l => l.trim()).map(line => {
-    const vals = _parseCSVLine(line);
-    const row  = {};
-    headers.forEach((h, i) => {
+
+  return records.slice(1).map(vals => {
+    const row = {};
+    headers.forEach((h, idx) => {
       const mapped = COL_MAP[h.toLowerCase().trim()];
       if (!mapped) return;
-      const v = (vals[i] || "").trim();
+      const v = (vals[idx] || "").trim();
       if (mapped === "completed" || mapped === "deleted") row[mapped] = ["1","true","yes","x","y","✓"].includes(v.toLowerCase());
-      else if (mapped === "id") { const n = parseFloat(v); if (!isNaN(n) && n > 0) row[mapped] = n; }
+      else if (mapped === "id")   { const n = parseFloat(v); if (!isNaN(n) && n > 0) row[mapped] = n; }
       else if (mapped === "sort") row[mapped] = parseFloat(v) || 0;
       else row[mapped] = v;
     });
     return row;
-  });
+  }).filter(row => Object.keys(row).length > 0);
 }
 
 // ---------------------------------------------------------------------------
