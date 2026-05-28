@@ -28,9 +28,29 @@ let snoozedItems          = {};
 let condFmtRules          = [];
 let customCategories      = [];
 let statusOptions         = [];   // loaded from localStorage; falls back to DEFAULT_STATUS_OPTIONS
-let showSnoozedInGrid     = false;      // when true, snoozed items appear in the main grid
+let showSnoozedInGrid     = false;      // when true, snoozed items appear in the main grid alongside others
+let showOnlySnoozed       = false;      // exclusive mode: show ONLY snoozed items (bypasses all other filters)
 let hiddenDetailFields    = new Set();  // field keys hidden in the detail panel
 let displayDateFormat     = "YYYY-MM-DD"; // display format for date columns (stored values stay ISO)
+
+// ---------------------------------------------------------------------------
+// Snoozed button state — updates label, active classes, and title
+// ---------------------------------------------------------------------------
+
+function _updateSnoozedBtnState() {
+  const btn = document.getElementById("btn-show-snoozed");
+  if (!btn) return;
+  const label = btn.querySelector(".snoozed-btn-label");
+  const isActive = showSnoozedInGrid || showOnlySnoozed;
+  btn.classList.toggle("active", isActive);
+  btn.classList.toggle("snoozed-only-mode", showOnlySnoozed);
+  if (label) label.textContent = showOnlySnoozed ? "Only Snoozed" : "Snoozed";
+  btn.title = showOnlySnoozed
+    ? "Showing ONLY snoozed items — click to turn off"
+    : showSnoozedInGrid
+      ? "Showing snoozed items alongside others — click for Only Snoozed mode"
+      : "Show snoozed items in grid";
+}
 
 // ---------------------------------------------------------------------------
 // Status selects — rebuild filter dropdown + detail panel select from statusOptions
@@ -208,6 +228,10 @@ function clearAllFilters() {
 function clearAllFiltersUI() {
   clearAllFilters();
   activatePreset("all");
+  // Reset snoozed view modes
+  showSnoozedInGrid = false;
+  showOnlySnoozed   = false;
+  _updateSnoozedBtnState();
   const qf = document.getElementById("quick-filter");
   if (qf) { qf.value = ""; gridApi?.setGridOption("quickFilterText", ""); }
   gridApi?.onFilterChanged();
@@ -333,7 +357,7 @@ async function openExportSettingsModal() {
   const settings = getExportSettings();
 
   // Populate format radio
-  const fmt = settings.format || "json";
+  const fmt = settings.format || "csv";
   document.querySelectorAll("input[name='exp-fmt']").forEach(r => { r.checked = (r.value === fmt); });
 
   // Filename
@@ -941,8 +965,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.getElementById("btn-show-snoozed")?.addEventListener("click", () => {
-    showSnoozedInGrid = !showSnoozedInGrid;
-    document.getElementById("btn-show-snoozed").classList.toggle("active", showSnoozedInGrid);
+    // Cycle: off → show alongside → only snoozed → off
+    if (!showSnoozedInGrid && !showOnlySnoozed) {
+      showSnoozedInGrid = true;  showOnlySnoozed = false;
+    } else if (showSnoozedInGrid && !showOnlySnoozed) {
+      showSnoozedInGrid = false; showOnlySnoozed = true;
+    } else {
+      showSnoozedInGrid = false; showOnlySnoozed = false;
+    }
+    _updateSnoozedBtnState();
     gridApi?.onFilterChanged();
     updateRowCount();
   });

@@ -96,7 +96,7 @@
       </button>
       <button id="btn-show-snoozed" class="btn btn-ghost btn-sm" title="Show snoozed items in grid">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-        Snoozed
+        <span class="snoozed-btn-label">Snoozed</span>
         <span id="snoozed-badge" class="badge" style="display:none">0</span>
       </button>
       <button id="btn-undo" class="btn btn-ghost btn-sm icon-btn" title="Undo (Ctrl+Z)">
@@ -462,8 +462,8 @@
       <div class="settings-row">
         <label class="settings-label">Format</label>
         <div style="display:flex;gap:16px">
-          <label class="radio-label"><input type="radio" name="exp-fmt" value="json"> JSON backup</label>
           <label class="radio-label"><input type="radio" name="exp-fmt" value="csv"> CSV</label>
+          <label class="radio-label"><input type="radio" name="exp-fmt" value="json"> JSON backup</label>
         </div>
       </div>
 
@@ -471,7 +471,7 @@
         <label class="settings-label" for="exp-filename">Filename</label>
         <input type="text" id="exp-filename" class="detail-input" placeholder="work-tracker-export"
                style="max-width:280px" />
-        <span id="exp-filename-ext" style="font-size:12px;color:var(--text-subtle);margin-left:4px">.json</span>
+        <span id="exp-filename-ext" style="font-size:12px;color:var(--text-subtle);margin-left:4px">.csv</span>
       </div>
 
       <div class="settings-row">

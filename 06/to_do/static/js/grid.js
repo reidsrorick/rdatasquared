@@ -200,7 +200,7 @@ function buildColumnDefs() {
         : { display: "flex", alignItems: "center", justifyContent: "flex-start" },
       cellRenderer: p => {
         const checklist = (() => { try { return JSON.parse(p.data?.checklist || "[]"); } catch { return []; } })();
-        const isSnoozed = showSnoozedInGrid && isSnoozeActive(p.data?.id);
+        const isSnoozed = (showSnoozedInGrid || showOnlySnoozed) && isSnoozeActive(p.data?.id);
         const doneCount = checklist.filter(i => i.done).length;
         const showBadge = checklist.length > 0 && doneCount < checklist.length;
         if (!isSnoozed && !showBadge) return esc(p.value || "");
@@ -363,13 +363,16 @@ function passesDateFilter(row) {
 
 function isExternalFilterPresent() {
   return activePreset !== "all" || !catFilterShowAll || activeCategoryFilters.length > 0
-    || activeDateFilter !== "all" || Object.keys(snoozedItems).length > 0;
+    || activeDateFilter !== "all" || Object.keys(snoozedItems).length > 0 || showOnlySnoozed;
 }
 
 function doesExternalFilterPass(node) {
   if (!node.data) return true;
   if (addingNewRow && node.data === addingNewRow) return true;
   const row = node.data;
+
+  // Exclusive modes — bypass all other filters
+  if (showOnlySnoozed) return isSnoozeActive(row.id);
 
   if (!showSnoozedInGrid && isSnoozeActive(row.id)) return false;
 
@@ -530,7 +533,7 @@ function initGrid() {
     getRowStyle: p => {
       if (!p.data || p.data.deleted) return null;
       const style = evalCondFmt(p.data) || {};
-      if (showSnoozedInGrid && isSnoozeActive(p.data.id)) {
+      if ((showSnoozedInGrid || showOnlySnoozed) && isSnoozeActive(p.data.id)) {
         return { ...style, background: style.background || "var(--snooze-row-bg, rgba(180,140,60,0.12))" };
       }
       return Object.keys(style).length ? style : null;

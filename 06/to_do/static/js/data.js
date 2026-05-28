@@ -67,7 +67,7 @@ async function saveRow(row) {
     }
 
     _saveAllItems(all);
-    _scheduleNDJsonSave(row);
+    _scheduleCsvAutoSave();
     setSaveStatus("saved");
     return row;
   } catch (err) {
@@ -113,7 +113,7 @@ async function bulkAction(action) {
   });
 
   _saveAllItems(all);
-  _scheduleNDJsonSave(all.filter(r => idSet.has(r.id)));
+  _scheduleCsvAutoSave();
   toast(`${ids.length} row(s) updated`, "success");
   gridApi.deselectAll();
   await loadRows();
@@ -147,7 +147,7 @@ async function showDeletedModal() {
 async function emptyTrash() {
   confirm$("Empty Trash", "Permanently delete all trashed items? This cannot be undone.", () => {
     _saveAllItems(getAllItems().filter(r => !r.deleted));
-    compactNDJsonExport();
+    _scheduleCsvAutoSave();
     toast("Trash emptied", "success");
     showDeletedModal();
     updateDeletedBadge();
@@ -206,9 +206,10 @@ async function doImport() {
     const text     = await importFile.text();
     const filename = importFile.name.toLowerCase();
     let items = [];
+    let data  = null;
 
     if (filename.endsWith(".json")) {
-      const data = JSON.parse(text);
+      data = JSON.parse(text);
       if (!Array.isArray(data.items)) throw new Error("Invalid backup file — expected { items: [...] }");
       items = data.items;
     } else if (filename.endsWith(".ndjson")) {
@@ -238,6 +239,7 @@ async function doImport() {
       // Restore snoozed state directly (IDs preserved in replace mode)
       snoozedItems = { ...backupSnoozed };
       saveSnoozedItems();
+      _scheduleCsvAutoSave();
     } else {
       const existing = getAllItems();
       const base     = existing.length > 0 ? Math.max(...existing.map(r => Number(r.id) || 0)) + 1 : 1;
@@ -256,6 +258,7 @@ async function doImport() {
         if (newId != null && until >= now2) snoozedItems[newId] = until;
       });
       saveSnoozedItems();
+      _scheduleCsvAutoSave();
     }
 
     _idCounter = null;
@@ -294,10 +297,18 @@ function _parseCSV(text) {
   if (!lines.length) return [];
   const headers = _parseCSVLine(lines[0]);
   const COL_MAP = {
+    "id": "id",
     "item": "item", "category": "category", "date": "date", "time": "time",
     "sort": "sort", "description": "description",
     "completed?": "completed", "completed": "completed",
     "date completed": "date_completed", "date_completed": "date_completed",
+    "last_modified": "last_modified", "last modified": "last_modified",
+    "created_at": "created_at", "created at": "created_at",
+    "deleted": "deleted",
+    "link": "link",
+    "recur_rule": "recur_rule", "recur rule": "recur_rule",
+    "follow_ups": "follow_ups", "follow ups": "follow_ups",
+    "checklist": "checklist",
   };
   return lines.slice(1).filter(l => l.trim()).map(line => {
     const vals = _parseCSVLine(line);
@@ -306,7 +317,8 @@ function _parseCSV(text) {
       const mapped = COL_MAP[h.toLowerCase().trim()];
       if (!mapped) return;
       const v = (vals[i] || "").trim();
-      if (mapped === "completed") row[mapped] = ["1","true","yes","x","y","✓"].includes(v.toLowerCase());
+      if (mapped === "completed" || mapped === "deleted") row[mapped] = ["1","true","yes","x","y","✓"].includes(v.toLowerCase());
+      else if (mapped === "id") { const n = parseFloat(v); if (!isNaN(n) && n > 0) row[mapped] = n; }
       else if (mapped === "sort") row[mapped] = parseFloat(v) || 0;
       else row[mapped] = v;
     });
@@ -315,108 +327,51 @@ function _parseCSV(text) {
 }
 
 // ---------------------------------------------------------------------------
-// NDJSON auto-save — append-only, compacts after threshold
+// CSV auto-save — full rewrite on every change, debounced 2s
 // ---------------------------------------------------------------------------
 
-let _ndJsonBuffer       = [];   // rows queued for next write
-let _ndJsonTimer        = null; // debounce handle
-let _ndJsonAppendCount  = 0;    // lines written since last compact
-const _NDJSON_COMPACT_AT = 500; // compact (deduplicate) after this many appended lines
+let _csvAutoSaveTimer = null;
 
-function _ndJsonLine(r) {
-  return JSON.stringify({ id: r.id, ...r });
+function _buildFullCsv(items) {
+  const FIELDS = [
+    "id", "item", "category", "date", "time", "sort", "description",
+    "completed", "date_completed", "last_modified", "created_at",
+    "deleted", "link", "recur_rule", "follow_ups", "checklist",
+  ];
+  const escape = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = items.map(r =>
+    FIELDS.map(f => {
+      const v = r[f];
+      if (f === "completed" || f === "deleted") return escape(v ? "true" : "false");
+      return escape(v);
+    }).join(",")
+  );
+  return [FIELDS.join(","), ...rows].join("\n");
 }
 
-function _scheduleNDJsonSave(rows) {
-  if (!Array.isArray(rows)) rows = [rows];
-  _ndJsonBuffer.push(...rows);
-  clearTimeout(_ndJsonTimer);
-  _ndJsonTimer = setTimeout(_flushNDJson, 2000);
+function _scheduleCsvAutoSave() {
+  clearTimeout(_csvAutoSaveTimer);
+  _csvAutoSaveTimer = setTimeout(_flushCsvAutoSave, 2000);
 }
 
-async function _flushNDJson() {
-  if (!_ndJsonBuffer.length) return;
-  const rows = _ndJsonBuffer.splice(0);
-
+async function _flushCsvAutoSave() {
   let dirHandle;
   try { dirHandle = await getExportDirHandle(); } catch { return; }
   if (!dirHandle) return;
-
   // Only auto-save if permission already granted — no user gesture available here
   let perm;
   try { perm = await dirHandle.queryPermission({ mode: "readwrite" }); } catch { return; }
   if (perm !== "granted") return;
-
   const settings = getExportSettings();
-  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|ndjson)$/i, "");
-  const filename = baseName + ".ndjson";
-
+  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|ndjson|csv)$/i, "");
   try {
-    _ndJsonAppendCount += rows.length;
-    if (_ndJsonAppendCount >= _NDJSON_COMPACT_AT) {
-      await _compactNDJson(dirHandle, filename);
-      _ndJsonAppendCount = 0;
-    } else {
-      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-      const file       = await fileHandle.getFile();
-      const writable   = await fileHandle.createWritable({ keepExistingData: true });
-      await writable.seek(file.size);
-
-      let content;
-      if (file.size === 0) {
-        // First write — seed with full dataset so the file is a complete backup
-        const allRows = getAllItems();
-        const rowMap  = new Map(allRows.map(r => [r.id, r]));
-        rows.forEach(r => { if (r.id != null) rowMap.set(r.id, r); });
-        content = [...rowMap.values()].map(_ndJsonLine).join("\n");
-        _ndJsonAppendCount = rowMap.size;
-      } else {
-        content = "\n" + rows.map(_ndJsonLine).join("\n");
-      }
-
-      await writable.write(content);
-      await writable.close();
-    }
+    const fileHandle = await dirHandle.getFileHandle(baseName + ".csv", { create: true });
+    const writable   = await fileHandle.createWritable(); // no keepExistingData = full overwrite
+    await writable.write(_buildFullCsv(getAllItems()));
+    await writable.close();
   } catch (err) {
-    console.warn("NDJSON auto-save failed:", err.message);
+    console.warn("CSV auto-save failed:", err.message);
   }
-}
-
-async function _compactNDJson(dirHandle, filename) {
-  let fileHandle;
-  try { fileHandle = await dirHandle.getFileHandle(filename, { create: true }); } catch { return; }
-  const file = await fileHandle.getFile();
-  const text = await file.text();
-
-  // Drain any pending buffer rows — they're newer than what's on disk
-  const pending = _ndJsonBuffer.splice(0);
-
-  const rowMap = new Map();
-  text.split("\n").forEach(line => {
-    const l = line.trim();
-    if (!l) return;
-    try { const r = JSON.parse(l); if (r.id != null) rowMap.set(r.id, r); } catch {}
-  });
-  pending.forEach(r => { if (r.id != null) rowMap.set(r.id, r); });
-
-  const compacted = [...rowMap.values()].map(_ndJsonLine).join("\n");
-  const writable  = await fileHandle.createWritable();
-  await writable.write(compacted);
-  await writable.close();
-}
-
-// Exposed for manual compaction (e.g. after empty trash)
-async function compactNDJsonExport() {
-  let dirHandle;
-  try { dirHandle = await getExportDirHandle(); } catch { return; }
-  if (!dirHandle) return;
-  let perm;
-  try { perm = await dirHandle.queryPermission({ mode: "readwrite" }); } catch { return; }
-  if (perm !== "granted") return;
-  const settings = getExportSettings();
-  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|ndjson)$/i, "");
-  await _compactNDJson(dirHandle, baseName + ".ndjson");
-  _ndJsonAppendCount = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -486,7 +441,7 @@ async function exportToDefault() {
 
   // No File System Access API support → fall back to regular download
   if (!window.showDirectoryPicker) {
-    const format = settings.format || "json";
+    const format = settings.format || "csv";
     exportData(format);
     return;
   }
@@ -516,8 +471,8 @@ async function exportToDefault() {
     return;
   }
 
-  const format   = settings.format || "json";
-  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|csv)$/i, "");
+  const format   = settings.format || "csv";
+  const baseName = (settings.filename || "work-tracker-export").replace(/\.(json|ndjson|csv)$/i, "");
   const filename = baseName + (format === "json" ? ".json" : ".csv");
 
   let content;
@@ -562,11 +517,21 @@ async function spawnRecurringOccurrence(sourceRow) {
   const nextDate = nextRecurDate(sourceRow.date, sourceRow.recur_rule);
   if (!nextDate) return;
   const now    = fmtDateTime(new Date());
+
+  // Copy checklist items but reset each to unchecked (no done, no completedAt)
+  let resetChecklist = "[]";
+  try {
+    const items = JSON.parse(sourceRow.checklist || "[]");
+    if (Array.isArray(items) && items.length > 0) {
+      resetChecklist = JSON.stringify(items.map(({ label }) => ({ label, done: false })));
+    }
+  } catch {}
+
   const newRow = {
     item: sourceRow.item, category: sourceRow.category,
     date: nextDate, time: sourceRow.time, sort: sourceRow.sort,
     description: sourceRow.description, link: sourceRow.link || "",
-    recur_rule: sourceRow.recur_rule, follow_ups: "[]", checklist: "[]",
+    recur_rule: sourceRow.recur_rule, follow_ups: "[]", checklist: resetChecklist,
     completed: false, date_completed: "", last_modified: now, deleted: false,
   };
   const saved = await saveRow(newRow);

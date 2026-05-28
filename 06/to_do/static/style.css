@@ -550,6 +550,12 @@ input.date-format-input.filter-select {
   color: var(--primary-h);
   border: 1px solid var(--primary);
 }
+/* Only-snoozed exclusive filter mode — amber tint to distinguish from "show alongside" */
+.btn-ghost.active.snoozed-only-mode {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  border-color: #d97706;
+}
 
 /* Filter summary label */
 .filter-summary {
