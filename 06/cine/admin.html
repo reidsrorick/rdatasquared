@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FilmNerdle — Puzzle Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── Admin-specific ── */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+
+.status-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex; gap: 20px;
+  font-size: .8rem; color: var(--muted);
+}
+.status-bar strong { color: var(--accent); }
+
+.admin-body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) { .admin-body { grid-template-columns: 1fr; } }
+
+.mode-col { display: flex; flex-direction: column; gap: 12px; }
+.mode-col-title {
+  font-size: 1rem; font-weight: 700; color: var(--accent);
+  padding: 10px 0 6px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* Candidate cards */
+.candidate-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.candidate-card.approved { border-color: var(--success); }
+.candidate-card.rejected { opacity: .45; }
+
+.card-head {
+  padding: 10px 14px;
+  background: var(--surface2);
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+}
+.card-head-label { font-size: .85rem; font-weight: 600; flex: 1; }
+.card-head-status { font-size: .75rem; }
+.approved .card-head { background: #1e3a1e; }
+.rejected .card-head { background: #2a1a1a; }
+
+.card-body { padding: 12px 14px; display: none; flex-direction: column; gap: 10px; }
+.card-body.open { display: flex; }
+
+.card-movies { font-size: .8rem; color: var(--muted); line-height: 1.6; }
+.card-movies strong { color: var(--text); }
+
+.card-tile-wrap { display: flex; justify-content: center; }
+.card-tile-wrap .tile-grid { max-width: 360px; }
+.card-tile-wrap .tile { font-size: .65rem; }
+
+/* Reversal theme labels */
+.rev-themes { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.rev-theme-row { font-size: .72rem; color: var(--success); padding: 1px 0; }
+
+/* Burgle clue preview */
+.burgle-preview { display: flex; flex-direction: column; gap: 8px; }
+.burgle-film-block { background: var(--surface2); border-radius: var(--radius-md); padding: 8px 10px; }
+.burgle-film-title { font-size: .82rem; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+.burgle-clue-row { display: flex; gap: 6px; font-size: .75rem; color: var(--muted); }
+.burgle-clue-lbl { min-width: 90px; }
+.burgle-clue-val { color: var(--text); }
+
+.card-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+
+.date-assign { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.date-assign label { font-size: .8rem; color: var(--muted); }
+
+.difficulty-row { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); }
+
+/* Action bar */
+.action-bar {
+  position: sticky; bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.action-bar-status { margin-left: auto; font-size: .82rem; color: var(--muted); }
+
+.warn-banner {
+  background: #2a2010; border: 1px solid var(--warn);
+  border-radius: var(--radius-md); padding: 8px 12px;
+  font-size: .8rem; color: var(--warn); display: none;
+}
+.warn-banner.visible { display: block; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 10px 20px;
+  font-size: .88rem; color: var(--text);
+  opacity: 0; transition: opacity .2s;
+  pointer-events: none; z-index: 9000; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading-screen">
+  <div class="spinner"></div>
+  <p>Loading library…</p>
+</div>
+
+<div id="app">
+  <header class="site-header">
+    <div class="site-logo">🎬 Puzzle Admin</div>
+    <div class="header-actions">
+      <a href="index.html" class="btn btn-sm">Game</a>
+      <a href="archive.html" class="btn btn-sm">Archive</a>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <span>Films: <strong id="lib-count">—</strong></span>
+    <span>Approved games: <strong id="approved-count">—</strong></span>
+    <span>Latest date: <strong id="latest-date">—</strong></span>
+  </div>
+
+  <div class="admin-body">
+    <div class="mode-col">
+      <div class="mode-col-title">
+        Original
+        <span id="orig-warn" class="warn-banner"></span>
+      </div>
+      <div id="orig-cards"></div>
+    </div>
+    <div class="mode-col">
+      <div class="mode-col-title">
+        Reversal
+        <span id="rev-warn" class="warn-banner"></span>
+      </div>
+      <div id="rev-cards"></div>
+    </div>
+    <div class="mode-col">
+      <div class="mode-col-title">
+        Burgle
+        <span id="burgle-warn" class="warn-banner"></span>
+      </div>
+      <div id="burgle-cards"></div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn btn-primary btn-lg" id="btn-generate">⚡ Generate Batch</button>
+    <button class="btn btn-success btn-lg" id="btn-save">💾 Save Approved to games.json</button>
+    <span class="action-bar-status" id="action-status">Generate a batch to get started.</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+/* ══════════════════════════════════════════
+   Admin state
+══════════════════════════════════════════ */
+let library = [];
+let gamesData = { generated: '', games: [] };
+
+// candidates[mode] = array of candidate objects
+const candidates = { original: [], reversal: [], burgle: [] };
+
+/* ══════════════════════════════════════════
+   Boot
+══════════════════════════════════════════ */
+async function boot() {
+  const [csvText, games] = await Promise.all([fetchCSV(), loadGamesJSON()]);
+  if (!csvText) {
+    document.getElementById('loading-screen').querySelector('p').textContent =
+      'Could not load letterboxd_scraped.csv. Serve from a local server.';
+    return;
+  }
+  library = buildLibrary(csvText);
+  gamesData = games;
+
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateStatusBar();
+}
+
+function updateStatusBar() {
+  document.getElementById('lib-count').textContent = library.length;
+  const approved = gamesData.games.filter(g => g.status === 'approved');
+  document.getElementById('approved-count').textContent = approved.length;
+  const dates = approved.map(g => g.date).sort();
+  document.getElementById('latest-date').textContent = dates.length ? dates[dates.length - 1] : '—';
+}
+
+/* ══════════════════════════════════════════
+   Used sets per mode (for deduplication)
+══════════════════════════════════════════ */
+function usedOriginalSets() {
+  return gamesData.games
+    .filter(g => g.modes?.original)
+    .map(g => new Set(g.modes.original.movies));
+}
+function usedReversalSets() {
+  return gamesData.games
+    .filter(g => g.modes?.reversal)
+    .map(g => new Set(g.modes.reversal.groups.flatMap(gr => gr.movies)));
+}
+function usedBurgleMovies() {
+  return gamesData.games
+    .filter(g => g.modes?.burgle)
+    .flatMap(g => g.modes.burgle.movies.map(m => m.title));
+}
+
+/* ══════════════════════════════════════════
+   Generate batch
+══════════════════════════════════════════ */
+document.getElementById('btn-generate').addEventListener('click', generateBatch);
+
+function generateBatch() {
+  const usedO = usedOriginalSets();
+  const usedR = usedReversalSets();
+  const usedB = usedBurgleMovies();
+  const seed = Date.now().toString();
+
+  candidates.original = [];
+  candidates.reversal = [];
+  candidates.burgle   = [];
+
+  for (let i = 0; i < 5; i++) {
+    const o = generateOriginalPuzzle(library, usedO, seed + 'orig' + i);
+    candidates.original.push(o ? { ...o, status: 'pending', date: '' } : null);
+
+    const r = generateReversalPuzzle(library, usedR, seed + 'rev' + i);
+    candidates.reversal.push(r ? { ...r, status: 'pending', date: '' } : null);
+
+    const b = generateBurglePuzzle(library, usedB, seed + 'burgle' + i);
+    candidates.burgle.push(b ? { ...b, status: 'pending', date: '' } : null);
+  }
+
+  renderAll();
+  document.getElementById('action-status').textContent = 'Review and approve puzzles, then assign dates and save.';
+}
+
+/* ══════════════════════════════════════════
+   Render helpers
+══════════════════════════════════════════ */
+function renderAll() {
+  renderModeCards('original', candidates.original, document.getElementById('orig-cards'));
+  renderModeCards('reversal', candidates.reversal, document.getElementById('rev-cards'));
+  renderModeCards('burgle',   candidates.burgle,   document.getElementById('burgle-cards'));
+  updateSaveStatus();
+}
+
+function renderModeCards(mode, list, container) {
+  container.innerHTML = '';
+  if (!list.length) {
+    container.innerHTML = '<p class="text-muted text-sm" style="padding:12px 0">Click Generate Batch to create candidates.</p>';
+    return;
+  }
+
+  const warnEl = document.getElementById(mode === 'original' ? 'orig-warn' : mode === 'reversal' ? 'rev-warn' : 'burgle-warn');
+  const nullCount = list.filter(c => c === null).length;
+  if (nullCount) {
+    warnEl.textContent = `Not enough unique combinations remaining for ${mode} (${nullCount} failed).`;
+    warnEl.classList.add('visible');
+  } else {
+    warnEl.classList.remove('visible');
+  }
+
+  list.forEach((cand, i) => {
+    if (!cand) return;
+    const card = buildCandidateCard(mode, cand, i);
+    container.appendChild(card);
+  });
+}
+
+function buildCandidateCard(mode, cand, idx) {
+  const card = document.createElement('div');
+  card.className = 'candidate-card' + (cand.status === 'approved' ? ' approved' : cand.status === 'rejected' ? ' rejected' : '');
+  card.id = `card-${mode}-${idx}`;
+
+  const statusIcon = cand.status === 'approved' ? '✅' : cand.status === 'rejected' ? '❌' : '⏳';
+
+  // Head
+  const head = document.createElement('div');
+  head.className = 'card-head';
+  head.innerHTML = `
+    <span class="card-head-label">${capitalize(mode)} #${idx + 1}</span>
+    <span class="card-head-status">${statusIcon}</span>
+    <span class="text-muted text-xs">${starsHtml(cand.difficulty || 3)}</span>
+    <span class="text-muted text-xs">▼</span>`;
+  head.addEventListener('click', () => {
+    const body = card.querySelector('.card-body');
+    const chevron = head.querySelector('.text-xs:last-child');
+    const isOpen = body.classList.toggle('open');
+    chevron.textContent = isOpen ? '▲' : '▼';
+  });
+  card.appendChild(head);
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'card-body';
+
+  // Movie list
+  const movieDiv = document.createElement('div');
+  movieDiv.className = 'card-movies';
+  if (mode === 'original') {
+    movieDiv.innerHTML = cand.movies.map(t => `<strong>${t}</strong>`).join(' · ');
+  } else if (mode === 'reversal') {
+    movieDiv.innerHTML = cand.groups.map(g =>
+      `<div style="margin-bottom:3px"><span style="color:var(--accent)">${g.theme}:</span> ${g.movies.join(', ')}</div>`
+    ).join('');
+  } else {
+    movieDiv.innerHTML = cand.movies.map(m => `<strong>${m.title}</strong> (${m.year})`).join(' · ');
+  }
+  body.appendChild(movieDiv);
+
+  // Interactive preview
+  if (mode === 'original' || mode === 'reversal') {
+    const gridWrap = document.createElement('div');
+    gridWrap.className = 'card-tile-wrap';
+    const gridContainer = document.createElement('div');
+    gridWrap.appendChild(gridContainer);
+    body.appendChild(gridWrap);
+
+    const tiles = mode === 'original'
+      ? cand.tiles.map(t => ({ text: t.text, movie: t.movie, type: t.type }))
+      : cand.tiles.map(t => ({ text: t.text, clusterIdx: t.clusterIdx }));
+
+    createTileGrid({
+      container: gridContainer,
+      tiles,
+      mode,
+      groups: mode === 'reversal' ? cand.groups : [],
+      readOnly: false,
+    });
+
+    // Reversal: theme labels placeholder
+    if (mode === 'reversal') {
+      const themes = document.createElement('div');
+      themes.className = 'rev-themes';
+      cand.groups.forEach(g => {
+        const d = document.createElement('div');
+        d.className = 'rev-theme-row';
+        d.textContent = g.theme;
+        themes.appendChild(d);
+      });
+      body.appendChild(themes);
+    }
+  } else {
+    // Burgle clue preview
+    const preview = document.createElement('div');
+    preview.className = 'burgle-preview';
+    cand.movies.forEach(m => {
+      const block = document.createElement('div');
+      block.className = 'burgle-film-block';
+      block.innerHTML = `<div class="burgle-film-title">${m.title} (${m.year})</div>` +
+        m.clues.map(c => `<div class="burgle-clue-row"><span class="burgle-clue-lbl">${c.label}:</span><span class="burgle-clue-val">${c.text}</span></div>`).join('');
+      preview.appendChild(block);
+    });
+    body.appendChild(preview);
+  }
+
+  // Difficulty
+  const diffRow = document.createElement('div');
+  diffRow.className = 'difficulty-row';
+  diffRow.innerHTML = `Difficulty: ${starsHtml(cand.difficulty || 3)}`;
+  body.appendChild(diffRow);
+
+  // Date assign (shown when approved)
+  const dateWrap = document.createElement('div');
+  dateWrap.className = 'date-assign';
+  dateWrap.style.display = cand.status === 'approved' ? 'flex' : 'none';
+  const nextDate = nextUnscheduledDate(gamesData.games);
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.className = 'form-input';
+  dateInput.value = cand.date || nextDate;
+  dateInput.addEventListener('change', () => { cand.date = dateInput.value; updateSaveStatus(); });
+  cand.date = cand.date || nextDate;
+  dateWrap.innerHTML = '<label>Assign date:</label>';
+  dateWrap.appendChild(dateInput);
+  body.appendChild(dateWrap);
+
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+
+  const btnApprove = document.createElement('button');
+  btnApprove.className = 'btn btn-success btn-sm';
+  btnApprove.textContent = '✅ Approve';
+  btnApprove.disabled = cand.status === 'approved';
+  btnApprove.addEventListener('click', () => {
+    cand.status = 'approved';
+    cand.date = cand.date || nextDate;
+    renderAll();
+    showToast(`${capitalize(mode)} #${idx + 1} approved!`);
+  });
+
+  const btnReject = document.createElement('button');
+  btnReject.className = 'btn btn-danger btn-sm';
+  btnReject.textContent = '❌ Reject';
+  btnReject.disabled = cand.status === 'rejected';
+  btnReject.addEventListener('click', () => {
+    cand.status = 'rejected';
+    renderAll();
+  });
+
+  const btnRegen = document.createElement('button');
+  btnRegen.className = 'btn btn-sm';
+  btnRegen.textContent = '↺ Regenerate';
+  btnRegen.addEventListener('click', () => regenCandidate(mode, idx));
+
+  actions.appendChild(btnApprove);
+  actions.appendChild(btnReject);
+  actions.appendChild(btnRegen);
+  body.appendChild(actions);
+
+  card.appendChild(body);
+  return card;
+}
+
+function regenCandidate(mode, idx) {
+  const usedO = usedOriginalSets();
+  const usedR = usedReversalSets();
+  const usedB = usedBurgleMovies();
+  const seed = Date.now().toString() + mode + idx;
+
+  let newCand = null;
+  if (mode === 'original') newCand = generateOriginalPuzzle(library, usedO, seed);
+  else if (mode === 'reversal') newCand = generateReversalPuzzle(library, usedR, seed);
+  else newCand = generateBurglePuzzle(library, usedB, seed);
+
+  if (newCand) {
+    candidates[mode][idx] = { ...newCand, status: 'pending', date: '' };
+  } else {
+    showToast('Could not generate a unique candidate.');
+    return;
+  }
+  renderAll();
+}
+
+/* ══════════════════════════════════════════
+   Save
+══════════════════════════════════════════ */
+document.getElementById('btn-save').addEventListener('click', saveApproved);
+
+function updateSaveStatus() {
+  const approvedO = candidates.original.filter(c => c?.status === 'approved');
+  const approvedR = candidates.reversal.filter(c => c?.status === 'approved');
+  const approvedB = candidates.burgle.filter(c => c?.status === 'approved');
+  const total = approvedO.length + approvedR.length + approvedB.length;
+  document.getElementById('action-status').textContent =
+    total ? `${total} approved (O:${approvedO.length} R:${approvedR.length} B:${approvedB.length}) — assign dates and save.` : 'No approved puzzles yet.';
+}
+
+function saveApproved() {
+  // Build a map of date → { original?, reversal?, burgle? }
+  const dateMap = {};
+
+  const collect = (mode, list) => {
+    list.filter(c => c?.status === 'approved' && c.date).forEach(cand => {
+      const d = cand.date;
+      if (!dateMap[d]) dateMap[d] = {};
+      if (mode === 'original') {
+        dateMap[d].original = {
+          movies: cand.movies,
+          tiles: cand.tiles,
+        };
+      } else if (mode === 'reversal') {
+        dateMap[d].reversal = {
+          groups: cand.groups,
+          tiles: cand.tiles,
+        };
+      } else {
+        dateMap[d].burgle = {
+          movies: cand.movies,
+        };
+      }
+    });
+  };
+
+  collect('original', candidates.original);
+  collect('reversal', candidates.reversal);
+  collect('burgle',   candidates.burgle);
+
+  if (!Object.keys(dateMap).length) {
+    showToast('No approved puzzles with dates to save.');
+    return;
+  }
+
+  // Detect date conflicts
+  const existingDates = new Set(gamesData.games.map(g => g.date));
+  const conflicts = Object.keys(dateMap).filter(d => existingDates.has(d));
+  if (conflicts.length) {
+    if (!confirm(`These dates already exist in games.json and will be overwritten:\n${conflicts.join(', ')}\n\nContinue?`)) return;
+    gamesData.games = gamesData.games.filter(g => !conflicts.includes(g.date));
+  }
+
+  // Build new game entries
+  let added = 0;
+  Object.entries(dateMap).forEach(([date, modes]) => {
+    gamesData.games.push({
+      id: date,
+      date,
+      status: 'approved',
+      modes,
+    });
+    added++;
+  });
+
+  gamesData.games.sort((a, b) => a.date.localeCompare(b.date));
+  gamesData.generated = new Date().toISOString();
+
+  const json = JSON.stringify(gamesData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'games.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast(`${added} new game(s) saved. Replace your games.json with the downloaded file.`);
+  updateStatusBar();
+}
+
+/* ── Utilities ── */
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+boot();
+</script>
+</body>
+</html>

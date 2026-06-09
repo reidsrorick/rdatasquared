@@ -3,192 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cine2 — Film Puzzle</title>
+<title>FilmNerdle — Today's Puzzle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;
-  --text:#f5e6c8;--dim:#a09070;--accent:#c8a84b;
-  --success:#4caf50;--success-bg:#1a3a1a;
-  --warn:#f0c040;--err:#e05050;--border:#333;
-}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.025;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size:150px 150px}
+#app { display: none; flex-direction: column; min-height: 100vh; }
 
-/* ── Loading / Error ── */
-#loading-screen,#error-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:14px;padding:32px;text-align:center}
-#error-screen{display:none}
-.spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.err-icon{font-size:3rem;margin-bottom:4px}
-.err-title{font-size:1.4rem;color:var(--err)}
-.err-body{color:var(--dim);font-size:.9rem;max-width:400px;line-height:1.6}
-code{color:var(--accent);background:var(--surface);padding:1px 5px;border-radius:4px}
+/* Mode panels */
+.mode { display: none; flex-direction: column; align-items: center; padding: 20px 14px 60px; width: 100%; max-width: 580px; margin: 0 auto; }
+.mode.active { display: flex; }
+.mode-intro { text-align: center; margin-bottom: 14px; }
+.mode-intro h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 4px; }
+.mode-intro p  { font-size: .83rem; color: var(--muted); line-height: 1.5; }
 
-/* ── App shell ── */
-#app{display:none;flex-direction:column;min-height:100vh}
-
-/* ── Header ── */
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:50}
-.logo{font-size:1.3rem;font-weight:700;color:var(--accent);letter-spacing:-.02em}
-.hdr-actions{display:flex;gap:8px}
-.icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;transition:all .15s;font-family:inherit}
-.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
-
-/* ── Tabs ── */
-.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg)}
-.tab{flex:1;padding:11px 8px;text-align:center;cursor:pointer;font-size:.88rem;font-weight:500;color:var(--dim);border-bottom:2px solid transparent;transition:all .15s;user-select:none}
-.tab:hover{color:var(--text)}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-
-/* ── Mode containers ── */
-.mode{display:none;flex-direction:column;align-items:center;padding:20px 14px 40px;width:100%;max-width:580px;margin:0 auto}
-.mode.active{display:flex}
-.mode-intro{text-align:center;margin-bottom:14px}
-.mode-intro h2{font-size:1.2rem;color:var(--accent);margin-bottom:4px}
-.mode-intro p{font-size:.83rem;color:var(--dim);line-height:1.5}
-
-/* ── Score bar ── */
-.score-bar{display:flex;align-items:center;gap:16px;padding:10px 14px;background:var(--surface);border-radius:10px;width:100%;max-width:520px;margin-bottom:10px;border:1px solid var(--border)}
-.sb-label{font-size:.75rem;color:var(--dim)}
-.sb-value{font-size:1.1rem;font-weight:700;color:var(--accent)}
-.sb-right{margin-left:auto;font-size:.82rem;color:var(--dim)}
-
-/* ── Tile Grid ── */
-.tile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;width:100%;max-width:520px;margin:4px 0}
-.tile{aspect-ratio:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.76rem;font-weight:500;padding:6px;cursor:pointer;user-select:none;transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s,border-color .18s,background .25s;word-break:break-word;hyphens:auto;line-height:1.3;position:relative}
-.tile:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.5);border-color:#555}
-.tile.selected{border-color:var(--accent);box-shadow:0 0 10px rgba(200,168,75,.45);transform:scale(1.06)}
-.tile.near{border-color:var(--warn);box-shadow:0 0 8px rgba(240,192,64,.5)}
-.tile.locked{background:var(--success-bg);border-color:var(--success);cursor:default;transform:none !important;box-shadow:none !important}
-.tile.swap-anim{animation:swapbounce .2s ease}
-@keyframes swapbounce{0%{transform:scale(1)}50%{transform:scale(.88)}100%{transform:scale(1)}}
-
-/* theme labels under grid rows */
-.row-theme{font-size:.72rem;color:var(--success);text-align:left;padding:2px 0;min-height:16px;grid-column:1/-1}
-
-/* ── Buttons ── */
-.btn{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;cursor:pointer;transition:all .15s}
-.btn:hover{border-color:var(--accent);color:var(--accent)}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#000}
-.btn-primary:hover{background:#d4b055;border-color:#d4b055;color:#000}
-.btn-sm{padding:6px 12px;font-size:.8rem}
-
-/* ── Overlays ── */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.87);z-index:300;align-items:center;justify-content:center;padding:16px}
-.overlay.active{display:flex}
-.ov-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;text-align:center}
-.ov-card h2{font-size:1.5rem;color:var(--accent);margin-bottom:6px}
-.ov-sub{color:var(--dim);font-size:.88rem;margin-bottom:14px}
-
-/* ── Poster grid ── */
-.poster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}
-@media(max-width:420px){.poster-grid{grid-template-columns:repeat(2,1fr)}}
-.poster-item{border-radius:8px;overflow:hidden;border:1px solid var(--border)}
-.poster-item img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
-.poster-title{font-size:.62rem;padding:4px;text-align:center;background:var(--surface2);line-height:1.3;color:var(--dim)}
-
-/* ── Settings panel ── */
-#settings-panel{display:none;position:fixed;top:0;right:0;width:min(310px,90vw);height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:400;flex-direction:column;padding:20px;gap:14px;overflow-y:auto}
-#settings-panel.open{display:flex}
-.sp-title{font-size:1rem;font-weight:700;color:var(--accent)}
-.sp-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:.88rem}
-.toggle{width:42px;height:22px;background:var(--border);border-radius:11px;cursor:pointer;position:relative;transition:background .2s;border:none;flex-shrink:0}
-.toggle.on{background:var(--accent)}
-.toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s}
-.toggle.on::after{left:23px}
-.hist-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:.82rem}
-
-/* ── Modal ── */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.87);z-index:500;align-items:center;justify-content:center;padding:16px}
-.modal.active{display:flex}
-.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;max-width:460px;width:100%;max-height:80vh;overflow-y:auto}
-.modal-card h3{color:var(--accent);margin-bottom:14px;font-size:1.1rem}
-.modal-card p,.modal-card li{font-size:.86rem;line-height:1.65;color:var(--dim);margin-bottom:7px}
-.modal-card ul{padding-left:18px}
-
-/* ── Warning overlay ── */
-#warn-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.87);z-index:250;align-items:center;justify-content:center;padding:16px}
-#warn-overlay.active{display:flex}
-
-/* ── Burgle ── */
-.vault-wrap{width:100%;max-width:520px;display:flex;flex-direction:column;gap:10px}
-.vault{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .3s}
-.vault.solved{border-color:var(--success)}
-.vault.cracked{border-color:var(--err)}
-.vault-hdr{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none}
-.vault-num{width:26px;height:26px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0}
-.vault.solved .vault-num{background:var(--success-bg);border-color:var(--success)}
-.vault.cracked .vault-num{background:#3a1a1a;border-color:var(--err)}
-.vault-name{font-size:.92rem;font-weight:500;flex:1}
-.vault-status{font-size:.78rem;color:var(--dim)}
-.vault-chevron{color:var(--dim);font-size:.8rem;margin-left:4px}
-.vault-body{display:none;padding:10px 14px 14px;border-top:1px solid var(--border);flex-direction:column;gap:9px}
-.vault-body.open{display:flex}
-.clue-row{display:flex;gap:8px;font-size:.83rem;line-height:1.4}
-.clue-lbl{color:var(--dim);font-weight:500;min-width:110px;flex-shrink:0}
-.clue-val{color:var(--text)}
-.guess-area{display:flex;gap:7px;margin-top:2px}
-.guess-input{flex:1;padding:7px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.84rem;outline:none;transition:border-color .15s}
-.guess-input:focus{border-color:var(--accent)}
-.guess-input.wrong{border-color:var(--err);animation:shake .3s ease}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-.dots{display:flex;gap:4px;align-items:center}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
-.dot.filled{background:var(--err)}
-.poster-reveal{width:75px;height:112px;border-radius:6px;object-fit:cover;border:1px solid var(--border);animation:revealp .45s ease}
-@keyframes revealp{0%{opacity:0;transform:scale(.8) rotateY(90deg)}100%{opacity:1;transform:scale(1) rotateY(0)}}
-.burgle-total{font-size:2.2rem;font-weight:700;color:var(--accent);margin:10px 0}
-
-/* ── Misc ── */
-.text-accent{color:var(--accent)}
-.text-dim{color:var(--dim)}
-a{color:var(--accent)}
+/* No-game screen */
+#no-game-screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; gap: 16px; text-align: center; padding: 32px; }
+#no-game-screen h2 { color: var(--accent); font-size: 1.4rem; }
+#no-game-screen p  { color: var(--muted); font-size: .92rem; max-width: 380px; line-height: 1.6; }
 </style>
 </head>
 <body>
 
-<!-- Loading -->
-<div id="loading-screen">
+<div class="loading-screen" id="loading-screen">
   <div class="spinner"></div>
-  <p>Loading film library…</p>
+  <p>Loading today's puzzle…</p>
 </div>
 
-<!-- Error -->
-<div id="error-screen">
-  <div class="err-icon">🎬</div>
-  <div class="err-title">Could not load film library</div>
-  <p class="err-body">Place <code>letterboxd_scraped.csv</code> in the same folder as <code>index.html</code> and open via a local web server (e.g. <code>npx serve .</code> or VS Code Live Server).</p>
-  <button class="btn btn-primary" style="margin-top:16px" onclick="location.reload()">Try Again</button>
+<div id="no-game-screen">
+  <div style="font-size:3rem">🎬</div>
+  <h2>No puzzle today</h2>
+  <p>There's no puzzle scheduled for today. Check back tomorrow or browse past games in the archive.</p>
+  <a href="archive.html" class="btn btn-primary">Browse Archive</a>
 </div>
 
-<!-- Small library warning -->
-<div id="warn-overlay">
-  <div class="ov-card">
-    <h2 style="color:var(--warn)">Small Library</h2>
-    <p class="ov-sub">Only <span id="warn-count"></span> films parsed. At least 20 are recommended for all modes.</p>
-    <button class="btn btn-primary" onclick="document.getElementById('warn-overlay').classList.remove('active')">Continue Anyway</button>
-  </div>
-</div>
-
-<!-- Main app -->
 <div id="app">
-  <div class="hdr">
-    <div class="logo">🎬 Cine2</div>
-    <div class="hdr-actions">
-      <button class="icon-btn" onclick="showHelp()" title="How to Play">?</button>
-      <button class="icon-btn" onclick="toggleSettings()" title="Settings">⚙</button>
+  <header class="site-header">
+    <div class="site-logo">🎬 FilmNerdle</div>
+    <div class="header-actions">
+      <span id="hdr-date" style="font-size:.8rem;color:var(--muted)"></span>
+      <a href="archive.html" class="btn btn-sm">Archive</a>
+      <button class="btn btn-icon" id="btn-help" title="How to play">?</button>
+      <button class="btn btn-icon" id="btn-settings" title="Settings">⚙</button>
     </div>
-  </div>
+  </header>
 
   <div class="tabs">
-    <div class="tab active" data-mode="original" onclick="switchMode('original')">Original</div>
-    <div class="tab" data-mode="reversal" onclick="switchMode('reversal')">Reversal</div>
-    <div class="tab" data-mode="burgle" onclick="switchMode('burgle')">Burgle</div>
+    <div class="tab active" data-mode="original" onclick="switchTab('original')">Original</div>
+    <div class="tab" data-mode="reversal"  onclick="switchTab('reversal')">Reversal</div>
+    <div class="tab" data-mode="burgle"    onclick="switchTab('burgle')">Burgle</div>
   </div>
 
   <!-- Original -->
@@ -201,8 +63,9 @@ a{color:var(--accent)}
       <div><div class="sb-label">Swaps left</div><div class="sb-value" id="orig-swaps">20</div></div>
       <div class="sb-right" id="orig-rows">0 / 4 rows locked</div>
     </div>
-    <div class="tile-grid" id="orig-grid"></div>
-    <div id="orig-theme-labels" style="width:100%;max-width:520px;margin-top:4px;display:flex;flex-direction:column;gap:3px"></div>
+    <div id="orig-grid-container"></div>
+    <div class="row-theme-labels" id="orig-labels"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center" id="orig-btn-row"></div>
   </div>
 
   <!-- Reversal -->
@@ -215,8 +78,9 @@ a{color:var(--accent)}
       <div><div class="sb-label">Swaps left</div><div class="sb-value" id="rev-swaps">20</div></div>
       <div class="sb-right" id="rev-rows">0 / 4 rows locked</div>
     </div>
-    <div class="tile-grid" id="rev-grid"></div>
-    <div id="rev-theme-labels" style="width:100%;max-width:520px;margin-top:4px;display:flex;flex-direction:column;gap:3px"></div>
+    <div id="rev-grid-container"></div>
+    <div class="row-theme-labels" id="rev-labels"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center" id="rev-btn-row"></div>
   </div>
 
   <!-- Burgle -->
@@ -233,14 +97,14 @@ a{color:var(--accent)}
   </div>
 </div>
 
-<!-- Win overlay (Original & Reversal) -->
+<!-- Win overlay -->
 <div class="overlay" id="win-overlay">
   <div class="ov-card">
     <h2 id="win-title">🏆 Puzzle Solved!</h2>
     <p class="ov-sub" id="win-sub"></p>
     <div class="poster-grid" id="win-posters"></div>
-    <div id="win-extra" style="font-size:.82rem;color:var(--dim);margin-top:4px;text-align:left"></div>
-    <button class="btn btn-primary" style="margin-top:16px;width:100%" onclick="closeOverlay('win-overlay')">Close</button>
+    <div id="win-extra" style="font-size:.82rem;color:var(--muted);margin-top:4px;text-align:left"></div>
+    <button class="btn btn-primary btn-full mt-16" onclick="closeOverlay('win-overlay')">Close</button>
   </div>
 </div>
 
@@ -248,760 +112,345 @@ a{color:var(--accent)}
 <div class="overlay" id="burgle-overlay">
   <div class="ov-card">
     <h2>🔓 Heist Complete!</h2>
-    <div class="burgle-total" id="burgle-final">0 / 35</div>
+    <div style="font-size:2.2rem;font-weight:700;color:var(--accent);margin:10px 0" id="burgle-final">0 / 35</div>
     <div class="poster-grid" id="burgle-posters"></div>
-    <button class="btn btn-primary" style="margin-top:16px;width:100%" onclick="closeOverlay('burgle-overlay')">Close</button>
+    <button class="btn btn-primary btn-full mt-16" onclick="closeOverlay('burgle-overlay')">Close</button>
   </div>
 </div>
 
 <!-- Settings panel -->
-<div id="settings-panel">
+<div class="settings-panel" id="settings-panel">
   <div style="display:flex;justify-content:space-between;align-items:center">
     <div class="sp-title">Settings</div>
-    <button class="icon-btn" onclick="toggleSettings()">✕</button>
+    <button class="btn btn-icon" onclick="toggleSettings()">✕</button>
   </div>
-  <div class="sp-row"><span>Films loaded</span><span class="text-accent" id="sp-count">—</span></div>
-  <div class="sp-row"><span>Hard Mode <span class="text-dim" style="font-size:.75rem">(lower-rated films)</span></span><button class="toggle" id="diff-toggle" onclick="toggleDifficulty()"></button></div>
-  <div class="sp-row"><span>Today's puzzle</span><span class="text-dim" id="sp-date">—</span></div>
-  <button class="btn" style="width:100%" onclick="reloadCSV()">↺ Reload CSV</button>
-  <div>
-    <div class="sp-title" style="font-size:.9rem;margin-bottom:8px">Score History</div>
-    <div id="sp-history"></div>
-  </div>
+  <div class="sp-row"><span>Today's date</span><span class="text-accent" id="sp-date">—</span></div>
+  <div class="sp-row"><span>Score history</span></div>
+  <div id="sp-history"></div>
+  <a href="admin.html" class="btn btn-sm" style="text-align:center">⚙ Admin</a>
 </div>
 
-<!-- How-to-play modals -->
-<div class="modal" id="modal-original">
+<!-- How-to modals -->
+<div class="modal" id="modal-help">
   <div class="modal-card">
-    <h3>How to Play: Original</h3>
-    <p>16 clue tiles are drawn from 4 hidden films. Swap them into rows so each row contains clues from exactly one film.</p>
-    <ul>
-      <li>Click two tiles to swap them</li>
-      <li>A row glows <span style="color:var(--warn)">yellow</span> when 3 of 4 tiles match one film</li>
-      <li>A row locks <span style="color:var(--success)">green</span> when all 4 match</li>
-      <li>You have 20 swaps — more remaining = higher score</li>
-      <li>Watch for red herrings: one attribute might apply to two films!</li>
-    </ul>
-    <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="closeModal('modal-original')">Got it!</button>
+    <h3 id="modal-help-title">How to Play</h3>
+    <div id="modal-help-body" style="margin-top:10px"></div>
+    <button class="btn btn-primary btn-full mt-16" onclick="closeModal('modal-help')">Got it!</button>
   </div>
 </div>
 
-<div class="modal" id="modal-reversal">
-  <div class="modal-card">
-    <h3>How to Play: Reversal</h3>
-    <p>16 movie titles are shuffled. Group them into rows — each row shares a hidden theme.</p>
-    <ul>
-      <li>Click two tiles to swap them</li>
-      <li>Possible themes: director, lead actor, genre, decade, country, runtime</li>
-      <li>Locked rows reveal their theme</li>
-      <li>You have 20 swaps</li>
-    </ul>
-    <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="closeModal('modal-reversal')">Got it!</button>
-  </div>
-</div>
-
-<div class="modal" id="modal-burgle">
-  <div class="modal-card">
-    <h3>How to Play: Burgle</h3>
-    <p>5 mystery films are locked in vaults. Crack each one for points!</p>
-    <ul>
-      <li>Click "Next Clue" to reveal clues one by one</li>
-      <li>Type your guess at any time and press Enter or click Guess</li>
-      <li>Score = <strong>7 − clues revealed</strong> per vault (max 35 total)</li>
-      <li>3 wrong guesses = vault cracked, 0 points</li>
-      <li>Matching ignores "The/A/An" and is case-insensitive</li>
-    </ul>
-    <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="closeModal('modal-burgle')">Got it!</button>
-  </div>
-</div>
-
+<script src="shared.js"></script>
 <script>
-/* ═══════════════════════════════════════════
-   SEEDED PRNG — mulberry32
-═══════════════════════════════════════════ */
-function mulberry32(seed){
-  return function(){
-    let t=seed+=0x6D2B79F5;
-    t=Math.imul(t^t>>>15,t|1);
-    t^=t+Math.imul(t^t>>>7,t|61);
-    return((t^t>>>14)>>>0)/4294967296;
-  };
-}
-function strToSeed(s){
-  let h=0;
-  for(let i=0;i<s.length;i++) h=Math.imul(31,h)+s.charCodeAt(i)|0;
-  return h>>>0;
-}
-function shuffle(arr,rng){
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
-  return a;
-}
-function pick(arr,n,rng){ return shuffle(arr,rng).slice(0,n); }
+/* ══════════════════════════════════════════
+   State
+══════════════════════════════════════════ */
+const TODAY = todayStr();
+let gameData = null; // today's game object from games.json
+let scores = JSON.parse(localStorage.getItem('lb_scores') || '{}');
+let currentMode = 'original';
 
-/* ═══════════════════════════════════════════
-   CSV PARSER — handles quoted fields
-═══════════════════════════════════════════ */
-function parseCSV(raw){
-  if(raw.charCodeAt(0)===0xFEFF) raw=raw.slice(1);
-  const rows=[];
-  let i=0,len=raw.length;
-  while(i<len){
-    const row=[];
-    while(i<len&&raw[i]!=='\n'&&raw[i]!=='\r'){
-      if(raw[i]==='"'){
-        i++;let f='';
-        while(i<len){
-          if(raw[i]==='"'&&raw[i+1]==='"'){f+='"';i+=2;}
-          else if(raw[i]==='"'){i++;break;}
-          else f+=raw[i++];
-        }
-        row.push(f);
-        if(i<len&&raw[i]===',') i++;
-      } else {
-        let f='';
-        while(i<len&&raw[i]!==','&&raw[i]!=='\n'&&raw[i]!=='\r') f+=raw[i++];
-        row.push(f.trim());
-        if(i<len&&raw[i]===',') i++;
-      }
-    }
-    if(i<len&&raw[i]==='\r') i++;
-    if(i<len&&raw[i]==='\n') i++;
-    if(row.length>1||(row.length===1&&row[0]!=='')) rows.push(row);
-  }
-  return rows;
-}
+// Per-mode controllers
+let origCtrl = null, revCtrl = null;
+const B = { vaults: [], score: 0, done: false };
 
-function buildLibrary(csv){
-  const rows=parseCSV(csv);
-  if(rows.length<2) return [];
-  const hdr=rows[0].map(h=>h.trim().toLowerCase().replace(/\s+/g,'_'));
-  const films=[];
-  for(let i=1;i<rows.length;i++){
-    const r=rows[i];
-    if(r.length<5) continue;
-    const o={};
-    hdr.forEach((h,j)=>{ o[h]=r[j]||''; });
-    o.year=parseInt(o.year)||0;
-    o.average_rating=parseFloat(o.average_rating)||0;
-    o.runtime=parseInt(o.runtime)||0;
-    o.decade=Math.floor(o.year/10)*10;
-    o.decade_label=o.decade+'s';
-    if(o.runtime<90) o.runtime_bracket='Under 90 min';
-    else if(o.runtime<=120) o.runtime_bracket='90–120 min';
-    else o.runtime_bracket='Over 120 min';
-    o.genres_arr=(o.genres||'').split(',').map(g=>g.trim()).filter(Boolean);
-    o.cast_names=[];
-    for(let c=1;c<=5;c++){
-      const v=o[`cast_${c}`]||'';
-      const name=v.includes('(')?v.slice(0,v.indexOf('(')).trim():v.trim();
-      if(name) o.cast_names.push(name);
-    }
-    if(o.title&&o.year) films.push(o);
-  }
-  return films;
-}
+/* ══════════════════════════════════════════
+   Boot
+══════════════════════════════════════════ */
+async function boot() {
+  const games = await loadGamesJSON();
+  const todayGame = games.games.find(g => g.id === TODAY && g.status === 'approved');
 
-/* ═══════════════════════════════════════════
-   APP STATE
-═══════════════════════════════════════════ */
-let library=[];
-const TODAY=new Date().toISOString().split('T')[0];
-let difficulty=localStorage.getItem('lb_difficulty')||'easy';
-let scores=JSON.parse(localStorage.getItem('lb_scores')||'{}');
-let currentMode='original';
+  document.getElementById('loading-screen').style.display = 'none';
 
-const O={tiles:[],sel:null,swaps:20,locked:0,movies:[],done:false};
-const R={tiles:[],sel:null,swaps:20,locked:0,clusters:[],done:false};
-const B={vaults:[],score:0,done:false};
-
-/* ═══════════════════════════════════════════
-   DATA LOADING
-═══════════════════════════════════════════ */
-async function boot(){
-  const cached=localStorage.getItem('lb_library');
-  if(cached){
-    try{
-      library=JSON.parse(cached);
-      startApp();
-      // background refresh
-      fetchCSV().then(t=>{if(t){const f=buildLibrary(t);if(f.length>0){library=f;localStorage.setItem('lb_library',JSON.stringify(f));document.getElementById('sp-count').textContent=f.length;}}});
-      return;
-    }catch(e){}
-  }
-  const t=await fetchCSV();
-  if(!t){showErr();return;}
-  library=buildLibrary(t);
-  if(!library.length){showErr();return;}
-  localStorage.setItem('lb_library',JSON.stringify(library));
-  startApp();
-}
-
-async function fetchCSV(){
-  try{
-    const r=await fetch('./letterboxd_scraped.csv',{cache:'no-cache'});
-    if(!r.ok) return null;
-    return await r.text();
-  }catch(e){return null;}
-}
-
-function showErr(){
-  document.getElementById('loading-screen').style.display='none';
-  document.getElementById('error-screen').style.display='flex';
-}
-
-function startApp(){
-  document.getElementById('loading-screen').style.display='none';
-  if(library.length<20){
-    document.getElementById('warn-count').textContent=library.length;
-    document.getElementById('warn-overlay').classList.add('active');
-  }
-  document.getElementById('app').style.display='flex';
-  document.getElementById('sp-count').textContent=library.length;
-  document.getElementById('sp-date').textContent=TODAY;
-  if(difficulty==='hard') document.getElementById('diff-toggle').classList.add('on');
-  buildHistory();
-  initMode('original');
-}
-
-async function reloadCSV(){
-  localStorage.removeItem('lb_library');
-  const t=await fetchCSV();
-  if(!t){alert('Could not fetch CSV.');return;}
-  library=buildLibrary(t);
-  if(!library.length){alert('CSV parsed 0 films.');return;}
-  localStorage.setItem('lb_library',JSON.stringify(library));
-  document.getElementById('sp-count').textContent=library.length;
-  alert(`Reloaded ${library.length} films.`);
-  initMode(currentMode);
-}
-
-/* ═══════════════════════════════════════════
-   FILM POOL
-═══════════════════════════════════════════ */
-function filmPool(){
-  const sorted=[...library].sort((a,b)=>
-    difficulty==='hard'?a.average_rating-b.average_rating:b.average_rating-a.average_rating
-  );
-  return sorted.slice(0,Math.min(sorted.length,60));
-}
-
-function directorCounts(){
-  const m={};
-  library.forEach(f=>{if(f.director) m[f.director]=(m[f.director]||0)+1;});
-  return m;
-}
-
-/* ═══════════════════════════════════════════
-   MODE SWITCHING
-═══════════════════════════════════════════ */
-function switchMode(m){
-  currentMode=m;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelector(`[data-mode="${m}"]`).classList.add('active');
-  document.querySelectorAll('.mode').forEach(el=>el.classList.remove('active'));
-  document.getElementById(`mode-${m}`).classList.add('active');
-  initMode(m);
-}
-
-function initMode(m){
-  if(m==='original') initOriginal();
-  else if(m==='reversal') initReversal();
-  else if(m==='burgle') initBurgle();
-}
-
-/* ═══════════════════════════════════════════
-   ORIGINAL MODE
-═══════════════════════════════════════════ */
-const STOP=new Set(['the','a','an','of','and','in','to','for','on','at','by','with','is','it','as','its']);
-
-function filmTilePool(film,dirCount){
-  const pool=[];
-  const add=(v,type,pri)=>{if(v&&v.trim()) pool.push({value:v.trim(),type,pri});};
-  // actors (most specific)
-  film.cast_names.slice(0,3).forEach(n=>add(n,'actor',1));
-  // title words
-  const words=film.title.split(/\s+/);
-  if(words.length===1){
-    add(film.title,'title',2);
-  } else {
-    words.forEach(w=>{
-      const clean=w.replace(/[^a-zA-Z0-9]/g,'');
-      if(clean.length>2&&!STOP.has(clean.toLowerCase())) add(clean,'title',2);
-    });
-    if(!pool.find(t=>t.type==='title')) add(film.title,'title',2);
-  }
-  // director last name (only if 2+ films)
-  if(film.director&&dirCount[film.director]>=2){
-    const ln=film.director.split(' ').pop();
-    add(ln,'director',3);
-  }
-  // genres
-  film.genres_arr.slice(0,3).forEach(g=>add(g,'genre',4));
-  // country
-  add(film.country,'country',5);
-  // decade
-  add(film.decade_label,'decade',6);
-  // deduplicate by value
-  const seen=new Set();
-  return pool.filter(t=>{const k=t.value.toLowerCase();if(seen.has(k))return false;seen.add(k);return true;})
-             .sort((a,b)=>a.pri-b.pri);
-}
-
-function initOriginal(){
-  const rng=mulberry32(strToSeed(TODAY+'-orig'));
-  const pool=filmPool();
-  if(pool.length<4){
-    document.getElementById('orig-grid').innerHTML='<p style="color:var(--dim);text-align:center;padding:20px;grid-column:1/-1">Not enough films in library.</p>';
+  if (!todayGame) {
+    document.getElementById('no-game-screen').style.display = 'flex';
     return;
   }
-  const movies=pick(pool,4,mulberry32(strToSeed(TODAY+'-orig-movies')));
-  const dc=directorCounts();
-  O.movies=movies; O.swaps=20; O.locked=0; O.sel=null; O.done=false;
 
-  // build tile pools for each movie
-  const tilePools=movies.map(m=>filmTilePool(m,dc));
+  gameData = todayGame;
+  document.getElementById('hdr-date').textContent = TODAY;
+  document.getElementById('sp-date').textContent = TODAY;
+  document.getElementById('app').style.display = 'flex';
 
-  // assign tiles — prefer specific types, ensure global uniqueness
-  const used=new Set();
-  const assigned=[];
-  for(let mi=0;mi<4;mi++){
-    const picked=[];
-    const rngM=mulberry32(strToSeed(TODAY+'-orig-m'+mi));
-    const candidates=shuffle(tilePools[mi],rngM);
-    for(const t of candidates){
-      if(picked.length>=4) break;
-      const k=t.value.toLowerCase();
-      if(!used.has(k)){used.add(k);picked.push(t);}
-    }
-    // fallback if can't fill 4
-    let fb=0;
-    while(picked.length<4){
-      const fbVal=movies[mi].title+'-'+fb++;
-      picked.push({value:movies[mi].title.split(' ')[0]||'Film',type:'title',pri:2});
-      used.add(fbVal);
-    }
-    assigned.push(picked);
+  buildHistory();
+  initOriginal();
+}
+
+/* ══════════════════════════════════════════
+   Tab switching
+══════════════════════════════════════════ */
+function switchTab(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  document.querySelectorAll('.mode').forEach(el => el.classList.toggle('active', el.id === `mode-${mode}`));
+  if (mode === 'original' && !origCtrl) initOriginal();
+  if (mode === 'reversal' && !revCtrl) initReversal();
+  if (mode === 'burgle' && !B.vaults.length) initBurgle();
+}
+
+/* ══════════════════════════════════════════
+   ORIGINAL
+══════════════════════════════════════════ */
+function initOriginal() {
+  const data = gameData?.modes?.original;
+  if (!data) {
+    document.getElementById('orig-grid-container').innerHTML = '<p class="text-muted" style="padding:20px">No Original puzzle for today.</p>';
+    return;
   }
 
-  // flat tile array with movieIdx
-  const flat=[];
-  assigned.forEach((tiles,mi)=>{
-    tiles.forEach((t,ti)=>{
-      flat.push({value:t.value,type:t.type,movieIdx:mi,id:mi*4+ti,locked:false});
-    });
+  const tiles = data.tiles.map(t => ({ text: t.text, movie: t.movie, type: t.type }));
+
+  origCtrl = createTileGrid({
+    container: document.getElementById('orig-grid-container'),
+    tiles,
+    mode: 'original',
+    swapLimit: 20,
+    onComplete: (won, swapsLeft) => finishOriginal(won, swapsLeft),
   });
 
-  O.tiles=shuffle(flat,rng);
-  renderOriginal();
+  updateOrigBar();
+  setupOrigLabels(data.movies);
 }
 
-function renderOriginal(){
-  const grid=document.getElementById('orig-grid');
-  grid.innerHTML='';
-  document.getElementById('orig-swaps').textContent=O.swaps;
-  document.getElementById('orig-rows').textContent=`${O.locked} / 4 rows locked`;
+function updateOrigBar() {
+  if (!origCtrl) return;
+  document.getElementById('orig-swaps').textContent = origCtrl.state.swaps;
+  document.getElementById('orig-rows').textContent = `${origCtrl.state.locked} / 4 rows locked`;
+}
 
-  O.tiles.forEach((tile,idx)=>{
-    const el=document.createElement('div');
-    el.className='tile'+(tile.locked?' locked':'');
-    el.textContent=tile.value;
-    if(tile.value.length>18) el.style.fontSize='.65rem';
-    if(!tile.locked){
-      el.addEventListener('click',()=>origClick(idx));
-      el.addEventListener('touchstart',e=>{e.preventDefault();origClick(idx);},{passive:false});
-    }
-    if(O.sel===idx&&!tile.locked) el.classList.add('selected');
-    grid.appendChild(el);
+function setupOrigLabels(movieTitles) {
+  const container = document.getElementById('orig-labels');
+  container.innerHTML = '';
+  // Labels filled in when rows lock — we hook via MutationObserver on the grid
+  const grid = document.getElementById('orig-grid-container');
+  const obs = new MutationObserver(() => {
+    updateOrigBar();
+    renderOrigLabels(movieTitles);
   });
-
-  checkOrigRows();
-  renderOrigLabels();
+  obs.observe(grid, { childList: true, subtree: true });
 }
 
-function checkOrigRows(){
-  const els=document.getElementById('orig-grid').querySelectorAll('.tile');
-  for(let row=0;row<4;row++){
-    const slice=O.tiles.slice(row*4,row*4+4);
-    if(slice[0].locked) continue; // already locked row
-    const cnt={};
-    slice.forEach(t=>{cnt[t.movieIdx]=(cnt[t.movieIdx]||0)+1;});
-    const max=Math.max(...Object.values(cnt));
-    if(max===4){
-      // lock row
-      slice.forEach((t,i)=>{
-        t.locked=true;
-        const el=els[row*4+i];
-        if(el){el.classList.add('locked');el.classList.remove('near','selected');}
-      });
-      O.locked++;
-      document.getElementById('orig-rows').textContent=`${O.locked} / 4 rows locked`;
-      if(O.locked===4&&!O.done){O.done=true;setTimeout(()=>showOrigEnd(true),450);}
-    } else if(max===3){
-      const topMi=Object.entries(cnt).find(([,v])=>v===3)?.[0];
-      slice.forEach((t,i)=>{
-        const el=els[row*4+i];
-        if(el&&!t.locked){
-          el.classList.toggle('near',String(t.movieIdx)===topMi);
-        }
-      });
-    } else {
-      slice.forEach((_,i)=>{
-        const el=els[row*4+i];
-        if(el) el.classList.remove('near');
-      });
+function renderOrigLabels(movieTitles) {
+  if (!origCtrl) return;
+  const container = document.getElementById('orig-labels');
+  container.innerHTML = '';
+  const tiles = origCtrl.state.tiles;
+  for (let row = 0; row < 4; row++) {
+    const slice = tiles.slice(row * 4, row * 4 + 4);
+    if (slice.length && slice[0].locked) {
+      const d = document.createElement('div');
+      d.className = 'row-theme-label fade-in';
+      d.textContent = `Row ${row + 1}: ${slice[0].movie}`;
+      container.appendChild(d);
     }
   }
 }
 
-function renderOrigLabels(){
-  const c=document.getElementById('orig-theme-labels');
-  c.innerHTML='';
-  // show movie title for each locked row
-  for(let row=0;row<4;row++){
-    const slice=O.tiles.slice(row*4,row*4+4);
-    if(slice[0]&&slice[0].locked){
-      const mi=slice[0].movieIdx;
-      const m=O.movies[mi];
-      const div=document.createElement('div');
-      div.style.cssText='font-size:.72rem;color:var(--success);padding:2px 0';
-      div.textContent=`Row ${row+1}: ${m.title} (${m.year})`;
-      c.appendChild(div);
-    }
-  }
-}
+function finishOriginal(won, swapsLeft) {
+  saveScore('original', won ? swapsLeft : 0);
+  buildHistory();
 
-function origClick(idx){
-  if(O.tiles[idx].locked||O.done) return;
-  if(O.sel===null){
-    O.sel=idx; renderOriginal();
-  } else if(O.sel===idx){
-    O.sel=null; renderOriginal();
-  } else {
-    const a=O.sel,b=idx;
-    [O.tiles[a],O.tiles[b]]=[O.tiles[b],O.tiles[a]];
-    O.swaps--;
-    O.sel=null;
-    renderOriginal();
-    // bounce animation
-    const els=document.getElementById('orig-grid').querySelectorAll('.tile');
-    [els[a],els[b]].forEach(el=>{
-      if(el){el.classList.add('swap-anim');el.addEventListener('animationend',()=>el.classList.remove('swap-anim'),{once:true});}
-    });
-    if(O.swaps<=0&&O.locked<4&&!O.done){O.done=true;setTimeout(()=>showOrigEnd(false),500);}
-  }
-}
+  const data = gameData.modes.original;
+  document.getElementById('win-title').textContent = won ? '🏆 Puzzle Solved!' : '😞 Out of Swaps';
+  document.getElementById('win-sub').textContent = won
+    ? `Score: ${swapsLeft} swaps remaining (used ${20 - swapsLeft})`
+    : 'Better luck tomorrow! The films were:';
 
-function showOrigEnd(won){
-  const score=O.swaps;
-  if(won){saveScore('original',score);}
-  document.getElementById('win-title').textContent=won?'🏆 Puzzle Solved!':'😞 Out of Swaps';
-  document.getElementById('win-sub').textContent=won
-    ?`Score: ${score} swaps remaining (used ${20-score})`
-    :'Better luck tomorrow! The films were:';
-  const pg=document.getElementById('win-posters');
-  pg.innerHTML='';
-  O.movies.forEach(m=>pg.appendChild(posterItem(m)));
-  document.getElementById('win-extra').innerHTML='';
+  const pg = document.getElementById('win-posters');
+  pg.innerHTML = '';
+
+  // Build movie objects from library for posters
+  data.movies.forEach(title => {
+    pg.appendChild(posterItem({ title, year: '', poster_url: '' }));
+  });
+  document.getElementById('win-extra').innerHTML = '';
   document.getElementById('win-overlay').classList.add('active');
-  buildHistory();
 }
 
-/* ═══════════════════════════════════════════
-   REVERSAL MODE
-═══════════════════════════════════════════ */
-function buildClusterMaps(){
-  const dir={},actor={},genre={},decade={},country={},runtime={};
-  library.forEach((f,i)=>{
-    if(f.director){if(!dir[f.director])dir[f.director]=[];dir[f.director].push(i);}
-    if(f.cast_names[0]){if(!actor[f.cast_names[0]])actor[f.cast_names[0]]=[];actor[f.cast_names[0]].push(i);}
-    f.genres_arr.forEach(g=>{if(!genre[g])genre[g]=[];genre[g].push(i);});
-    if(!decade[f.decade_label])decade[f.decade_label]=[];decade[f.decade_label].push(i);
-    if(f.country){if(!country[f.country])country[f.country]=[];country[f.country].push(i);}
-    if(!runtime[f.runtime_bracket])runtime[f.runtime_bracket]=[];runtime[f.runtime_bracket].push(i);
-  });
-
-  const all=[];
-  const add=(map,label)=>{
-    Object.entries(map).forEach(([k,idxs])=>{
-      if(idxs.length>=4) all.push({label:label(k),films:idxs});
-    });
-  };
-  add(dir,k=>`Directed by ${k}`);
-  add(actor,k=>`Starring ${k}`);
-  add(genre,k=>`${k} Films`);
-  add(decade,k=>`Films from the ${k}`);
-  add(country,k=>`Films from ${k}`);
-  add(runtime,k=>`Runtime: ${k}`);
-  return all;
-}
-
-function findClusters(rng){
-  const all=shuffle(buildClusterMaps(),rng);
-  const chosen=[];
-  const usedFilms=new Set();
-  for(const cl of all){
-    if(chosen.length>=4) break;
-    const avail=cl.films.filter(i=>!usedFilms.has(i));
-    if(avail.length<4) continue;
-    const picked=pick(avail,4,mulberry32(strToSeed(TODAY+'-rev-'+cl.label)));
-    picked.forEach(i=>usedFilms.add(i));
-    chosen.push({...cl,selectedFilms:picked.map(i=>library[i]),revealed:false});
-  }
-  return chosen.length>=2?chosen:null;
-}
-
-function initReversal(){
-  const rng=mulberry32(strToSeed(TODAY+'-rev'));
-  const clusters=findClusters(rng);
-  if(!clusters){
-    document.getElementById('rev-grid').innerHTML='<p style="color:var(--dim);text-align:center;padding:20px;grid-column:1/-1">Not enough data for Reversal mode. Add more films with shared directors/genres.</p>';
+/* ══════════════════════════════════════════
+   REVERSAL
+══════════════════════════════════════════ */
+function initReversal() {
+  const data = gameData?.modes?.reversal;
+  if (!data) {
+    document.getElementById('rev-grid-container').innerHTML = '<p class="text-muted" style="padding:20px">No Reversal puzzle for today.</p>';
     return;
   }
-  R.clusters=clusters; R.swaps=20; R.locked=0; R.sel=null; R.done=false;
 
-  const flat=[];
-  clusters.forEach((cl,ci)=>{
-    cl.selectedFilms.forEach((f,fi)=>{
-      flat.push({value:f.title,clusterIdx:ci,id:ci*4+fi,locked:false});
-    });
-  });
-  R.tiles=shuffle(flat,rng);
-  renderReversal();
-}
+  const tiles = data.tiles.map(t => ({ text: t.text, clusterIdx: t.clusterIdx }));
 
-function renderReversal(){
-  const grid=document.getElementById('rev-grid');
-  grid.innerHTML='';
-  document.getElementById('rev-swaps').textContent=R.swaps;
-  document.getElementById('rev-rows').textContent=`${R.locked} / ${R.clusters.length} rows locked`;
-
-  R.tiles.forEach((tile,idx)=>{
-    const el=document.createElement('div');
-    el.className='tile'+(tile.locked?' locked':'');
-    el.textContent=tile.value;
-    if(tile.value.length>20) el.style.fontSize='.65rem';
-    else if(tile.value.length>14) el.style.fontSize='.7rem';
-    if(!tile.locked){
-      el.addEventListener('click',()=>revClick(idx));
-      el.addEventListener('touchstart',e=>{e.preventDefault();revClick(idx);},{passive:false});
-    }
-    if(R.sel===idx&&!tile.locked) el.classList.add('selected');
-    grid.appendChild(el);
+  revCtrl = createTileGrid({
+    container: document.getElementById('rev-grid-container'),
+    tiles,
+    mode: 'reversal',
+    groups: data.groups,
+    swapLimit: 20,
+    onComplete: (won, swapsLeft) => finishReversal(won, swapsLeft),
   });
 
-  checkRevRows();
-  renderRevLabels();
+  updateRevBar();
+  setupRevLabels(data.groups);
 }
 
-function checkRevRows(){
-  const els=document.getElementById('rev-grid').querySelectorAll('.tile');
-  const n=R.clusters.length;
-  for(let row=0;row<n;row++){
-    const slice=R.tiles.slice(row*4,row*4+4);
-    if(!slice[0]||slice[0].locked) continue;
-    const cnt={};
-    slice.forEach(t=>{cnt[t.clusterIdx]=(cnt[t.clusterIdx]||0)+1;});
-    const max=Math.max(...Object.values(cnt));
-    if(max===4){
-      slice.forEach((t,i)=>{
-        t.locked=true;
-        const el=els[row*4+i];
-        if(el){el.classList.add('locked');el.classList.remove('near','selected');}
-      });
-      R.clusters[slice[0].clusterIdx].revealed=true;
-      R.locked++;
-      document.getElementById('rev-rows').textContent=`${R.locked} / ${n} rows locked`;
-      renderRevLabels();
-      if(R.locked===n&&!R.done){R.done=true;setTimeout(()=>showRevEnd(true),450);}
-    } else if(max===3){
-      const topCi=Object.entries(cnt).find(([,v])=>v===3)?.[0];
-      slice.forEach((t,i)=>{
-        const el=els[row*4+i];
-        if(el&&!t.locked) el.classList.toggle('near',String(t.clusterIdx)===topCi);
-      });
-    } else {
-      slice.forEach((_,i)=>{const el=els[row*4+i];if(el) el.classList.remove('near');});
+function updateRevBar() {
+  if (!revCtrl) return;
+  document.getElementById('rev-swaps').textContent = revCtrl.state.swaps;
+  document.getElementById('rev-rows').textContent = `${revCtrl.state.locked} / 4 rows locked`;
+}
+
+function setupRevLabels(groups) {
+  const grid = document.getElementById('rev-grid-container');
+  const obs = new MutationObserver(() => {
+    updateRevBar();
+    renderRevLabels(groups);
+  });
+  obs.observe(grid, { childList: true, subtree: true });
+}
+
+function renderRevLabels(groups) {
+  if (!revCtrl) return;
+  const container = document.getElementById('rev-labels');
+  container.innerHTML = '';
+  const tiles = revCtrl.state.tiles;
+  for (let row = 0; row < groups.length; row++) {
+    const slice = tiles.slice(row * 4, row * 4 + 4);
+    if (slice.length && slice[0].locked) {
+      const ci = slice[0].clusterIdx;
+      const d = document.createElement('div');
+      d.className = 'row-theme-label fade-in';
+      d.textContent = `Row ${row + 1}: ${groups[ci]?.theme || ''}`;
+      container.appendChild(d);
     }
   }
 }
 
-function renderRevLabels(){
-  const c=document.getElementById('rev-theme-labels');
-  c.innerHTML='';
-  R.clusters.forEach((cl,ci)=>{
-    if(cl.revealed){
-      const div=document.createElement('div');
-      div.style.cssText='font-size:.72rem;color:var(--success);padding:2px 0';
-      div.textContent=`Row ${ci+1}: ${cl.label}`;
-      c.appendChild(div);
-    }
+function finishReversal(won, swapsLeft) {
+  saveScore('reversal', won ? swapsLeft : 0);
+  buildHistory();
+
+  const data = gameData.modes.reversal;
+  document.getElementById('win-title').textContent = won ? '🏆 All Themes Found!' : '😞 Out of Swaps';
+  document.getElementById('win-sub').textContent = won ? `Score: ${swapsLeft} swaps remaining` : 'The themes were:';
+
+  const pg = document.getElementById('win-posters');
+  pg.innerHTML = '';
+  data.groups.flatMap(g => g.movies).slice(0, 8).forEach(title => {
+    pg.appendChild(posterItem({ title, year: '', poster_url: '' }));
   });
-}
 
-function revClick(idx){
-  if(R.tiles[idx].locked||R.done) return;
-  if(R.sel===null){
-    R.sel=idx; renderReversal();
-  } else if(R.sel===idx){
-    R.sel=null; renderReversal();
-  } else {
-    const a=R.sel,b=idx;
-    [R.tiles[a],R.tiles[b]]=[R.tiles[b],R.tiles[a]];
-    R.swaps--;
-    R.sel=null;
-    renderReversal();
-    if(R.swaps<=0&&R.locked<R.clusters.length&&!R.done){R.done=true;setTimeout(()=>showRevEnd(false),500);}
-  }
-}
-
-function showRevEnd(won){
-  const score=R.swaps;
-  if(won) saveScore('reversal',score);
-  // reveal all themes
-  R.clusters.forEach(cl=>cl.revealed=true);
-  renderRevLabels();
-  document.getElementById('win-title').textContent=won?'🏆 All Themes Found!':'😞 Out of Swaps';
-  document.getElementById('win-sub').textContent=won
-    ?`Score: ${score} swaps remaining`:'The themes were:';
-  const pg=document.getElementById('win-posters');
-  pg.innerHTML='';
-  R.clusters.flatMap(cl=>cl.selectedFilms).slice(0,8).forEach(f=>pg.appendChild(posterItem(f)));
-  document.getElementById('win-extra').innerHTML=R.clusters.map(cl=>`<div style="margin:3px 0">• ${cl.label}</div>`).join('');
+  document.getElementById('win-extra').innerHTML = data.groups
+    .map(g => `<div style="margin:3px 0">• ${g.theme}</div>`)
+    .join('');
   document.getElementById('win-overlay').classList.add('active');
-  buildHistory();
 }
 
-/* ═══════════════════════════════════════════
-   BURGLE MODE
-═══════════════════════════════════════════ */
-const CLUES=[
-  {key:'decade',  label:'Decade',         get:f=>f.decade_label},
-  {key:'genres',  label:'Genre(s)',        get:f=>f.genres_arr.join(', ')||'—'},
-  {key:'runtime', label:'Runtime',         get:f=>f.runtime_bracket},
-  {key:'support', label:'Supporting Actor',get:f=>f.cast_names[1]||f.cast_names[2]||'—'},
-  {key:'director',label:'Director',        get:f=>f.director||'—'},
-  {key:'lead',    label:'Lead Actor',      get:f=>f.cast_names[0]||'—'},
-  {key:'synopsis',label:'Synopsis',        get:f=>{const s=f.synopsis||'';const fs=s.split(/[.!?]/)[0];return fs?fs.trim()+'.':'—';}},
-];
-
-function normTitle(t){
-  return t.toLowerCase().replace(/^(the|a|an)\s+/,'').replace(/[^a-z0-9\s]/g,'').trim();
-}
-function titleMatch(guess,target){
-  const g=normTitle(guess), t=normTitle(target);
-  if(g===t) return true;
-  const gw=g.split(/\s+/).filter(Boolean);
-  const tw=new Set(t.split(/\s+/).filter(Boolean));
-  if(!gw.length||!tw.size) return false;
-  const hits=gw.filter(w=>tw.has(w)).length;
-  return hits/Math.max(gw.length,tw.size)>=0.8;
-}
-
-function initBurgle(){
-  const rng=mulberry32(strToSeed(TODAY+'-burgle'));
-  const pool=filmPool();
-  if(pool.length<5){
-    document.getElementById('vault-wrap').innerHTML='<p style="color:var(--dim);padding:20px">Not enough films for Burgle mode.</p>';
+/* ══════════════════════════════════════════
+   BURGLE
+══════════════════════════════════════════ */
+function initBurgle() {
+  const data = gameData?.modes?.burgle;
+  if (!data) {
+    document.getElementById('vault-wrap').innerHTML = '<p class="text-muted" style="padding:20px">No Burgle puzzle for today.</p>';
     return;
   }
-  const movies=pick(pool,5,rng);
-  B.vaults=movies.map((f,i)=>({
-    film:f,id:i,clues:0,wrong:0,solved:false,cracked:false,open:i===0,points:0,input:'',
+
+  B.vaults = data.movies.map((m, i) => ({
+    film: m,
+    id: i,
+    clues: 0,
+    wrong: 0,
+    solved: false,
+    cracked: false,
+    open: i === 0,
+    points: 0,
+    input: '',
   }));
-  B.score=0; B.done=false;
+  B.score = 0; B.done = false;
   renderBurgle();
 }
 
-function renderBurgle(){
-  const wrap=document.getElementById('vault-wrap');
-  wrap.innerHTML='';
-  document.getElementById('burgle-score').textContent=B.score;
-  const resolved=B.vaults.filter(v=>v.solved||v.cracked).length;
-  document.getElementById('burgle-prog').textContent=`${resolved} / 5 vaults`;
+function renderBurgle() {
+  const wrap = document.getElementById('vault-wrap');
+  wrap.innerHTML = '';
+  document.getElementById('burgle-score').textContent = B.score;
+  const resolved = B.vaults.filter(v => v.solved || v.cracked).length;
+  document.getElementById('burgle-prog').textContent = `${resolved} / 5 vaults`;
 
-  B.vaults.forEach((v,idx)=>{
-    const el=document.createElement('div');
-    el.className='vault'+(v.solved?' solved':v.cracked?' cracked':'');
+  B.vaults.forEach((v, idx) => {
+    const el = document.createElement('div');
+    el.className = 'vault' + (v.solved ? ' solved' : v.cracked ? ' cracked' : '');
 
-    const statusTxt=v.solved?`✓ ${v.points} pts`:v.cracked?'✗ 0 pts':v.wrong>0?`${v.wrong}/3 wrong`:'';
+    const statusTxt = v.solved ? `✓ ${v.points} pts` : v.cracked ? '✗ 0 pts' : v.wrong > 0 ? `${v.wrong}/3 ❌` : '';
 
-    // header
-    const hdr=document.createElement('div');
-    hdr.className='vault-hdr';
-    hdr.onclick=()=>toggleVault(idx);
-    hdr.innerHTML=`
-      <div class="vault-num">${idx+1}</div>
-      <div class="vault-name">${(v.solved||v.cracked)?`${v.film.title} (${v.film.year})`:'??? Unknown Film'}</div>
+    const hdr = document.createElement('div');
+    hdr.className = 'vault-hdr';
+    hdr.onclick = () => toggleVault(idx);
+    hdr.innerHTML = `
+      <div class="vault-num">${idx + 1}</div>
+      <div class="vault-name">${(v.solved || v.cracked) ? `${v.film.title} (${v.film.year || ''})` : '??? Unknown Film'}</div>
       <div class="vault-status">${statusTxt}</div>
-      <div class="vault-chevron">${v.open?'▲':'▼'}</div>`;
+      <div class="vault-chevron">${v.open ? '▲' : '▼'}</div>`;
     el.appendChild(hdr);
 
-    // body
-    const body=document.createElement('div');
-    body.className='vault-body'+(v.open?' open':'');
+    const body = document.createElement('div');
+    body.className = 'vault-body' + (v.open ? ' open' : '');
 
-    // revealed clues
-    const clueList=document.createElement('div');
-    clueList.className='clue-list';
-    for(let c=0;c<v.clues;c++){
-      const cr=document.createElement('div');
-      cr.className='clue-row';
-      cr.innerHTML=`<span class="clue-lbl">${CLUES[c].label}:</span><span class="clue-val">${CLUES[c].get(v.film)}</span>`;
-      clueList.appendChild(cr);
+    // Revealed clues
+    const clues = v.film.clues || [];
+    for (let c = 0; c < v.clues; c++) {
+      const cr = document.createElement('div');
+      cr.className = 'clue-row';
+      cr.innerHTML = `<span class="clue-lbl">${clues[c].label}:</span><span class="clue-val">${clues[c].text}</span>`;
+      body.appendChild(cr);
     }
-    body.appendChild(clueList);
 
-    if(v.solved||v.cracked){
-      if(v.film.poster_url){
-        const img=document.createElement('img');
-        img.src=v.film.poster_url;
-        img.className='poster-reveal';
-        img.alt=v.film.title;
-        img.style.opacity=v.cracked?'0.45':'1';
-        img.onerror=()=>img.style.display='none';
+    if (v.solved || v.cracked) {
+      if (v.film.poster_url) {
+        const img = document.createElement('img');
+        img.src = v.film.poster_url;
+        img.className = 'poster-reveal';
+        img.alt = v.film.title;
+        img.style.opacity = v.cracked ? '0.45' : '1';
+        img.onerror = () => img.style.display = 'none';
         body.appendChild(img);
       }
-      if(v.cracked){
-        const p=document.createElement('p');
-        p.style.cssText='color:var(--err);font-size:.8rem;margin-top:4px';
-        p.textContent='Vault cracked — no points.';
+      if (v.cracked) {
+        const p = document.createElement('p');
+        p.style.cssText = 'color:var(--danger);font-size:.8rem;margin-top:4px';
+        p.textContent = 'Vault cracked — no points.';
         body.appendChild(p);
       }
     } else {
-      // next clue button
-      if(v.clues<CLUES.length){
-        const btn=document.createElement('button');
-        btn.className='btn btn-sm';
-        btn.textContent=v.clues===0?'Reveal First Clue':'Next Clue';
-        btn.onclick=()=>revealClue(idx);
+      if (v.clues < clues.length) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm';
+        btn.textContent = v.clues === 0 ? 'Reveal First Clue' : 'Next Clue';
+        btn.onclick = () => revealClue(idx);
         body.appendChild(btn);
       }
 
-      // guess area — always visible
-      const ga=document.createElement('div');
-      ga.className='guess-area';
-      const inp=document.createElement('input');
-      inp.type='text';
-      inp.className='guess-input';
-      inp.id=`gi-${idx}`;
-      inp.placeholder='Guess the film…';
-      inp.value=v.input;
-      inp.addEventListener('input',e=>v.input=e.target.value);
-      inp.addEventListener('keydown',e=>{if(e.key==='Enter') submitGuess(idx);});
-      const gbtn=document.createElement('button');
-      gbtn.className='btn btn-primary btn-sm';
-      gbtn.textContent='Guess';
-      gbtn.onclick=()=>submitGuess(idx);
+      const ga = document.createElement('div');
+      ga.className = 'guess-area';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'guess-input';
+      inp.id = `gi-${idx}`;
+      inp.placeholder = 'Guess the film…';
+      inp.value = v.input;
+      inp.addEventListener('input', e => v.input = e.target.value);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitGuess(idx); });
+      const gbtn = document.createElement('button');
+      gbtn.className = 'btn btn-primary btn-sm';
+      gbtn.textContent = 'Guess';
+      gbtn.onclick = () => submitGuess(idx);
       ga.appendChild(inp); ga.appendChild(gbtn);
       body.appendChild(ga);
 
-      // wrong dots
-      const dots=document.createElement('div');
-      dots.className='dots';
-      for(let d=0;d<3;d++){
-        const dot=document.createElement('div');
-        dot.className='dot'+(d<v.wrong?' filled':'');
+      const dots = document.createElement('div');
+      dots.className = 'dots';
+      for (let d = 0; d < 3; d++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (d < v.wrong ? ' filled' : '');
         dots.appendChild(dot);
       }
       body.appendChild(dots);
@@ -1012,140 +461,132 @@ function renderBurgle(){
   });
 }
 
-function toggleVault(idx){
-  B.vaults[idx].open=!B.vaults[idx].open;
-  renderBurgle();
-}
+function toggleVault(idx) { B.vaults[idx].open = !B.vaults[idx].open; renderBurgle(); }
 
-function revealClue(idx){
-  const v=B.vaults[idx];
-  if(v.clues>=CLUES.length) return;
+function revealClue(idx) {
+  const v = B.vaults[idx];
+  if (v.clues >= (v.film.clues || []).length) return;
   v.clues++;
   renderBurgle();
-  setTimeout(()=>{const inp=document.getElementById(`gi-${idx}`);if(inp) inp.focus();},60);
+  setTimeout(() => { const inp = document.getElementById(`gi-${idx}`); if (inp) inp.focus(); }, 60);
 }
 
-function submitGuess(idx){
-  const v=B.vaults[idx];
-  if(v.solved||v.cracked) return;
-  const guess=(v.input||'').trim();
-  if(!guess) return;
+function submitGuess(idx) {
+  const v = B.vaults[idx];
+  if (v.solved || v.cracked) return;
+  const guess = (v.input || '').trim();
+  if (!guess) return;
 
-  if(titleMatch(guess,v.film.title)){
-    // correct
-    const pts=Math.max(0,7-v.clues);
-    v.solved=true; v.points=pts; v.clues=CLUES.length;
-    B.score+=pts;
+  if (titleMatch(guess, v.film.title)) {
+    const pts = Math.max(0, 7 - v.clues);
+    v.solved = true; v.points = pts; v.clues = (v.film.clues || []).length;
+    B.score += pts;
     renderBurgle();
-    // open next
-    const next=B.vaults.find((x,i)=>i>idx&&!x.solved&&!x.cracked);
-    if(next){next.open=true; setTimeout(()=>renderBurgle(),350);}
-    if(B.vaults.every(x=>x.solved||x.cracked)&&!B.done){
-      B.done=true;
-      setTimeout(()=>showBurgleEnd(),650);
+    const next = B.vaults.find((x, i) => i > idx && !x.solved && !x.cracked);
+    if (next) { next.open = true; setTimeout(renderBurgle, 350); }
+    if (B.vaults.every(x => x.solved || x.cracked) && !B.done) {
+      B.done = true; setTimeout(showBurgleEnd, 650);
     }
   } else {
-    // wrong
     v.wrong++;
-    v.input='';
-    const inp=document.getElementById(`gi-${idx}`);
-    if(inp){inp.classList.add('wrong');inp.value='';setTimeout(()=>inp.classList.remove('wrong'),400);}
-    if(v.wrong>=3){
-      v.cracked=true; v.clues=CLUES.length;
-      const next=B.vaults.find((x,i)=>i>idx&&!x.solved&&!x.cracked);
-      if(next) next.open=true;
-      if(B.vaults.every(x=>x.solved||x.cracked)&&!B.done){
-        B.done=true;
-        setTimeout(()=>showBurgleEnd(),650);
+    v.input = '';
+    const inp = document.getElementById(`gi-${idx}`);
+    if (inp) { inp.classList.add('wrong'); inp.value = ''; setTimeout(() => inp.classList.remove('wrong'), 400); }
+    if (v.wrong >= 3) {
+      v.cracked = true; v.clues = (v.film.clues || []).length;
+      const next = B.vaults.find((x, i) => i > idx && !x.solved && !x.cracked);
+      if (next) next.open = true;
+      if (B.vaults.every(x => x.solved || x.cracked) && !B.done) {
+        B.done = true; setTimeout(showBurgleEnd, 650);
       }
     }
     renderBurgle();
   }
 }
 
-function showBurgleEnd(){
-  const total=B.vaults.reduce((s,v)=>s+(v.points||0),0);
-  saveScore('burgle',total);
-  document.getElementById('burgle-final').textContent=`${total} / 35`;
-  const pg=document.getElementById('burgle-posters');
-  pg.innerHTML='';
-  B.vaults.forEach(v=>pg.appendChild(posterItem(v.film)));
-  document.getElementById('burgle-overlay').classList.add('active');
+function showBurgleEnd() {
+  const total = B.vaults.reduce((s, v) => s + (v.points || 0), 0);
+  saveScore('burgle', total);
   buildHistory();
+  document.getElementById('burgle-final').textContent = `${total} / 35`;
+  const pg = document.getElementById('burgle-posters');
+  pg.innerHTML = '';
+  B.vaults.forEach(v => pg.appendChild(posterItem(v.film)));
+  document.getElementById('burgle-overlay').classList.add('active');
 }
 
-/* ═══════════════════════════════════════════
-   SETTINGS & HISTORY
-═══════════════════════════════════════════ */
-function toggleSettings(){
-  document.getElementById('settings-panel').classList.toggle('open');
+/* ══════════════════════════════════════════
+   Settings & scores
+══════════════════════════════════════════ */
+function toggleSettings() { document.getElementById('settings-panel').classList.toggle('open'); }
+document.getElementById('btn-settings').addEventListener('click', toggleSettings);
+
+document.getElementById('btn-help').addEventListener('click', () => {
+  const titles = { original: 'Original', reversal: 'Reversal', burgle: 'Burgle' };
+  const bodies = {
+    original: `
+      <p>16 clue tiles are drawn from 4 hidden films. Swap them into rows so each row contains clues from exactly one film.</p>
+      <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:.86rem;color:var(--muted)">
+        <li>Click two tiles to swap them (or drag and drop)</li>
+        <li>A row glows <span style="color:var(--warn)">yellow</span> when 3/4 tiles match one film</li>
+        <li>A row locks <span style="color:var(--success)">green</span> when all 4 match</li>
+        <li>You have 20 swaps — more remaining = higher score</li>
+      </ul>`,
+    reversal: `
+      <p>16 movie titles are shuffled. Group them into rows — each row shares a hidden theme.</p>
+      <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:.86rem;color:var(--muted)">
+        <li>Click two tiles to swap (or drag and drop)</li>
+        <li>Possible themes: director, lead actor, genre, decade, country, runtime</li>
+        <li>Locked rows reveal their theme</li>
+        <li>You have 20 swaps</li>
+      </ul>`,
+    burgle: `
+      <p>5 mystery films are locked in vaults. Crack each one for points!</p>
+      <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:.86rem;color:var(--muted)">
+        <li>Click "Reveal Next Clue" to reveal clues one by one</li>
+        <li>Type your guess and press Enter or click Guess</li>
+        <li>Score = 7 − clues revealed per vault (max 35 total)</li>
+        <li>3 wrong guesses = vault cracked, 0 points</li>
+        <li>Matching ignores "The/A/An" and is case-insensitive</li>
+      </ul>`,
+  };
+  document.getElementById('modal-help-title').textContent = `How to Play: ${titles[currentMode]}`;
+  document.getElementById('modal-help-body').innerHTML = bodies[currentMode];
+  document.getElementById('modal-help').classList.add('active');
+});
+
+function saveScore(mode, val) {
+  if (!scores[TODAY]) scores[TODAY] = {};
+  scores[TODAY][mode] = val;
+  localStorage.setItem('lb_scores', JSON.stringify(scores));
 }
 
-function toggleDifficulty(){
-  difficulty=difficulty==='easy'?'hard':'easy';
-  localStorage.setItem('lb_difficulty',difficulty);
-  document.getElementById('diff-toggle').classList.toggle('on');
-  initMode(currentMode);
-}
-
-function saveScore(mode,val){
-  if(!scores[TODAY]) scores[TODAY]={};
-  scores[TODAY][mode]=val;
-  localStorage.setItem('lb_scores',JSON.stringify(scores));
-}
-
-function buildHistory(){
-  const c=document.getElementById('sp-history');
-  c.innerHTML='';
-  const entries=Object.entries(scores).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,7);
-  if(!entries.length){c.innerHTML='<p class="text-dim" style="padding:6px 0;font-size:.82rem">No scores yet.</p>';return;}
-  entries.forEach(([date,s])=>{
-    const row=document.createElement('div');
-    row.className='hist-row';
-    row.innerHTML=`<span class="text-dim">${date}</span><span style="display:flex;gap:10px">
-      ${s.original!==undefined?`<span>O:${s.original}</span>`:''}
-      ${s.reversal!==undefined?`<span>R:${s.reversal}</span>`:''}
-      ${s.burgle!==undefined?`<span>B:${s.burgle}/35</span>`:''}
+function buildHistory() {
+  const c = document.getElementById('sp-history');
+  c.innerHTML = '';
+  const entries = Object.entries(scores).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
+  if (!entries.length) { c.innerHTML = '<p class="text-muted text-sm" style="padding:6px 0">No scores yet.</p>'; return; }
+  entries.forEach(([date, s]) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:.82rem';
+    row.innerHTML = `<span class="text-muted">${date}</span><span style="display:flex;gap:10px">
+      ${s.original !== undefined ? `<span>O:${s.original}</span>` : ''}
+      ${s.reversal !== undefined ? `<span>R:${s.reversal}</span>` : ''}
+      ${s.burgle   !== undefined ? `<span>B:${s.burgle}/35</span>` : ''}
     </span>`;
     c.appendChild(row);
   });
 }
 
-/* ═══════════════════════════════════════════
-   MODALS & OVERLAYS
-═══════════════════════════════════════════ */
-function showHelp(){
-  closeAllModals();
-  document.getElementById(`modal-${currentMode}`)?.classList.add('active');
-}
-function closeModal(id){document.getElementById(id)?.classList.remove('active');}
-function closeAllModals(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active'));}
-function closeOverlay(id){document.getElementById(id)?.classList.remove('active');}
+/* ── Overlay/modal helpers ── */
+function closeOverlay(id) { document.getElementById(id)?.classList.remove('active'); }
+function closeModal(id)   { document.getElementById(id)?.classList.remove('active'); }
 
-document.addEventListener('click',e=>{
-  if(e.target.classList.contains('modal')) closeAllModals();
-  if(e.target.classList.contains('overlay')) closeOverlay(e.target.id);
-  if(e.target.id==='settings-panel'||!e.target.closest('#settings-panel')&&!e.target.closest('.icon-btn[onclick*="Settings"]')&&!e.target.closest('.icon-btn[onclick="toggleSettings()"]')){
-    // close settings if clicking outside — but be careful not to close on inner clicks
-    // simpler: only close via the X button
-  }
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('overlay')) closeOverlay(e.target.id);
+  if (e.target.classList.contains('modal'))   closeModal(e.target.id);
 });
 
-/* ═══════════════════════════════════════════
-   POSTER HELPER
-═══════════════════════════════════════════ */
-function posterItem(film){
-  const div=document.createElement('div');
-  div.className='poster-item';
-  div.innerHTML=film.poster_url
-    ?`<img src="${film.poster_url}" alt="${film.title.replace(/"/g,'')}" loading="lazy" onerror="this.style.display='none'"><div class="poster-title">${film.title} (${film.year})</div>`
-    :`<div style="background:var(--surface2);aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--dim);padding:4px;text-align:center">${film.title}</div>`;
-  return div;
-}
-
-/* ═══════════════════════════════════════════
-   BOOT
-═══════════════════════════════════════════ */
 boot();
 </script>
 </body>
