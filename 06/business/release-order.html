@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Release Order</title>
+  <style>
+    :root {
+      --bg: #0c0c14;
+      --card-bg: #14141f;
+      --card-border: #23233a;
+      --card-hover: #1b1b2c;
+      --text: #dcdcf0;
+      --muted: #6868a0;
+      --accent: #f0bf3c;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Upload ── */
+    #upload-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .brand { font-size: 3.2rem; font-weight: 900; letter-spacing: -2px; line-height: 1; margin-bottom: .5rem; }
+    .brand em { color: var(--accent); font-style: normal; }
+
+    .tagline { color: var(--muted); font-size: 1rem; margin-bottom: 3rem; max-width: 420px; line-height: 1.6; }
+
+    .drop-zone {
+      border: 2px dashed var(--card-border);
+      border-radius: 14px;
+      padding: 2.5rem 3rem;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      max-width: 400px; width: 100%;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(240,191,60,.05); }
+    .dz-icon { margin: 0 auto 1rem; opacity: .4; }
+    .drop-zone p { color: var(--muted); font-size: .95rem; line-height: 1.6; }
+    .drop-zone strong { color: var(--accent); text-decoration: underline; cursor: pointer; }
+    #file-input { display: none; }
+
+    /* ── Game ── */
+    #game-screen { display: none; max-width: 680px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+
+    .g-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.75rem; flex-wrap: wrap; gap: .75rem;
+    }
+    .brand-sm { font-size: 1.15rem; font-weight: 800; letter-spacing: -.5px; }
+    .brand-sm em { color: var(--accent); font-style: normal; }
+
+    .pills { display: flex; gap: .6rem; }
+    .pill { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: .3rem .85rem; font-size: .82rem; color: var(--muted); }
+    .pill b { color: var(--text); }
+
+    /* ── Difficulty tabs ── */
+    .diff-row { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+
+    .diff-tab {
+      flex: 1;
+      padding: .5rem .75rem;
+      border-radius: 9px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color .12s, color .12s, background .12s;
+      font-family: inherit;
+    }
+    .diff-tab:hover { border-color: var(--accent); color: var(--accent); }
+    .diff-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+    .diff-sub { font-size: .7rem; font-weight: 400; opacity: .75; display: block; margin-top: .15rem; }
+
+    /* ── Instruction ── */
+    .instruction {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      text-align: center;
+      letter-spacing: .3px;
+    }
+
+    /* ── Sortable list ── */
+    #sort-list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.5rem; }
+
+    .sort-item {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 10px;
+      padding: .6rem .75rem;
+      cursor: grab;
+      transition: border-color .12s, background .12s, opacity .15s, transform .1s;
+      user-select: none;
+    }
+    .sort-item:active { cursor: grabbing; }
+    .sort-item.dragging { opacity: .45; }
+    .sort-item.over { border-color: var(--accent); background: var(--card-hover); transform: scale(1.01); }
+    .sort-item.revealed-correct { border-color: var(--green); background: rgba(34,197,94,.06); cursor: default; }
+    .sort-item.revealed-wrong   { border-color: var(--red);   background: rgba(239,68,68,.06);  cursor: default; }
+
+    .item-handle { color: var(--card-border); font-size: 1rem; flex-shrink: 0; line-height: 1; }
+    .sort-item:hover .item-handle { color: var(--muted); }
+
+    .item-num {
+      width: 20px; font-size: .78rem; font-weight: 700;
+      color: var(--muted); text-align: center; flex-shrink: 0;
+    }
+
+    .item-poster {
+      width: 38px; height: 54px; object-fit: cover;
+      border-radius: 4px; flex-shrink: 0;
+      background: var(--card-border);
+    }
+    .item-poster-ph {
+      width: 38px; height: 54px; border-radius: 4px;
+      background: var(--card-border); flex-shrink: 0;
+    }
+
+    .item-title { flex: 1; font-size: .88rem; font-weight: 600; line-height: 1.35; }
+
+    .item-year-badge {
+      font-size: .8rem; font-weight: 700; flex-shrink: 0;
+      padding: .2rem .55rem; border-radius: 6px;
+    }
+    .revealed-correct .item-year-badge { background: rgba(34,197,94,.15); color: var(--green); }
+    .revealed-wrong   .item-year-badge { background: rgba(239,68,68,.15);  color: var(--red); }
+
+    .item-arrows { display: flex; flex-direction: column; gap: .2rem; flex-shrink: 0; }
+    .arrow-btn {
+      background: none; border: 1px solid var(--card-border); border-radius: 4px;
+      width: 24px; height: 22px; color: var(--muted); cursor: pointer;
+      font-size: .6rem; display: flex; align-items: center; justify-content: center;
+      transition: border-color .1s, color .1s; line-height: 1;
+    }
+    .arrow-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .arrow-btn:disabled { opacity: .25; cursor: default; }
+
+    /* ── Buttons ── */
+    .btn-row { display: flex; justify-content: center; gap: .75rem; }
+
+    .btn {
+      background: var(--accent); color: #000; border: none; border-radius: 8px;
+      padding: .72rem 2rem; font-size: .93rem; font-weight: 700; cursor: pointer;
+      letter-spacing: .3px; transition: background .12s, transform .1s; font-family: inherit;
+    }
+    .btn:hover { background: #f8d060; transform: translateY(-1px); }
+    .btn:disabled { opacity: .4; cursor: default; transform: none; }
+
+    /* ── Result ── */
+    .result-bar {
+      display: none; flex-direction: column; align-items: center;
+      gap: .75rem; margin-bottom: 1.5rem; text-align: center;
+    }
+    .result-bar.show { display: flex; }
+
+    .result-score { font-size: 1.25rem; font-weight: 700; }
+    .result-score.perfect { color: var(--green); }
+    .result-score.ok { color: var(--accent); }
+    .result-score.bad { color: var(--red); }
+
+    .result-note { font-size: .82rem; color: var(--muted); }
+
+    /* ── Error ── */
+    .diff-error {
+      background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+      border-radius: 8px; padding: .65rem 1rem; font-size: .85rem; color: var(--red);
+      margin-bottom: 1rem; display: none; text-align: center;
+    }
+    .diff-error.show { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- Upload -->
+<div id="upload-screen">
+  <h1 class="brand">Release <em>Order</em></h1>
+  <p class="tagline">Five films. Arrange them from oldest to newest. Three difficulty levels — how well do you know your release dates?</p>
+  <div class="drop-zone" id="drop-zone">
+    <svg class="dz-icon" width="44" height="44" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p>Drop your CSV here, or <strong id="browse-link">browse to upload</strong></p>
+    <input type="file" id="file-input" accept=".csv">
+  </div>
+</div>
+
+<!-- Game -->
+<div id="game-screen">
+  <div class="g-header">
+    <span class="brand-sm">Release <em>Order</em></span>
+    <div class="pills">
+      <span class="pill">Round <b id="round-num">1</b></span>
+      <span class="pill">Score <b id="score-num">0</b> / <b id="score-den">0</b></span>
+    </div>
+  </div>
+
+  <div class="diff-row">
+    <button class="diff-tab active" data-diff="easy">
+      Easy <span class="diff-sub">10+ yrs apart</span>
+    </button>
+    <button class="diff-tab" data-diff="hard">
+      Hard <span class="diff-sub">Same decade</span>
+    </button>
+    <button class="diff-tab" data-diff="expert">
+      Expert <span class="diff-sub">Same 3-year span</span>
+    </button>
+  </div>
+
+  <p class="instruction" id="instruction">Drag or use arrows to arrange oldest &#8594; newest</p>
+
+  <div class="diff-error" id="diff-error"></div>
+  <div class="result-bar" id="result-bar">
+    <p class="result-score" id="result-score"></p>
+    <p class="result-note" id="result-note"></p>
+  </div>
+
+  <div id="sort-list"></div>
+
+  <div class="btn-row">
+    <button class="btn" id="btn-action">Lock In</button>
+  </div>
+</div>
+
+<script>
+  let allMovies  = [];
+  let playerOrder = [];   // current arrangement of 5 movies
+  let correctOrder = [];  // sorted by year asc
+  let difficulty  = 'easy';
+  let isRevealed  = false;
+  let roundNum    = 1;
+  let totalScore  = 0;
+  let totalPossible = 0;
+  let dragIdx     = null;
+
+  // ── CSV ────────────────────────────────────────────────────
+
+  function parseCSV(src) {
+    const rows = [];
+    let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') {
+        if (q && src[i + 1] === '"') { field += '"'; i++; } else q = !q;
+      } else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) {
+        if (c === '\r' && src[i + 1] === '\n') i++;
+        row.push(field); field = ''; rows.push(row); row = [];
+      } else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0];
+    const col = n => h.indexOf(n);
+    const [ti, yi, pi] = ['title', 'year', 'poster_url'].map(col);
+    if (ti < 0 || yi < 0) return [];
+
+    return rows.slice(1).flatMap(r => {
+      const title = r[ti]?.trim(), year = r[yi]?.trim();
+      if (!title || !/^\d{4}$/.test(year)) return [];
+      return [{ title, year: +year, poster: pi >= 0 ? r[pi]?.trim() : '' }];
+    });
+  }
+
+  // ── Movie selection per difficulty ────────────────────────
+
+  function shuffle(a) {
+    a = [...a];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickMovies(diff) {
+    if (diff === 'easy') {
+      // 5 movies where every consecutive gap is 10+ years
+      for (let t = 0; t < 3000; t++) {
+        const picks = shuffle(allMovies).slice(0, 5).sort((a, b) => a.year - b.year);
+        if (picks[1].year - picks[0].year >= 10 &&
+            picks[2].year - picks[1].year >= 10 &&
+            picks[3].year - picks[2].year >= 10 &&
+            picks[4].year - picks[3].year >= 10) return picks;
+      }
+      return null;
+    }
+
+    if (diff === 'hard') {
+      // All 5 from the same decade
+      const byDecade = {};
+      for (const m of allMovies) {
+        const d = Math.floor(m.year / 10) * 10;
+        (byDecade[d] = byDecade[d] || []).push(m);
+      }
+      const eligible = shuffle(Object.keys(byDecade).filter(d => byDecade[d].length >= 5));
+      if (!eligible.length) return null;
+      return shuffle(byDecade[eligible[0]]).slice(0, 5);
+    }
+
+    if (diff === 'expert') {
+      // All 5 within a 3-year span (max - min <= 2), then relax if needed
+      for (const span of [2, 3, 4]) {
+        const years = [...new Set(allMovies.map(m => m.year))].sort((a, b) => a - b);
+        const windows = [];
+        for (const y of years) {
+          const w = allMovies.filter(m => m.year >= y && m.year <= y + span);
+          if (w.length >= 5) windows.push(w);
+        }
+        if (windows.length) return shuffle(shuffle(windows)[0]).slice(0, 5);
+      }
+      return null;
+    }
+  }
+
+  // ── Render ─────────────────────────────────────────────────
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderList() {
+    const list = document.getElementById('sort-list');
+
+    list.innerHTML = playerOrder.map((m, i) => {
+      let itemClass = 'sort-item';
+      let yearBadge = '';
+      let arrowsOrYear = '';
+
+      if (isRevealed) {
+        const correct = correctOrder[i];
+        const isRight = m.year === correct.year;
+        itemClass += isRight ? ' revealed-correct' : ' revealed-wrong';
+        yearBadge = `<span class="item-year-badge">${m.year}</span>`;
+      } else {
+        arrowsOrYear = `<div class="item-arrows">
+          <button class="arrow-btn" data-dir="up"   data-idx="${i}" ${i === 0 ? 'disabled' : ''}>&#9650;</button>
+          <button class="arrow-btn" data-dir="down" data-idx="${i}" ${i === playerOrder.length - 1 ? 'disabled' : ''}>&#9660;</button>
+        </div>`;
+      }
+
+      const poster = m.poster
+        ? `<img class="item-poster" src="${esc(m.poster)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+        : `<div class="item-poster-ph"></div>`;
+
+      return `<div class="${itemClass}" draggable="${!isRevealed}" data-idx="${i}">
+        ${!isRevealed ? '<span class="item-handle">&#9776;</span>' : ''}
+        <span class="item-num">${i + 1}</span>
+        ${poster}
+        <span class="item-title">${esc(m.title)}</span>
+        ${yearBadge}
+        ${arrowsOrYear}
+      </div>`;
+    }).join('');
+
+    if (!isRevealed) attachDrag();
+  }
+
+  // ── Drag and drop ──────────────────────────────────────────
+
+  function attachDrag() {
+    document.querySelectorAll('.sort-item').forEach((el, i) => {
+      el.addEventListener('dragstart', e => {
+        dragIdx = i;
+        e.dataTransfer.effectAllowed = 'move';
+        requestAnimationFrame(() => el.classList.add('dragging'));
+      });
+
+      el.addEventListener('dragend', () => {
+        el.classList.remove('dragging');
+        document.querySelectorAll('.sort-item').forEach(x => x.classList.remove('over'));
+        dragIdx = null;
+      });
+
+      el.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (dragIdx !== null && dragIdx !== i) {
+          document.querySelectorAll('.sort-item').forEach(x => x.classList.remove('over'));
+          el.classList.add('over');
+        }
+      });
+
+      el.addEventListener('dragleave', e => {
+        if (!el.contains(e.relatedTarget)) el.classList.remove('over');
+      });
+
+      el.addEventListener('drop', e => {
+        e.preventDefault();
+        el.classList.remove('over');
+        if (dragIdx !== null && dragIdx !== i) {
+          const [moved] = playerOrder.splice(dragIdx, 1);
+          playerOrder.splice(i, 0, moved);
+          renderList();
+        }
+      });
+    });
+  }
+
+  // Arrow buttons (event delegation)
+  document.getElementById('sort-list').addEventListener('click', e => {
+    if (isRevealed) return;
+    const btn = e.target.closest('.arrow-btn');
+    if (!btn) return;
+    const idx = +btn.dataset.idx;
+    const dir = btn.dataset.dir;
+    if (dir === 'up' && idx > 0) {
+      [playerOrder[idx], playerOrder[idx - 1]] = [playerOrder[idx - 1], playerOrder[idx]];
+      renderList();
+    } else if (dir === 'down' && idx < playerOrder.length - 1) {
+      [playerOrder[idx], playerOrder[idx + 1]] = [playerOrder[idx + 1], playerOrder[idx]];
+      renderList();
+    }
+  });
+
+  // ── Lock In / Next Round ───────────────────────────────────
+
+  document.getElementById('btn-action').addEventListener('click', () => {
+    if (!isRevealed) {
+      reveal();
+    } else {
+      nextRound();
+    }
+  });
+
+  function reveal() {
+    isRevealed = true;
+
+    // Score: count positions where year matches correct year
+    let correct = 0;
+    for (let i = 0; i < 5; i++) {
+      if (playerOrder[i].year === correctOrder[i].year) correct++;
+    }
+
+    totalScore    += correct;
+    totalPossible += 5;
+    document.getElementById('score-num').textContent = totalScore;
+    document.getElementById('score-den').textContent = totalPossible;
+
+    const scoreEl = document.getElementById('result-score');
+    const noteEl  = document.getElementById('result-note');
+    const bar     = document.getElementById('result-bar');
+
+    if (correct === 5) {
+      scoreEl.className = 'result-score perfect';
+      scoreEl.textContent = 'Perfect — 5/5!';
+    } else if (correct >= 3) {
+      scoreEl.className = 'result-score ok';
+      scoreEl.textContent = `${correct}/5 correct`;
+    } else {
+      scoreEl.className = 'result-score bad';
+      scoreEl.textContent = `${correct}/5 correct`;
+    }
+
+    // Note: show correct order if not perfect
+    if (correct < 5) {
+      noteEl.textContent = 'Correct order: ' + correctOrder.map(m => `${m.title} (${m.year})`).join(' → ');
+    } else {
+      noteEl.textContent = '';
+    }
+
+    bar.classList.add('show');
+    renderList();
+
+    const btn = document.getElementById('btn-action');
+    btn.textContent = 'Next Round';
+  }
+
+  function nextRound() {
+    roundNum++;
+    document.getElementById('round-num').textContent = roundNum;
+    document.getElementById('result-bar').classList.remove('show');
+    startRound();
+  }
+
+  // ── Round setup ────────────────────────────────────────────
+
+  function startRound() {
+    isRevealed = false;
+    document.getElementById('diff-error').classList.remove('show');
+    document.getElementById('result-bar').classList.remove('show');
+
+    const picks = pickMovies(difficulty);
+    if (!picks) {
+      document.getElementById('diff-error').textContent =
+        `Not enough movies for ${difficulty} mode. Try a different difficulty.`;
+      document.getElementById('diff-error').classList.add('show');
+      document.getElementById('sort-list').innerHTML = '';
+      document.getElementById('btn-action').disabled = true;
+      return;
+    }
+
+    document.getElementById('btn-action').disabled = false;
+    document.getElementById('btn-action').textContent = 'Lock In';
+
+    correctOrder = [...picks].sort((a, b) => a.year - b.year);
+    playerOrder  = shuffle([...picks]);
+    renderList();
+  }
+
+  // ── Difficulty tabs ────────────────────────────────────────
+
+  document.querySelectorAll('.diff-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.diff-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      difficulty = tab.dataset.diff;
+      roundNum   = 1;
+      totalScore = totalPossible = 0;
+      document.getElementById('round-num').textContent = 1;
+      document.getElementById('score-num').textContent = 0;
+      document.getElementById('score-den').textContent = 0;
+      startRound();
+    });
+  });
+
+  // ── File load ──────────────────────────────────────────────
+
+  function onFile(file) {
+    if (!file?.name.endsWith('.csv')) return alert('Please upload a .csv file.');
+    const reader = new FileReader();
+    reader.onload = e => {
+      allMovies = loadCSV(e.target.result);
+      if (allMovies.length < 5) return alert('Not enough movies found in CSV.');
+      document.getElementById('upload-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display  = 'block';
+      startRound();
+    };
+    reader.readAsText(file);
+  }
+
+  const dz = document.getElementById('drop-zone');
+  const fi = document.getElementById('file-input');
+  document.getElementById('browse-link').addEventListener('click', e => { e.stopPropagation(); fi.click(); });
+  dz.addEventListener('click', () => fi.click());
+  fi.addEventListener('change', e => e.target.files[0] && onFile(e.target.files[0]));
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', ()  => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    e.dataTransfer.files[0] && onFile(e.dataTransfer.files[0]);
+  });
+</script>
+</body>
+</html>

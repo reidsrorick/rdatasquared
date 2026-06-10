@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Genre Grid</title>
+  <style>
+    :root {
+      --bg: #0c0c14;
+      --card-bg: #14141f;
+      --card-border: #23233a;
+      --card-hover: #1b1b2c;
+      --text: #dcdcf0;
+      --muted: #6868a0;
+      --accent: #f0bf3c;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Upload ── */
+    #upload-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .brand {
+      font-size: 3.2rem;
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-bottom: .5rem;
+    }
+
+    .brand em { color: var(--accent); font-style: normal; }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 3rem;
+      max-width: 420px;
+      line-height: 1.6;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--card-border);
+      border-radius: 14px;
+      padding: 2.5rem 3rem;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--accent);
+      background: rgba(240,191,60,.05);
+    }
+
+    .dz-icon { margin: 0 auto 1rem; opacity: .4; }
+
+    .drop-zone p { color: var(--muted); font-size: .95rem; line-height: 1.6; }
+
+    .drop-zone strong {
+      color: var(--accent);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #file-input { display: none; }
+
+    /* ── Game ── */
+    #game-screen {
+      display: none;
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 5rem;
+    }
+
+    .g-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: .75rem;
+    }
+
+    .brand-sm {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
+
+    .brand-sm em { color: var(--accent); font-style: normal; }
+
+    .g-actions { display: flex; gap: .65rem; align-items: center; }
+
+    .pill {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: .3rem .85rem;
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    .pill b { color: var(--text); }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: .38rem 1rem;
+      font-size: .84rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .12s, color .12s;
+    }
+
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Grid ── */
+    .grid-wrap { overflow-x: auto; }
+
+    table.grid {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 580px;
+      table-layout: fixed;
+    }
+
+    .grid th, .grid td {
+      border: 1px solid var(--card-border);
+    }
+
+    .th-corner {
+      width: 78px;
+      background: var(--bg);
+    }
+
+    .th-genre {
+      background: var(--card-bg);
+      padding: .7rem .5rem;
+      font-size: .7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .th-decade {
+      background: var(--card-bg);
+      padding: .75rem .5rem;
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .cell {
+      background: var(--card-bg);
+      vertical-align: middle;
+      text-align: center;
+      cursor: pointer;
+      transition: background .12s;
+      height: 96px;
+      padding: 0;
+    }
+
+    .cell:hover:not(.filled):not(.locked) {
+      background: var(--card-hover);
+    }
+
+    .cell:hover:not(.filled):not(.locked) .cell-plus {
+      color: var(--muted);
+    }
+
+    .cell.filled {
+      background: rgba(34,197,94,.06);
+      cursor: default;
+    }
+
+    .cell.locked {
+      background: rgba(0,0,0,.25);
+      cursor: not-allowed;
+    }
+
+    .cell.shake {
+      animation: shake .3s ease;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-5px); }
+      75%      { transform: translateX(5px); }
+    }
+
+    .cell-inner {
+      padding: .6rem;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .25rem;
+    }
+
+    .cell-plus {
+      font-size: 1.5rem;
+      color: var(--card-border);
+      line-height: 1;
+      transition: color .12s;
+    }
+
+    .cell-title {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1.3;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .cell-year {
+      font-size: .68rem;
+      color: var(--muted);
+    }
+
+    .cell-lock {
+      font-size: .85rem;
+      color: var(--muted);
+      opacity: .35;
+    }
+
+    /* ── Complete banner ── */
+    .complete-bar {
+      background: rgba(34,197,94,.1);
+      border: 1px solid rgba(34,197,94,.25);
+      border-radius: 10px;
+      padding: .7rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: .92rem;
+      color: var(--green);
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+
+    .complete-bar.show { display: block; }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.78);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 1rem;
+    }
+
+    .overlay.off { display: none; }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 460px;
+      position: relative;
+    }
+
+    .modal-x {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: .2rem .4rem;
+      line-height: 1;
+    }
+
+    .modal-x:hover { color: var(--text); }
+
+    .modal-eye {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: var(--muted);
+      margin-bottom: .3rem;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      line-height: 1.4;
+    }
+
+    .modal-title .hl { color: var(--accent); }
+
+    .search-wrap {
+      position: relative;
+      margin-bottom: .65rem;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #0e0e1a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: .62rem 1rem;
+      font-size: .93rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color .12s;
+      font-family: inherit;
+    }
+
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+
+    .results {
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 280px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--card-border) transparent;
+    }
+
+    .results.off { display: none; }
+
+    .r-item {
+      padding: .65rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--card-border);
+      transition: background .1s;
+    }
+
+    .r-item:last-child { border-bottom: none; }
+    .r-item:hover, .r-item.hi { background: var(--card-hover); }
+
+    .r-title { font-size: .88rem; font-weight: 600; }
+    .r-meta  { font-size: .73rem; color: var(--muted); margin-top: .1rem; }
+
+    .modal-err {
+      margin-top: .65rem;
+      font-size: .83rem;
+      color: var(--red);
+      min-height: 1.1em;
+    }
+
+    .modal-err.off { visibility: hidden; }
+  </style>
+</head>
+<body>
+
+<!-- Upload -->
+<div id="upload-screen">
+  <h1 class="brand">Genre <em>Grid</em></h1>
+  <p class="tagline">Fill the 4×4 grid. Each cell needs a film from your collection that matches both the genre and the decade.</p>
+
+  <div class="drop-zone" id="drop-zone">
+    <svg class="dz-icon" width="44" height="44" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p>Drop your CSV here, or <strong id="browse-link">browse to upload</strong></p>
+    <input type="file" id="file-input" accept=".csv">
+  </div>
+</div>
+
+<!-- Game -->
+<div id="game-screen">
+  <div class="g-header">
+    <span class="brand-sm">Genre <em>Grid</em></span>
+    <div class="g-actions">
+      <span class="pill">Filled <b id="fill-count">0</b> / <b id="fill-total">16</b></span>
+      <button class="btn-ghost" id="btn-new">New Grid</button>
+    </div>
+  </div>
+
+  <div class="complete-bar" id="complete-bar">Grid complete!</div>
+
+  <div class="grid-wrap">
+    <table class="grid" id="grid-table"></table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay off" id="overlay">
+  <div class="modal">
+    <button class="modal-x" id="modal-x">&#10005;</button>
+    <p class="modal-eye">Find a match</p>
+    <p class="modal-title">
+      <span class="hl" id="m-genre"></span> film
+      from the <span class="hl" id="m-decade"></span>s
+    </p>
+    <div class="search-wrap">
+      <input class="search-input" id="search-input" type="text"
+             placeholder="Type a movie title..." autocomplete="off">
+    </div>
+    <div class="results off" id="results"></div>
+    <p class="modal-err off" id="modal-err"></p>
+  </div>
+</div>
+
+<script>
+  let allMovies  = [];
+  let gridDef    = null;   // { decades: [1990,…], genres: ['Action',…] }
+  let filled     = {};     // "r,c" → movie object
+  let activeCell = null;   // { row, col }
+  let currentResults = []; // movies shown in dropdown
+
+  // ── CSV ───────────────────────────────────────────────────
+
+  function parseCSV(src) {
+    const rows = [];
+    let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) {
+        row.push(field);
+        if (row.some(Boolean)) rows.push(row);
+        break;
+      }
+      if (c === '"') {
+        if (q && src[i + 1] === '"') { field += '"'; i++; }
+        else q = !q;
+      } else if (c === ',' && !q) {
+        row.push(field); field = '';
+      } else if ((c === '\n' || c === '\r') && !q) {
+        if (c === '\r' && src[i + 1] === '\n') i++;
+        row.push(field); field = '';
+        rows.push(row); row = [];
+      } else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0];
+    const col = n => h.indexOf(n);
+    const [ti, gi, yi] = ['title', 'genres', 'year'].map(col);
+    if (ti < 0 || gi < 0 || yi < 0) return [];
+
+    return rows.slice(1).flatMap(r => {
+      const title = r[ti]?.trim(), gStr = r[gi]?.trim(), year = r[yi]?.trim();
+      if (!title || !gStr || !year || !/^\d{4}$/.test(year)) return [];
+      const genres = gStr.split(',').map(s => s.trim()).filter(Boolean);
+      return [{ title, genres, year: +year }];
+    });
+  }
+
+  // ── Grid generation ───────────────────────────────────────
+
+  function shuffle(a) {
+    a = [...a];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function decadeOf(year) { return Math.floor(year / 10) * 10; }
+
+  function moviesFor(decade, genre) {
+    return allMovies.filter(m =>
+      decadeOf(m.year) === decade && m.genres.includes(genre)
+    );
+  }
+
+  function buildGrid() {
+    // Top 4 decades by movie count
+    const dCount = {};
+    for (const m of allMovies) {
+      const d = decadeOf(m.year);
+      dCount[d] = (dCount[d] || 0) + 1;
+    }
+    const decades = Object.entries(dCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([d]) => +d)
+      .sort((a, b) => a - b);
+
+    if (decades.length < 4) return null;
+
+    // Genres with movies in all 4 decades
+    const gDecades = {};
+    for (const m of allMovies) {
+      const d = decadeOf(m.year);
+      if (!decades.includes(d)) continue;
+      for (const g of m.genres) {
+        (gDecades[g] = gDecades[g] || new Set()).add(d);
+      }
+    }
+
+    let eligible = Object.entries(gDecades)
+      .filter(([, ds]) => ds.size === 4)
+      .map(([g]) => g);
+
+    // Fallback: genres covering 3+ decades
+    if (eligible.length < 4) {
+      eligible = Object.entries(gDecades)
+        .filter(([, ds]) => ds.size >= 3)
+        .map(([g]) => g);
+    }
+
+    if (eligible.length < 4) return null;
+
+    // Try to find a fully solvable 4-genre combo (all 16 cells have ≥1 movie)
+    const pool = shuffle(eligible);
+    for (let i = 0; i < 30; i++) {
+      const genres = shuffle(pool).slice(0, 4);
+      const allFilled = decades.every(d => genres.every(g => moviesFor(d, g).length > 0));
+      if (allFilled) return { decades, genres };
+    }
+
+    // Just use the first 4
+    return { decades, genres: pool.slice(0, 4) };
+  }
+
+  // ── Render ────────────────────────────────────────────────
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderGrid() {
+    const { decades, genres } = gridDef;
+    let html = `<thead><tr><th class="th-corner"></th>`;
+    for (const g of genres) html += `<th class="th-genre">${esc(g)}</th>`;
+    html += `</tr></thead><tbody>`;
+
+    for (let r = 0; r < decades.length; r++) {
+      html += `<tr><th class="th-decade">${decades[r]}s</th>`;
+      for (let c = 0; c < genres.length; c++) {
+        const key   = `${r},${c}`;
+        const movie = filled[key];
+        const valid = moviesFor(decades[r], genres[c]).length > 0;
+
+        if (movie) {
+          html += `<td class="cell filled" data-r="${r}" data-c="${c}">
+            <div class="cell-inner">
+              <span class="cell-title">${esc(movie.title)}</span>
+              <span class="cell-year">${movie.year}</span>
+            </div></td>`;
+        } else if (!valid) {
+          html += `<td class="cell locked" data-r="${r}" data-c="${c}">
+            <div class="cell-inner"><span class="cell-lock">—</span></div></td>`;
+        } else {
+          html += `<td class="cell" data-r="${r}" data-c="${c}">
+            <div class="cell-inner"><span class="cell-plus">+</span></div></td>`;
+        }
+      }
+      html += `</tr>`;
+    }
+    html += `</tbody>`;
+
+    const table = document.getElementById('grid-table');
+    table.innerHTML = html;
+
+    table.querySelectorAll('.cell:not(.filled):not(.locked)').forEach(td => {
+      td.addEventListener('click', () => openModal(+td.dataset.r, +td.dataset.c));
+    });
+
+    updateScore();
+  }
+
+  function updateScore() {
+    const n     = Object.keys(filled).length;
+    const total = gridDef.decades.reduce((sum, d) =>
+      sum + gridDef.genres.filter(g => moviesFor(d, g).length > 0).length, 0);
+
+    document.getElementById('fill-count').textContent = n;
+    document.getElementById('fill-total').textContent = total;
+    document.getElementById('complete-bar').classList.toggle('show', n > 0 && n >= total);
+  }
+
+  // ── Modal ─────────────────────────────────────────────────
+
+  function openModal(r, c) {
+    activeCell = { r, c };
+    currentResults = [];
+    document.getElementById('m-genre').textContent  = gridDef.genres[c];
+    document.getElementById('m-decade').textContent = gridDef.decades[r];
+    document.getElementById('search-input').value   = '';
+    document.getElementById('results').innerHTML    = '';
+    document.getElementById('results').classList.add('off');
+    setErr('');
+    document.getElementById('overlay').classList.remove('off');
+    setTimeout(() => document.getElementById('search-input').focus(), 30);
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').classList.add('off');
+    activeCell = null;
+  }
+
+  function setErr(msg) {
+    const el = document.getElementById('modal-err');
+    el.textContent = msg;
+    el.classList.toggle('off', !msg);
+  }
+
+  function queryMovies(q) {
+    if (!q.trim()) return [];
+    const lq = q.toLowerCase();
+    const results = allMovies.filter(m => m.title.toLowerCase().includes(lq));
+    results.sort((a, b) => {
+      const as = a.title.toLowerCase().startsWith(lq);
+      const bs = b.title.toLowerCase().startsWith(lq);
+      if (as && !bs) return -1;
+      if (!as && bs) return 1;
+      return a.title.localeCompare(b.title);
+    });
+    return results.slice(0, 8);
+  }
+
+  function renderResults(movies) {
+    const el = document.getElementById('results');
+    currentResults = movies;
+    if (!movies.length) {
+      el.classList.add('off');
+      return;
+    }
+    el.classList.remove('off');
+    el.innerHTML = movies.map((m, i) =>
+      `<div class="r-item" data-i="${i}">
+        <div class="r-title">${esc(m.title)}</div>
+      </div>`
+    ).join('');
+
+    el.querySelectorAll('.r-item').forEach(item => {
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        attemptFill(currentResults[+item.dataset.i]);
+      });
+    });
+  }
+
+  function attemptFill(movie) {
+    if (!activeCell || !gridDef) return;
+    const { r, c }    = activeCell;
+    const needDecade  = gridDef.decades[r];
+    const needGenre   = gridDef.genres[c];
+    const movieDecade = decadeOf(movie.year);
+
+    // Already on grid?
+    if (Object.values(filled).some(m => m.title === movie.title)) {
+      setErr(`"${movie.title}" is already placed on the grid.`);
+      return;
+    }
+
+    // Wrong decade?
+    if (movieDecade !== needDecade) {
+      setErr(`"${movie.title}" (${movie.year}) is from the ${movieDecade}s, not the ${needDecade}s.`);
+      return;
+    }
+
+    // Wrong genre?
+    if (!movie.genres.includes(needGenre)) {
+      setErr(`"${movie.title}" isn't tagged as ${needGenre} (${movie.genres.join(', ')}).`);
+      return;
+    }
+
+    // Valid — fill and close
+    filled[`${r},${c}`] = movie;
+    closeModal();
+    renderGrid();
+  }
+
+  // Search input
+  let debounce;
+  document.getElementById('search-input').addEventListener('input', e => {
+    setErr('');
+    clearTimeout(debounce);
+    debounce = setTimeout(() => renderResults(queryMovies(e.target.value)), 80);
+  });
+
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === 'Enter' && currentResults.length) {
+      attemptFill(currentResults[0]);
+    }
+  });
+
+  document.getElementById('modal-x').addEventListener('click', closeModal);
+  document.getElementById('overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('overlay')) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // ── New grid ──────────────────────────────────────────────
+
+  function newGrid() {
+    const def = buildGrid();
+    if (!def) {
+      alert('Not enough genre/decade variety to build a grid.');
+      return;
+    }
+    gridDef = def;
+    filled  = {};
+    document.getElementById('complete-bar').classList.remove('show');
+    renderGrid();
+  }
+
+  document.getElementById('btn-new').addEventListener('click', newGrid);
+
+  // ── File load ─────────────────────────────────────────────
+
+  function onFile(file) {
+    if (!file?.name.endsWith('.csv')) return alert('Please upload a .csv file.');
+    const reader = new FileReader();
+    reader.onload = e => {
+      allMovies = loadCSV(e.target.result);
+      if (allMovies.length < 16) return alert('Not enough movies in CSV.');
+      document.getElementById('upload-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display  = 'block';
+      newGrid();
+    };
+    reader.readAsText(file);
+  }
+
+  const dz = document.getElementById('drop-zone');
+  const fi = document.getElementById('file-input');
+  document.getElementById('browse-link').addEventListener('click', e => { e.stopPropagation(); fi.click(); });
+  dz.addEventListener('click', () => fi.click());
+  fi.addEventListener('change', e => e.target.files[0] && onFile(e.target.files[0]));
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', ()  => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    e.dataTransfer.files[0] && onFile(e.dataTransfer.files[0]);
+  });
+</script>
+</body>
+</html>
