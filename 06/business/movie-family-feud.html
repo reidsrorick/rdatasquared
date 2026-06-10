@@ -265,18 +265,14 @@ body {
 </head>
 <body>
 
-<!-- ══════════════════ UPLOAD SCREEN ══════════════════ -->
-<div id="upload-screen" class="screen">
-  <div class="logo">Movie <span>Family Feud</span></div>
-  <div class="tagline">
-    Guess top-rated films by director, actor, genre, or studio — from your own Letterboxd collection.
-  </div>
-  <div class="upload-box" id="drop-zone">
-    <h2>Load Your Collection</h2>
-    <p>Drop your <strong>letterboxd_scraped.csv</strong> here or click to browse</p>
-    <label class="upload-btn" for="file-input">Choose CSV File</label>
-    <input type="file" id="file-input" accept=".csv">
-  </div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Failed to load collection</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:300px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in the same folder.</p>
 </div>
 
 <!-- ══════════════════ GAME SCREEN ══════════════════ -->
@@ -516,8 +512,6 @@ function startGame(movies) {
   promptIdx = 0;
   teamScores = [0, 0];
   activeTeam = 0;
-  document.getElementById('upload-screen').classList.add('hidden');
-  document.getElementById('game-screen').classList.remove('hidden');
   loadRound();
 }
 
@@ -834,31 +828,20 @@ function esc(s) {
 // ══════════════════════════════════════════
 // FILE LOADING
 // ══════════════════════════════════════════
-function handleFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const movies = loadMovies(e.target.result);
-    if (!movies.length) {
-      alert('No movies found. Check the CSV format.');
-      return;
-    }
+// ── Load data ─────────────────────────────────────────────
+fetch('./letterboxd_scraped.csv')
+  .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+  .then(text => {
+    const movies = loadMovies(text);
+    if (!movies.length) throw new Error();
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('game-screen').classList.remove('hidden');
     startGame(movies);
-  };
-  reader.readAsText(file);
-}
-
-document.getElementById('file-input').addEventListener('change', e => {
-  handleFile(e.target.files[0]);
-});
-
-const dz = document.getElementById('drop-zone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-dz.addEventListener('drop', e => {
-  e.preventDefault(); dz.classList.remove('drag');
-  handleFile(e.dataTransfer.files[0]);
-});
+  })
+  .catch(() => {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('error-screen').style.display  = 'flex';
+  });
 
 document.getElementById('guess-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleSubmit();

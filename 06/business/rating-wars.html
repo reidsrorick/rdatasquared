@@ -199,20 +199,14 @@
 </head>
 <body>
 
-<!-- Upload -->
-<div id="upload-screen">
-  <h1 class="brand">Rating <em>Wars</em></h1>
-  <p class="tagline">Two movies. One question: which has the higher Letterboxd rating? Build your streak.</p>
-  <div class="drop-zone" id="drop-zone">
-    <svg class="dz-icon" width="44" height="44" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-      <polyline points="17 8 12 3 7 8"/>
-      <line x1="12" y1="3" x2="12" y2="15"/>
-    </svg>
-    <p>Drop your CSV here, or <strong id="browse-link">browse to upload</strong></p>
-    <input type="file" id="file-input" accept=".csv">
-  </div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Failed to load collection</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:300px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in the same folder.</p>
 </div>
 
 <!-- Game -->
@@ -410,30 +404,20 @@
 
   // ── File load ──────────────────────────────────────────────
 
-  function onFile(file) {
-    if (!file?.name.endsWith('.csv')) return alert('Please upload a .csv file.');
-    const reader = new FileReader();
-    reader.onload = e => {
-      allMovies = loadCSV(e.target.result);
-      if (allMovies.length < 2) return alert('Not enough rated movies found in CSV.');
-      document.getElementById('upload-screen').style.display = 'none';
-      document.getElementById('game-screen').style.display  = 'block';
+  // ── Load data ─────────────────────────────────────────────
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+    .then(text => {
+      allMovies = loadCSV(text);
+      if (allMovies.length < 2) throw new Error();
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display   = 'block';
       newRound();
-    };
-    reader.readAsText(file);
-  }
-
-  const dz = document.getElementById('drop-zone');
-  const fi = document.getElementById('file-input');
-  document.getElementById('browse-link').addEventListener('click', e => { e.stopPropagation(); fi.click(); });
-  dz.addEventListener('click', () => fi.click());
-  fi.addEventListener('change', e => e.target.files[0] && onFile(e.target.files[0]));
-  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
-  dz.addEventListener('dragleave', ()  => dz.classList.remove('over'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.classList.remove('over');
-    e.dataTransfer.files[0] && onFile(e.dataTransfer.files[0]);
-  });
+    })
+    .catch(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('error-screen').style.display  = 'flex';
+    });
 </script>
 </body>
 </html>
