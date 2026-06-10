@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cine2 — Letterboxd Games</title>
+<style>
+:root {
+  --bg:#0c0c14; --card-bg:#14141f; --card-border:#23233a;
+  --accent:#f0bf3c; --text:#dcdcf0; --text-dim:#9090b8; --muted:#6868a0;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 4rem 1.5rem 3rem;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.site-title {
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  font-weight: 900;
+  letter-spacing: .04em;
+  line-height: 1;
+  color: var(--text);
+}
+.site-title sup {
+  font-size: .5em;
+  color: var(--accent);
+  vertical-align: super;
+  line-height: 0;
+}
+.site-tagline {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  margin-top: .9rem;
+  line-height: 1.5;
+}
+.csv-note {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: 1.5rem;
+  background: rgba(240,191,60,.07);
+  border: 1px solid rgba(240,191,60,.2);
+  border-radius: 8px;
+  padding: .55rem 1rem;
+  font-size: .82rem;
+  color: #c8a830;
+}
+.csv-note svg {
+  flex-shrink: 0;
+  width: 15px; height: 15px;
+  fill: currentColor;
+}
+
+/* ── GRID ── */
+.grid-section {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 1.2rem 4rem;
+}
+.section-label {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+}
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 760px) {
+  .games-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .games-grid { grid-template-columns: 1fr; }
+}
+
+/* ── CARD ── */
+.game-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform .2s, box-shadow .2s;
+  text-decoration: none;
+  color: inherit;
+}
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.5), 0 0 0 1px var(--c);
+}
+.card-stripe {
+  height: 4px;
+  background: var(--c);
+}
+.card-body {
+  flex: 1;
+  padding: 1.2rem 1.2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+.card-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.card-num {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  color: var(--c);
+  opacity: .8;
+  text-transform: uppercase;
+}
+.card-tags {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.tag {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  padding: .18rem .5rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,.05);
+  color: var(--text-dim);
+  border: 1px solid var(--card-border);
+  text-transform: uppercase;
+}
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+.card-desc {
+  font-size: .84rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  flex: 1;
+}
+.card-play {
+  display: block;
+  text-align: center;
+  margin: 1rem 1.2rem 1.2rem;
+  padding: .6rem;
+  border: 2px solid var(--c);
+  border-radius: 8px;
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--c);
+  text-decoration: none;
+  transition: background .18s, color .18s;
+}
+.game-card:hover .card-play {
+  background: var(--c);
+  color: #0c0c14;
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: .78rem;
+  color: var(--muted);
+  border-top: 1px solid var(--card-border);
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="site-title">Cine<sup>2</sup></div>
+  <p class="site-tagline">
+    Six movie trivia games built from your personal Letterboxd collection.
+    Every game loads the same CSV file.
+  </p>
+  <div class="csv-note">
+    <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 10.5h-1.5v-5h1.5v5zm0-6.5h-1.5V3.5h1.5V5z"/></svg>
+    Each game asks you to load <strong>&nbsp;letterboxd_scraped.csv&nbsp;</strong> on startup
+  </div>
+</div>
+
+<div class="grid-section">
+  <div class="section-label">All Games</div>
+  <div class="games-grid">
+
+    <!-- Game 2: Letterboxd Ladder -->
+    <div class="game-card" style="--c:#6366f1">
+      <div class="card-stripe"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">Game 02</span>
+          <div class="card-tags">
+            <span class="tag">Solo</span>
+            <span class="tag">Puzzle</span>
+          </div>
+        </div>
+        <div class="card-title">Letterboxd Ladder</div>
+        <div class="card-desc">
+          Start from a low-rated film and climb toward the highest rating in your collection.
+          Each step must share an actor, director, or genre — and always go higher.
+        </div>
+      </div>
+      <a class="card-play" href="letterboxd-ladder.html">Play</a>
+    </div>
+
+    <!-- Game 3: Movie Family Feud -->
+    <div class="game-card" style="--c:#ef4444">
+      <div class="card-stripe"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">Game 03</span>
+          <div class="card-tags">
+            <span class="tag">Multiplayer</span>
+            <span class="tag">Trivia</span>
+          </div>
+        </div>
+        <div class="card-title">Movie Family Feud</div>
+        <div class="card-desc">
+          Name the top-rated films by a given director, actor, genre, or studio.
+          Three strikes and the opposing team steals. Built for game nights.
+        </div>
+      </div>
+      <a class="card-play" href="movie-family-feud.html">Play</a>
+    </div>
+
+    <!-- Game 4: Plot Imposter -->
+    <div class="game-card" style="--c:#a855f7">
+      <div class="card-stripe"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">Game 04</span>
+          <div class="card-tags">
+            <span class="tag">Solo</span>
+            <span class="tag">Detective</span>
+          </div>
+        </div>
+        <div class="card-title">Plot Imposter</div>
+        <div class="card-desc">
+          Three synopses belong to the same genre. One is the imposter from a nearby genre.
+          Read carefully and find the film that does not belong.
+        </div>
+      </div>
+      <a class="card-play" href="plot-imposter.html">Play</a>
+    </div>
+
+    <!-- Game 5: Release Order Challenge -->
+    <div class="game-card" style="--c:#22c55e">
+      <div class="card-stripe"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">Game 05</span>
+          <div class="card-tags">
+            <span class="tag">Solo</span>
+            <span class="tag">Easy – Expert</span>
+          </div>
+        </div>
+        <div class="card-title">Release Order Challenge</div>
+        <div class="card-desc">
+          Five films appear in random order. Arrange them from oldest to newest.
+          Three difficulty modes: decades apart, same decade, or the same three-year span.
+        </div>
+      </div>
+      <a class="card-play" href="release-order.html">Play</a>
+    </div>
+
+    <!-- Game 7: Genre Grid -->
+    <div class="game-card" style="--c:#14b8a6">
+      <div class="card-stripe"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">Game 07</span>
+          <div class="card-tags">
+            <span class="tag">Solo</span>
+            <span class="tag">Fill-In</span>
+          </div>
+        </div>
+        <div class="card-title">Genre Grid</div>
+        <div class="card-desc">
+          A 4x4 grid of decades and genres. Fill every cell by searching for a film
+          that matches both the row and column. Every game generates a new grid.
+        </div>
+      </div>
+      <a class="card-play" href="genre-grid.html">Play</a>
+    </div>
+
+    <!-- Game 12: Rating Wars -->
+    <div class="game-card" style="--c:#f0bf3c">
+      <div class="card-stripe"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">Game 12</span>
+          <div class="card-tags">
+            <span class="tag">Solo</span>
+            <span class="tag">Quick</span>
+          </div>
+        </div>
+        <div class="card-title">Rating Wars</div>
+        <div class="card-desc">
+          Two films face off — pick the one with the higher Letterboxd rating
+          and build your streak. Simple, fast, and surprisingly tricky.
+        </div>
+      </div>
+      <a class="card-play" href="rating-wars.html">Play</a>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Powered by your Letterboxd data &mdash; all games run locally in your browser
+</footer>
+
+</body>
+</html>
