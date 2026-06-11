@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Letterboxd Ladder</title>
+  <title>Letterboxd Ladder (Test)</title>
   <style>
     :root {
       --bg: #0c0c14;
@@ -15,143 +15,296 @@
       --accent: #f0bf3c;
       --green: #22c55e;
       --red: #ef4444;
+      --indigo: #6366f1;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    /* ── Upload ── */
-    #upload-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
-    .brand { font-size: 3rem; font-weight: 900; letter-spacing: -2px; line-height: 1; margin-bottom: .5rem; }
-    .brand em { color: var(--accent); font-style: normal; }
-    .tagline { color: var(--muted); font-size: 1rem; margin-bottom: 3rem; max-width: 420px; line-height: 1.6; }
-    .drop-zone { border: 2px dashed var(--card-border); border-radius: 14px; padding: 2.5rem 3rem; cursor: pointer; transition: border-color .15s, background .15s; max-width: 400px; width: 100%; }
-    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(240,191,60,.05); }
-    .dz-icon { margin: 0 auto 1rem; opacity: .4; }
-    .drop-zone p { color: var(--muted); font-size: .95rem; line-height: 1.6; }
-    .drop-zone strong { color: var(--accent); text-decoration: underline; cursor: pointer; }
-    #file-input { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Game ── */
-    #game-screen { display: none; max-width: 640px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+    /* ── Game screen ── */
+    #game-screen { display: none; max-width: 640px; margin: 0 auto; padding: 1.25rem 1.25rem 5rem; }
 
-    .g-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: .6rem; }
+    /* ── Header ── */
+    .g-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .7rem; flex-wrap: wrap; gap: .5rem; }
     .brand-sm { font-size: 1.1rem; font-weight: 800; letter-spacing: -.5px; }
     .brand-sm em { color: var(--accent); font-style: normal; }
-    .g-actions { display: flex; gap: .6rem; align-items: center; }
-    .pill { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: .3rem .85rem; font-size: .82rem; color: var(--muted); }
+    .g-actions { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    .pill { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: .28rem .8rem; font-size: .78rem; color: var(--muted); }
     .pill b { color: var(--text); }
-    .btn-ghost { background: transparent; border: 1px solid var(--card-border); border-radius: 8px; padding: .35rem .9rem; font-size: .82rem; color: var(--muted); cursor: pointer; transition: border-color .12s, color .12s; font-family: inherit; }
+    .btn-ghost { background: transparent; border: 1px solid var(--card-border); border-radius: 8px; padding: .32rem .85rem; font-size: .78rem; color: var(--muted); cursor: pointer; transition: border-color .12s, color .12s; font-family: inherit; }
     .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .mode-toggle { display:flex; background: var(--card-bg); border:1px solid var(--card-border); border-radius:8px; overflow:hidden; }
+    .mode-btn { background:none; border:none; padding:.26rem .7rem; font-size:.75rem; font-weight:700; color:var(--muted); cursor:pointer; transition:background .12s,color .12s; font-family:inherit; line-height:1; }
+    .mode-btn.active { background:var(--card-border); color:var(--text); }
+    .mode-btn:hover:not(.active) { color:var(--text); }
 
-    /* ── Target banner ── */
-    .target-bar {
-      background: var(--card-bg); border: 1px solid var(--card-border);
-      border-radius: 10px; padding: .65rem 1rem;
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 1rem; font-size: .82rem; gap: 1rem;
+    #mode-desc { font-size:.73rem; color:var(--muted); margin-bottom:1rem; line-height:1.5; }
+
+    /* ── Dual stage ── */
+    .dual-stage {
+      display: grid;
+      grid-template-columns: 1fr 64px 1fr;
+      align-items: start;
+      margin-bottom: .75rem;
     }
-    .target-label { color: var(--muted); white-space: nowrap; }
-    .target-title { font-weight: 700; flex: 1; text-align: right; }
-    .target-rating { color: var(--accent); font-weight: 800; white-space: nowrap; }
 
-    /* ── Progress bar ── */
-    .prog-wrap { margin-bottom: 1.75rem; }
-    .prog-labels { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-bottom: .35rem; }
-    .prog-track { width: 100%; height: 4px; background: var(--card-border); border-radius: 2px; overflow: hidden; }
-    .prog-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
+    .stage-slot { display: flex; flex-direction: column; min-width: 0; }
 
-    /* ── Chain ── */
-    #chain { display: flex; flex-direction: column; margin-bottom: 1.25rem; }
-
-    .chain-step { display: flex; align-items: center; gap: .7rem; background: var(--card-bg); border: 2px solid var(--card-border); border-radius: 10px; padding: .65rem .85rem; transition: opacity .15s; }
-    .chain-step.done { opacity: .6; }
-    .chain-step.current { border-color: var(--accent); opacity: 1; }
-    .chain-step.win-step { border-color: var(--green); background: rgba(34,197,94,.06); opacity: 1; }
-
-    .step-poster { width: 30px; height: 42px; object-fit: cover; border-radius: 3px; flex-shrink: 0; background: var(--card-border); }
-    .step-poster.hidden { visibility: hidden; }
-    .step-poster-ph { width: 30px; height: 42px; border-radius: 3px; background: var(--card-border); flex-shrink: 0; }
-
-    .step-body { flex: 1; min-width: 0; }
-    .step-title { font-size: .88rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .step-year  { font-size: .72rem; color: var(--muted); }
-
-    .step-rating { font-size: .9rem; font-weight: 800; color: var(--accent); flex-shrink: 0; }
-    .chain-step.win-step .step-rating { color: var(--green); }
-
-    .connector {
-      display: flex; align-items: center; gap: .5rem;
-      padding: .25rem 1rem; font-size: .72rem; color: var(--muted);
+    .stage-label {
+      font-size: .57rem; font-weight: 800; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .38rem;
     }
-    .connector-arrow { color: var(--card-border); font-size: .9rem; }
-    .connector-type { color: var(--accent); font-weight: 600; }
+    .slot-target .stage-label { text-align: right; color: var(--accent); }
+
+    .stage-card {
+      background: var(--card-bg); border-radius: 12px; overflow: hidden;
+      border: 2px solid var(--card-border);
+      transition: border-color .22s, box-shadow .22s;
+      will-change: transform, opacity;
+    }
+    .slot-current .stage-card {
+      border-color: var(--indigo);
+      box-shadow: 0 0 0 1px rgba(99,102,241,.12), 0 4px 24px rgba(99,102,241,.1);
+    }
+    .slot-target .stage-card {
+      border-color: rgba(240,191,60,.38);
+      box-shadow: 0 0 0 1px rgba(240,191,60,.08), 0 4px 24px rgba(240,191,60,.07);
+    }
+    .stage-card.win {
+      border-color: var(--green) !important;
+      box-shadow: 0 0 0 2px rgba(34,197,94,.22), 0 6px 32px rgba(34,197,94,.14) !important;
+    }
+
+    .stage-poster {
+      width: 100%; height: clamp(148px, 27vw, 230px);
+      object-fit: cover; object-position: center top; display: block;
+    }
+    .stage-poster-ph {
+      width: 100%; height: clamp(148px, 27vw, 230px);
+      background: var(--card-border); display: block;
+    }
+    .stage-poster.hidden { visibility: hidden; }
+
+    .stage-info { padding: .6rem .75rem .72rem; }
+    .stage-title { font-size: .86rem; font-weight: 800; line-height: 1.25; margin-bottom: .26rem; }
+    .stage-sub { display: flex; align-items: center; gap: .4rem; font-size: .68rem; }
+    .stage-year { color: var(--muted); }
+    .stage-rating { color: var(--accent); font-weight: 800; }
+    .stage-card.win .stage-rating { color: var(--green); }
+
+    /* ── Card meta ── */
+    .step-meta { margin-top:.22rem; display:flex; flex-direction:column; gap:.1rem; }
+    .meta-row { display:flex; align-items:baseline; gap:.3rem; }
+    .meta-label { font-size:.53rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); flex-shrink:0; min-width:2.2em; opacity:.6; }
+    .meta-val { font-size:.65rem; color:#9090b8; line-height:1.5; word-break:break-word; }
+    .meta-val.meta-dir { font-style:italic; color:#b0b0d0; }
+    .meta-highlight { color:var(--accent); font-weight:700; background:rgba(240,191,60,.12); border-radius:3px; padding:0 .18rem; }
+
+    /* ── Bridge ── */
+    .stage-bridge {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding-top: 1.35rem; gap: .3rem;
+    }
+    .bridge-steps { font-size: .6rem; font-weight: 800; color: var(--muted); letter-spacing: .05em; }
+    .bridge-arrow { font-size: 1.6rem; color: var(--card-border); line-height: 1; transition: color .25s; }
+    .bridge-arrow.lit { color: var(--accent); }
+    .bridge-conn {
+      font-size: .6rem; font-weight: 700; color: var(--accent); text-align: center;
+      max-width: 56px; line-height: 1.35; word-break: break-word;
+      opacity: 0; transition: opacity .2s;
+    }
+    .bridge-conn.show { opacity: 1; }
+
+    /* ── Path trail ── */
+    .path-trail {
+      display: flex; align-items: center; gap: .22rem;
+      overflow-x: auto; scrollbar-width: none; padding: .1rem 0 .7rem;
+      min-height: 42px;
+    }
+    .path-trail::-webkit-scrollbar { display: none; }
+    .trail-poster {
+      width: 24px; height: 34px; object-fit: cover; border-radius: 3px;
+      background: var(--card-border); border: 1.5px solid var(--card-border);
+      flex-shrink: 0; display: block;
+    }
+    .trail-poster.is-current { border-color: var(--indigo); }
+    .trail-poster.hidden { visibility: hidden; }
+    .trail-ph { width:24px; height:34px; border-radius:3px; background:var(--card-border); flex-shrink:0; border:1.5px solid var(--card-border); }
+    .trail-ph.is-current { border-color: var(--indigo); }
+    .trail-sep { font-size: .65rem; color: var(--card-border); flex-shrink: 0; }
+    .trail-conn {
+      font-size: .54rem; font-weight: 700; color: var(--muted); background: var(--card-bg);
+      border: 1px solid var(--card-border); border-radius: 8px; padding: .08rem .3rem;
+      flex-shrink: 0; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Strike bar ── */
+    .strike-bar { display:flex; align-items:center; gap:.55rem; margin-bottom:.65rem; }
+    .strike-label { font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+    .strike-pips { display:flex; gap:.32rem; }
+    .strike-pip { width:9px; height:9px; border-radius:50%; border:1.5px solid var(--muted); opacity:.35; transition:background .18s, border-color .18s, opacity .18s; }
+    .strike-pip.hit { background:var(--red); border-color:var(--red); opacity:1; }
+
+    /* ── Timer ── */
+    .timer-wrap { display:flex; align-items:center; gap:.75rem; margin-bottom:.9rem; }
+    .timer-bar { flex:1; height:5px; background:var(--card-border); border-radius:3px; overflow:hidden; }
+    .timer-fill { height:100%; width:100%; background:var(--green); border-radius:3px; transition:width 1s linear, background .4s; }
+    .timer-fill.warn   { background:var(--accent); }
+    .timer-fill.danger { background:var(--red); }
+    .timer-text { font-size:.85rem; font-weight:900; color:var(--text); min-width:2.6em; text-align:right; font-variant-numeric:tabular-nums; transition:color .4s; }
+    .timer-text.warn   { color:var(--accent); }
+    .timer-text.danger { color:var(--red); }
+    @keyframes t-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .timer-text.danger { animation:t-pulse .55s ease infinite; }
+
+    /* ── Via label in results ── */
+    .r-via { font-size:.62rem; color:var(--muted); font-style:italic; margin-left:.3rem; }
 
     /* ── Search area ── */
-    .search-area { margin-bottom: 1rem; }
-    .search-label { font-size: .78rem; color: var(--muted); margin-bottom: .45rem; }
+    .search-area { margin-bottom: .8rem; }
+    .search-label { font-size: .74rem; color: var(--muted); margin-bottom: .38rem; }
     .search-label b { color: var(--text); }
-
     .search-input {
       width: 100%; background: var(--card-bg); border: 1px solid var(--card-border);
-      border-radius: 8px; padding: .65rem 1rem; font-size: .93rem;
-      color: var(--text); outline: none; transition: border-color .12s; font-family: inherit;
+      border-radius: 10px; padding: .68rem 1rem; font-size: .93rem;
+      color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s; font-family: inherit;
     }
-    .search-input:focus { border-color: var(--accent); }
+    .search-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
     .search-input::placeholder { color: var(--muted); }
     .search-input:disabled { opacity: .4; cursor: not-allowed; }
-
-    .results { border: 1px solid var(--card-border); border-radius: 8px; overflow: hidden; max-height: 280px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--card-border) transparent; margin-top: .45rem; }
+    .results { border: 1px solid var(--card-border); border-radius: 10px; overflow: hidden; max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--card-border) transparent; margin-top: .38rem; }
     .results.off { display: none; }
-
-    .r-item { padding: .6rem 1rem; cursor: pointer; border-bottom: 1px solid var(--card-border); transition: background .1s; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+    .r-item { padding: .55rem 1rem; cursor: pointer; border-bottom: 1px solid var(--card-border); transition: background .1s; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
     .r-item:last-child { border-bottom: none; }
     .r-item:hover { background: var(--card-hover); }
-    .r-title { font-size: .88rem; font-weight: 600; }
-    .r-meta  { font-size: .75rem; color: var(--muted); }
-    .r-rating { font-size: .82rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+    .r-title { font-size: .86rem; font-weight: 600; }
+    .r-meta  { font-size: .72rem; color: var(--muted); }
 
     /* ── Feedback ── */
-    .feedback { min-height: 1.2em; font-size: .84rem; margin-bottom: .75rem; }
-    .feedback.err { color: var(--red); }
-    .feedback.ok  { color: var(--green); }
-    .feedback.info{ color: var(--muted); }
+    .feedback { min-height: 1.2em; font-size: .82rem; margin-bottom: .6rem; }
+    .feedback.err  { color: var(--red); }
+    .feedback.ok   { color: var(--green); }
+    .feedback.info { color: var(--muted); }
 
     /* ── Bottom row ── */
-    .bottom-row { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; }
+    .bottom-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.btn-end  { background: transparent; border: 1px solid var(--card-border); border-radius: 8px; padding: .4rem .95rem; font-size: .8rem; color: var(--muted); cursor: pointer; transition: border-color .12s, color .12s; font-family: inherit; margin-left: auto; }
+    .btn-end:hover  { border-color: var(--red); color: var(--red); }
 
-    .btn-hint {
-      background: transparent; border: 1px solid var(--card-border); border-radius: 8px;
-      padding: .45rem 1rem; font-size: .82rem; color: var(--muted); cursor: pointer;
-      transition: border-color .12s, color .12s; font-family: inherit;
-    }
-    .btn-hint:hover { border-color: var(--muted); color: var(--text); }
-
-    .btn-end {
-      background: transparent; border: 1px solid var(--card-border); border-radius: 8px;
-      padding: .45rem 1rem; font-size: .82rem; color: var(--muted); cursor: pointer;
-      transition: border-color .12s, color .12s; font-family: inherit; margin-left: auto;
-    }
-    .btn-end:hover { border-color: var(--red); color: var(--red); }
-
-    /* ── Win / End banner ── */
-    .finish-banner {
-      background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.25);
-      border-radius: 12px; padding: 1.25rem 1.5rem;
-      text-align: center; margin-bottom: 1.5rem; display: none;
-    }
+    /* ── Finish banner ── */
+    .finish-banner { display: none; background: rgba(34,197,94,.07); border: 1px solid rgba(34,197,94,.22); border-radius: 14px; padding: 1.1rem 1.25rem; text-align: center; margin-top: 1rem; margin-bottom: 1.25rem; }
     .finish-banner.bad { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.2); }
     .finish-banner.show { display: block; }
-    .finish-title { font-size: 1.2rem; font-weight: 800; margin-bottom: .3rem; }
-    .finish-title.ok { color: var(--green); }
+    .finish-title { font-size: 1.15rem; font-weight: 800; margin-bottom: .25rem; }
+    .finish-title.ok  { color: var(--green); }
     .finish-title.bad { color: var(--red); }
-    .finish-detail { font-size: .85rem; color: var(--muted); }
-
-    .btn-new { background: var(--accent); color: #000; border: none; border-radius: 8px; padding: .72rem 2rem; font-size: .93rem; font-weight: 700; cursor: pointer; letter-spacing: .3px; transition: background .12s, transform .1s; font-family: inherit; }
+    .finish-detail { font-size: .83rem; color: var(--muted); }
+    .btn-new { display: inline-block; background: var(--accent); color: #000; border: none; border-radius: 8px; padding: .65rem 1.8rem; font-size: .9rem; font-weight: 700; cursor: pointer; letter-spacing: .3px; transition: background .12s, transform .1s; font-family: inherit; margin-top: .85rem; }
     .btn-new:hover { background: #f8d060; transform: translateY(-1px); }
+
+    /* ── Best path button ── */
+    .btn-best-path { display:none; margin-top:.75rem; background:rgba(240,191,60,.08); border:1px solid rgba(240,191,60,.28); border-radius:8px; padding:.46rem 1.1rem; font-size:.8rem; font-weight:700; color:var(--accent); cursor:pointer; transition:background .12s,border-color .12s; font-family:inherit; }
+    .btn-best-path:hover { background:rgba(240,191,60,.16); border-color:rgba(240,191,60,.5); }
+
+    /* ── Best path display ── */
+    .best-path-wrap { display:none; margin-top:1rem; margin-bottom:1.5rem; border:1px solid rgba(240,191,60,.2); border-radius:14px; overflow:hidden; box-shadow:0 0 0 1px rgba(240,191,60,.04),0 4px 24px rgba(240,191,60,.05); }
+    .bp-header { display:flex; align-items:center; gap:.6rem; padding:.75rem 1rem; background:rgba(240,191,60,.06); border-bottom:1px solid rgba(240,191,60,.12); }
+    .bp-trophy { font-size:.9rem; color:var(--accent); }
+    .bp-title  { font-size:.66rem; font-weight:800; letter-spacing:.13em; color:var(--accent); text-transform:uppercase; flex:1; }
+    .bp-badge  { background:rgba(240,191,60,.14); border:1px solid rgba(240,191,60,.3); border-radius:20px; padding:.18rem .6rem; font-size:.68rem; font-weight:800; color:var(--accent); }
+    .bp-body   { padding:.8rem 1rem; }
+    .bp-step-row { display:flex; align-items:center; gap:.55rem; }
+    .bp-num { width:20px; height:20px; border-radius:50%; background:rgba(240,191,60,.1); border:1px solid rgba(240,191,60,.28); font-size:.58rem; font-weight:900; color:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .bp-card { flex:1; display:flex; align-items:center; gap:.75rem; background:var(--card-bg); border:1px solid rgba(240,191,60,.1); border-radius:10px; padding:.6rem .85rem; }
+    .bp-card.bp-last { border-color:rgba(240,191,60,.38); background:rgba(240,191,60,.05); }
+    .step-poster { width:48px; height:72px; object-fit:cover; border-radius:4px; flex-shrink:0; background:var(--card-border); }
+    .step-poster.hidden { visibility:hidden; }
+    .step-poster-ph { width:48px; height:72px; border-radius:4px; background:var(--card-border); flex-shrink:0; }
+    .step-title  { font-size:.88rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .step-year   { font-size:.72rem; color:var(--muted); }
+    .step-rating { font-size:.9rem; font-weight:800; color:var(--accent); flex-shrink:0; }
+    .step-body   { flex:1; min-width:0; }
+    .bp-conn-wrap { display:flex; align-items:center; gap:.55rem; padding:.1rem 0; }
+    .bp-conn-line-wrap { width:20px; display:flex; justify-content:center; flex-shrink:0; }
+    .bp-conn-line { width:2px; height:22px; background:linear-gradient(to bottom,rgba(240,191,60,.5),rgba(240,191,60,.1)); border-radius:1px; }
+    .bp-conn-pill { display:inline-flex; align-items:center; gap:.32rem; background:rgba(240,191,60,.08); border:1px solid rgba(240,191,60,.16); border-radius:20px; padding:.19rem .65rem; font-size:.69rem; }
+    .bp-conn-type { color:var(--accent); font-weight:800; font-size:.58rem; text-transform:uppercase; letter-spacing:.07em; }
+    .bp-conn-sep  { color:var(--muted); }
+    .bp-conn-name { color:var(--text); font-weight:600; }
+    @keyframes bp-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+    .bp-step-row, .bp-conn-wrap { animation:bp-in .25s ease both; }
+
+    /* ── Card swap animations ── */
+    @keyframes card-out { to   { opacity:0; transform:translateX(-22px) scale(.965); } }
+    @keyframes card-in  { from { opacity:0; transform:translateX( 22px) scale(.965); } }
+    .card-exiting { animation: card-out .17s ease forwards; pointer-events: none; }
+    .card-entering { animation: card-in .22s ease both; }
+
+    /* ── Win glow on target ── */
+    @keyframes win-glow {
+      0%,100% { box-shadow: 0 0 0 2px rgba(34,197,94,.2),  0 4px 28px rgba(34,197,94,.1); }
+      50%      { box-shadow: 0 0 0 3px rgba(34,197,94,.38), 0 6px 44px rgba(34,197,94,.22); }
+    }
+    .slot-target .stage-card.win { animation: win-glow 1.6s ease infinite; }
   </style>
 </head>
 <body>
+
+<!-- ── Cine² Navigation ── -->
+<style>
+  #c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+  #c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+  #c2-btn.c2-hide { opacity:0; pointer-events:none; }
+  #c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+  #c2-bd.on { opacity:1; pointer-events:all; }
+  #c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+  #c2-nav.on { transform:translateX(0); }
+  .c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+  .c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+  .c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+  .c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+  .c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+  .c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+  .c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+  .c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+  .c2-link:hover, .c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+  .c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+  .c2-link:hover .c2-pip, .c2-link.c2-on .c2-pip { opacity:1; }
+  .c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+</style>
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close navigation">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open);
+  x.addEventListener('click',close);
+  bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+})();
+</script>
+<!-- ── End Navigation ── -->
 
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 <div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
@@ -165,62 +318,240 @@
 
 <!-- Game -->
 <div id="game-screen">
+
   <div class="g-header">
     <span class="brand-sm">Letterboxd <em>Ladder</em></span>
     <div class="g-actions">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-easy">Easy</button>
+        <button class="mode-btn" id="btn-med">Medium</button>
+        <button class="mode-btn" id="btn-hard">Hard</button>
+        <button class="mode-btn" id="btn-timed">Timed</button>
+      </div>
       <span class="pill">Steps <b id="steps-num">0</b></span>
-      <span class="pill">Best <b id="best-num">0</b></span>
+      <span class="pill">Best <b id="best-num">--</b></span>
       <button class="btn-ghost" id="btn-new-game">New Game</button>
     </div>
   </div>
 
-  <div class="target-bar">
-    <span class="target-label">Target</span>
-    <span class="target-title" id="target-title"></span>
-    <span class="target-rating" id="target-rating"></span>
+  <p id="mode-desc"></p>
+
+  <!-- Countdown timer (timed mode only) -->
+  <div class="timer-wrap" id="timer-wrap" style="display:none">
+    <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+    <span class="timer-text" id="timer-text">1:30</span>
   </div>
 
-  <div class="prog-wrap">
-    <div class="prog-labels">
-      <span id="prog-current">&#9733; —</span>
-      <span id="prog-target">&#9733; —</span>
+  <!-- Side-by-side stage -->
+  <div class="dual-stage">
+    <div class="stage-slot slot-current">
+      <div class="stage-label">Now At</div>
+      <div class="stage-card" id="card-current"></div>
     </div>
-    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+    <div class="stage-bridge">
+      <div class="bridge-steps" id="bridge-steps">0 steps</div>
+      <div class="bridge-arrow" id="bridge-arrow">&#8594;</div>
+      <div class="bridge-conn" id="bridge-conn"></div>
+    </div>
+
+    <div class="stage-slot slot-target">
+      <div class="stage-label">Target</div>
+      <div class="stage-card" id="card-target"></div>
+    </div>
   </div>
 
-  <div id="chain"></div>
+  <!-- Path trail (history thumbnails) -->
+  <div class="path-trail" id="path-trail"></div>
 
+  <!-- Finish banner -->
   <div class="finish-banner" id="finish-banner">
     <p class="finish-title" id="finish-title"></p>
     <p class="finish-detail" id="finish-detail"></p>
+    <br>
+    <button class="btn-best-path" id="btn-best-path">Show Best Path</button>
+    <br>
+    <button class="btn-new" id="btn-play-again">Play Again</button>
+  </div>
+
+  <!-- Best path -->
+  <div class="best-path-wrap" id="best-path-wrap">
+    <div class="bp-header">
+      <span class="bp-trophy">&#9733;</span>
+      <span class="bp-title">Optimal Route</span>
+      <span class="bp-badge" id="best-path-steps"></span>
+    </div>
+    <div id="best-path-chain"></div>
+  </div>
+
+  <div class="strike-bar" id="strike-bar">
+    <span class="strike-label">Strikes</span>
+    <div class="strike-pips">
+      <div class="strike-pip" id="s1"></div>
+      <div class="strike-pip" id="s2"></div>
+      <div class="strike-pip" id="s3"></div>
+    </div>
   </div>
 
   <div class="search-area" id="search-area">
     <p class="search-label" id="search-label"></p>
     <input class="search-input" id="search-input" type="text"
-           placeholder="Search for a movie..." autocomplete="off">
+           placeholder="Search for a connecting film..." autocomplete="off">
     <div class="results off" id="results"></div>
   </div>
 
-  <p class="feedback off" id="feedback"></p>
+  <p class="feedback" id="feedback"></p>
 
   <div class="bottom-row">
-    <button class="btn-hint" id="btn-hint">How many moves?</button>
-    <button class="btn-end"  id="btn-end">Give Up</button>
+    <button class="btn-end" id="btn-end">Give Up</button>
   </div>
+
 </div>
 
 <script>
   let allMovies   = [];
-  let chain       = [];   // [{ movie, connection }]  connection = null for first step
+  let chain       = [];   // [{ movie, connection }]
   let targetMovie = null;
   let bestSteps   = 0;
+  let strikes     = 0;
   let gameOver    = false;
+  let difficulty  = 'easy';
 
-  const MIN_RATING  = 0;     // floor of ratings in collection
-  const START_PCTILE = 0.35; // start from bottom 35%
+  // ── Timer ────────────────────────────────────────────────────
 
-  // ── CSV ────────────────────────────────────────────────────
+  const TIMER_START = 90;
+  let timeLeft      = TIMER_START;
+  let timerInterval = null;
+
+  function startTimer() {
+    timeLeft = TIMER_START;
+    updateTimerDisplay();
+    document.getElementById('timer-wrap').style.display = '';
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) {
+        stopTimer();
+        endGame(false, 'timeout');
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function updateTimerDisplay() {
+    const fill = document.getElementById('timer-fill');
+    const text = document.getElementById('timer-text');
+    if (!fill || !text) return;
+    const pct     = Math.max(0, timeLeft / TIMER_START * 100);
+    const mins    = Math.floor(timeLeft / 60);
+    const secs    = Math.max(0, timeLeft % 60);
+    fill.style.width = pct + '%';
+    text.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    const danger = timeLeft <= 15;
+    const warn   = timeLeft <= 30 && !danger;
+    fill.classList.toggle('danger', danger);
+    fill.classList.toggle('warn', warn);
+    text.classList.toggle('danger', danger);
+    text.classList.toggle('warn', warn);
+  }
+
+  // ── Persistence (one slot per difficulty) ────────────────────
+
+  const saveKey = () => `c2-ladder-${difficulty}`;
+
+  function saveState() {
+    if (difficulty === 'timed') return; // timed mode is live — not persisted
+    try {
+      const win = gameOver && chain.length > 0 && targetMovie &&
+                  chain[chain.length - 1].movie.title === targetMovie.title;
+      localStorage.setItem(saveKey(), JSON.stringify({
+        chainTitles: chain.map(s => ({ title: s.movie.title, connection: s.connection })),
+        targetTitle: targetMovie?.title,
+        bestSteps,
+        strikes,
+        gameOver,
+        gameOverWin: win
+      }));
+    } catch(e) {}
+  }
+
+  function loadState(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      if (!s.chainTitles?.length || !s.targetTitle) return false;
+
+      const movieMap = new Map(allMovies.map(m => [m.title, m]));
+      const restoredChain = s.chainTitles.map(step => {
+        const movie = movieMap.get(step.title);
+        return movie ? { movie, connection: step.connection } : null;
+      }).filter(Boolean);
+      const restoredTarget = movieMap.get(s.targetTitle);
+
+      if (restoredChain.length !== s.chainTitles.length || !restoredTarget) return false;
+
+      chain       = restoredChain;
+      targetMovie = restoredTarget;
+      bestSteps   = s.bestSteps || 0;
+      strikes     = s.strikes   || 0;
+      gameOver    = s.gameOver  || false;
+      return { win: s.gameOverWin || false };
+    } catch(e) { return false; }
+  }
+
+  const MODE_DESC = {
+    easy:   'Director &amp; cast displayed on each card — connect via shared director or actor.',
+    medium: 'No hints shown — connect via shared director or actor.',
+    hard:   'No hints shown — connect via shared actor only.',
+    timed:  '90 seconds on the clock. Search by film title <em>or cast member name</em> to move fast. Wrong picks cost 5 seconds.'
+  };
+
+  function syncModeButtons(mode) {
+    document.getElementById('btn-easy').classList.toggle('active', mode === 'easy');
+    document.getElementById('btn-med').classList.toggle('active', mode === 'medium');
+    document.getElementById('btn-hard').classList.toggle('active', mode === 'hard');
+    document.getElementById('btn-timed').classList.toggle('active', mode === 'timed');
+    document.getElementById('mode-desc').innerHTML = MODE_DESC[mode];
+  }
+
+  function setMode(mode) {
+    if (mode === difficulty) return;
+    saveState();               // save current difficulty's progress before switching
+    stopTimer();               // stop any running timer
+    difficulty = mode;
+    syncModeButtons(mode);
+
+    try { localStorage.setItem('c2-ladder-mode', mode); } catch(e) {}
+
+    if (mode === 'timed') {
+      // Timed always starts fresh — no saved state
+      startGame();
+    } else {
+      const restored = loadState(saveKey());
+      if (restored) {
+        if (gameOver) {
+          endGame(restored.win);
+        } else {
+          resetUIForActiveGame();
+          renderAll();
+        }
+      } else {
+        startGame();
+      }
+    }
+  }
+  document.getElementById('btn-easy').addEventListener('click',  () => setMode('easy'));
+  document.getElementById('btn-med').addEventListener('click',   () => setMode('medium'));
+  document.getElementById('btn-hard').addEventListener('click',  () => setMode('hard'));
+  document.getElementById('btn-timed').addEventListener('click', () => setMode('timed'));
+
+  // ── CSV ──────────────────────────────────────────────────────
 
   function parseCSV(src) {
     const rows = [];
@@ -248,40 +579,32 @@
       ['title','year','director','average_rating','genres',
        'cast_1','cast_2','cast_3','cast_4','cast_5','poster_url'].map(col);
     if (ti < 0 || ri < 0) return [];
-
     return rows.slice(1).flatMap(r => {
       const title  = r[ti]?.trim();
       const rating = parseFloat(r[ri]);
       if (!title || isNaN(rating)) return [];
       const genres = r[gi]?.split(',').map(s => s.trim()).filter(Boolean) || [];
       const casts  = [c1,c2,c3,c4,c5]
-        .filter(i => i >= 0)
-        .map(i => r[i]?.trim())
-        .filter(Boolean)
-        .map(s => s.replace(/\s*\([^)]*\)\s*$/, '').trim())
-        .filter(Boolean);
+        .filter(i => i >= 0).map(i => r[i]?.trim()).filter(Boolean)
+        .map(s => s.replace(/\s*\(.*\)\s*$/, '').trim()).filter(Boolean);
       return [{ title, year: r[yi]?.trim()||'', director: r[di]?.trim()||'', rating, genres, casts, poster: pi>=0 ? r[pi]?.trim():'' }];
     });
   }
 
-  // ── Connection logic ───────────────────────────────────────
+  // ── Connection logic ─────────────────────────────────────────
 
   function getConnection(a, b) {
-    // Director
-    if (a.director && b.director && a.director === b.director)
-      return { type: 'Director', value: a.director };
-    // Shared actor
+    if (difficulty !== 'hard') {
+      if (a.director && b.director && a.director === b.director)
+        return { type: 'Director', value: a.director };
+    }
     const setA = new Set(a.casts);
     for (const actor of b.casts)
       if (actor && setA.has(actor)) return { type: 'Actor', value: actor };
-    // Shared genre
-    const setG = new Set(a.genres);
-    for (const g of b.genres)
-      if (g && setG.has(g)) return { type: 'Genre', value: g };
     return null;
   }
 
-  // ── Helpers ────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────
 
   function shuffle(a) {
     a = [...a];
@@ -302,74 +625,137 @@
     const cur = currentMovie();
     if (!cur) return [];
     return allMovies.filter(m =>
-      m.rating > cur.rating &&
-      !chain.some(s => s.movie.title === m.title) &&
-      getConnection(cur, m)
+      !chain.some(s => s.movie.title === m.title) && getConnection(cur, m)
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────
+  // ── Meta helper ──────────────────────────────────────────────
 
-  function renderChain() {
-    const el = document.getElementById('chain');
-    if (!chain.length) { el.innerHTML = ''; return; }
+  function buildMeta(movie, conn) {
+    const row = (label, val, extra = '') =>
+      `<div class="meta-row"><span class="meta-label">${label}</span><span class="meta-val${extra}">${val}</span></div>`;
+    const hl = v => `<span class="meta-highlight">${esc(v)}</span>`;
 
+    if (conn && difficulty !== 'easy') {
+      const label = conn.type === 'Director' ? 'Dir' : 'Cast';
+      const extra = conn.type === 'Director' ? ' meta-dir' : '';
+      return `<div class="step-meta">${row(label, hl(conn.value), extra)}</div>`;
+    }
+    if (difficulty !== 'easy') return '';
+
+    const rows = [];
+    if (movie.director) {
+      const val = conn?.type === 'Director' ? hl(movie.director) : esc(movie.director);
+      rows.push(row('Dir', val, ' meta-dir'));
+    }
+    if (movie.casts.length) {
+      const list = conn?.type === 'Actor' ? movie.casts : movie.casts.slice(0, 4);
+      const castHtml = list.map(c =>
+        conn?.type === 'Actor' && conn.value === c ? hl(c) : esc(c)
+      ).join(' · ');
+      rows.push(row('Cast', castHtml));
+    }
+    return rows.length ? `<div class="step-meta">${rows.join('')}</div>` : '';
+  }
+
+  // ── Stage card renderers ─────────────────────────────────────
+
+  function stageCardHTML(movie, conn) {
+    const poster = movie.poster
+      ? `<img class="stage-poster" src="${esc(movie.poster)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">`
+      : `<div class="stage-poster-ph"></div>`;
+    const meta = buildMeta(movie, conn);
+    return `${poster}
+      <div class="stage-info">
+        <div class="stage-title">${esc(movie.title)}</div>
+        <div class="stage-sub">
+          <span class="stage-year">${esc(movie.year)}</span>
+          <span class="stage-rating">&#9733; ${movie.rating.toFixed(2)}</span>
+        </div>
+        ${meta}
+      </div>`;
+  }
+
+  function renderCurrentCard(conn) {
+    const movie = currentMovie();
+    const el = document.getElementById('card-current');
+    if (!movie || !el) return;
+    el.innerHTML = stageCardHTML(movie, conn || null);
+    el.classList.remove('win');
+  }
+
+  function renderTargetCard(reached) {
+    const el = document.getElementById('card-target');
+    if (!targetMovie || !el) return;
+    el.innerHTML = stageCardHTML(targetMovie, null);
+    el.classList.toggle('win', !!reached);
+  }
+
+  // ── Bridge ───────────────────────────────────────────────────
+
+  let bridgeTimer = null;
+
+  function flashBridge(conn) {
+    const arrow  = document.getElementById('bridge-arrow');
+    const connEl = document.getElementById('bridge-conn');
+    arrow.classList.add('lit');
+    connEl.innerHTML = `<span style="font-size:.5rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);">${esc(conn.type)}</span><br>${esc(conn.value)}`;
+    connEl.classList.add('show');
+    clearTimeout(bridgeTimer);
+    bridgeTimer = setTimeout(() => {
+      arrow.classList.remove('lit');
+      connEl.classList.remove('show');
+    }, 2200);
+  }
+
+  function updateBridgeSteps() {
+    const steps = chain.length - 1;
+    document.getElementById('bridge-steps').textContent = `${steps} step${steps !== 1 ? 's' : ''}`;
+  }
+
+  // ── Path trail ───────────────────────────────────────────────
+
+  function renderTrail() {
+    const el = document.getElementById('path-trail');
+    if (chain.length <= 1) { el.innerHTML = ''; return; }
     let html = '';
     chain.forEach((step, i) => {
-      const isCurrent = i === chain.length - 1 && !gameOver;
-      const isWin     = gameOver && step.movie.title === targetMovie?.title;
-      const cls = isCurrent ? 'current' : (isWin ? 'win-step' : 'done');
-
-      if (i > 0 && step.connection) {
-        html += `<div class="connector">
-          <span class="connector-arrow">&#8595;</span>
-          <span class="connector-type">${esc(step.connection.type)}</span>
-          <span>${esc(step.connection.value)}</span>
-        </div>`;
+      if (i > 0) {
+        const conn = step.connection;
+        html += `<span class="trail-sep">›</span>`;
+        if (conn) {
+          const label = conn.type === 'Director' ? 'Dir' : conn.value.split(' ')[0];
+          html += `<span class="trail-conn">${esc(label)}</span><span class="trail-sep">›</span>`;
+        }
       }
-
-      const poster = step.movie.poster
-        ? `<img class="step-poster" src="${esc(step.movie.poster)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">`
-        : `<div class="step-poster-ph"></div>`;
-
-      html += `<div class="chain-step ${cls}">
-        ${poster}
-        <div class="step-body">
-          <p class="step-title">${esc(step.movie.title)}</p>
-          ${step.movie.year ? `<p class="step-year">${esc(step.movie.year)}</p>` : ''}
-        </div>
-        <span class="step-rating">&#9733; ${step.movie.rating.toFixed(2)}</span>
-      </div>`;
+      const isCur = i === chain.length - 1;
+      if (step.movie.poster) {
+        html += `<img class="trail-poster${isCur ? ' is-current' : ''}" src="${esc(step.movie.poster)}" title="${esc(step.movie.title)}" loading="lazy" onerror="this.classList.add('hidden')">`;
+      } else {
+        html += `<div class="trail-ph${isCur ? ' is-current' : ''}" title="${esc(step.movie.title)}"></div>`;
+      }
     });
-
     el.innerHTML = html;
-    el.scrollTop = el.scrollHeight;
+    el.scrollLeft = el.scrollWidth;
   }
 
-  function renderProgress() {
-    const cur  = currentMovie();
-    const tgt  = targetMovie;
-    if (!cur || !tgt) return;
-
-    const minR = allMovies.reduce((m, v) => Math.min(m, v.rating), Infinity);
-    const range = tgt.rating - minR;
-    const pct   = range > 0 ? Math.min(100, ((cur.rating - minR) / range) * 100) : 100;
-
-    document.getElementById('prog-fill').style.width = pct + '%';
-    document.getElementById('prog-current').textContent = `★ ${cur.rating.toFixed(2)}`;
-    document.getElementById('prog-target').textContent  = `★ ${tgt.rating.toFixed(2)}`;
-  }
+  // ── Stats ────────────────────────────────────────────────────
 
   function updateStats() {
     document.getElementById('steps-num').textContent = Math.max(0, chain.length - 1);
-    document.getElementById('best-num').textContent  = bestSteps;
+    document.getElementById('best-num').textContent  = bestSteps === 0 ? '--' : bestSteps;
+    updateBridgeSteps();
   }
 
   function renderSearchLabel() {
     const cur = currentMovie();
-    if (!cur) return;
-    const label = document.getElementById('search-label');
-    label.innerHTML = `Find a movie connected to <b>${esc(cur.title)}</b> with a higher rating`;
+    if (!cur || !targetMovie) return;
+    const n = validNextMovies().length;
+    const countHtml = n > 0
+      ? `<span style="color:var(--muted)"> · ${n} move${n !== 1 ? 's' : ''} available</span>`
+      : `<span style="color:var(--red)"> · no valid moves</span>`;
+    document.getElementById('search-label').innerHTML =
+      `From <b>${esc(cur.title)}</b> — reach <b style="color:var(--accent)">${esc(targetMovie.title)}</b>${countHtml}`;
   }
 
   function setFeedback(msg, type) {
@@ -378,41 +764,108 @@
     el.className   = 'feedback ' + (type || '');
   }
 
-  // ── Search ─────────────────────────────────────────────────
+  function renderStrikes() {
+    for (let i = 1; i <= 3; i++)
+      document.getElementById(`s${i}`).classList.toggle('hit', i <= strikes);
+  }
+
+  function resetUIForActiveGame() {
+    document.getElementById('finish-banner').classList.remove('show');
+    document.getElementById('best-path-wrap').style.display  = 'none';
+    document.getElementById('btn-best-path').style.display   = 'none';
+    document.getElementById('search-area').style.display     = '';
+    document.getElementById('results').classList.add('off');
+    document.getElementById('search-input').value = '';
+    document.getElementById('btn-end').style.display  = '';
+    document.getElementById('bridge-conn').classList.remove('show');
+    document.getElementById('bridge-arrow').classList.remove('lit');
+    document.getElementById('card-current').classList.remove('win');
+    document.getElementById('card-target').classList.remove('win');
+    // Show timer in timed mode; show strikes otherwise
+    const isTimed = difficulty === 'timed';
+    document.getElementById('timer-wrap').style.display  = isTimed ? '' : 'none';
+    document.getElementById('strike-bar').style.display  = isTimed ? 'none' : '';
+    setFeedback('', '');
+  }
+
+  function renderAll() {
+    renderCurrentCard();
+    renderTargetCard(false);
+    renderTrail();
+    updateStats();
+    renderSearchLabel();
+    renderStrikes();
+  }
+
+  // ── Search ───────────────────────────────────────────────────
 
   let currentResults = [];
 
+  // Returns [{movie, via}] — via=null for title matches, via=name for cast/dir matches
   function queryMovies(q) {
-    const cur = currentMovie();
-    if (!cur) return [];
-    const lq = q.toLowerCase();
-    const pool = allMovies.filter(m =>
-      m.rating > cur.rating &&
-      !chain.some(s => s.movie.title === m.title) &&
-      m.title.toLowerCase().includes(lq)
-    );
-    pool.sort((a, b) => a.rating - b.rating);
-    return pool.slice(0, 9);
+    if (!q.trim()) return [];
+    const lq      = q.toLowerCase();
+    const cur     = currentMovie();
+    const inChain = t => chain.some(s => s.movie.title === t);
+    const results = [];
+    const seen    = new Set();
+
+    for (const m of allMovies) {
+      if (inChain(m.title)) continue;
+      const titleMatch = m.title.toLowerCase().includes(lq);
+      let via = null;
+      if (difficulty === 'timed' && !titleMatch) {
+        if (m.director && m.director.toLowerCase().includes(lq)) {
+          via = m.director;
+        } else {
+          via = m.casts.find(c => c.toLowerCase().includes(lq)) || null;
+        }
+      }
+      if ((titleMatch || via) && !seen.has(m.title)) {
+        seen.add(m.title);
+        results.push({ movie: m, via: titleMatch ? null : via });
+      }
+    }
+
+    results.sort((a, b) => {
+      const at = targetMovie && a.movie.title === targetMovie.title;
+      const bt = targetMovie && b.movie.title === targetMovie.title;
+      if (at && !bt) return -1;
+      if (!at && bt) return 1;
+      if (cur) {
+        const ac = !!getConnection(cur, a.movie);
+        const bc = !!getConnection(cur, b.movie);
+        if (ac && !bc) return -1;
+        if (!ac && bc) return 1;
+      }
+      if (!a.via && b.via) return -1;
+      if (a.via && !b.via) return 1;
+      return a.movie.title.localeCompare(b.movie.title);
+    });
+    return results;
   }
 
-  function renderResults(movies) {
+  function renderResults(results) {
     const el = document.getElementById('results');
-    currentResults = movies;
-    if (!movies.length) { el.classList.add('off'); return; }
+    currentResults = results;
+    if (!results.length) { el.classList.add('off'); return; }
     el.classList.remove('off');
-    el.innerHTML = movies.map((m, i) =>
-      `<div class="r-item" data-i="${i}">
+    el.innerHTML = results.map((r, i) => {
+      const m        = r.movie;
+      const isTarget = targetMovie && m.title === targetMovie.title;
+      const viaHtml  = r.via ? ` <span class="r-via">via ${esc(r.via)}</span>` : '';
+      return `<div class="r-item" data-i="${i}" style="${isTarget ? 'background:rgba(240,191,60,.08);' : ''}">
         <div>
-          <div class="r-title">${esc(m.title)}</div>
-          <div class="r-meta">${esc(m.year)}</div>
+          <div class="r-title" style="${isTarget ? 'color:var(--accent);' : ''}">${esc(m.title)}</div>
+          <div class="r-meta">${esc(m.year)}${viaHtml}</div>
         </div>
-        <span class="r-rating">&#9733; ${m.rating.toFixed(2)}</span>
-      </div>`
-    ).join('');
+        ${isTarget ? '<span style="font-size:.65rem;font-weight:800;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;">Target</span>' : ''}
+      </div>`;
+    }).join('');
     el.querySelectorAll('.r-item').forEach(item => {
       item.addEventListener('mousedown', e => {
         e.preventDefault();
-        attemptAdd(currentResults[+item.dataset.i]);
+        attemptAdd(currentResults[+item.dataset.i].movie);
       });
     });
   }
@@ -423,153 +876,250 @@
     clearTimeout(debounce);
     debounce = setTimeout(() => renderResults(queryMovies(e.target.value)), 80);
   });
-
   document.getElementById('search-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && currentResults.length) attemptAdd(currentResults[0]);
+    if (e.key === 'Enter' && currentResults.length) attemptAdd(currentResults[0].movie);
   });
 
-  // ── Add to chain ───────────────────────────────────────────
+  // ── Add to chain (with card swap animation) ──────────────────
 
   function attemptAdd(movie) {
     if (gameOver) return;
-    const cur  = currentMovie();
+    const cur = currentMovie();
 
-    // Duplicate
     if (chain.some(s => s.movie.title === movie.title)) {
       setFeedback(`"${movie.title}" is already in your chain.`, 'err'); return;
     }
-    // Rating
-    if (movie.rating <= cur.rating) {
-      setFeedback(`★${movie.rating.toFixed(2)} is not higher than ★${cur.rating.toFixed(2)}.`, 'err'); return;
-    }
-    // Connection
     const conn = getConnection(cur, movie);
     if (!conn) {
-      setFeedback(`No connection found between "${cur.title}" and "${movie.title}".`, 'err'); return;
+      if (difficulty === 'timed') {
+        timeLeft = Math.max(0, timeLeft - 5);
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          stopTimer();
+          document.getElementById('search-input').value = '';
+          document.getElementById('results').classList.add('off');
+          currentResults = [];
+          endGame(false, 'timeout');
+          return;
+        }
+        setFeedback(`No connection — −5 seconds!`, 'err');
+      } else {
+        strikes++;
+        renderStrikes();
+        saveState();
+        if (strikes >= 3) {
+          document.getElementById('search-input').value = '';
+          document.getElementById('results').classList.add('off');
+          currentResults = [];
+          endGame(false, 'strikes');
+        } else {
+          const left = 3 - strikes;
+          setFeedback(`No connection — Strike ${strikes}/3. ${left} chance${left !== 1 ? 's' : ''} left.`, 'err');
+        }
+      }
+      return;
     }
 
-    // Valid
     chain.push({ movie, connection: conn });
     const steps = chain.length - 1;
     if (steps > bestSteps) bestSteps = steps;
+    saveState();
 
     document.getElementById('search-input').value = '';
     document.getElementById('results').classList.add('off');
     currentResults = [];
     setFeedback('', '');
 
-    // Win?
-    if (targetMovie && movie.title === targetMovie.title) {
-      endGame(true);
-    } else {
-      renderAll();
-    }
+    const isWin   = targetMovie && movie.title === targetMovie.title;
+    const cardEl  = document.getElementById('card-current');
+
+    // Slide old card out
+    cardEl.classList.add('card-exiting');
+
+    setTimeout(() => {
+      cardEl.classList.remove('card-exiting');
+
+      if (isWin) {
+        endGame(true);
+      } else {
+        renderCurrentCard();
+        cardEl.classList.add('card-entering');
+        flashBridge(conn);
+        renderTrail();
+        updateStats();
+        renderSearchLabel();
+        setTimeout(() => cardEl.classList.remove('card-entering'), 240);
+      }
+    }, 170);
   }
 
-  // ── End game ───────────────────────────────────────────────
+  // ── Best path (BFS) ──────────────────────────────────────────
 
-  function endGame(win) {
+  function findBestPath(start, target) {
+    if (start.title === target.title) return [{ movie: start, connection: null }];
+    const queue   = [[{ movie: start, connection: null }]];
+    const visited = new Set([start.title]);
+    while (queue.length) {
+      const path = queue.shift();
+      const cur  = path[path.length - 1].movie;
+      for (const next of allMovies) {
+        if (visited.has(next.title)) continue;
+        const conn = getConnection(cur, next);
+        if (!conn) continue;
+        const newPath = [...path, { movie: next, connection: conn }];
+        if (next.title === target.title) return newPath;
+        visited.add(next.title);
+        queue.push(newPath);
+      }
+    }
+    return null;
+  }
+
+  function renderBestPath(path) {
+    const wrap    = document.getElementById('best-path-wrap');
+    const chainEl = document.getElementById('best-path-chain');
+    const stepsEl = document.getElementById('best-path-steps');
+    if (!path) {
+      stepsEl.textContent = '';
+      chainEl.innerHTML   = `<div class="bp-body"><p style="color:var(--muted);font-size:.85rem;">No path found between these films under the current rules.</p></div>`;
+      wrap.style.display  = 'block';
+      return;
+    }
+    const steps = path.length - 1;
+    stepsEl.textContent = `${steps} step${steps !== 1 ? 's' : ''}`;
+    let html = '<div class="bp-body">';
+    path.forEach((step, i) => {
+      const delay = `animation-delay:${(i * 0.07).toFixed(2)}s`;
+      if (i > 0 && step.connection) {
+        html += `<div class="bp-conn-wrap" style="${delay}">
+          <div class="bp-conn-line-wrap"><div class="bp-conn-line"></div></div>
+          <div class="bp-conn-pill">
+            <span class="bp-conn-type">${esc(step.connection.type)}</span>
+            <span class="bp-conn-sep">·</span>
+            <span class="bp-conn-name">${esc(step.connection.value)}</span>
+          </div>
+        </div>`;
+      }
+      const isLast   = i === path.length - 1;
+      const poster   = step.movie.poster
+        ? `<img class="step-poster" src="${esc(step.movie.poster)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">`
+        : `<div class="step-poster-ph"></div>`;
+      const outConn  = path[i + 1]?.connection ?? null;
+      const metaLine = buildMeta(step.movie, outConn);
+      html += `<div class="bp-step-row" style="${delay}">
+        <div class="bp-num">${i + 1}</div>
+        <div class="bp-card${isLast ? ' bp-last' : ''}">
+          ${poster}
+          <div class="step-body">
+            <p class="step-title">${esc(step.movie.title)}</p>
+            ${step.movie.year ? `<p class="step-year">${esc(step.movie.year)}</p>` : ''}
+            ${metaLine}
+          </div>
+          <span class="step-rating">&#9733; ${step.movie.rating.toFixed(2)}</span>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    chainEl.innerHTML  = html;
+    wrap.style.display = 'block';
+  }
+
+  document.getElementById('btn-best-path').addEventListener('click', () => {
+    document.getElementById('btn-best-path').style.display = 'none';
+    renderBestPath(findBestPath(chain[0].movie, targetMovie));
+  });
+
+  // ── End game ─────────────────────────────────────────────────
+
+  function endGame(win, reason) {
     gameOver = true;
     const steps = chain.length - 1;
-    if (steps > bestSteps) bestSteps = steps;
 
-    const banner    = document.getElementById('finish-banner');
-    const titleEl   = document.getElementById('finish-title');
-    const detailEl  = document.getElementById('finish-detail');
-    const searchArea = document.getElementById('search-area');
-    const bottomRow = document.getElementById('bottom-row');
+    const banner   = document.getElementById('finish-banner');
+    const titleEl  = document.getElementById('finish-title');
+    const detailEl = document.getElementById('finish-detail');
 
     if (win) {
+      if (bestSteps === 0 || steps < bestSteps) bestSteps = steps;
       banner.className  = 'finish-banner show';
       titleEl.className = 'finish-title ok';
-      titleEl.textContent  = `You reached the top!`;
-      detailEl.textContent = `${steps} step${steps !== 1 ? 's' : ''} to ★${currentMovie().rating.toFixed(2)}`;
+      titleEl.textContent  = 'Connected!';
+      detailEl.textContent = `Reached "${targetMovie.title}" in ${steps} step${steps !== 1 ? 's' : ''}`;
+      renderCurrentCard();
+      document.getElementById('card-current').classList.add('win');
+      renderTargetCard(true);
     } else {
       banner.className  = 'finish-banner bad show';
       titleEl.className = 'finish-title bad';
-      titleEl.textContent  = `Run ended`;
-      detailEl.textContent = `Climbed ${steps} step${steps !== 1 ? 's' : ''} to ★${currentMovie().rating.toFixed(2)}`;
+      if (reason === 'strikes') {
+        titleEl.textContent  = '3 Strikes — You\'re Out!';
+        detailEl.textContent = steps > 0
+          ? `Made it ${steps} step${steps !== 1 ? 's' : ''} before using all 3 strikes`
+          : 'Used all 3 strikes before making a single move';
+      } else if (reason === 'timeout') {
+        titleEl.textContent  = 'Time\'s Up!';
+        detailEl.textContent = steps > 0
+          ? `Made it ${steps} step${steps !== 1 ? 's' : ''} before time ran out`
+          : 'Ran out of time before making a single connection';
+      } else {
+        titleEl.textContent  = 'Run ended';
+        detailEl.textContent = `${steps} step${steps !== 1 ? 's' : ''} from "${chain[0].movie.title}"`;
+      }
+      renderTargetCard(false);
     }
 
-    searchArea.style.display = 'none';
-    document.getElementById('feedback').className = 'feedback off';
-    document.getElementById('btn-hint').style.display = 'none';
-    document.getElementById('btn-end').style.display  = 'none';
-
-    renderChain();
-    renderProgress();
+    renderTrail();
     updateStats();
+    stopTimer();
+
+    document.getElementById('strike-bar').style.display  = 'none';
+    document.getElementById('timer-wrap').style.display  = 'none';
+    document.getElementById('search-area').style.display = 'none';
+    document.getElementById('feedback').className        = 'feedback';
+    document.getElementById('btn-end').style.display     = 'none';
+    document.getElementById('btn-best-path').style.display = 'block';
+    saveState();
   }
 
-  function renderAll() {
-    renderChain();
-    renderProgress();
-    renderSearchLabel();
-    updateStats();
-  }
-
-  // ── Hint button ────────────────────────────────────────────
-
-  document.getElementById('btn-hint').addEventListener('click', () => {
-    const n = validNextMovies().length;
-    if (n === 0) {
-      setFeedback('No valid moves from here — try a different path or start a new game.', 'err');
-    } else {
-      setFeedback(`${n} movie${n !== 1 ? 's' : ''} can follow from here.`, 'info');
-    }
-  });
-
-  // ── Give up ────────────────────────────────────────────────
+  // ── Give up ──────────────────────────────────────────────────
 
   document.getElementById('btn-end').addEventListener('click', () => {
     if (!gameOver) endGame(false);
   });
 
-  // ── New game ───────────────────────────────────────────────
+  // ── New game ─────────────────────────────────────────────────
 
   function startGame() {
     gameOver = false;
-    chain = [];
+    strikes  = 0;
+    chain    = [];
     currentResults = [];
+    clearTimeout(bridgeTimer);
+    stopTimer();
+    document.getElementById('path-trail').innerHTML = '';
+    resetUIForActiveGame();
+    renderStrikes();
+    if (difficulty === 'timed') startTimer();
 
-    document.getElementById('finish-banner').classList.remove('show');
-    document.getElementById('search-area').style.display = '';
-    document.getElementById('results').classList.add('off');
-    document.getElementById('search-input').value = '';
-    document.getElementById('btn-hint').style.display = '';
-    document.getElementById('btn-end').style.display  = '';
-    setFeedback('', '');
-
-    // Target: highest-rated movie
-    targetMovie = allMovies.reduce((best, m) => m.rating > best.rating ? m : best);
-    document.getElementById('target-title').textContent  = targetMovie.title;
-    document.getElementById('target-rating').textContent = `★ ${targetMovie.rating.toFixed(2)}`;
-
-    // Start: random movie from bottom 35%, but make sure it has at least one valid next move
-    const sorted   = [...allMovies].sort((a, b) => a.rating - b.rating);
-    const cutoff   = sorted[Math.floor(sorted.length * START_PCTILE)].rating;
-    const starters = shuffle(allMovies.filter(m =>
-      m.rating <= cutoff && m.title !== targetMovie.title
-    ));
-
-    // Find a starter with at least one reachable movie
-    let startMovie = starters[0];
-    for (const candidate of starters) {
-      const hasMove = allMovies.some(m =>
-        m.rating > candidate.rating && getConnection(candidate, m)
-      );
+    const pool = shuffle([...allMovies]);
+    targetMovie = pool[0];
+    let startMovie = pool[1];
+    for (const candidate of pool) {
+      if (candidate.title === targetMovie.title) continue;
+      const hasMove = allMovies.some(m => m.title !== candidate.title && getConnection(candidate, m));
       if (hasMove) { startMovie = candidate; break; }
     }
 
     chain = [{ movie: startMovie, connection: null }];
+    saveState();
     renderAll();
   }
 
   document.getElementById('btn-new-game').addEventListener('click', startGame);
+  document.getElementById('btn-play-again').addEventListener('click', startGame);
 
-  // ── File load ──────────────────────────────────────────────
+  // ── Load data ────────────────────────────────────────────────
 
-  // ── Load data ─────────────────────────────────────────────
   fetch('./letterboxd_scraped.csv')
     .then(r => { if (!r.ok) throw new Error(); return r.text(); })
     .then(text => {
@@ -577,7 +1127,25 @@
       if (allMovies.length < 5) throw new Error();
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('game-screen').style.display   = 'block';
-      startGame();
+
+      // Restore last-used mode (never restore timed — it's a live mode)
+      const savedMode = localStorage.getItem('c2-ladder-mode');
+      if (savedMode && ['easy', 'medium', 'hard'].includes(savedMode)) {
+        difficulty = savedMode;
+      }
+      syncModeButtons(difficulty);
+
+      const restored = loadState(saveKey());
+      if (restored) {
+        if (gameOver) {
+          endGame(restored.win);
+        } else {
+          resetUIForActiveGame();
+          renderAll();
+        }
+      } else {
+        startGame();
+      }
     })
     .catch(() => {
       document.getElementById('loading-screen').style.display = 'none';
