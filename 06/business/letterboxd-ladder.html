@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Letterboxd Ladder (Test)</title>
+  <title>Letterboxd Ladder</title>
   <style>
     :root {
       --bg: #0c0c14;
@@ -35,12 +35,6 @@
     .pill b { color: var(--text); }
     .btn-ghost { background: transparent; border: 1px solid var(--card-border); border-radius: 8px; padding: .32rem .85rem; font-size: .78rem; color: var(--muted); cursor: pointer; transition: border-color .12s, color .12s; font-family: inherit; }
     .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-    .mode-toggle { display:flex; background: var(--card-bg); border:1px solid var(--card-border); border-radius:8px; overflow:hidden; }
-    .mode-btn { background:none; border:none; padding:.26rem .7rem; font-size:.75rem; font-weight:700; color:var(--muted); cursor:pointer; transition:background .12s,color .12s; font-family:inherit; line-height:1; }
-    .mode-btn.active { background:var(--card-border); color:var(--text); }
-    .mode-btn:hover:not(.active) { color:var(--text); }
-
-    #mode-desc { font-size:.73rem; color:var(--muted); margin-bottom:1rem; line-height:1.5; }
 
     /* ── Dual stage ── */
     .dual-stage {
@@ -147,17 +141,6 @@
     .strike-pip { width:9px; height:9px; border-radius:50%; border:1.5px solid var(--muted); opacity:.35; transition:background .18s, border-color .18s, opacity .18s; }
     .strike-pip.hit { background:var(--red); border-color:var(--red); opacity:1; }
 
-    /* ── Timer ── */
-    .timer-wrap { display:flex; align-items:center; gap:.75rem; margin-bottom:.9rem; }
-    .timer-bar { flex:1; height:5px; background:var(--card-border); border-radius:3px; overflow:hidden; }
-    .timer-fill { height:100%; width:100%; background:var(--green); border-radius:3px; transition:width 1s linear, background .4s; }
-    .timer-fill.warn   { background:var(--accent); }
-    .timer-fill.danger { background:var(--red); }
-    .timer-text { font-size:.85rem; font-weight:900; color:var(--text); min-width:2.6em; text-align:right; font-variant-numeric:tabular-nums; transition:color .4s; }
-    .timer-text.warn   { color:var(--accent); }
-    .timer-text.danger { color:var(--red); }
-    @keyframes t-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-    .timer-text.danger { animation:t-pulse .55s ease infinite; }
 
     /* ── Via label in results ── */
     .r-via { font-size:.62rem; color:var(--muted); font-style:italic; margin-left:.3rem; }
@@ -181,6 +164,42 @@
     .r-item:hover { background: var(--card-hover); }
     .r-title { font-size: .86rem; font-weight: 600; }
     .r-meta  { font-size: .72rem; color: var(--muted); }
+    .r-easy-info { font-size: .67rem; color: var(--muted); margin-top: .18rem; line-height: 1.4; opacity: .85; }
+    .r-easy-lbl  { opacity: .55; margin-right: .25rem; text-transform: uppercase; font-size: .58rem; letter-spacing: .04em; }
+    .r-item.r-disabled { opacity: .38; cursor: default; pointer-events: none; }
+
+    /* ── Planning ── */
+    .btn-plan { background:transparent; border:1px solid rgba(99,102,241,.35); border-radius:8px; padding:.4rem .95rem; font-size:.8rem; color:var(--indigo); cursor:pointer; transition:border-color .12s,color .12s,background .12s; font-family:inherit; }
+    .btn-plan:hover { background:rgba(99,102,241,.08); border-color:var(--indigo); }
+    .btn-plan.plan-on { background:rgba(99,102,241,.14); border-color:var(--indigo); }
+    .btn-plan-execute { background:var(--indigo); color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; transition:opacity .12s; font-family:inherit; }
+    .btn-plan-execute:hover:not(:disabled) { opacity:.85; }
+    .btn-plan-execute:disabled { opacity:.28; cursor:not-allowed; }
+    .btn-plan-clear { background:transparent; border:1px solid rgba(99,102,241,.22); border-radius:8px; padding:.4rem .72rem; font-size:.8rem; color:var(--muted); cursor:pointer; transition:border-color .12s,color .12s; font-family:inherit; }
+    .btn-plan-clear:hover { border-color:var(--red); color:var(--red); }
+    .plan-trail { border:1px solid rgba(99,102,241,.18); border-radius:12px; background:rgba(99,102,241,.03); overflow:hidden; margin-bottom:.65rem; display:none; max-height:480px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(99,102,241,.18) transparent; }
+    .plan-trail.on { display:block; }
+    .pt-hd { display:flex; align-items:center; padding:.38rem .9rem; background:rgba(99,102,241,.06); border-bottom:1px solid rgba(99,102,241,.1); position:sticky; top:0; z-index:1; }
+    .pt-lbl { font-size:.57rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; color:var(--indigo); }
+    .pt-body { padding:.5rem .9rem .7rem; display:flex; flex-direction:column; }
+    .pt-film { background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; padding:.5rem .75rem; margin:.35rem 0; }
+    .pt-film-hd { display:flex; align-items:baseline; gap:.28rem; margin-bottom:.14rem; flex-wrap:wrap; }
+    .pt-film-title { font-size:.86rem; font-weight:800; }
+    .pt-film-year { font-size:.64rem; color:var(--muted); }
+    .pt-step-num { font-size:.56rem; font-weight:800; color:var(--indigo); opacity:.38; }
+    .pt-start-lbl { font-size:.53rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); opacity:.5; }
+    .pt-film-meta { display:flex; flex-direction:column; gap:.05rem; padding-left:.04rem; }
+    .pt-film-row { font-size:.66rem; color:var(--muted); line-height:1.7; display:flex; align-items:baseline; gap:.1rem; flex-wrap:wrap; }
+    .pt-film-lbl { font-size:.53rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; opacity:.44; flex-shrink:0; min-width:2em; }
+    .pt-sep { color:var(--muted); font-size:.7rem; margin:0 .1rem; }
+    .pt-conn { display:flex; align-items:center; gap:.5rem; padding:.18rem 0; }
+    .pt-conn-line { width:1.5px; min-height:18px; flex-shrink:0; border-radius:1px; margin-left:2px; }
+    .pt-conn-pill { font-size:.7rem; font-weight:800; border-radius:20px; padding:.15rem .55rem; flex-shrink:0; }
+    .pt-conn-type { font-size:.54rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .pt-rm { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.65rem; padding:.1rem .22rem; font-family:inherit; transition:color .1s; flex-shrink:0; line-height:1; margin-left:auto; }
+    .pt-rm:hover { color:var(--red); }
+    /* In plan mode the search box glows indigo */
+    .search-input.planning { border-color:rgba(99,102,241,.4); box-shadow:0 0 0 3px rgba(99,102,241,.08); }
 
     /* ── Feedback ── */
     .feedback { min-height: 1.2em; font-size: .82rem; margin-bottom: .6rem; }
@@ -215,7 +234,7 @@
     .bp-title  { font-size:.66rem; font-weight:800; letter-spacing:.13em; color:var(--accent); text-transform:uppercase; flex:1; }
     .bp-badge  { background:rgba(240,191,60,.14); border:1px solid rgba(240,191,60,.3); border-radius:20px; padding:.18rem .6rem; font-size:.68rem; font-weight:800; color:var(--accent); }
     .bp-body   { padding:.8rem 1rem; }
-    .bp-step-row { display:flex; align-items:center; gap:.55rem; }
+    .bp-step-row { display:flex; align-items:center; gap:.55rem; margin-bottom:.35rem; }
     .bp-num { width:20px; height:20px; border-radius:50%; background:rgba(240,191,60,.1); border:1px solid rgba(240,191,60,.28); font-size:.58rem; font-weight:900; color:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .bp-card { flex:1; display:flex; align-items:center; gap:.75rem; background:var(--card-bg); border:1px solid rgba(240,191,60,.1); border-radius:10px; padding:.6rem .85rem; }
     .bp-card.bp-last { border-color:rgba(240,191,60,.38); background:rgba(240,191,60,.05); }
@@ -226,15 +245,8 @@
     .step-year   { font-size:.72rem; color:var(--muted); }
     .step-rating { font-size:.9rem; font-weight:800; color:var(--accent); flex-shrink:0; }
     .step-body   { flex:1; min-width:0; }
-    .bp-conn-wrap { display:flex; align-items:center; gap:.55rem; padding:.1rem 0; }
-    .bp-conn-line-wrap { width:20px; display:flex; justify-content:center; flex-shrink:0; }
-    .bp-conn-line { width:2px; height:22px; background:linear-gradient(to bottom,rgba(240,191,60,.5),rgba(240,191,60,.1)); border-radius:1px; }
-    .bp-conn-pill { display:inline-flex; align-items:center; gap:.32rem; background:rgba(240,191,60,.08); border:1px solid rgba(240,191,60,.16); border-radius:20px; padding:.19rem .65rem; font-size:.69rem; }
-    .bp-conn-type { color:var(--accent); font-weight:800; font-size:.58rem; text-transform:uppercase; letter-spacing:.07em; }
-    .bp-conn-sep  { color:var(--muted); }
-    .bp-conn-name { color:var(--text); font-weight:600; }
     @keyframes bp-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
-    .bp-step-row, .bp-conn-wrap { animation:bp-in .25s ease both; }
+    .bp-step-row { animation:bp-in .25s ease both; }
 
     /* ── Card swap animations ── */
     @keyframes card-out { to   { opacity:0; transform:translateX(-22px) scale(.965); } }
@@ -322,24 +334,10 @@
   <div class="g-header">
     <span class="brand-sm">Letterboxd <em>Ladder</em></span>
     <div class="g-actions">
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="btn-easy">Easy</button>
-        <button class="mode-btn" id="btn-med">Medium</button>
-        <button class="mode-btn" id="btn-hard">Hard</button>
-        <button class="mode-btn" id="btn-timed">Timed</button>
-      </div>
       <span class="pill">Steps <b id="steps-num">0</b></span>
       <span class="pill">Best <b id="best-num">--</b></span>
       <button class="btn-ghost" id="btn-new-game">New Game</button>
     </div>
-  </div>
-
-  <p id="mode-desc"></p>
-
-  <!-- Countdown timer (timed mode only) -->
-  <div class="timer-wrap" id="timer-wrap" style="display:none">
-    <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
-    <span class="timer-text" id="timer-text">1:30</span>
   </div>
 
   <!-- Side-by-side stage -->
@@ -402,7 +400,16 @@
 
   <p class="feedback" id="feedback"></p>
 
+  <!-- Plan trail: compact steps shown while planning mode is active -->
+  <div class="plan-trail" id="plan-trail"></div>
+
   <div class="bottom-row">
+    <button class="btn-plan" id="btn-plan">Plan Route</button>
+    <button class="btn-plan-execute" id="plan-execute" style="display:none" disabled>Execute Plan</button>
+    <button class="btn-plan-clear" id="plan-clear" style="display:none">Clear</button>
+    <button class="btn-ghost" id="btn-restart" style="color:var(--muted);">Restart</button>
+    <button class="btn-ghost" id="btn-restart-confirm" style="display:none;border-color:rgba(240,191,60,.4);color:var(--accent);">Sure?</button>
+    <button class="btn-ghost" id="btn-restart-cancel" style="display:none;">✕</button>
     <button class="btn-end" id="btn-end">Give Up</button>
   </div>
 
@@ -415,57 +422,12 @@
   let bestSteps   = 0;
   let strikes     = 0;
   let gameOver    = false;
-  let difficulty  = 'easy';
 
-  // ── Timer ────────────────────────────────────────────────────
+  // ── Persistence ──────────────────────────────────────────────
 
-  const TIMER_START = 90;
-  let timeLeft      = TIMER_START;
-  let timerInterval = null;
-
-  function startTimer() {
-    timeLeft = TIMER_START;
-    updateTimerDisplay();
-    document.getElementById('timer-wrap').style.display = '';
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      updateTimerDisplay();
-      if (timeLeft <= 0) {
-        stopTimer();
-        endGame(false, 'timeout');
-      }
-    }, 1000);
-  }
-
-  function stopTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-
-  function updateTimerDisplay() {
-    const fill = document.getElementById('timer-fill');
-    const text = document.getElementById('timer-text');
-    if (!fill || !text) return;
-    const pct     = Math.max(0, timeLeft / TIMER_START * 100);
-    const mins    = Math.floor(timeLeft / 60);
-    const secs    = Math.max(0, timeLeft % 60);
-    fill.style.width = pct + '%';
-    text.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
-    const danger = timeLeft <= 15;
-    const warn   = timeLeft <= 30 && !danger;
-    fill.classList.toggle('danger', danger);
-    fill.classList.toggle('warn', warn);
-    text.classList.toggle('danger', danger);
-    text.classList.toggle('warn', warn);
-  }
-
-  // ── Persistence (one slot per difficulty) ────────────────────
-
-  const saveKey = () => `c2-ladder-${difficulty}`;
+  const saveKey = () => 'c2-ladder';
 
   function saveState() {
-    if (difficulty === 'timed') return; // timed mode is live — not persisted
     try {
       const win = gameOver && chain.length > 0 && targetMovie &&
                   chain[chain.length - 1].movie.title === targetMovie.title;
@@ -504,52 +466,6 @@
       return { win: s.gameOverWin || false };
     } catch(e) { return false; }
   }
-
-  const MODE_DESC = {
-    easy:   'Director &amp; cast displayed on each card — connect via shared director or actor.',
-    medium: 'No hints shown — connect via shared director or actor.',
-    hard:   'No hints shown — connect via shared actor only.',
-    timed:  '90 seconds on the clock. Search by film title <em>or cast member name</em> to move fast. Wrong picks cost 5 seconds.'
-  };
-
-  function syncModeButtons(mode) {
-    document.getElementById('btn-easy').classList.toggle('active', mode === 'easy');
-    document.getElementById('btn-med').classList.toggle('active', mode === 'medium');
-    document.getElementById('btn-hard').classList.toggle('active', mode === 'hard');
-    document.getElementById('btn-timed').classList.toggle('active', mode === 'timed');
-    document.getElementById('mode-desc').innerHTML = MODE_DESC[mode];
-  }
-
-  function setMode(mode) {
-    if (mode === difficulty) return;
-    saveState();               // save current difficulty's progress before switching
-    stopTimer();               // stop any running timer
-    difficulty = mode;
-    syncModeButtons(mode);
-
-    try { localStorage.setItem('c2-ladder-mode', mode); } catch(e) {}
-
-    if (mode === 'timed') {
-      // Timed always starts fresh — no saved state
-      startGame();
-    } else {
-      const restored = loadState(saveKey());
-      if (restored) {
-        if (gameOver) {
-          endGame(restored.win);
-        } else {
-          resetUIForActiveGame();
-          renderAll();
-        }
-      } else {
-        startGame();
-      }
-    }
-  }
-  document.getElementById('btn-easy').addEventListener('click',  () => setMode('easy'));
-  document.getElementById('btn-med').addEventListener('click',   () => setMode('medium'));
-  document.getElementById('btn-hard').addEventListener('click',  () => setMode('hard'));
-  document.getElementById('btn-timed').addEventListener('click', () => setMode('timed'));
 
   // ── CSV ──────────────────────────────────────────────────────
 
@@ -594,10 +510,15 @@
   // ── Connection logic ─────────────────────────────────────────
 
   function getConnection(a, b) {
-    if (difficulty !== 'hard') {
-      if (a.director && b.director && a.director === b.director)
-        return { type: 'Director', value: a.director };
-    }
+    if (a.director && b.director && a.director === b.director)
+      return { type: 'Director', value: a.director };
+    const setA = new Set(a.casts);
+    for (const actor of b.casts)
+      if (actor && setA.has(actor)) return { type: 'Actor', value: actor };
+    return null;
+  }
+
+  function getCastConnection(a, b) {
     const setA = new Set(a.casts);
     for (const actor of b.casts)
       if (actor && setA.has(actor)) return { type: 'Actor', value: actor };
@@ -635,13 +556,6 @@
     const row = (label, val, extra = '') =>
       `<div class="meta-row"><span class="meta-label">${label}</span><span class="meta-val${extra}">${val}</span></div>`;
     const hl = v => `<span class="meta-highlight">${esc(v)}</span>`;
-
-    if (conn && difficulty !== 'easy') {
-      const label = conn.type === 'Director' ? 'Dir' : 'Cast';
-      const extra = conn.type === 'Director' ? ' meta-dir' : '';
-      return `<div class="step-meta">${row(label, hl(conn.value), extra)}</div>`;
-    }
-    if (difficulty !== 'easy') return '';
 
     const rows = [];
     if (movie.director) {
@@ -750,12 +664,18 @@
   function renderSearchLabel() {
     const cur = currentMovie();
     if (!cur || !targetMovie) return;
-    const n = validNextMovies().length;
-    const countHtml = n > 0
-      ? `<span style="color:var(--muted)"> · ${n} move${n !== 1 ? 's' : ''} available</span>`
-      : `<span style="color:var(--red)"> · no valid moves</span>`;
-    document.getElementById('search-label').innerHTML =
-      `From <b>${esc(cur.title)}</b> — reach <b style="color:var(--accent)">${esc(targetMovie.title)}</b>${countHtml}`;
+    if (planMode) {
+      const head = planHead();
+      document.getElementById('search-label').innerHTML =
+        `<span style="color:var(--indigo);font-weight:700;">Planning</span> from <b>${esc(head.title)}</b> — reach <b style="color:var(--accent)">${esc(targetMovie.title)}</b>`;
+    } else {
+      const n = validNextMovies().length;
+      const countHtml = n > 0
+        ? `<span style="color:var(--muted)"> \xb7 ${n} move${n !== 1 ? 's' : ''} available</span>`
+        : `<span style="color:var(--red)"> \xb7 no valid moves</span>`;
+      document.getElementById('search-label').innerHTML =
+        `From <b>${esc(cur.title)}</b> — reach <b style="color:var(--accent)">${esc(targetMovie.title)}</b>${countHtml}`;
+    }
   }
 
   function setFeedback(msg, type) {
@@ -776,15 +696,15 @@
     document.getElementById('search-area').style.display     = '';
     document.getElementById('results').classList.add('off');
     document.getElementById('search-input').value = '';
-    document.getElementById('btn-end').style.display  = '';
+    document.getElementById('btn-end').style.display     = '';
+    document.getElementById('btn-restart').style.display = '';
     document.getElementById('bridge-conn').classList.remove('show');
     document.getElementById('bridge-arrow').classList.remove('lit');
     document.getElementById('card-current').classList.remove('win');
     document.getElementById('card-target').classList.remove('win');
-    // Show timer in timed mode; show strikes otherwise
-    const isTimed = difficulty === 'timed';
-    document.getElementById('timer-wrap').style.display  = isTimed ? '' : 'none';
-    document.getElementById('strike-bar').style.display  = isTimed ? 'none' : '';
+    document.getElementById('strike-bar').style.display  = '';
+    document.getElementById('btn-plan').style.display    = '';
+    disablePlanMode();
     setFeedback('', '');
   }
 
@@ -805,8 +725,9 @@
   function queryMovies(q) {
     if (!q.trim()) return [];
     const lq      = q.toLowerCase();
-    const cur     = currentMovie();
-    const inChain = t => chain.some(s => s.movie.title === t);
+    const cur     = planMode ? planHead() : currentMovie();
+    const inChain = t => chain.some(s => s.movie.title === t) ||
+                         (planMode && planChain.some(s => s.movie.title === t));
     const results = [];
     const seen    = new Set();
 
@@ -814,7 +735,7 @@
       if (inChain(m.title)) continue;
       const titleMatch = m.title.toLowerCase().includes(lq);
       let via = null;
-      if (difficulty === 'timed' && !titleMatch) {
+      if (!titleMatch) {
         if (m.director && m.director.toLowerCase().includes(lq)) {
           via = m.director;
         } else {
@@ -850,22 +771,36 @@
     currentResults = results;
     if (!results.length) { el.classList.add('off'); return; }
     el.classList.remove('off');
+    const cur = planMode ? planHead() : currentMovie();
     el.innerHTML = results.map((r, i) => {
       const m        = r.movie;
       const isTarget = targetMovie && m.title === targetMovie.title;
+      const isWinnable = !isTarget || (cur && !!getCastConnection(cur, m));
       const viaHtml  = r.via ? ` <span class="r-via">via ${esc(r.via)}</span>` : '';
-      return `<div class="r-item" data-i="${i}" style="${isTarget ? 'background:rgba(240,191,60,.08);' : ''}">
+      let easyInfoHtml = '';
+      const parts = [];
+      if (m.director) parts.push(`<span class="r-easy-lbl">Dir</span>${esc(m.director)}`);
+      if (m.casts.length) parts.push(`<span class="r-easy-lbl">Cast</span>${esc(m.casts.slice(0, 4).join(' · '))}`);
+      if (parts.length) easyInfoHtml = `<div class="r-easy-info">${parts.join('<br>')}</div>`;
+      const targetBadge = isTarget
+        ? ((isWinnable || planMode)
+            ? `<span style="font-size:.65rem;font-weight:800;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;">Target</span>`
+            : `<span style="font-size:.65rem;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;">Target \xb7 no link</span>`)
+        : '';
+      return `<div class="r-item${(!planMode && isTarget && !isWinnable) ? ' r-disabled' : ''}" data-i="${i}" style="${isTarget ? 'background:rgba(240,191,60,.08);' : ''}">
         <div>
           <div class="r-title" style="${isTarget ? 'color:var(--accent);' : ''}">${esc(m.title)}</div>
           <div class="r-meta">${esc(m.year)}${viaHtml}</div>
+          ${easyInfoHtml}
         </div>
-        ${isTarget ? '<span style="font-size:.65rem;font-weight:800;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;">Target</span>' : ''}
+        ${targetBadge}
       </div>`;
     }).join('');
     el.querySelectorAll('.r-item').forEach(item => {
       item.addEventListener('mousedown', e => {
         e.preventDefault();
-        attemptAdd(currentResults[+item.dataset.i].movie);
+        if (planMode) addToPlan(currentResults[+item.dataset.i].movie);
+        else attemptAdd(currentResults[+item.dataset.i].movie);
       });
     });
   }
@@ -877,7 +812,17 @@
     debounce = setTimeout(() => renderResults(queryMovies(e.target.value)), 80);
   });
   document.getElementById('search-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && currentResults.length) attemptAdd(currentResults[0].movie);
+    if (e.key === 'Enter' && currentResults.length) {
+      if (planMode) {
+        addToPlan(currentResults[0].movie);
+      } else {
+        const top = currentResults[0];
+        const isTarget = targetMovie && top.movie.title === targetMovie.title;
+        const cur = currentMovie();
+        const winnable = !isTarget || (cur && !!getCastConnection(cur, top.movie));
+        if (winnable) attemptAdd(top.movie);
+      }
+    }
   });
 
   // ── Add to chain (with card swap animation) ──────────────────
@@ -891,32 +836,24 @@
     }
     const conn = getConnection(cur, movie);
     if (!conn) {
-      if (difficulty === 'timed') {
-        timeLeft = Math.max(0, timeLeft - 5);
-        updateTimerDisplay();
-        if (timeLeft <= 0) {
-          stopTimer();
-          document.getElementById('search-input').value = '';
-          document.getElementById('results').classList.add('off');
-          currentResults = [];
-          endGame(false, 'timeout');
-          return;
-        }
-        setFeedback(`No connection — −5 seconds!`, 'err');
+      strikes++;
+      renderStrikes();
+      saveState();
+      if (strikes >= 3) {
+        document.getElementById('search-input').value = '';
+        document.getElementById('results').classList.add('off');
+        currentResults = [];
+        endGame(false, 'strikes');
       } else {
-        strikes++;
-        renderStrikes();
-        saveState();
-        if (strikes >= 3) {
-          document.getElementById('search-input').value = '';
-          document.getElementById('results').classList.add('off');
-          currentResults = [];
-          endGame(false, 'strikes');
-        } else {
-          const left = 3 - strikes;
-          setFeedback(`No connection — Strike ${strikes}/3. ${left} chance${left !== 1 ? 's' : ''} left.`, 'err');
-        }
+        const left = 3 - strikes;
+        setFeedback(`No connection — Strike ${strikes}/3. ${left} chance${left !== 1 ? 's' : ''} left.`, 'err');
       }
+      return;
+    }
+
+    // Final step must be via a shared actor, not director
+    if (targetMovie && movie.title === targetMovie.title && conn.type === 'Director') {
+      setFeedback(`Must reach "${esc(targetMovie.title)}" via a shared actor — director connections can't finish the game.`, 'err');
       return;
     }
 
@@ -987,25 +924,41 @@
     }
     const steps = path.length - 1;
     stepsEl.textContent = `${steps} step${steps !== 1 ? 's' : ''}`;
+
+    const filmMeta = (movie, hlMap) => {
+      const span = name => {
+        const c = hlMap.get(name);
+        return c
+          ? `<span style="background:${c.bg};color:${c.fg};font-weight:800;border-radius:3px;padding:0 .17rem;">${esc(name)}</span>`
+          : `<span>${esc(name)}</span>`;
+      };
+      const parts = [];
+      if (movie.director)
+        parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Dir</span>${span(movie.director)}</div>`);
+      if (movie.casts.length) {
+        const castHtml = movie.casts.slice(0, 5).map(span).join('<span class="pt-sep"> · </span>');
+        parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Cast</span>${castHtml}</div>`);
+      }
+      return parts.join('');
+    };
+
     let html = '<div class="bp-body">';
     path.forEach((step, i) => {
-      const delay = `animation-delay:${(i * 0.07).toFixed(2)}s`;
-      if (i > 0 && step.connection) {
-        html += `<div class="bp-conn-wrap" style="${delay}">
-          <div class="bp-conn-line-wrap"><div class="bp-conn-line"></div></div>
-          <div class="bp-conn-pill">
-            <span class="bp-conn-type">${esc(step.connection.type)}</span>
-            <span class="bp-conn-sep">·</span>
-            <span class="bp-conn-name">${esc(step.connection.value)}</span>
-          </div>
-        </div>`;
-      }
-      const isLast   = i === path.length - 1;
-      const poster   = step.movie.poster
+      const isLast  = i === path.length - 1;
+      const delay   = `animation-delay:${(i * 0.07).toFixed(2)}s`;
+
+      // Incoming link (what got us here) gets color index i-1; outgoing gets color index i
+      const hlMap   = new Map();
+      if (i > 0 && step.connection)
+        hlMap.set(step.connection.value, PLAN_PALETTE[(i - 1) % PLAN_PALETTE.length]);
+      const outConn = path[i + 1]?.connection;
+      if (outConn)
+        hlMap.set(outConn.value, PLAN_PALETTE[i % PLAN_PALETTE.length]);
+
+      const poster = step.movie.poster
         ? `<img class="step-poster" src="${esc(step.movie.poster)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">`
         : `<div class="step-poster-ph"></div>`;
-      const outConn  = path[i + 1]?.connection ?? null;
-      const metaLine = buildMeta(step.movie, outConn);
+
       html += `<div class="bp-step-row" style="${delay}">
         <div class="bp-num">${i + 1}</div>
         <div class="bp-card${isLast ? ' bp-last' : ''}">
@@ -1013,7 +966,7 @@
           <div class="step-body">
             <p class="step-title">${esc(step.movie.title)}</p>
             ${step.movie.year ? `<p class="step-year">${esc(step.movie.year)}</p>` : ''}
-            ${metaLine}
+            <div class="pt-film-meta">${filmMeta(step.movie, hlMap)}</div>
           </div>
           <span class="step-rating">&#9733; ${step.movie.rating.toFixed(2)}</span>
         </div>
@@ -1056,11 +1009,6 @@
         detailEl.textContent = steps > 0
           ? `Made it ${steps} step${steps !== 1 ? 's' : ''} before using all 3 strikes`
           : 'Used all 3 strikes before making a single move';
-      } else if (reason === 'timeout') {
-        titleEl.textContent  = 'Time\'s Up!';
-        detailEl.textContent = steps > 0
-          ? `Made it ${steps} step${steps !== 1 ? 's' : ''} before time ran out`
-          : 'Ran out of time before making a single connection';
       } else {
         titleEl.textContent  = 'Run ended';
         detailEl.textContent = `${steps} step${steps !== 1 ? 's' : ''} from "${chain[0].movie.title}"`;
@@ -1070,16 +1018,68 @@
 
     renderTrail();
     updateStats();
-    stopTimer();
 
     document.getElementById('strike-bar').style.display  = 'none';
-    document.getElementById('timer-wrap').style.display  = 'none';
     document.getElementById('search-area').style.display = 'none';
     document.getElementById('feedback').className        = 'feedback';
     document.getElementById('btn-end').style.display     = 'none';
-    document.getElementById('btn-best-path').style.display = 'block';
+    document.getElementById('btn-restart').style.display = 'none';
+    document.getElementById('btn-restart-confirm').style.display = 'none';
+    document.getElementById('btn-restart-cancel').style.display  = 'none';
+    document.getElementById('btn-plan').style.display    = 'none';
+    disablePlanMode();
+
+    if (!win && !reason) {
+      // Give Up — auto-show best path immediately
+      document.getElementById('btn-best-path').style.display = 'none';
+      renderBestPath(findBestPath(chain[0].movie, targetMovie));
+    } else {
+      document.getElementById('btn-best-path').style.display = 'block';
+    }
     saveState();
   }
+
+  // ── Restart (same movies, clear guesses) ─────────────────────
+
+  function doRestart() {
+    const startMovie = chain[0]?.movie;
+    if (!startMovie || !targetMovie) return;
+    gameOver = false;
+    strikes  = 0;
+    chain    = [{ movie: startMovie, connection: null }];
+    currentResults = [];
+    disablePlanMode();
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    document.getElementById('path-trail').innerHTML = '';
+    resetUIForActiveGame();
+    renderStrikes();
+    renderAll();
+    setFeedback('', '');
+    saveState();
+    // hide confirm buttons, show restart
+    document.getElementById('btn-restart-confirm').style.display = 'none';
+    document.getElementById('btn-restart-cancel').style.display  = 'none';
+    document.getElementById('btn-restart').style.display         = '';
+  }
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    if (gameOver) return;
+    // show confirmation
+    document.getElementById('btn-restart').style.display         = 'none';
+    document.getElementById('btn-restart-confirm').style.display = '';
+    document.getElementById('btn-restart-cancel').style.display  = '';
+  });
+
+  document.getElementById('btn-restart-confirm').addEventListener('click', () => {
+    doRestart();
+  });
+
+  document.getElementById('btn-restart-cancel').addEventListener('click', () => {
+    document.getElementById('btn-restart-confirm').style.display = 'none';
+    document.getElementById('btn-restart-cancel').style.display  = 'none';
+    document.getElementById('btn-restart').style.display         = '';
+  });
 
   // ── Give up ──────────────────────────────────────────────────
 
@@ -1095,18 +1095,16 @@
     chain    = [];
     currentResults = [];
     clearTimeout(bridgeTimer);
-    stopTimer();
     document.getElementById('path-trail').innerHTML = '';
     resetUIForActiveGame();
     renderStrikes();
-    if (difficulty === 'timed') startTimer();
 
     const pool = shuffle([...allMovies]);
     targetMovie = pool[0];
     let startMovie = pool[1];
     for (const candidate of pool) {
       if (candidate.title === targetMovie.title) continue;
-      const hasMove = allMovies.some(m => m.title !== candidate.title && getConnection(candidate, m));
+      const hasMove = allMovies.some(m => m.title !== candidate.title && getCastConnection(candidate, m));
       if (hasMove) { startMovie = candidate; break; }
     }
 
@@ -1118,6 +1116,195 @@
   document.getElementById('btn-new-game').addEventListener('click', startGame);
   document.getElementById('btn-play-again').addEventListener('click', startGame);
 
+  // ── Planning ─────────────────────────────────────────────────
+
+  let planMode  = false;
+  let planChain = [];  // [{movie, connection}]
+
+  const PLAN_PALETTE = [
+    { fg:'#f59e0b', bg:'rgba(245,158,11,.15)', border:'rgba(245,158,11,.28)' },
+    { fg:'#818cf8', bg:'rgba(99,102,241,.15)',  border:'rgba(99,102,241,.28)' },
+    { fg:'#4ade80', bg:'rgba(34,197,94,.15)',   border:'rgba(34,197,94,.28)'  },
+    { fg:'#f472b6', bg:'rgba(236,72,153,.15)',  border:'rgba(236,72,153,.28)' },
+    { fg:'#2dd4bf', bg:'rgba(20,184,166,.15)',  border:'rgba(20,184,166,.28)' },
+    { fg:'#fb923c', bg:'rgba(249,115,22,.15)',  border:'rgba(249,115,22,.28)' },
+  ];
+
+  function planFilmMeta(movie, hlMap) {
+    const span = name => {
+      const c = hlMap.get(name);
+      return c
+        ? `<span style="background:${c.bg};color:${c.fg};font-weight:800;border-radius:3px;padding:0 .17rem;">${esc(name)}</span>`
+        : `<span>${esc(name)}</span>`;
+    };
+    const parts = [];
+    if (movie.director)
+      parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Dir</span>${span(movie.director)}</div>`);
+    if (movie.casts.length) {
+      const castHtml = movie.casts.slice(0, 5).map(span).join('<span class="pt-sep"> · </span>');
+      parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Cast</span>${castHtml}</div>`);
+    }
+    return parts.join('');
+  }
+
+  function planHead() {
+    return planChain.length > 0 ? planChain[planChain.length - 1].movie : currentMovie();
+  }
+
+  function enablePlanMode() {
+    planMode  = true;
+    planChain = [];
+    document.getElementById('btn-plan').classList.add('plan-on');
+    document.getElementById('search-input').classList.add('planning');
+    document.getElementById('search-input').placeholder = 'Search to add to your plan…';
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+    renderPlanTrail();
+    renderSearchLabel();
+    document.getElementById('search-input').focus();
+  }
+
+  function disablePlanMode() {
+    planMode  = false;
+    planChain = [];
+    document.getElementById('btn-plan').classList.remove('plan-on');
+    document.getElementById('search-input').classList.remove('planning');
+    document.getElementById('search-input').placeholder = 'Search for a connecting film…';
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+    document.getElementById('plan-trail').classList.remove('on');
+    document.getElementById('plan-execute').style.display = 'none';
+    document.getElementById('plan-clear').style.display   = 'none';
+    renderSearchLabel();
+  }
+
+  function renderPlanTrail() {
+    const el      = document.getElementById('plan-trail');
+    const execBtn = document.getElementById('plan-execute');
+    const clrBtn  = document.getElementById('plan-clear');
+
+    if (!planMode || planChain.length === 0) {
+      el.classList.remove('on');
+      execBtn.style.display = 'none';
+      clrBtn.style.display  = 'none';
+      return;
+    }
+
+    el.classList.add('on');
+    execBtn.style.display = '';
+    clrBtn.style.display  = '';
+    execBtn.disabled      = planChain.some(s => !s.connection);
+
+    const startMovie = currentMovie();
+    let html = `<div class="pt-hd"><span class="pt-lbl">&#9998; Route Plan</span></div><div class="pt-body">`;
+
+    // Starting film — outgoing connection is planChain[0]
+    if (startMovie) {
+      const outConn = planChain[0]?.connection;
+      const hlMap = new Map();
+      if (outConn) hlMap.set(outConn.value, PLAN_PALETTE[0]);
+      html += `<div class="pt-film">
+        <div class="pt-film-hd">
+          <span class="pt-start-lbl">From</span>
+          <span class="pt-film-title">${esc(startMovie.title)}</span>
+          <span class="pt-film-year">${esc(startMovie.year)}</span>
+        </div>
+        <div class="pt-film-meta">${planFilmMeta(startMovie, hlMap)}</div>
+      </div>`;
+    }
+
+    planChain.forEach((step, i) => {
+      const conn  = step.connection;
+      const color = PLAN_PALETTE[i % PLAN_PALETTE.length];
+
+      // Film — incoming: color i, outgoing: color i+1
+      const hlMap = new Map();
+      if (conn) hlMap.set(conn.value, PLAN_PALETTE[i % PLAN_PALETTE.length]);
+      const nextConn = planChain[i + 1]?.connection;
+      if (nextConn && nextConn.value !== conn?.value)
+        hlMap.set(nextConn.value, PLAN_PALETTE[(i + 1) % PLAN_PALETTE.length]);
+
+      const cardStyle = !conn ? 'border-color:rgba(239,68,68,.35);' : '';
+      html += `<div class="pt-film" style="${cardStyle}">
+        <div class="pt-film-hd">
+          <span class="pt-step-num">${i + 1}</span>
+          <span class="pt-film-title">${esc(step.movie.title)}</span>
+          <span class="pt-film-year">${esc(step.movie.year)}</span>
+          ${!conn ? `<span style="font-size:.58rem;color:var(--red);margin-left:auto;margin-right:.3rem;">no link</span>` : ''}
+          <button class="pt-rm" data-i="${i}">&#10005;</button>
+        </div>
+        <div class="pt-film-meta">${planFilmMeta(step.movie, hlMap)}</div>
+      </div>`;
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+
+    el.querySelectorAll('.pt-rm').forEach(btn => {
+      btn.addEventListener('click', () => {
+        planChain = planChain.slice(0, +btn.dataset.i);
+        renderPlanTrail();
+        renderSearchLabel();
+        const q = document.getElementById('search-input').value;
+        if (q.trim()) renderResults(queryMovies(q));
+      });
+    });
+  }
+
+  function addToPlan(movie) {
+    const conn = getConnection(planHead(), movie);
+    planChain.push({ movie, connection: conn });
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+    setFeedback('', '');
+    renderPlanTrail();
+    renderSearchLabel();
+    document.getElementById('search-input').focus();
+  }
+
+  function executePlan() {
+    if (planChain.length === 0 || gameOver) return;
+    let cur = currentMovie();
+    for (const step of planChain) {
+      const conn = getConnection(cur, step.movie);
+      if (!conn) {
+        setFeedback(`No connection: "${step.movie.title}" doesn't link from here.`, 'err');
+        return;
+      }
+      if (step.movie.title === targetMovie?.title && conn.type === 'Director') {
+        setFeedback(`Can't reach the target via director — must use a shared actor.`, 'err');
+        return;
+      }
+      cur = step.movie;
+    }
+    const moves = planChain.map(s => s.movie);
+    disablePlanMode();
+    let idx = 0;
+    function next() {
+      if (idx >= moves.length || gameOver) return;
+      attemptAdd(moves[idx++]);
+      if (idx < moves.length) setTimeout(next, 230);
+    }
+    next();
+  }
+
+  document.getElementById('btn-plan').addEventListener('click', () => {
+    if (gameOver) return;
+    planMode ? disablePlanMode() : enablePlanMode();
+  });
+  document.getElementById('plan-execute').addEventListener('click', executePlan);
+  document.getElementById('plan-clear').addEventListener('click', () => {
+    planChain = [];
+    renderPlanTrail();
+    renderSearchLabel();
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+  });
+
   // ── Load data ────────────────────────────────────────────────
 
   fetch('./letterboxd_scraped.csv')
@@ -1127,13 +1314,6 @@
       if (allMovies.length < 5) throw new Error();
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('game-screen').style.display   = 'block';
-
-      // Restore last-used mode (never restore timed — it's a live mode)
-      const savedMode = localStorage.getItem('c2-ladder-mode');
-      if (savedMode && ['easy', 'medium', 'hard'].includes(savedMode)) {
-        difficulty = savedMode;
-      }
-      syncModeButtons(difficulty);
 
       const restored = loadState(saveKey());
       if (restored) {
