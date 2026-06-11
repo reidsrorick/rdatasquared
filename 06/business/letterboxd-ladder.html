@@ -285,6 +285,10 @@
   .c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
   .c2-link:hover .c2-pip, .c2-link.c2-on .c2-pip { opacity:1; }
   .c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+  .c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+  .c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+  .c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+  .c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
 </style>
 <div id="c2-bd"></div>
 <button id="c2-btn" aria-label="Open navigation">&#9776;</button>
@@ -301,6 +305,13 @@
     <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
     <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
     <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
   </div>
 </nav>
 <script>
@@ -314,6 +325,11 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
   var page=location.pathname.split('/').pop()||'index.html';
   document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
 })();
 </script>
 <!-- ── End Navigation ── -->
@@ -491,9 +507,9 @@
     if (!rows.length) return [];
     const h = rows[0];
     const col = n => h.indexOf(n);
-    const [ti, yi, di, ri, gi, c1, c2, c3, c4, c5, pi] =
+    const [ti, yi, di, ri, gi, c1, c2, c3, c4, c5, pi, wi] =
       ['title','year','director','average_rating','genres',
-       'cast_1','cast_2','cast_3','cast_4','cast_5','poster_url'].map(col);
+       'cast_1','cast_2','cast_3','cast_4','cast_5','poster_url','watched_by'].map(col);
     if (ti < 0 || ri < 0) return [];
     return rows.slice(1).flatMap(r => {
       const title  = r[ti]?.trim();
@@ -503,7 +519,19 @@
       const casts  = [c1,c2,c3,c4,c5]
         .filter(i => i >= 0).map(i => r[i]?.trim()).filter(Boolean)
         .map(s => s.replace(/\s*\(.*\)\s*$/, '').trim()).filter(Boolean);
-      return [{ title, year: r[yi]?.trim()||'', director: r[di]?.trim()||'', rating, genres, casts, poster: pi>=0 ? r[pi]?.trim():'' }];
+      return [{ title, year: r[yi]?.trim()||'', director: r[di]?.trim()||'', rating, genres, casts, poster: pi>=0 ? r[pi]?.trim():'', watchedBy: wi>=0 ? r[wi]?.trim()||'' : '' }];
+    });
+  }
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter') || 'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy || '').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
     });
   }
 
@@ -1310,7 +1338,7 @@
   fetch('./letterboxd_scraped.csv')
     .then(r => { if (!r.ok) throw new Error(); return r.text(); })
     .then(text => {
-      allMovies = loadCSV(text);
+      allMovies = applyDatasetFilter(loadCSV(text));
       if (allMovies.length < 5) throw new Error();
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('game-screen').style.display   = 'block';

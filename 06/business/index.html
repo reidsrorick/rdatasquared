@@ -174,6 +174,46 @@ body {
   color: #0c0c14;
 }
 
+/* ── DATASET FILTER ── */
+.dataset-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6rem;
+  margin-top: 1.5rem;
+}
+.df-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.df-options {
+  display: flex;
+  gap: .45rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.df-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: .38rem .95rem;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.df-btn:hover { border-color: rgba(240,191,60,.5); color: var(--accent); }
+.df-btn.active {
+  background: rgba(240,191,60,.12);
+  border-color: rgba(240,191,60,.45);
+  color: var(--accent);
+}
+
 /* ── FOOTER ── */
 footer {
   text-align: center;
@@ -195,6 +235,15 @@ footer {
   <div class="csv-note">
     <svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 10.5h-1.5v-5h1.5v5zm0-6.5h-1.5V3.5h1.5V5z"/></svg>
     All games auto-load <strong>&nbsp;letterboxd_scraped.csv&nbsp;</strong> from this folder
+  </div>
+  <div class="dataset-filter">
+    <div class="df-label">Dataset</div>
+    <div class="df-options">
+      <button class="df-btn" data-f="all">All Movies</button>
+      <button class="df-btn" data-f="reid">Reid Only</button>
+      <button class="df-btn" data-f="zach">Zach Only</button>
+      <button class="df-btn" data-f="both">Both Watched</button>
+    </div>
   </div>
 </div>
 
@@ -329,5 +378,19 @@ footer {
   Powered by your Letterboxd data &mdash; all games run locally in your browser
 </footer>
 
+<script>
+(function() {
+  var cur = localStorage.getItem('c2-filter') || 'all';
+  document.querySelectorAll('.df-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.f === cur);
+    b.addEventListener('click', function() {
+      localStorage.setItem('c2-filter', b.dataset.f);
+      document.querySelectorAll('.df-btn').forEach(function(x) {
+        x.classList.toggle('active', x.dataset.f === b.dataset.f);
+      });
+    });
+  });
+})();
+</script>
 </body>
 </html>
