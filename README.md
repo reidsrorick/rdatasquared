@@ -16,3 +16,6 @@ Previously `03_styles`. Contains styling assets such as CSS, templates, or other
 
 **04 - Sandbox**  
 Previously `04_sandbox`. Used for testing, experimentation, and temporary work.
+
+**07 - Work**  
+This is used to easily have my Zen browser sort my workflow into specific spaces.
