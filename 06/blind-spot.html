@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blind Spot — Cine²</title>
+<style>
+:root {
+  --bg:#0c0c14; --card-bg:#14141f; --card-border:#23233a; --card-hover:#1b1b2c;
+  --text:#dcdcf0; --text-dim:#9090b8; --muted:#6868a0;
+  --accent:#f0bf3c; --green:#22c55e; --red:#ef4444; --indigo:#6366f1;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── NAV ── */
+#c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+#c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+#c2-btn.c2-hide { opacity:0; pointer-events:none; }
+#c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+#c2-bd.on { opacity:1; pointer-events:all; }
+#c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+#c2-nav.on { transform:translateX(0); }
+.c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+.c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+.c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+.c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+.c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+.c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+.c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+.c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+.c2-link:hover,.c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+.c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+.c2-link:hover .c2-pip,.c2-link.c2-on .c2-pip { opacity:1; }
+.c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+.c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+.c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+.c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+.c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+
+/* ── GAME WRAP ── */
+.game-wrap { max-width:900px; margin:0 auto; padding:1.25rem 1rem 5rem; }
+
+/* ── TOP ── */
+.game-top { text-align:center; margin-bottom:1.4rem; padding-top:.5rem; }
+.game-title { font-size:1.55rem; font-weight:900; letter-spacing:.05em; }
+.game-title span { color:var(--indigo); }
+.game-sub { font-size:.78rem; color:var(--muted); margin-top:.28rem; }
+
+/* ── GUESS BAR ── */
+.guess-bar { display:flex; gap:.5rem; max-width:580px; margin:.85rem auto 0; position:relative; }
+.guess-wrap { flex:1; position:relative; }
+#guess-input { width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; padding:.62rem 1rem; font-size:.9rem; color:var(--text); outline:none; font-family:inherit; transition:border-color .15s; }
+#guess-input:focus { border-color:rgba(240,191,60,.4); }
+#guess-input.shake { animation:shake .3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+.guess-dd { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; z-index:60; max-height:200px; overflow-y:auto; box-shadow:0 8px 28px rgba(0,0,0,.55); }
+.guess-dd.off { display:none; }
+.guess-opt { padding:.44rem .9rem; font-size:.84rem; cursor:pointer; transition:background .1s; }
+.guess-opt:hover,.guess-opt.hi { background:rgba(255,255,255,.07); }
+#guess-submit { background:var(--green); border:none; border-radius:9px; padding:.62rem 1.35rem; font-size:.9rem; font-weight:700; color:#0c0c14; cursor:pointer; font-family:inherit; white-space:nowrap; transition:opacity .15s; }
+#guess-submit:hover { opacity:.85; }
+#guess-submit:disabled { opacity:.35; cursor:default; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x:auto; }
+.movie-table { width:100%; border-collapse:collapse; min-width:480px; }
+.movie-table thead tr { border-bottom:2px solid var(--card-border); }
+.movie-table th { font-size:.62rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:.6rem .7rem; text-align:left; white-space:nowrap; }
+.th-c { text-align:center !important; }
+.movie-row td { padding:.7rem .7rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
+.movie-row:hover td { background:rgba(255,255,255,.016); }
+.movie-row.row-correct td { background:rgba(34,197,94,.04); }
+.movie-row.row-skip td { background:rgba(255,255,255,.01); }
+.movie-row.row-miss td { background:rgba(239,68,68,.03); }
+
+.td-tog { width:34px; }
+.td-num { font-weight:800; font-size:.84rem; color:var(--muted); text-align:center; width:30px; }
+.td-title { font-size:.9rem; font-weight:700; min-width:120px; }
+.title-mystery { letter-spacing:.2em; color:var(--muted); }
+.title-correct { color:var(--green); }
+.title-skip { color:var(--text-dim); font-style:italic; }
+.td-rating { font-size:.84rem; color:var(--accent); white-space:nowrap; }
+.td-runtime,.td-year { font-size:.8rem; color:var(--text-dim); white-space:nowrap; }
+.td-pts { font-size:.88rem; font-weight:800; color:var(--green); text-align:center; width:50px; }
+.td-pts.mid { color:var(--accent); }
+.td-pts.low { color:var(--red); }
+.td-check { text-align:center; font-size:.95rem; width:28px; }
+
+/* TOGGLE */
+.tog { width:26px; height:26px; border-radius:50%; background:var(--card-bg); border:1px solid var(--card-border); cursor:pointer; color:var(--text-dim); font-size:.8rem; display:flex; align-items:center; justify-content:center; transition:all .12s; font-family:inherit; }
+.tog:hover { border-color:var(--accent); color:var(--accent); }
+.tog.open { border-color:var(--accent); color:var(--accent); background:rgba(240,191,60,.08); }
+
+/* HINT ROW */
+.hint-row td { padding:0; border-bottom:1px solid rgba(255,255,255,.05); }
+.hint-row.off { display:none; }
+.hint-panel { background:rgba(8,8,20,.55); padding:.8rem 1rem 1rem; border-top:1px solid rgba(255,255,255,.04); }
+.hint-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.55rem .7rem; }
+.h-cell { display:flex; flex-direction:column; gap:.18rem; }
+.h-cell.sp2 { grid-column:span 2; }
+.h-cell.sp3 { grid-column:span 3; }
+.h-lbl { font-size:.57rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.h-val { font-size:.8rem; line-height:1.5; color:var(--text-dim); }
+.h-val img { width:68px; border-radius:6px; display:block; margin-top:.15rem; }
+.rv-btn { background:none; border:1px solid var(--card-border); border-radius:6px; padding:.25rem .55rem; font-size:.7rem; font-weight:700; color:var(--muted); cursor:pointer; font-family:inherit; transition:border-color .12s,color .12s; white-space:nowrap; }
+.rv-btn:hover { border-color:rgba(240,191,60,.4); color:var(--accent); }
+.rv-btn.pricey { border-color:rgba(239,68,68,.22); color:rgba(239,68,68,.65); }
+.rv-btn.pricey:hover { border-color:var(--red); color:var(--red); }
+.reveal-all-wrap { grid-column:span 3; display:flex; justify-content:flex-end; margin-top:.3rem; }
+.rv-all { background:none; border:1px solid rgba(239,68,68,.18); border-radius:6px; padding:.24rem .65rem; font-size:.68rem; font-weight:700; color:rgba(239,68,68,.5); cursor:pointer; font-family:inherit; transition:color .12s,border-color .12s; }
+.rv-all:hover { color:var(--red); border-color:var(--red); }
+
+/* SCORE BAR */
+.score-bar { display:flex; align-items:center; gap:1.2rem; justify-content:flex-end; flex-wrap:wrap; margin-top:.6rem; font-size:.78rem; color:var(--text-dim); padding:.25rem 0; }
+.score-bar strong { color:var(--text); }
+#miss-strong { color:var(--red); }
+#score-strong { color:var(--accent); }
+
+/* END PANEL */
+#end-panel { display:none; text-align:center; padding:2.5rem 1rem 3rem; border-top:1px solid var(--card-border); margin-top:1.5rem; }
+#end-panel.on { display:block; }
+.end-label { font-size:.65rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+.end-score { font-size:3.8rem; font-weight:900; color:var(--accent); line-height:1; }
+.end-of { font-size:.85rem; color:var(--muted); margin-top:.15rem; }
+.end-best { font-size:.78rem; color:var(--muted); margin-top:.3rem; }
+.end-best strong { color:var(--text); }
+.end-actions { display:flex; gap:.75rem; justify-content:center; margin-top:1.5rem; flex-wrap:wrap; }
+.btn-again { background:var(--indigo); border:none; border-radius:10px; padding:.68rem 2rem; font-size:.92rem; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; transition:opacity .15s; }
+.btn-again:hover { opacity:.85; }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open); x.addEventListener('click',close); bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+
+<!-- ── Loading / Error ── -->
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Failed to load collection</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:300px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in the same folder.</p>
+</div>
+
+<!-- ── Game ── -->
+<div id="game-screen" style="display:none;">
+<div class="game-wrap">
+
+  <div class="game-top">
+    <div class="game-title">Blind <span>Spot</span></div>
+    <p class="game-sub" id="game-sub">Guess the 5 mystery films from your collection</p>
+  </div>
+
+  <div class="guess-bar">
+    <div class="guess-wrap">
+      <input id="guess-input" type="text" placeholder="Guess a movie…" autocomplete="off" spellcheck="false">
+      <div id="guess-dd" class="guess-dd off"></div>
+    </div>
+    <button id="guess-submit">Submit</button>
+  </div>
+
+  <div style="height:.9rem;"></div>
+
+  <div class="table-wrap">
+    <table class="movie-table">
+      <thead>
+        <tr>
+          <th style="width:34px;"></th>
+          <th class="th-c" style="width:30px;">#</th>
+          <th>Title</th>
+          <th>&#9733; Rating</th>
+          <th>Runtime</th>
+          <th>Year</th>
+          <th class="th-c">Pts</th>
+          <th class="th-c">&#10003;</th>
+        </tr>
+      </thead>
+      <tbody id="movie-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="score-bar">
+    <span>Misses: <strong id="miss-strong">0</strong> / 10 &nbsp;(&#8722;20 each)</span>
+    <span>Bonus: <strong id="bonus-strong">200</strong></span>
+    <span>Score: <strong id="score-strong">200</strong></span>
+  </div>
+
+  <div id="end-panel">
+    <div class="end-label">Final Score</div>
+    <div class="end-score" id="end-score-num">0</div>
+    <div class="end-of" id="end-of-max">of 1200</div>
+    <div class="end-best" id="end-best"></div>
+    <div class="end-actions">
+      <button class="btn-again" id="btn-again">Play Again</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── CSV parsing ──────────────────────────────────────────────
+  function parseCSV(src) {
+    const rows = [];
+    let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') {
+        if (q && src[i+1] === '"') { field += '"'; i++; } else q = !q;
+      } else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) {
+        if (c === '\r' && src[i+1] === '\n') i++;
+        row.push(field); field = ''; rows.push(row); row = [];
+      } else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0];
+    const col = n => h.indexOf(n);
+    const ti  = col('title'),    yi  = col('year'),     di = col('director');
+    const ri  = col('average_rating');
+    const gi  = col('genres'),   c1  = col('cast_1'),   c2 = col('cast_2');
+    const c3  = col('cast_3'),   c4  = col('cast_4'),   c5 = col('cast_5');
+    const pi  = col('poster_url'), wi = col('watched_by');
+    const sti = col('studio'),   cti = col('country'),  syi = col('synopsis');
+    const rti = col('runtime');
+    if (ti < 0 || ri < 0) return [];
+    return rows.slice(1).flatMap(r => {
+      const title  = r[ti]?.trim();
+      const rating = parseFloat(r[ri]);
+      if (!title || isNaN(rating)) return [];
+      const genres = (r[gi]||'').split(',').map(s=>s.trim()).filter(Boolean);
+      const casts  = [c1,c2,c3,c4,c5].filter(i=>i>=0)
+        .map(i=>r[i]?.trim()).filter(Boolean)
+        .map(s=>s.replace(/\s*\(.*\)\s*$/,'').trim()).filter(Boolean);
+      return [{
+        title,
+        year:     r[yi]?.trim()||'',
+        director: r[di]?.trim()||'',
+        rating,
+        genres,
+        casts,
+        poster:   pi>=0  ? r[pi]?.trim()||''  : '',
+        watchedBy:wi>=0  ? r[wi]?.trim()||''  : '',
+        studio:   sti>=0 ? r[sti]?.trim()||'' : '',
+        country:  cti>=0 ? r[cti]?.trim()||'' : '',
+        synopsis: syi>=0 ? r[syi]?.trim()||'' : '',
+        runtime:  rti>=0 ? r[rti]?.trim()||'' : '',
+      }];
+    });
+  }
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter')||'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy||'').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
+    });
+  }
+
+  // ── Hints config ─────────────────────────────────────────────
+  // Each hint: key (state field), label, cost, grid span, value getter
+  const HINTS = [
+    { key:'genres',   label:'Genres',   cost:10,  span:2, get: m => m.genres.join(', ')  || '' },
+    { key:'country',  label:'Country',  cost:5,   span:1, get: m => m.country             || '' },
+    { key:'studio',   label:'Studio',   cost:25,  span:2, get: m => m.studio              || '' },
+    { key:'director', label:'Director', cost:50,  span:1, get: m => m.director            || '' },
+    { key:'cast1',    label:'Actor 1',  cost:60,  span:1, get: m => m.casts[0]            || '' },
+    { key:'cast2',    label:'Actor 2',  cost:50,  span:1, get: m => m.casts[1]            || '' },
+    { key:'cast3',    label:'Actor 3',  cost:40,  span:1, get: m => m.casts[2]            || '' },
+    { key:'synopsis', label:'Synopsis', cost:100, span:3, get: m => m.synopsis            || '' },
+    { key:'poster',   label:'Poster',   cost:75,  span:1, get: m => m.poster              || '' },
+  ];
+
+  // ── State ────────────────────────────────────────────────────
+  let allMovies = [];
+  let round     = [];
+  let pts       = [];    // pts[i] = remaining pts for movie i
+  let revealed  = [];    // revealed[i] = { key: true/false }
+  let guessed   = [];    // correctly guessed by user
+  let skipped   = [];    // revealed via "reveal all"
+  let expanded  = null;  // index of expanded row
+  let misses    = 0;
+  let bonus     = 200;
+  let gameOver  = false;
+  let roundNum  = parseInt(localStorage.getItem('c2-bs-round')||'0') + 1;
+
+  const MISS_MAX   = 10;
+  const MISS_COST  = 20;
+  const BONUS_MAX  = 200;
+  const PTS_START  = 200;
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function normTitle(s) {
+    return s.toLowerCase()
+      .replace(/[^a-z0-9 ]/g, '')
+      .replace(/^(the |a |an )/, '')
+      .trim();
+  }
+
+  function isDone(i) { return guessed[i] || skipped[i]; }
+  function allDone() { return round.every((_, i) => isDone(i)); }
+
+  function currentScore() {
+    let s = bonus;
+    for (let i = 0; i < round.length; i++) if (guessed[i]) s += pts[i];
+    return s;
+  }
+
+  // ── New round ────────────────────────────────────────────────
+  function startRound() {
+    const pool = [...allMovies];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    round    = pool.slice(0, 5);
+    pts      = round.map(() => PTS_START);
+    revealed = round.map(() => ({}));
+    guessed  = round.map(() => false);
+    skipped  = round.map(() => false);
+    expanded = null;
+    misses   = 0;
+    bonus    = BONUS_MAX;
+    gameOver = false;
+    document.getElementById('end-panel').classList.remove('on');
+    document.getElementById('guess-input').value = '';
+    document.getElementById('guess-submit').disabled = false;
+    renderAll();
+    updateScoreBar();
+  }
+
+  // ── Rendering ────────────────────────────────────────────────
+  function ptsClass(p) {
+    if (p <= 0)   return 'td-pts low';
+    if (p < 100)  return 'td-pts mid';
+    return 'td-pts';
+  }
+
+  function renderAll() {
+    const tbody = document.getElementById('movie-tbody');
+    let html = '';
+    for (let i = 0; i < round.length; i++) {
+      html += renderMovieRow(i) + renderHintRowHTML(i);
+    }
+    tbody.innerHTML = html;
+
+    // Attach events
+    tbody.querySelectorAll('.tog').forEach(btn => {
+      const i = +btn.dataset.i;
+      btn.addEventListener('click', () => toggleRow(i));
+    });
+    tbody.querySelectorAll('.rv-btn').forEach(btn => {
+      const i    = +btn.dataset.i;
+      const key  = btn.dataset.key;
+      const cost = +btn.dataset.cost;
+      btn.addEventListener('click', () => revealHint(i, key, cost));
+    });
+    tbody.querySelectorAll('.rv-all').forEach(btn => {
+      const i = +btn.dataset.i;
+      btn.addEventListener('click', () => revealAll(i));
+    });
+  }
+
+  function renderMovieRow(i) {
+    const m   = round[i];
+    const done = isDone(i);
+    const g    = guessed[i];
+    const sk   = skipped[i];
+    let rowClass = 'movie-row';
+    if (g)  rowClass += ' row-correct';
+    else if (sk) rowClass += ' row-skip';
+
+    let titleHTML = `<span class="title-mystery">???</span>`;
+    if (g)  titleHTML = `<span class="title-correct">${esc(m.title)}</span>`;
+    else if (sk) titleHTML = `<span class="title-skip">${esc(m.title)}</span>`;
+
+    const togOpen = (expanded === i) ? ' open' : '';
+    const togIcon = (expanded === i) ? '&#8722;' : '&#43;';
+    const togDisabled = done ? 'disabled' : '';
+
+    const ratingStr = m.rating ? `&#9733; ${m.rating.toFixed(1)}` : '—';
+    const rtStr = m.runtime ? m.runtime : '—';
+    const checkHTML = g  ? `<span style="color:var(--green)">&#10003;</span>`
+                   : sk  ? `<span style="color:var(--muted)">&#8212;</span>`
+                   :       `<span style="color:var(--muted)">&#9675;</span>`;
+
+    return `<tr class="${rowClass}" data-i="${i}">
+      <td class="td-tog">
+        ${!done ? `<button class="tog${togOpen}" data-i="${i}" ${togDisabled}>${togIcon}</button>` : '<span></span>'}
+      </td>
+      <td class="td-num">${i + 1}</td>
+      <td class="td-title">${titleHTML}</td>
+      <td class="td-rating">${ratingStr}</td>
+      <td class="td-runtime">${esc(rtStr)}</td>
+      <td class="td-year">${esc(m.year)}</td>
+      <td class="${ptsClass(pts[i])}">${pts[i]}</td>
+      <td class="td-check">${checkHTML}</td>
+    </tr>`;
+  }
+
+  function renderHintRowHTML(i) {
+    const isOff     = (expanded !== i) ? ' off' : '';
+    const isGuessed = isDone(i);
+    const m = round[i];
+
+    let cells = '';
+    for (const h of HINTS) {
+      const spanClass = h.span === 3 ? 'sp3' : h.span === 2 ? 'sp2' : '';
+      let valHTML = '';
+      if (revealed[i][h.key] || isGuessed) {
+        const val = h.get(m);
+        if (h.key === 'poster') {
+          valHTML = val ? `<img src="${esc(val)}" alt="${esc(m.title)}" loading="lazy">` : '<span style="color:var(--muted)">—</span>';
+        } else {
+          valHTML = `<span>${esc(val || '—')}</span>`;
+        }
+      } else {
+        const cls = h.cost >= 75 ? 'rv-btn pricey' : 'rv-btn';
+        valHTML = `<button class="${cls}" data-i="${i}" data-key="${h.key}" data-cost="${h.cost}">Reveal &minus;${h.cost}</button>`;
+      }
+      cells += `<div class="h-cell ${spanClass}"><div class="h-lbl">${esc(h.label)}</div><div class="h-val">${valHTML}</div></div>`;
+    }
+
+    const revAllBtn = !isGuessed
+      ? `<div class="reveal-all-wrap"><button class="rv-all" data-i="${i}">Reveal All &minus;${PTS_START}</button></div>`
+      : '';
+
+    return `<tr class="hint-row${isOff}">
+      <td colspan="8">
+        <div class="hint-panel">
+          <div class="hint-grid">${cells}</div>
+          ${revAllBtn}
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  function toggleRow(i) {
+    if (isDone(i)) return;
+    expanded = (expanded === i) ? null : i;
+    renderAll();
+  }
+
+  function revealHint(i, key, cost) {
+    if (revealed[i][key]) return;
+    revealed[i][key] = true;
+    pts[i] = Math.max(0, pts[i] - cost);
+    renderAll();
+    updateScoreBar();
+  }
+
+  function revealAll(i) {
+    if (isDone(i)) return;
+    for (const h of HINTS) revealed[i][h.key] = true;
+    pts[i] = 0;
+    skipped[i] = true;
+    expanded = null;
+    renderAll();
+    updateScoreBar();
+    if (allDone()) endGame();
+  }
+
+  // ── Score bar ────────────────────────────────────────────────
+  function updateScoreBar() {
+    document.getElementById('miss-strong').textContent  = misses;
+    document.getElementById('bonus-strong').textContent = bonus;
+    document.getElementById('score-strong').textContent = currentScore();
+  }
+
+  // ── Guess logic ──────────────────────────────────────────────
+  function submitGuess(raw) {
+    if (gameOver) return;
+    const norm = normTitle(raw);
+    if (!norm) return;
+
+    for (let i = 0; i < round.length; i++) {
+      if (!isDone(i) && normTitle(round[i].title) === norm) {
+        guessed[i] = true;
+        expanded   = null;
+        document.getElementById('guess-input').value = '';
+        closeDD();
+        renderAll();
+        updateScoreBar();
+        if (allDone()) endGame();
+        return;
+      }
+    }
+
+    // Wrong guess
+    misses++;
+    bonus = Math.max(0, BONUS_MAX - misses * MISS_COST);
+    updateScoreBar();
+    const inp = document.getElementById('guess-input');
+    inp.classList.remove('shake');
+    void inp.offsetWidth;
+    inp.classList.add('shake');
+    if (misses >= MISS_MAX) {
+      revealUnguessed();
+      endGame();
+    }
+  }
+
+  function revealUnguessed() {
+    for (let i = 0; i < round.length; i++) {
+      if (!isDone(i)) {
+        for (const h of HINTS) revealed[i][h.key] = true;
+        pts[i] = 0;
+        skipped[i] = true;
+      }
+    }
+    expanded = null;
+    renderAll();
+  }
+
+  function endGame() {
+    gameOver = true;
+    document.getElementById('guess-submit').disabled = true;
+    document.getElementById('guess-input').disabled  = true;
+    closeDD();
+
+    const score  = currentScore();
+    const maxPts = round.length * PTS_START + BONUS_MAX;
+    const best   = parseInt(localStorage.getItem('c2-bs-best') || '0');
+    const newBest = score > best;
+    if (newBest) localStorage.setItem('c2-bs-best', score);
+    roundNum++;
+    localStorage.setItem('c2-bs-round', roundNum);
+
+    document.getElementById('end-score-num').textContent = score;
+    document.getElementById('end-of-max').textContent    = `of ${maxPts}`;
+    document.getElementById('end-best').innerHTML = newBest
+      ? `<strong>New best!</strong>`
+      : `Best: <strong>${newBest ? score : Math.max(score, best)}</strong>`;
+    document.getElementById('end-panel').classList.add('on');
+    document.getElementById('end-panel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  // ── Autocomplete ─────────────────────────────────────────────
+  let ddActive = -1;
+
+  function openDD(q) {
+    const dd  = document.getElementById('guess-dd');
+    const lq  = q.toLowerCase();
+    const matches = allMovies
+      .filter(m => m.title.toLowerCase().includes(lq))
+      .slice(0, 8);
+
+    if (!matches.length) { closeDD(); return; }
+    dd.innerHTML = matches.map((m, idx) =>
+      `<div class="guess-opt" data-idx="${idx}" data-title="${esc(m.title)}">${esc(m.title)} <span style="color:var(--muted);font-size:.75rem;">(${esc(m.year)})</span></div>`
+    ).join('');
+    dd.classList.remove('off');
+    ddActive = -1;
+
+    dd.querySelectorAll('.guess-opt').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        document.getElementById('guess-input').value = el.dataset.title;
+        closeDD();
+        submitGuess(el.dataset.title);
+      });
+    });
+  }
+
+  function closeDD() {
+    document.getElementById('guess-dd').classList.add('off');
+    ddActive = -1;
+  }
+
+  function moveDD(dir) {
+    const opts = document.getElementById('guess-dd').querySelectorAll('.guess-opt');
+    if (!opts.length) return;
+    opts[ddActive]?.classList.remove('hi');
+    ddActive = (ddActive + dir + opts.length) % opts.length;
+    opts[ddActive].classList.add('hi');
+    document.getElementById('guess-input').value = opts[ddActive].dataset.title;
+  }
+
+  // ── Events ───────────────────────────────────────────────────
+  const inp = document.getElementById('guess-input');
+  inp.addEventListener('input', () => {
+    const q = inp.value.trim();
+    if (q.length >= 1) openDD(q); else closeDD();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown')  { e.preventDefault(); moveDD(1); }
+    if (e.key === 'ArrowUp')    { e.preventDefault(); moveDD(-1); }
+    if (e.key === 'Enter')      { closeDD(); submitGuess(inp.value); }
+    if (e.key === 'Escape')     { closeDD(); }
+  });
+  inp.addEventListener('blur', () => setTimeout(closeDD, 120));
+
+  document.getElementById('guess-submit').addEventListener('click', () => {
+    closeDD();
+    submitGuess(document.getElementById('guess-input').value);
+  });
+
+  document.getElementById('btn-again').addEventListener('click', () => {
+    document.getElementById('guess-input').disabled = false;
+    document.getElementById('guess-input').value    = '';
+    startRound();
+  });
+
+  // ── Boot ─────────────────────────────────────────────────────
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(text => {
+      allMovies = applyDatasetFilter(loadCSV(text));
+      if (allMovies.length < 5) throw new Error('Not enough movies');
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display    = '';
+      startRound();
+    })
+    .catch(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('error-screen').style.display   = 'flex';
+    });
+
+})();
+</script>
+</body>
+</html>
