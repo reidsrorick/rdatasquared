@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Family Feud</title>
+<style>
+:root {
+  --bg:#0c0c14; --card-bg:#14141f; --card-border:#23233a;
+  --accent:#f0bf3c; --green:#22c55e; --red:#ef4444;
+  --muted:#6868a0; --text:#dcdcf0; --text-dim:#9090b8;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+}
+
+/* ── UPLOAD ── */
+.screen { width: 100%; max-width: 720px; padding: 2rem 1.5rem; }
+.upload-box {
+  border: 2px dashed var(--card-border); border-radius: 16px;
+  padding: 3rem 2rem; text-align: center; cursor: pointer;
+  transition: border-color .2s;
+}
+.upload-box:hover, .upload-box.drag { border-color: var(--accent); }
+.upload-box h2 { font-size: 1.4rem; margin-bottom: .5rem; }
+.upload-box p { color: var(--text-dim); margin-bottom: 1.5rem; }
+.upload-btn {
+  background: var(--accent); color: #0c0c14;
+  border: none; padding: .7rem 1.8rem;
+  border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer;
+}
+#file-input { display: none; }
+.logo { font-size: 2.2rem; font-weight: 900; letter-spacing: .05em; margin-bottom: .4rem; }
+.logo span { color: var(--accent); }
+.tagline { color: var(--text-dim); margin-bottom: 2.5rem; font-size: .95rem; }
+
+/* ── GAME LAYOUT ── */
+#game-screen {
+  width: 100%; max-width: 760px;
+  padding: 1rem 1rem 2rem;
+  display: flex; flex-direction: column; gap: .8rem;
+}
+.hidden { display: none !important; }
+
+/* ── TEAMS BAR ── */
+.teams-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+}
+.team-card {
+  flex: 1; background: var(--card-bg); border: 2px solid var(--card-border);
+  border-radius: 12px; padding: .6rem .9rem; text-align: center;
+  transition: border-color .3s, box-shadow .3s;
+}
+.team-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(240,191,60,.15);
+}
+.team-label {
+  font-size: .7rem; font-weight: 700; letter-spacing: .12em;
+  color: var(--text-dim); text-transform: uppercase; margin-bottom: .2rem;
+}
+.team-score { font-size: 1.9rem; font-weight: 900; color: var(--text); }
+.team-active-tag {
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em;
+  color: var(--accent); text-transform: uppercase; margin-top: .1rem;
+  min-height: .9em;
+}
+.round-info {
+  flex: 0 0 auto; text-align: center; font-size: .82rem;
+  color: var(--text-dim); font-weight: 600; padding: 0 .5rem;
+}
+
+/* ── CATEGORY BADGE ── */
+.category-badge {
+  display: inline-block; font-size: .72rem; font-weight: 800;
+  letter-spacing: .15em; padding: .28rem .85rem; border-radius: 20px;
+  text-transform: uppercase; align-self: center;
+}
+.cat-DIRECTOR { background: rgba(99,102,241,.18); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
+.cat-ACTOR    { background: rgba(168,85,247,.18); color: #d8b4fe; border: 1px solid rgba(168,85,247,.3); }
+.cat-GENRE    { background: rgba(20,184,166,.18); color: #5eead4; border: 1px solid rgba(20,184,166,.3); }
+.cat-STUDIO   { background: rgba(249,115,22,.18); color: #fdba74; border: 1px solid rgba(249,115,22,.3); }
+
+/* ── QUESTION ── */
+.question-block { text-align: center; padding: .2rem 0 .3rem; }
+.question-lead { font-size: .85rem; color: var(--text-dim); margin-bottom: .3rem; }
+.question-main {
+  font-size: 1.55rem; font-weight: 800; line-height: 1.25;
+  color: var(--text);
+}
+.question-main em { color: var(--accent); font-style: normal; }
+
+/* ── ANSWER BOARD ── */
+.answer-board { display: flex; flex-direction: column; gap: .5rem; }
+.answer-slot {
+  display: flex; align-items: center; gap: .9rem;
+  background: #1a1a2c; border: 2px solid var(--card-border);
+  border-radius: 11px; padding: .85rem 1rem; min-height: 58px;
+  transition: border-color .3s, background .3s;
+}
+.slot-rank {
+  font-size: .8rem; font-weight: 800; color: var(--muted);
+  width: 1.4rem; text-align: center; flex-shrink: 0;
+}
+.slot-body { flex: 1; min-width: 0; }
+.slot-hidden-bar {
+  height: 14px; border-radius: 7px;
+  background: linear-gradient(90deg, #2a2a42 25%, #33334e 50%, #2a2a42 75%);
+  background-size: 200% 100%; animation: shimmer 2s infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.slot-title { font-size: 1rem; font-weight: 700; display: none; }
+.slot-year  { font-size: .75rem; color: var(--text-dim); margin-top: .15rem; display: none; }
+.slot-points {
+  font-size: .9rem; font-weight: 800; color: var(--muted);
+  flex-shrink: 0; width: 2.8rem; text-align: right;
+}
+/* revealed by player */
+.answer-slot.guessed {
+  border-color: var(--green);
+  background: rgba(34,197,94,.07);
+}
+.answer-slot.guessed .slot-hidden-bar { display: none; }
+.answer-slot.guessed .slot-title { display: block; color: var(--text); }
+.answer-slot.guessed .slot-year  { display: block; }
+.answer-slot.guessed .slot-rank  { color: var(--green); }
+.answer-slot.guessed .slot-points{ color: var(--green); }
+/* revealed at end (not guessed) */
+.answer-slot.exposed {
+  border-color: #2d2d46;
+  background: rgba(255,255,255,.02);
+}
+.answer-slot.exposed .slot-hidden-bar { display: none; }
+.answer-slot.exposed .slot-title { display: block; color: var(--text-dim); }
+.answer-slot.exposed .slot-year  { display: block; }
+.answer-slot.exposed .slot-rank  { color: #3a3a58; }
+.answer-slot.exposed .slot-points{ color: #3a3a58; }
+/* pop animation */
+@keyframes popIn {
+  0%   { transform: scale(.9) translateY(-4px); opacity: 0; }
+  70%  { transform: scale(1.03) translateY(1px); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.answer-slot.guessed { animation: popIn .35s ease both; }
+
+/* ── STRIKES ── */
+.strikes-area {
+  display: flex; align-items: center; justify-content: center; gap: .9rem;
+}
+.strikes-label {
+  font-size: .7rem; font-weight: 800; letter-spacing: .12em;
+  color: var(--text-dim); text-transform: uppercase;
+}
+.strikes { display: flex; gap: .55rem; }
+.strike-circle {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid #2a2a42; display: flex; align-items: center;
+  justify-content: center; font-size: .78rem; font-weight: 900;
+  transition: all .25s; color: transparent;
+}
+.strike-circle.hit {
+  border-color: var(--red); background: rgba(239,68,68,.12);
+  color: var(--red);
+}
+@keyframes strikeShake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+.shake { animation: strikeShake .35s ease; }
+
+/* ── STEAL BANNER ── */
+.steal-banner {
+  background: linear-gradient(135deg, rgba(239,68,68,.15), rgba(239,68,68,.07));
+  border: 2px solid rgba(239,68,68,.4); border-radius: 12px;
+  padding: .85rem 1.2rem; text-align: center;
+}
+.steal-banner strong { color: var(--red); font-size: 1rem; display: block; margin-bottom: .2rem; }
+.steal-banner span { font-size: .85rem; color: var(--text-dim); }
+
+/* ── INPUT ── */
+.input-row { display: flex; gap: .6rem; }
+#guess-input {
+  flex: 1; background: var(--card-bg); border: 2px solid var(--card-border);
+  border-radius: 10px; padding: .7rem 1rem; font-size: 1rem; color: var(--text);
+  outline: none; transition: border-color .2s;
+}
+#guess-input:focus { border-color: var(--accent); }
+#guess-input.wrong-flash { border-color: var(--red) !important; }
+#submit-btn {
+  background: var(--accent); color: #0c0c14; border: none;
+  border-radius: 10px; padding: .7rem 1.4rem;
+  font-size: .95rem; font-weight: 800; cursor: pointer; white-space: nowrap;
+  transition: opacity .15s, background .2s;
+}
+#submit-btn:hover { opacity: .88; }
+#submit-btn.steal-mode { background: var(--red); color: #fff; }
+#submit-btn:disabled { opacity: .4; cursor: default; }
+
+/* ── FEEDBACK ── */
+#feedback-msg {
+  text-align: center; font-size: .92rem; min-height: 1.4em;
+  font-weight: 600; transition: color .2s;
+}
+#feedback-msg.ok   { color: var(--green); }
+#feedback-msg.err  { color: var(--red); }
+#feedback-msg.warn { color: var(--accent); }
+
+/* ── END-OF-ROUND AREA ── */
+.end-area {
+  display: flex; flex-direction: column; align-items: center; gap: .6rem;
+}
+.round-score-msg {
+  font-size: .95rem; color: var(--text-dim); text-align: center;
+}
+.round-score-msg strong { color: var(--accent); }
+.end-btns { display: flex; gap: .7rem; flex-wrap: wrap; justify-content: center; }
+.btn-next {
+  background: var(--accent); color: #0c0c14; border: none;
+  padding: .7rem 1.6rem; border-radius: 10px;
+  font-size: 1rem; font-weight: 800; cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-next:hover { opacity: .88; }
+.btn-switch {
+  background: transparent; color: var(--text-dim);
+  border: 2px solid var(--card-border); padding: .7rem 1.2rem;
+  border-radius: 10px; font-size: .9rem; font-weight: 700; cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.btn-switch:hover { border-color: var(--muted); color: var(--text); }
+
+/* ── GAME OVER ── */
+#gameover-screen {
+  width: 100%; max-width: 520px; padding: 3rem 1.5rem; text-align: center;
+}
+.winner-banner {
+  font-size: 2rem; font-weight: 900; color: var(--accent); margin-bottom: .5rem;
+}
+.final-scores {
+  display: flex; gap: 1rem; justify-content: center; margin: 1.5rem 0;
+}
+.final-card {
+  flex: 1; background: var(--card-bg); border: 2px solid var(--card-border);
+  border-radius: 14px; padding: 1.2rem; max-width: 180px;
+}
+.final-card.winner { border-color: var(--accent); }
+.final-card .lbl { font-size: .8rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; }
+.final-card .pts { font-size: 2.4rem; font-weight: 900; color: var(--text); margin-top: .2rem; }
+.btn-restart {
+  background: var(--accent); color: #0c0c14; border: none;
+  padding: .75rem 2rem; border-radius: 10px;
+  font-size: 1rem; font-weight: 800; cursor: pointer; margin-top: .5rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Cine² Navigation ── -->
+<style>
+  #c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+  #c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+  #c2-btn.c2-hide { opacity:0; pointer-events:none; }
+  #c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+  #c2-bd.on { opacity:1; pointer-events:all; }
+  #c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+  #c2-nav.on { transform:translateX(0); }
+  .c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+  .c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+  .c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+  .c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+  .c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+  .c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+  .c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+  .c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+  .c2-link:hover, .c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+  .c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+  .c2-link:hover .c2-pip, .c2-link.c2-on .c2-pip { opacity:1; }
+  .c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+  .c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+  .c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+  .c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+  .c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+</style>
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close navigation">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open);
+  x.addEventListener('click',close);
+  bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+<!-- ── End Navigation ── -->
+
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Failed to load collection</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:300px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in the same folder.</p>
+</div>
+
+<!-- ══════════════════ GAME SCREEN ══════════════════ -->
+<div id="game-screen" class="hidden">
+  <div class="teams-bar">
+    <div class="team-card active" id="team-card-0">
+      <div class="team-label">Team 1</div>
+      <div class="team-score" id="score-0">0</div>
+      <div class="team-active-tag" id="tag-0">ACTIVE</div>
+    </div>
+    <div class="round-info" id="round-info">Round 1</div>
+    <div class="team-card" id="team-card-1">
+      <div class="team-label">Team 2</div>
+      <div class="team-score" id="score-1">0</div>
+      <div class="team-active-tag" id="tag-1"></div>
+    </div>
+  </div>
+
+  <div style="text-align:center">
+    <div class="category-badge" id="cat-badge">DIRECTOR</div>
+  </div>
+
+  <div class="question-block">
+    <div class="question-lead">Name a film from this collection:</div>
+    <div class="question-main" id="question-text"></div>
+  </div>
+
+  <div class="answer-board" id="answer-board"></div>
+
+  <div class="strikes-area">
+    <div class="strikes-label">Strikes</div>
+    <div class="strikes" id="strikes-row">
+      <div class="strike-circle" id="sc-0"></div>
+      <div class="strike-circle" id="sc-1"></div>
+      <div class="strike-circle" id="sc-2"></div>
+    </div>
+  </div>
+
+  <div class="steal-banner hidden" id="steal-banner">
+    <strong id="steal-title">STEAL OPPORTUNITY</strong>
+    <span id="steal-desc"></span>
+  </div>
+
+  <div class="input-row">
+    <input type="text" id="guess-input" placeholder="Type a movie title..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <button id="submit-btn" onclick="handleSubmit()">Submit</button>
+  </div>
+  <div id="feedback-msg"></div>
+
+  <div class="end-area hidden" id="end-area">
+    <div class="round-score-msg" id="round-score-msg"></div>
+    <div class="end-btns">
+      <button class="btn-next" onclick="nextRound()">Next Question</button>
+      <button class="btn-switch" onclick="switchTeam()">Switch Active Team</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ GAME OVER SCREEN ══════════════════ -->
+<div id="gameover-screen" class="hidden">
+  <div class="winner-banner" id="winner-banner"></div>
+  <div class="final-scores" id="final-scores"></div>
+  <button class="btn-restart" onclick="restartGame()">Play Again</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CSV PARSER
+// ══════════════════════════════════════════
+function parseCSV(text) {
+  const lines = [];
+  let field = '', row = [], inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
+      else if (c === '"') { inQ = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQ = true; }
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') {
+        row.push(field); field = '';
+        if (row.some(f => f.trim())) lines.push(row);
+        row = [];
+      } else if (c !== '\r') { field += c; }
+    }
+  }
+  if (field || row.length) { row.push(field); if (row.some(f=>f.trim())) lines.push(row); }
+  return lines;
+}
+
+function loadMovies(csvText) {
+  const rows = parseCSV(csvText);
+  if (rows.length < 2) return [];
+  const movies = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.length < 10) continue;
+    const rating = parseFloat(r[4]);
+    if (isNaN(rating)) continue;
+    const casts = [];
+    for (let ci = 10; ci <= 14; ci++) {
+      const v = (r[ci] || '').trim();
+      if (v) casts.push(v.replace(/\s*\([^)]*\)\s*$/, '').trim());
+    }
+    const genres = (r[9] || '').split(',').map(s => s.trim()).filter(Boolean);
+    movies.push({
+      title:  r[1].trim(),
+      year:   parseInt(r[2]) || 0,
+      director: (r[3] || '').trim(),
+      rating,
+      genres,
+      casts,
+      studio: (r[16] || '').trim(),
+      watchedBy: (r[16] || '').trim(),
+    });
+  }
+  return movies;
+}
+
+function applyDatasetFilter(movies) {
+  var f = (localStorage.getItem('c2-filter') || 'all').toLowerCase();
+  if (f === 'all') return movies;
+  return movies.filter(function(m) {
+    var wb = (m.watchedBy || '').toLowerCase();
+    if (f === 'reid') return wb.includes('reid');
+    if (f === 'zach') return wb.includes('zach');
+    if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+    return true;
+  });
+}
+
+// ══════════════════════════════════════════
+// PROMPT GENERATION
+// ══════════════════════════════════════════
+const PTS = [50, 40, 30, 20, 10];
+const MIN_DIRECTOR = 3, MIN_ACTOR = 4, MIN_GENRE = 5, MIN_STUDIO = 4;
+
+function buildPrompts(movies) {
+  const prompts = [];
+
+  // DIRECTOR
+  const dirMap = new Map();
+  for (const m of movies) {
+    if (!m.director) continue;
+    if (!dirMap.has(m.director)) dirMap.set(m.director, []);
+    dirMap.get(m.director).push(m);
+  }
+  for (const [dir, films] of dirMap) {
+    if (films.length < MIN_DIRECTOR) continue;
+    const sorted = [...films].sort((a, b) => b.rating - a.rating);
+    const top = sorted.slice(0, 5).map((m, i) => ({
+      title: m.title, year: m.year, rating: m.rating, points: PTS[i], revealed: false
+    }));
+    prompts.push({ category: 'DIRECTOR', entity: dir,
+      question: `directed by <em>${dir}</em>`, answers: top });
+  }
+
+  // ACTOR
+  const actMap = new Map();
+  for (const m of movies) {
+    for (const actor of m.casts) {
+      if (!actor) continue;
+      if (!actMap.has(actor)) actMap.set(actor, new Map());
+      actMap.get(actor).set(m.title, m);
+    }
+  }
+  for (const [actor, filmMap] of actMap) {
+    const films = [...filmMap.values()];
+    if (films.length < MIN_ACTOR) continue;
+    const sorted = [...films].sort((a, b) => b.rating - a.rating);
+    const top = sorted.slice(0, 5).map((m, i) => ({
+      title: m.title, year: m.year, rating: m.rating, points: PTS[i], revealed: false
+    }));
+    prompts.push({ category: 'ACTOR', entity: actor,
+      question: `starring <em>${actor}</em>`, answers: top });
+  }
+
+  // GENRE
+  const genMap = new Map();
+  for (const m of movies) {
+    for (const g of m.genres) {
+      if (!g) continue;
+      if (!genMap.has(g)) genMap.set(g, new Map());
+      genMap.get(g).set(m.title, m);
+    }
+  }
+  for (const [genre, filmMap] of genMap) {
+    const films = [...filmMap.values()];
+    if (films.length < MIN_GENRE) continue;
+    const sorted = [...films].sort((a, b) => b.rating - a.rating);
+    const top = sorted.slice(0, 5).map((m, i) => ({
+      title: m.title, year: m.year, rating: m.rating, points: PTS[i], revealed: false
+    }));
+    prompts.push({ category: 'GENRE', entity: genre,
+      question: `in the <em>${genre}</em> genre`, answers: top });
+  }
+
+  // STUDIO
+  const stuMap = new Map();
+  for (const m of movies) {
+    if (!m.studio) continue;
+    const stu = m.studio.split(',')[0].trim();
+    if (!stu) continue;
+    if (!stuMap.has(stu)) stuMap.set(stu, new Map());
+    stuMap.get(stu).set(m.title, m);
+  }
+  for (const [stu, filmMap] of stuMap) {
+    const films = [...filmMap.values()];
+    if (films.length < MIN_STUDIO) continue;
+    const sorted = [...films].sort((a, b) => b.rating - a.rating);
+    const top = sorted.slice(0, 5).map((m, i) => ({
+      title: m.title, year: m.year, rating: m.rating, points: PTS[i], revealed: false
+    }));
+    prompts.push({ category: 'STUDIO', entity: stu,
+      question: `from <em>${stu}</em>`, answers: top });
+  }
+
+  return shuffle(prompts);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ══════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════
+let allPrompts = [], promptIdx = 0;
+let current = null;       // current prompt object
+let strikes = 0;
+let stealMode = false;
+let stealTeam = 0;
+let activeTeam = 0;
+let teamScores = [0, 0];
+let roundOver = false;
+let boardEarned = 0;      // points guessed by active team this round
+
+const MAX_STRIKES = 3;
+const CAT_LABELS = { DIRECTOR: 'Director', ACTOR: 'Actor', GENRE: 'Genre', STUDIO: 'Studio' };
+
+function startGame(movies) {
+  allPrompts = buildPrompts(movies);
+  promptIdx = 0;
+  teamScores = [0, 0];
+  activeTeam = 0;
+  loadRound();
+}
+
+function loadRound() {
+  if (promptIdx >= allPrompts.length) {
+    showGameOver();
+    return;
+  }
+  current = allPrompts[promptIdx];
+  // reset per-answer revealed flag
+  for (const a of current.answers) a.revealed = false;
+  strikes = 0;
+  stealMode = false;
+  roundOver = false;
+  boardEarned = 0;
+
+  renderRound();
+  document.getElementById('end-area').classList.add('hidden');
+  document.getElementById('steal-banner').classList.add('hidden');
+  setFeedback('');
+  setInput(true);
+  document.getElementById('guess-input').value = '';
+  document.getElementById('guess-input').focus();
+}
+
+function renderRound() {
+  // round counter
+  document.getElementById('round-info').textContent =
+    `Round ${promptIdx + 1} / ${allPrompts.length}`;
+
+  // category badge
+  const badge = document.getElementById('cat-badge');
+  badge.textContent = CAT_LABELS[current.category];
+  badge.className = `category-badge cat-${current.category}`;
+
+  // question
+  document.getElementById('question-text').innerHTML = `Name a film ${current.question}`;
+
+  // answer board
+  const board = document.getElementById('answer-board');
+  board.innerHTML = '';
+  current.answers.forEach((a, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'answer-slot' + (a.revealed ? ' guessed' : '');
+    slot.id = `slot-${i}`;
+    slot.innerHTML = `
+      <div class="slot-rank">${i + 1}</div>
+      <div class="slot-body">
+        <div class="slot-hidden-bar"></div>
+        <div class="slot-title">${esc(a.title)}</div>
+        <div class="slot-year">Letterboxd: ${a.rating.toFixed(2)}</div>
+      </div>
+      <div class="slot-points">${a.points}</div>
+    `;
+    board.appendChild(slot);
+  });
+
+  // strikes
+  for (let i = 0; i < MAX_STRIKES; i++) {
+    const sc = document.getElementById(`sc-${i}`);
+    sc.className = 'strike-circle' + (i < strikes ? ' hit' : '');
+    sc.textContent = i < strikes ? 'X' : '';
+  }
+
+  // team scores
+  updateTeamUI();
+}
+
+function updateTeamUI() {
+  for (let t = 0; t < 2; t++) {
+    document.getElementById(`score-${t}`).textContent = teamScores[t];
+    const card = document.getElementById(`team-card-${t}`);
+    const tag  = document.getElementById(`tag-${t}`);
+    if (stealMode) {
+      card.classList.toggle('active', t === stealTeam);
+      tag.textContent = (t === stealTeam) ? 'STEALING' : '';
+    } else {
+      card.classList.toggle('active', t === activeTeam);
+      tag.textContent = (t === activeTeam) ? 'ACTIVE' : '';
+    }
+  }
+}
+
+// ══════════════════════════════════════════
+// ANSWER MATCHING
+// ══════════════════════════════════════════
+function norm(s) {
+  return s.toLowerCase()
+    .replace(/^(the |a |an )/, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchesTitle(guess, title) {
+  const ng = norm(guess), nt = norm(title);
+  if (!ng) return false;
+  if (ng === nt) return true;
+  if (nt.startsWith(ng)) return true;  // prefix match
+  if (ng.startsWith(nt)) return true;  // over-specified guess
+  const gw = ng.split(' ').filter(w => w.length >= 3);
+  if (gw.length >= 2 && gw.every(w => nt.includes(w))) return true;
+  return false;
+}
+
+function findMatches(guess) {
+  return current.answers
+    .map((a, i) => ({ a, i }))
+    .filter(({ a }) => !a.revealed && matchesTitle(guess, a.title));
+}
+
+// ══════════════════════════════════════════
+// GAME ACTIONS
+// ══════════════════════════════════════════
+function handleSubmit() {
+  if (roundOver) return;
+  const input = document.getElementById('guess-input');
+  const guess = input.value.trim();
+  if (!guess) return;
+
+  if (stealMode) {
+    processSteal(guess);
+  } else {
+    processGuess(guess);
+  }
+  input.value = '';
+  input.focus();
+}
+
+function processGuess(guess) {
+  const matches = findMatches(guess);
+  if (matches.length === 0) {
+    addStrike();
+  } else if (matches.length === 1) {
+    revealSlot(matches[0].i, 'guessed');
+    boardEarned += matches[0].a.points;
+    setFeedback(`Correct! +${matches[0].a.points} pts`, 'ok');
+    if (current.answers.every(a => a.revealed)) {
+      endRound('complete');
+    }
+  } else {
+    setFeedback('Multiple matches — be more specific!', 'warn');
+  }
+}
+
+function addStrike() {
+  strikes++;
+  const sc = document.getElementById(`sc-${strikes - 1}`);
+  sc.className = 'strike-circle hit shake';
+  sc.textContent = 'X';
+  setTimeout(() => sc.classList.remove('shake'), 400);
+
+  const input = document.getElementById('guess-input');
+  input.classList.add('wrong-flash');
+  setTimeout(() => input.classList.remove('wrong-flash'), 400);
+
+  setFeedback('Wrong answer!', 'err');
+  if (strikes >= MAX_STRIKES) {
+    triggerSteal();
+  }
+}
+
+function triggerSteal() {
+  stealMode = true;
+  stealTeam = 1 - activeTeam;
+  const remaining = remainingPoints();
+  const banner = document.getElementById('steal-banner');
+  document.getElementById('steal-title').textContent = `STEAL — Team ${stealTeam + 1}`;
+  document.getElementById('steal-desc').textContent =
+    `One guess to win the remaining ${remaining} points!`;
+  banner.classList.remove('hidden');
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = 'Steal!';
+  btn.classList.add('steal-mode');
+  setFeedback(`Team ${stealTeam + 1}: one steal attempt!`, 'warn');
+  updateTeamUI();
+}
+
+function processSteal(guess) {
+  const matches = findMatches(guess);
+  if (matches.length === 0) {
+    // steal fails
+    setFeedback(`Steal failed! Team ${activeTeam + 1} keeps ${boardEarned} pts.`, 'err');
+    teamScores[activeTeam] += boardEarned;
+    document.getElementById(`score-${activeTeam}`).textContent = teamScores[activeTeam];
+    endRound('steal_fail');
+  } else if (matches.length === 1) {
+    // steal succeeds
+    const extra = remainingPoints();
+    teamScores[stealTeam] += extra;
+    document.getElementById(`score-${stealTeam}`).textContent = teamScores[stealTeam];
+    revealSlot(matches[0].i, 'guessed');
+    setFeedback(`Steal! Team ${stealTeam + 1} takes ${extra} pts!`, 'ok');
+    endRound('steal_success');
+  } else {
+    setFeedback('Multiple matches — be more specific!', 'warn');
+  }
+}
+
+function remainingPoints() {
+  return current.answers.filter(a => !a.revealed).reduce((s, a) => s + a.points, 0);
+}
+
+function revealSlot(i, cls) {
+  current.answers[i].revealed = true;
+  const slot = document.getElementById(`slot-${i}`);
+  slot.className = `answer-slot ${cls}`;
+}
+
+function endRound(reason) {
+  roundOver = true;
+  stealMode = false;
+  setInput(false);
+
+  // expose all remaining hidden answers
+  current.answers.forEach((a, i) => {
+    if (!a.revealed) revealSlot(i, 'exposed');
+  });
+
+  // award points for normal play (complete = all guessed)
+  if (reason === 'complete') {
+    teamScores[activeTeam] += boardEarned;
+    document.getElementById(`score-${activeTeam}`).textContent = teamScores[activeTeam];
+  }
+
+  // compose end message
+  let msg = '';
+  if (reason === 'complete') {
+    msg = `All ${current.answers.length} revealed! Team ${activeTeam + 1} earned <strong>${boardEarned} pts</strong>.`;
+  } else if (reason === 'steal_success') {
+    const extra = current.answers.reduce((s,a)=>s+a.points,0) - boardEarned;
+    msg = `Team ${activeTeam + 1} had <strong>${boardEarned} pts</strong>. Steal by Team ${stealTeam + 1} for <strong>${Math.max(extra,0)} pts</strong>!`;
+  } else if (reason === 'steal_fail') {
+    msg = `Steal failed. Team ${activeTeam + 1} kept <strong>${boardEarned} pts</strong>.`;
+  }
+  document.getElementById('round-score-msg').innerHTML = msg;
+
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = 'Submit';
+  btn.classList.remove('steal-mode');
+  document.getElementById('steal-banner').classList.add('hidden');
+  document.getElementById('end-area').classList.remove('hidden');
+  updateTeamUI();
+}
+
+function nextRound() {
+  promptIdx++;
+  if (promptIdx >= allPrompts.length) {
+    showGameOver();
+  } else {
+    loadRound();
+  }
+}
+
+function switchTeam() {
+  activeTeam = 1 - activeTeam;
+  updateTeamUI();
+}
+
+function setInput(enabled) {
+  const inp = document.getElementById('guess-input');
+  const btn = document.getElementById('submit-btn');
+  inp.disabled = !enabled;
+  btn.disabled = !enabled;
+}
+
+function setFeedback(msg, cls = '') {
+  const el = document.getElementById('feedback-msg');
+  el.textContent = msg;
+  el.className = cls ? cls : '';
+}
+
+// ══════════════════════════════════════════
+// GAME OVER
+// ══════════════════════════════════════════
+function showGameOver() {
+  document.getElementById('game-screen').classList.add('hidden');
+  const go = document.getElementById('gameover-screen');
+  go.classList.remove('hidden');
+
+  const [s0, s1] = teamScores;
+  let banner = '';
+  if (s0 > s1)      banner = 'Team 1 Wins!';
+  else if (s1 > s0) banner = 'Team 2 Wins!';
+  else               banner = "It's a Tie!";
+  document.getElementById('winner-banner').textContent = banner;
+
+  const winner = s0 >= s1 ? 0 : 1;
+  document.getElementById('final-scores').innerHTML = [0, 1].map(t => `
+    <div class="final-card ${t === winner ? 'winner' : ''}">
+      <div class="lbl">Team ${t + 1}</div>
+      <div class="pts">${teamScores[t]}</div>
+    </div>
+  `).join('');
+}
+
+function restartGame() {
+  promptIdx = 0;
+  teamScores = [0, 0];
+  activeTeam = 0;
+  allPrompts = shuffle(allPrompts);
+  document.getElementById('gameover-screen').classList.add('hidden');
+  document.getElementById('game-screen').classList.remove('hidden');
+  loadRound();
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════
+// FILE LOADING
+// ══════════════════════════════════════════
+// ── Load data ─────────────────────────────────────────────
+fetch('./letterboxd_scraped.csv')
+  .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+  .then(text => {
+    const movies = applyDatasetFilter(loadMovies(text));
+    if (!movies.length) throw new Error();
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('game-screen').classList.remove('hidden');
+    startGame(movies);
+  })
+  .catch(() => {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('error-screen').style.display  = 'flex';
+  });
+
+document.getElementById('guess-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleSubmit();
+});
+</script>
+</body>
+</html>

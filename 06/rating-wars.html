@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rating Wars</title>
+  <style>
+    :root {
+      --bg: #0c0c14;
+      --card-bg: #14141f;
+      --card-border: #23233a;
+      --card-hover: #1b1b2c;
+      --text: #dcdcf0;
+      --muted: #6868a0;
+      --accent: #f0bf3c;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Upload ── */
+    #upload-screen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 2rem; text-align: center;
+    }
+    .brand { font-size: 3.2rem; font-weight: 900; letter-spacing: -2px; line-height: 1; margin-bottom: .5rem; }
+    .brand em { color: var(--accent); font-style: normal; }
+    .tagline { color: var(--muted); font-size: 1rem; margin-bottom: 3rem; max-width: 380px; line-height: 1.6; }
+    .drop-zone {
+      border: 2px dashed var(--card-border); border-radius: 14px;
+      padding: 2.5rem 3rem; cursor: pointer;
+      transition: border-color .15s, background .15s; max-width: 400px; width: 100%;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(240,191,60,.05); }
+    .dz-icon { margin: 0 auto 1rem; opacity: .4; }
+    .drop-zone p { color: var(--muted); font-size: .95rem; line-height: 1.6; }
+    .drop-zone strong { color: var(--accent); text-decoration: underline; cursor: pointer; }
+    #file-input { display: none; }
+
+    /* ── Game ── */
+    #game-screen { display: none; max-width: 780px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+
+    .g-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 2rem; flex-wrap: wrap; gap: .75rem;
+    }
+    .brand-sm { font-size: 1.15rem; font-weight: 800; letter-spacing: -.5px; }
+    .brand-sm em { color: var(--accent); font-style: normal; }
+
+    .streak-pills { display: flex; gap: .6rem; }
+    .pill { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: .3rem .85rem; font-size: .82rem; color: var(--muted); }
+    .pill b { color: var(--text); }
+    .pill.hot b { color: var(--accent); }
+
+    /* ── Prompt ── */
+    .prompt {
+      text-align: center; margin-bottom: 1.75rem;
+    }
+    .prompt-eye { font-size: .72rem; text-transform: uppercase; letter-spacing: 2.5px; color: var(--muted); margin-bottom: .4rem; }
+    .prompt-text { font-size: 1.3rem; font-weight: 700; }
+
+    /* ── Battle ── */
+    .battle {
+      display: grid;
+      grid-template-columns: 1fr 52px 1fr;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    @media (max-width: 500px) {
+      .battle { grid-template-columns: 1fr 36px 1fr; gap: .6rem; }
+      .prompt-text { font-size: 1.1rem; }
+    }
+
+    .vs-col {
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .vs-badge {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 900; color: var(--muted); letter-spacing: .5px;
+    }
+
+    /* ── Cards ── */
+    .battle-card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color .12s, transform .1s, background .12s, opacity .2s;
+      display: flex; flex-direction: column;
+    }
+
+    .battle-card:hover:not(.locked) {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      background: var(--card-hover);
+    }
+
+    .battle-card.locked { cursor: default; }
+
+    .battle-card.winner {
+      border-color: var(--accent);
+      background: rgba(240,191,60,.06);
+    }
+
+    .battle-card.loser {
+      opacity: .45;
+      border-color: var(--card-border);
+    }
+
+    .battle-card.wrong-pick {
+      border-color: var(--red);
+      background: rgba(239,68,68,.06);
+      opacity: 1;
+    }
+
+    .card-poster-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: var(--card-border);
+      flex-shrink: 0;
+    }
+
+    .card-poster {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: opacity .2s;
+    }
+
+    .card-poster.hidden { visibility: hidden; }
+
+    .card-poster-ph {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0c0c14 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .card-info {
+      padding: .85rem .9rem .9rem;
+      display: flex; flex-direction: column; gap: .25rem; flex: 1;
+    }
+
+    .card-title {
+      font-size: .88rem; font-weight: 700;
+      line-height: 1.3;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+
+    .card-year { font-size: .75rem; color: var(--muted); }
+
+    .card-rating {
+      display: none;
+      margin-top: auto;
+      padding-top: .5rem;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .card-rating.show { display: block; }
+
+    .winner .card-rating { color: var(--accent); }
+    .loser  .card-rating { color: var(--muted); font-size: .95rem; }
+    .wrong-pick .card-rating { color: var(--red); }
+
+    /* ── Result area ── */
+    .result-area {
+      margin-top: 1.75rem; text-align: center;
+      display: none; flex-direction: column; align-items: center; gap: 1rem;
+    }
+    .result-area.show { display: flex; }
+
+    .result-msg { font-size: 1.1rem; font-weight: 700; }
+    .result-msg.ok  { color: var(--green); }
+    .result-msg.bad { color: var(--red); }
+    .result-msg.tie { color: var(--accent); }
+
+    .streak-break { font-size: .85rem; color: var(--muted); }
+
+    .btn {
+      background: var(--accent); color: #000; border: none; border-radius: 8px;
+      padding: .72rem 2rem; font-size: .93rem; font-weight: 700; cursor: pointer;
+      letter-spacing: .3px; transition: background .12s, transform .1s; font-family: inherit;
+    }
+    .btn:hover { background: #f8d060; transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+
+<!-- ── Cine² Navigation ── -->
+<style>
+  #c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+  #c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+  #c2-btn.c2-hide { opacity:0; pointer-events:none; }
+  #c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+  #c2-bd.on { opacity:1; pointer-events:all; }
+  #c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+  #c2-nav.on { transform:translateX(0); }
+  .c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+  .c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+  .c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+  .c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+  .c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+  .c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+  .c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+  .c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+  .c2-link:hover, .c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+  .c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+  .c2-link:hover .c2-pip, .c2-link.c2-on .c2-pip { opacity:1; }
+  .c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+  .c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+  .c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+  .c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+  .c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+</style>
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close navigation">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open);
+  x.addEventListener('click',close);
+  bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+<!-- ── End Navigation ── -->
+
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Failed to load collection</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:300px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in the same folder.</p>
+</div>
+
+<!-- Game -->
+<div id="game-screen">
+  <div class="g-header">
+    <span class="brand-sm">Rating <em>Wars</em></span>
+    <div class="streak-pills">
+      <span class="pill hot">Streak <b id="streak-num">0</b></span>
+      <span class="pill">Best <b id="best-num">0</b></span>
+    </div>
+  </div>
+
+  <div class="prompt">
+    <p class="prompt-eye">Click to answer</p>
+    <p class="prompt-text">Which has the higher Letterboxd rating?</p>
+  </div>
+
+  <div class="battle" id="battle">
+    <!-- Cards injected by JS -->
+  </div>
+
+  <div class="result-area" id="result-area">
+    <p class="result-msg" id="result-msg"></p>
+    <p class="streak-break" id="streak-break"></p>
+    <button class="btn" id="btn-next">Next Match</button>
+  </div>
+</div>
+
+<script>
+  let allMovies = [];
+  let streak    = 0;
+  let best      = 0;
+  let pair      = null;
+  let answered  = false;
+
+  // ── CSV ────────────────────────────────────────────────────
+
+  function parseCSV(src) {
+    const rows = [];
+    let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') {
+        if (q && src[i + 1] === '"') { field += '"'; i++; } else q = !q;
+      } else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) {
+        if (c === '\r' && src[i + 1] === '\n') i++;
+        row.push(field); field = ''; rows.push(row); row = [];
+      } else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0];
+    const col = n => h.indexOf(n);
+    const [ti, ri, yi, pi, wi] = ['title', 'average_rating', 'year', 'poster_url', 'watched_by'].map(col);
+    if (ti < 0 || ri < 0) return [];
+
+    return rows.slice(1).flatMap(r => {
+      const title  = r[ti]?.trim();
+      const rating = parseFloat(r[ri]);
+      if (!title || isNaN(rating)) return [];
+      return [{ title, rating, year: r[yi]?.trim() || '', poster: pi >= 0 ? r[pi]?.trim() : '', watchedBy: wi>=0 ? r[wi]?.trim()||'' : '' }];
+    });
+  }
+
+  // ── Pair selection ─────────────────────────────────────────
+
+  function shuffle(a) {
+    a = [...a];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickPair() {
+    const pool = shuffle(allMovies);
+    // Prefer a close matchup (0.05–1.2 rating diff) to avoid obvious blowouts
+    for (let i = 0; i < pool.length - 1; i++) {
+      for (let j = i + 1; j < Math.min(i + 15, pool.length); j++) {
+        const diff = Math.abs(pool[i].rating - pool[j].rating);
+        if (diff >= 0.05 && diff <= 1.2) return shuffle([pool[i], pool[j]]);
+      }
+    }
+    return [pool[0], pool[1]]; // fallback
+  }
+
+  // ── Render ─────────────────────────────────────────────────
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function makeCard(movie, idx) {
+    const posterContent = movie.poster
+      ? `<img class="card-poster" src="${esc(movie.poster)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">`
+      : `<div class="card-poster-ph"></div>`;
+
+    return `<div class="battle-card" id="card-${idx}" data-idx="${idx}">
+      <div class="card-poster-wrap">${posterContent}</div>
+      <div class="card-info">
+        <p class="card-title">${esc(movie.title)}</p>
+        ${movie.year ? `<p class="card-year">${esc(movie.year)}</p>` : ''}
+        <p class="card-rating" id="rating-${idx}">&#9733; ${movie.rating.toFixed(2)}</p>
+      </div>
+    </div>`;
+  }
+
+  function newRound() {
+    answered = false;
+    pair = pickPair();
+
+    document.getElementById('result-area').classList.remove('show');
+
+    document.getElementById('battle').innerHTML =
+      makeCard(pair[0], 0) +
+      `<div class="vs-col"><div class="vs-badge">VS</div></div>` +
+      makeCard(pair[1], 1);
+
+    document.querySelectorAll('.battle-card').forEach(card => {
+      card.addEventListener('click', () => pick(+card.dataset.idx));
+    });
+  }
+
+  // ── Pick ───────────────────────────────────────────────────
+
+  function pick(chosen) {
+    if (answered) return;
+    answered = true;
+
+    const [a, b]  = pair;
+    const isTie   = a.rating === b.rating;
+    const winnerIdx = a.rating >= b.rating ? 0 : 1;
+    const correct   = isTie || chosen === winnerIdx;
+
+    // Lock cards
+    document.querySelectorAll('.battle-card').forEach(c => c.classList.add('locked'));
+
+    // Reveal ratings
+    document.getElementById('rating-0').classList.add('show');
+    document.getElementById('rating-1').classList.add('show');
+
+    // Colour cards
+    if (isTie) {
+      document.getElementById('card-0').classList.add('winner');
+      document.getElementById('card-1').classList.add('winner');
+    } else {
+      document.getElementById(`card-${winnerIdx}`).classList.add('winner');
+      const loserIdx = winnerIdx === 0 ? 1 : 0;
+      document.getElementById(`card-${loserIdx}`).classList.add(chosen === loserIdx ? 'wrong-pick' : 'loser');
+    }
+
+    // Update streak
+    const prevStreak = streak;
+    if (correct) {
+      streak++;
+      if (streak > best) best = streak;
+    } else {
+      streak = 0;
+    }
+
+    document.getElementById('streak-num').textContent = streak;
+    document.getElementById('best-num').textContent   = best;
+
+    // Result message
+    const msgEl   = document.getElementById('result-msg');
+    const breakEl = document.getElementById('streak-break');
+
+    if (isTie) {
+      msgEl.className   = 'result-msg tie';
+      msgEl.textContent = `It's a tie — both rated ${a.rating.toFixed(2)}`;
+      breakEl.textContent = '';
+    } else if (correct) {
+      msgEl.className   = 'result-msg ok';
+      msgEl.textContent = streak > 1 ? `Correct! Streak: ${streak}` : 'Correct!';
+      breakEl.textContent = '';
+    } else {
+      msgEl.className   = 'result-msg bad';
+      msgEl.textContent = 'Wrong!';
+      breakEl.textContent = prevStreak > 0
+        ? `Streak of ${prevStreak} broken.`
+        : '';
+    }
+
+    document.getElementById('result-area').classList.add('show');
+  }
+
+  document.getElementById('btn-next').addEventListener('click', newRound);
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter') || 'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy || '').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
+    });
+  }
+
+  // ── Load data ─────────────────────────────────────────────
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+    .then(text => {
+      allMovies = applyDatasetFilter(loadCSV(text));
+      if (allMovies.length < 2) throw new Error();
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display   = 'block';
+      newRound();
+    })
+    .catch(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('error-screen').style.display  = 'flex';
+    });
+</script>
+</body>
+</html>

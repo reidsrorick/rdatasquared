@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Release Order</title>
+  <style>
+    :root {
+      --bg: #0c0c14;
+      --card-bg: #14141f;
+      --card-border: #23233a;
+      --card-hover: #1b1b2c;
+      --text: #dcdcf0;
+      --muted: #6868a0;
+      --accent: #f0bf3c;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Upload ── */
+    #upload-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .brand { font-size: 3.2rem; font-weight: 900; letter-spacing: -2px; line-height: 1; margin-bottom: .5rem; }
+    .brand em { color: var(--accent); font-style: normal; }
+
+    .tagline { color: var(--muted); font-size: 1rem; margin-bottom: 3rem; max-width: 420px; line-height: 1.6; }
+
+    .drop-zone {
+      border: 2px dashed var(--card-border);
+      border-radius: 14px;
+      padding: 2.5rem 3rem;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      max-width: 400px; width: 100%;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(240,191,60,.05); }
+    .dz-icon { margin: 0 auto 1rem; opacity: .4; }
+    .drop-zone p { color: var(--muted); font-size: .95rem; line-height: 1.6; }
+    .drop-zone strong { color: var(--accent); text-decoration: underline; cursor: pointer; }
+    #file-input { display: none; }
+
+    /* ── Game ── */
+    #game-screen { display: none; max-width: 680px; margin: 0 auto; padding: 1.5rem 1.25rem 5rem; }
+
+    .g-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.75rem; flex-wrap: wrap; gap: .75rem;
+    }
+    .brand-sm { font-size: 1.15rem; font-weight: 800; letter-spacing: -.5px; }
+    .brand-sm em { color: var(--accent); font-style: normal; }
+
+    .pills { display: flex; gap: .6rem; }
+    .pill { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: .3rem .85rem; font-size: .82rem; color: var(--muted); }
+    .pill b { color: var(--text); }
+
+    /* ── Difficulty tabs ── */
+    .diff-row { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+
+    .diff-tab {
+      flex: 1;
+      padding: .5rem .75rem;
+      border-radius: 9px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color .12s, color .12s, background .12s;
+      font-family: inherit;
+    }
+    .diff-tab:hover { border-color: var(--accent); color: var(--accent); }
+    .diff-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+    .diff-sub { font-size: .7rem; font-weight: 400; opacity: .75; display: block; margin-top: .15rem; }
+
+    /* ── Instruction ── */
+    .instruction {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      text-align: center;
+      letter-spacing: .3px;
+    }
+
+    /* ── Sortable list ── */
+    #sort-list { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.5rem; }
+
+    .sort-item {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 10px;
+      padding: .6rem .75rem;
+      cursor: grab;
+      transition: border-color .12s, background .12s, opacity .15s, transform .1s;
+      user-select: none;
+    }
+    .sort-item:active { cursor: grabbing; }
+    .sort-item.dragging { opacity: .45; }
+    .sort-item.over { border-color: var(--accent); background: var(--card-hover); transform: scale(1.01); }
+    .sort-item.revealed-correct { border-color: var(--green); background: rgba(34,197,94,.06); cursor: default; }
+    .sort-item.revealed-wrong   { border-color: var(--red);   background: rgba(239,68,68,.06);  cursor: default; }
+
+    .item-handle { color: var(--card-border); font-size: 1rem; flex-shrink: 0; line-height: 1; }
+    .sort-item:hover .item-handle { color: var(--muted); }
+
+    .item-num {
+      width: 20px; font-size: .78rem; font-weight: 700;
+      color: var(--muted); text-align: center; flex-shrink: 0;
+    }
+
+    .item-poster {
+      width: 38px; height: 54px; object-fit: cover;
+      border-radius: 4px; flex-shrink: 0;
+      background: var(--card-border);
+    }
+    .item-poster-ph {
+      width: 38px; height: 54px; border-radius: 4px;
+      background: var(--card-border); flex-shrink: 0;
+    }
+
+    .item-title { flex: 1; font-size: .88rem; font-weight: 600; line-height: 1.35; }
+
+    .item-year-badge {
+      font-size: .8rem; font-weight: 700; flex-shrink: 0;
+      padding: .2rem .55rem; border-radius: 6px;
+    }
+    .revealed-correct .item-year-badge { background: rgba(34,197,94,.15); color: var(--green); }
+    .revealed-wrong   .item-year-badge { background: rgba(239,68,68,.15);  color: var(--red); }
+
+    .item-arrows { display: flex; flex-direction: column; gap: .2rem; flex-shrink: 0; }
+    .arrow-btn {
+      background: none; border: 1px solid var(--card-border); border-radius: 4px;
+      width: 24px; height: 22px; color: var(--muted); cursor: pointer;
+      font-size: .6rem; display: flex; align-items: center; justify-content: center;
+      transition: border-color .1s, color .1s; line-height: 1;
+    }
+    .arrow-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .arrow-btn:disabled { opacity: .25; cursor: default; }
+
+    /* ── Buttons ── */
+    .btn-row { display: flex; justify-content: center; gap: .75rem; }
+
+    .btn {
+      background: var(--accent); color: #000; border: none; border-radius: 8px;
+      padding: .72rem 2rem; font-size: .93rem; font-weight: 700; cursor: pointer;
+      letter-spacing: .3px; transition: background .12s, transform .1s; font-family: inherit;
+    }
+    .btn:hover { background: #f8d060; transform: translateY(-1px); }
+    .btn:disabled { opacity: .4; cursor: default; transform: none; }
+
+    /* ── Result ── */
+    .result-bar {
+      display: none; flex-direction: column; align-items: center;
+      gap: .75rem; margin-bottom: 1.5rem; text-align: center;
+    }
+    .result-bar.show { display: flex; }
+
+    .result-score { font-size: 1.25rem; font-weight: 700; }
+    .result-score.perfect { color: var(--green); }
+    .result-score.ok { color: var(--accent); }
+    .result-score.bad { color: var(--red); }
+
+    .result-note { font-size: .82rem; color: var(--muted); }
+
+    /* ── Error ── */
+    .diff-error {
+      background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+      border-radius: 8px; padding: .65rem 1rem; font-size: .85rem; color: var(--red);
+      margin-bottom: 1rem; display: none; text-align: center;
+    }
+    .diff-error.show { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── Cine² Navigation ── -->
+<style>
+  #c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+  #c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+  #c2-btn.c2-hide { opacity:0; pointer-events:none; }
+  #c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+  #c2-bd.on { opacity:1; pointer-events:all; }
+  #c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+  #c2-nav.on { transform:translateX(0); }
+  .c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+  .c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+  .c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+  .c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+  .c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+  .c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+  .c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+  .c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+  .c2-link:hover, .c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+  .c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+  .c2-link:hover .c2-pip, .c2-link.c2-on .c2-pip { opacity:1; }
+  .c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+  .c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+  .c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+  .c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+  .c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+</style>
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close navigation">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open);
+  x.addEventListener('click',close);
+  bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+<!-- ── End Navigation ── -->
+
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Failed to load collection</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:300px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in the same folder.</p>
+</div>
+
+<!-- Game -->
+<div id="game-screen">
+  <div class="g-header">
+    <span class="brand-sm">Release <em>Order</em></span>
+    <div class="pills">
+      <span class="pill">Round <b id="round-num">1</b></span>
+      <span class="pill">Score <b id="score-num">0</b> / <b id="score-den">0</b></span>
+    </div>
+  </div>
+
+  <div class="diff-row">
+    <button class="diff-tab active" data-diff="easy">
+      Easy <span class="diff-sub">10+ yrs apart</span>
+    </button>
+    <button class="diff-tab" data-diff="hard">
+      Hard <span class="diff-sub">Same decade</span>
+    </button>
+    <button class="diff-tab" data-diff="expert">
+      Expert <span class="diff-sub">Same 3-year span</span>
+    </button>
+  </div>
+
+  <p class="instruction" id="instruction">Drag or use arrows to arrange oldest &#8594; newest</p>
+
+  <div class="diff-error" id="diff-error"></div>
+  <div class="result-bar" id="result-bar">
+    <p class="result-score" id="result-score"></p>
+    <p class="result-note" id="result-note"></p>
+  </div>
+
+  <div id="sort-list"></div>
+
+  <div class="btn-row">
+    <button class="btn" id="btn-action">Lock In</button>
+  </div>
+</div>
+
+<script>
+  let allMovies  = [];
+  let playerOrder = [];   // current arrangement of 5 movies
+  let correctOrder = [];  // sorted by year asc
+  let difficulty  = 'easy';
+  let isRevealed  = false;
+  let roundNum    = 1;
+  let totalScore  = 0;
+  let totalPossible = 0;
+  let dragIdx     = null;
+
+  // ── CSV ────────────────────────────────────────────────────
+
+  function parseCSV(src) {
+    const rows = [];
+    let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') {
+        if (q && src[i + 1] === '"') { field += '"'; i++; } else q = !q;
+      } else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) {
+        if (c === '\r' && src[i + 1] === '\n') i++;
+        row.push(field); field = ''; rows.push(row); row = [];
+      } else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0];
+    const col = n => h.indexOf(n);
+    const [ti, yi, pi, wi] = ['title', 'year', 'poster_url', 'watched_by'].map(col);
+    if (ti < 0 || yi < 0) return [];
+
+    return rows.slice(1).flatMap(r => {
+      const title = r[ti]?.trim(), year = r[yi]?.trim();
+      if (!title || !/^\d{4}$/.test(year)) return [];
+      return [{ title, year: +year, poster: pi >= 0 ? r[pi]?.trim() : '', watchedBy: wi>=0 ? r[wi]?.trim()||'' : '' }];
+    });
+  }
+
+  // ── Movie selection per difficulty ────────────────────────
+
+  function shuffle(a) {
+    a = [...a];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickMovies(diff) {
+    if (diff === 'easy') {
+      // 5 movies where every consecutive gap is 10+ years
+      for (let t = 0; t < 3000; t++) {
+        const picks = shuffle(allMovies).slice(0, 5).sort((a, b) => a.year - b.year);
+        if (picks[1].year - picks[0].year >= 10 &&
+            picks[2].year - picks[1].year >= 10 &&
+            picks[3].year - picks[2].year >= 10 &&
+            picks[4].year - picks[3].year >= 10) return picks;
+      }
+      return null;
+    }
+
+    if (diff === 'hard') {
+      // All 5 from the same decade
+      const byDecade = {};
+      for (const m of allMovies) {
+        const d = Math.floor(m.year / 10) * 10;
+        (byDecade[d] = byDecade[d] || []).push(m);
+      }
+      const eligible = shuffle(Object.keys(byDecade).filter(d => byDecade[d].length >= 5));
+      if (!eligible.length) return null;
+      return shuffle(byDecade[eligible[0]]).slice(0, 5);
+    }
+
+    if (diff === 'expert') {
+      // All 5 within a 3-year span (max - min <= 2), then relax if needed
+      for (const span of [2, 3, 4]) {
+        const years = [...new Set(allMovies.map(m => m.year))].sort((a, b) => a - b);
+        const windows = [];
+        for (const y of years) {
+          const w = allMovies.filter(m => m.year >= y && m.year <= y + span);
+          if (w.length >= 5) windows.push(w);
+        }
+        if (windows.length) return shuffle(shuffle(windows)[0]).slice(0, 5);
+      }
+      return null;
+    }
+  }
+
+  // ── Render ─────────────────────────────────────────────────
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderList() {
+    const list = document.getElementById('sort-list');
+
+    list.innerHTML = playerOrder.map((m, i) => {
+      let itemClass = 'sort-item';
+      let yearBadge = '';
+      let arrowsOrYear = '';
+
+      if (isRevealed) {
+        const correct = correctOrder[i];
+        const isRight = m.year === correct.year;
+        itemClass += isRight ? ' revealed-correct' : ' revealed-wrong';
+        yearBadge = `<span class="item-year-badge">${m.year}</span>`;
+      } else {
+        arrowsOrYear = `<div class="item-arrows">
+          <button class="arrow-btn" data-dir="up"   data-idx="${i}" ${i === 0 ? 'disabled' : ''}>&#9650;</button>
+          <button class="arrow-btn" data-dir="down" data-idx="${i}" ${i === playerOrder.length - 1 ? 'disabled' : ''}>&#9660;</button>
+        </div>`;
+      }
+
+      const poster = m.poster
+        ? `<img class="item-poster" src="${esc(m.poster)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+        : `<div class="item-poster-ph"></div>`;
+
+      return `<div class="${itemClass}" draggable="${!isRevealed}" data-idx="${i}">
+        ${!isRevealed ? '<span class="item-handle">&#9776;</span>' : ''}
+        <span class="item-num">${i + 1}</span>
+        ${poster}
+        <span class="item-title">${esc(m.title)}</span>
+        ${yearBadge}
+        ${arrowsOrYear}
+      </div>`;
+    }).join('');
+
+    if (!isRevealed) attachDrag();
+  }
+
+  // ── Drag and drop ──────────────────────────────────────────
+
+  function attachDrag() {
+    document.querySelectorAll('.sort-item').forEach((el, i) => {
+      el.addEventListener('dragstart', e => {
+        dragIdx = i;
+        e.dataTransfer.effectAllowed = 'move';
+        requestAnimationFrame(() => el.classList.add('dragging'));
+      });
+
+      el.addEventListener('dragend', () => {
+        el.classList.remove('dragging');
+        document.querySelectorAll('.sort-item').forEach(x => x.classList.remove('over'));
+        dragIdx = null;
+      });
+
+      el.addEventListener('dragover', e => {
+        e.preventDefault();
+        if (dragIdx !== null && dragIdx !== i) {
+          document.querySelectorAll('.sort-item').forEach(x => x.classList.remove('over'));
+          el.classList.add('over');
+        }
+      });
+
+      el.addEventListener('dragleave', e => {
+        if (!el.contains(e.relatedTarget)) el.classList.remove('over');
+      });
+
+      el.addEventListener('drop', e => {
+        e.preventDefault();
+        el.classList.remove('over');
+        if (dragIdx !== null && dragIdx !== i) {
+          const [moved] = playerOrder.splice(dragIdx, 1);
+          playerOrder.splice(i, 0, moved);
+          renderList();
+        }
+      });
+    });
+  }
+
+  // Arrow buttons (event delegation)
+  document.getElementById('sort-list').addEventListener('click', e => {
+    if (isRevealed) return;
+    const btn = e.target.closest('.arrow-btn');
+    if (!btn) return;
+    const idx = +btn.dataset.idx;
+    const dir = btn.dataset.dir;
+    if (dir === 'up' && idx > 0) {
+      [playerOrder[idx], playerOrder[idx - 1]] = [playerOrder[idx - 1], playerOrder[idx]];
+      renderList();
+    } else if (dir === 'down' && idx < playerOrder.length - 1) {
+      [playerOrder[idx], playerOrder[idx + 1]] = [playerOrder[idx + 1], playerOrder[idx]];
+      renderList();
+    }
+  });
+
+  // ── Lock In / Next Round ───────────────────────────────────
+
+  document.getElementById('btn-action').addEventListener('click', () => {
+    if (!isRevealed) {
+      reveal();
+    } else {
+      nextRound();
+    }
+  });
+
+  function reveal() {
+    isRevealed = true;
+
+    // Score: count positions where year matches correct year
+    let correct = 0;
+    for (let i = 0; i < 5; i++) {
+      if (playerOrder[i].year === correctOrder[i].year) correct++;
+    }
+
+    totalScore    += correct;
+    totalPossible += 5;
+    document.getElementById('score-num').textContent = totalScore;
+    document.getElementById('score-den').textContent = totalPossible;
+
+    const scoreEl = document.getElementById('result-score');
+    const noteEl  = document.getElementById('result-note');
+    const bar     = document.getElementById('result-bar');
+
+    if (correct === 5) {
+      scoreEl.className = 'result-score perfect';
+      scoreEl.textContent = 'Perfect — 5/5!';
+    } else if (correct >= 3) {
+      scoreEl.className = 'result-score ok';
+      scoreEl.textContent = `${correct}/5 correct`;
+    } else {
+      scoreEl.className = 'result-score bad';
+      scoreEl.textContent = `${correct}/5 correct`;
+    }
+
+    // Note: show correct order if not perfect
+    if (correct < 5) {
+      noteEl.textContent = 'Correct order: ' + correctOrder.map(m => `${m.title} (${m.year})`).join(' → ');
+    } else {
+      noteEl.textContent = '';
+    }
+
+    bar.classList.add('show');
+    renderList();
+
+    const btn = document.getElementById('btn-action');
+    btn.textContent = 'Next Round';
+  }
+
+  function nextRound() {
+    roundNum++;
+    document.getElementById('round-num').textContent = roundNum;
+    document.getElementById('result-bar').classList.remove('show');
+    startRound();
+  }
+
+  // ── Round setup ────────────────────────────────────────────
+
+  function startRound() {
+    isRevealed = false;
+    document.getElementById('diff-error').classList.remove('show');
+    document.getElementById('result-bar').classList.remove('show');
+
+    const picks = pickMovies(difficulty);
+    if (!picks) {
+      document.getElementById('diff-error').textContent =
+        `Not enough movies for ${difficulty} mode. Try a different difficulty.`;
+      document.getElementById('diff-error').classList.add('show');
+      document.getElementById('sort-list').innerHTML = '';
+      document.getElementById('btn-action').disabled = true;
+      return;
+    }
+
+    document.getElementById('btn-action').disabled = false;
+    document.getElementById('btn-action').textContent = 'Lock In';
+
+    correctOrder = [...picks].sort((a, b) => a.year - b.year);
+    playerOrder  = shuffle([...picks]);
+    renderList();
+  }
+
+  // ── Difficulty tabs ────────────────────────────────────────
+
+  document.querySelectorAll('.diff-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.diff-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      difficulty = tab.dataset.diff;
+      roundNum   = 1;
+      totalScore = totalPossible = 0;
+      document.getElementById('round-num').textContent = 1;
+      document.getElementById('score-num').textContent = 0;
+      document.getElementById('score-den').textContent = 0;
+      startRound();
+    });
+  });
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter') || 'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy || '').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
+    });
+  }
+
+  // ── Load data ─────────────────────────────────────────────
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+    .then(text => {
+      allMovies = applyDatasetFilter(loadCSV(text));
+      if (allMovies.length < 5) throw new Error();
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display   = 'block';
+      startRound();
+    })
+    .catch(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('error-screen').style.display  = 'flex';
+    });
+</script>
+</body>
+</html>

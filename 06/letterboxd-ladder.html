@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letterboxd Ladder</title>
+  <style>
+    :root {
+      --bg: #0c0c14;
+      --card-bg: #14141f;
+      --card-border: #23233a;
+      --card-hover: #1b1b2c;
+      --text: #dcdcf0;
+      --muted: #6868a0;
+      --accent: #f0bf3c;
+      --green: #22c55e;
+      --red: #ef4444;
+      --indigo: #6366f1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Game screen ── */
+    #game-screen { display: none; max-width: 640px; margin: 0 auto; padding: 1.25rem 1.25rem 5rem; }
+
+    /* ── Header ── */
+    .g-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .7rem; flex-wrap: wrap; gap: .5rem; }
+    .brand-sm { font-size: 1.1rem; font-weight: 800; letter-spacing: -.5px; }
+    .brand-sm em { color: var(--accent); font-style: normal; }
+    .g-actions { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    .pill { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: .28rem .8rem; font-size: .78rem; color: var(--muted); }
+    .pill b { color: var(--text); }
+    .btn-ghost { background: transparent; border: 1px solid var(--card-border); border-radius: 8px; padding: .32rem .85rem; font-size: .78rem; color: var(--muted); cursor: pointer; transition: border-color .12s, color .12s; font-family: inherit; }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Dual stage ── */
+    .dual-stage {
+      display: grid;
+      grid-template-columns: 1fr 64px 1fr;
+      align-items: start;
+      margin-bottom: .75rem;
+    }
+
+    .stage-slot { display: flex; flex-direction: column; min-width: 0; }
+
+    .stage-label {
+      font-size: .57rem; font-weight: 800; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .38rem;
+    }
+    .slot-target .stage-label { text-align: right; color: var(--accent); }
+
+    .stage-card {
+      background: var(--card-bg); border-radius: 12px; overflow: hidden;
+      border: 2px solid var(--card-border);
+      transition: border-color .22s, box-shadow .22s;
+      will-change: transform, opacity;
+    }
+    .slot-current .stage-card {
+      border-color: var(--indigo);
+      box-shadow: 0 0 0 1px rgba(99,102,241,.12), 0 4px 24px rgba(99,102,241,.1);
+    }
+    .slot-target .stage-card {
+      border-color: rgba(240,191,60,.38);
+      box-shadow: 0 0 0 1px rgba(240,191,60,.08), 0 4px 24px rgba(240,191,60,.07);
+    }
+    .stage-card.win {
+      border-color: var(--green) !important;
+      box-shadow: 0 0 0 2px rgba(34,197,94,.22), 0 6px 32px rgba(34,197,94,.14) !important;
+    }
+
+    .stage-poster {
+      width: 100%; height: clamp(148px, 27vw, 230px);
+      object-fit: cover; object-position: center top; display: block;
+    }
+    .stage-poster-ph {
+      width: 100%; height: clamp(148px, 27vw, 230px);
+      background: var(--card-border); display: block;
+    }
+    .stage-poster.hidden { visibility: hidden; }
+
+    .stage-info { padding: .6rem .75rem .72rem; }
+    .stage-title { font-size: .86rem; font-weight: 800; line-height: 1.25; margin-bottom: .26rem; }
+    .stage-sub { display: flex; align-items: center; gap: .4rem; font-size: .68rem; }
+    .stage-year { color: var(--muted); }
+    .stage-rating { color: var(--accent); font-weight: 800; }
+    .stage-card.win .stage-rating { color: var(--green); }
+
+    /* ── Card meta ── */
+    .step-meta { margin-top:.22rem; display:flex; flex-direction:column; gap:.1rem; }
+    .meta-row { display:flex; align-items:baseline; gap:.3rem; }
+    .meta-label { font-size:.53rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); flex-shrink:0; min-width:2.2em; opacity:.6; }
+    .meta-val { font-size:.65rem; color:#9090b8; line-height:1.5; word-break:break-word; }
+    .meta-val.meta-dir { font-style:italic; color:#b0b0d0; }
+    .meta-highlight { color:var(--accent); font-weight:700; background:rgba(240,191,60,.12); border-radius:3px; padding:0 .18rem; }
+
+    /* ── Bridge ── */
+    .stage-bridge {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding-top: 1.35rem; gap: .3rem;
+    }
+    .bridge-steps { font-size: .6rem; font-weight: 800; color: var(--muted); letter-spacing: .05em; }
+    .bridge-arrow { font-size: 1.6rem; color: var(--card-border); line-height: 1; transition: color .25s; }
+    .bridge-arrow.lit { color: var(--accent); }
+    .bridge-conn {
+      font-size: .6rem; font-weight: 700; color: var(--accent); text-align: center;
+      max-width: 56px; line-height: 1.35; word-break: break-word;
+      opacity: 0; transition: opacity .2s;
+    }
+    .bridge-conn.show { opacity: 1; }
+
+    /* ── Path trail ── */
+    .path-trail {
+      display: flex; align-items: center; gap: .22rem;
+      overflow-x: auto; scrollbar-width: none; padding: .1rem 0 .7rem;
+      min-height: 42px;
+    }
+    .path-trail::-webkit-scrollbar { display: none; }
+    .trail-poster {
+      width: 24px; height: 34px; object-fit: cover; border-radius: 3px;
+      background: var(--card-border); border: 1.5px solid var(--card-border);
+      flex-shrink: 0; display: block;
+    }
+    .trail-poster.is-current { border-color: var(--indigo); }
+    .trail-poster.hidden { visibility: hidden; }
+    .trail-ph { width:24px; height:34px; border-radius:3px; background:var(--card-border); flex-shrink:0; border:1.5px solid var(--card-border); }
+    .trail-ph.is-current { border-color: var(--indigo); }
+    .trail-sep { font-size: .65rem; color: var(--card-border); flex-shrink: 0; }
+    .trail-conn {
+      font-size: .54rem; font-weight: 700; color: var(--muted); background: var(--card-bg);
+      border: 1px solid var(--card-border); border-radius: 8px; padding: .08rem .3rem;
+      flex-shrink: 0; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Strike bar ── */
+    .strike-bar { display:flex; align-items:center; gap:.55rem; margin-bottom:.65rem; }
+    .strike-label { font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+    .strike-pips { display:flex; gap:.32rem; }
+    .strike-pip { width:9px; height:9px; border-radius:50%; border:1.5px solid var(--muted); opacity:.35; transition:background .18s, border-color .18s, opacity .18s; }
+    .strike-pip.hit { background:var(--red); border-color:var(--red); opacity:1; }
+
+
+    /* ── Via label in results ── */
+    .r-via { font-size:.62rem; color:var(--muted); font-style:italic; margin-left:.3rem; }
+
+    /* ── Search area ── */
+    .search-area { margin-bottom: .8rem; }
+    .search-label { font-size: .74rem; color: var(--muted); margin-bottom: .38rem; }
+    .search-label b { color: var(--text); }
+    .search-input {
+      width: 100%; background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 10px; padding: .68rem 1rem; font-size: .93rem;
+      color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s; font-family: inherit;
+    }
+    .search-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+    .search-input::placeholder { color: var(--muted); }
+    .search-input:disabled { opacity: .4; cursor: not-allowed; }
+    .results { border: 1px solid var(--card-border); border-radius: 10px; overflow: hidden; max-height: 260px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--card-border) transparent; margin-top: .38rem; }
+    .results.off { display: none; }
+    .r-item { padding: .55rem 1rem; cursor: pointer; border-bottom: 1px solid var(--card-border); transition: background .1s; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+    .r-item:last-child { border-bottom: none; }
+    .r-item:hover { background: var(--card-hover); }
+    .r-title { font-size: .86rem; font-weight: 600; }
+    .r-meta  { font-size: .72rem; color: var(--muted); }
+    .r-easy-info { font-size: .67rem; color: var(--muted); margin-top: .18rem; line-height: 1.4; opacity: .85; }
+    .r-easy-lbl  { opacity: .55; margin-right: .25rem; text-transform: uppercase; font-size: .58rem; letter-spacing: .04em; }
+    .r-item.r-disabled { opacity: .38; cursor: default; pointer-events: none; }
+
+    /* ── Planning ── */
+    .btn-plan { background:transparent; border:1px solid rgba(99,102,241,.35); border-radius:8px; padding:.4rem .95rem; font-size:.8rem; color:var(--indigo); cursor:pointer; transition:border-color .12s,color .12s,background .12s; font-family:inherit; }
+    .btn-plan:hover { background:rgba(99,102,241,.08); border-color:var(--indigo); }
+    .btn-plan.plan-on { background:rgba(99,102,241,.14); border-color:var(--indigo); }
+    .btn-plan-execute { background:var(--indigo); color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; transition:opacity .12s; font-family:inherit; }
+    .btn-plan-execute:hover:not(:disabled) { opacity:.85; }
+    .btn-plan-execute:disabled { opacity:.28; cursor:not-allowed; }
+    .btn-plan-clear { background:transparent; border:1px solid rgba(99,102,241,.22); border-radius:8px; padding:.4rem .72rem; font-size:.8rem; color:var(--muted); cursor:pointer; transition:border-color .12s,color .12s; font-family:inherit; }
+    .btn-plan-clear:hover { border-color:var(--red); color:var(--red); }
+    .plan-trail { border:1px solid rgba(99,102,241,.18); border-radius:12px; background:rgba(99,102,241,.03); overflow:hidden; margin-bottom:.65rem; display:none; max-height:480px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(99,102,241,.18) transparent; }
+    .plan-trail.on { display:block; }
+    .pt-hd { display:flex; align-items:center; padding:.38rem .9rem; background:rgba(99,102,241,.06); border-bottom:1px solid rgba(99,102,241,.1); position:sticky; top:0; z-index:1; }
+    .pt-lbl { font-size:.57rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; color:var(--indigo); }
+    .pt-body { padding:.5rem .9rem .7rem; display:flex; flex-direction:column; }
+    .pt-film { background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; padding:.5rem .75rem; margin:.35rem 0; }
+    .pt-film-hd { display:flex; align-items:baseline; gap:.28rem; margin-bottom:.14rem; flex-wrap:wrap; }
+    .pt-film-title { font-size:.86rem; font-weight:800; }
+    .pt-film-year { font-size:.64rem; color:var(--muted); }
+    .pt-step-num { font-size:.56rem; font-weight:800; color:var(--indigo); opacity:.38; }
+    .pt-start-lbl { font-size:.53rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); opacity:.5; }
+    .pt-film-meta { display:flex; flex-direction:column; gap:.05rem; padding-left:.04rem; }
+    .pt-film-row { font-size:.66rem; color:var(--muted); line-height:1.7; display:flex; align-items:baseline; gap:.1rem; flex-wrap:wrap; }
+    .pt-film-lbl { font-size:.53rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; opacity:.44; flex-shrink:0; min-width:2em; }
+    .pt-sep { color:var(--muted); font-size:.7rem; margin:0 .1rem; }
+    .pt-conn { display:flex; align-items:center; gap:.5rem; padding:.18rem 0; }
+    .pt-conn-line { width:1.5px; min-height:18px; flex-shrink:0; border-radius:1px; margin-left:2px; }
+    .pt-conn-pill { font-size:.7rem; font-weight:800; border-radius:20px; padding:.15rem .55rem; flex-shrink:0; }
+    .pt-conn-type { font-size:.54rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .pt-rm { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.65rem; padding:.1rem .22rem; font-family:inherit; transition:color .1s; flex-shrink:0; line-height:1; margin-left:auto; }
+    .pt-rm:hover { color:var(--red); }
+    .pt-drag { color:var(--muted); cursor:grab; font-size:.7rem; padding:.1rem .18rem; opacity:.35; flex-shrink:0; line-height:1; user-select:none; }
+    .pt-drag:hover { opacity:.7; }
+    .pt-film[draggable="true"] { cursor:default; }
+    .pt-film.pt-dragging { opacity:.35; }
+    .pt-film.pt-drag-over { border-color:var(--indigo); box-shadow:0 0 0 1px rgba(99,102,241,.3); }
+    /* In plan mode the search box glows indigo */
+    .search-input.planning { border-color:rgba(99,102,241,.4); box-shadow:0 0 0 3px rgba(99,102,241,.08); }
+
+    /* ── Feedback ── */
+    .feedback { min-height: 1.2em; font-size: .82rem; margin-bottom: .6rem; }
+    .feedback.err  { color: var(--red); }
+    .feedback.ok   { color: var(--green); }
+    .feedback.info { color: var(--muted); }
+
+    /* ── Bottom row ── */
+    .bottom-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.btn-end  { background: transparent; border: 1px solid var(--card-border); border-radius: 8px; padding: .4rem .95rem; font-size: .8rem; color: var(--muted); cursor: pointer; transition: border-color .12s, color .12s; font-family: inherit; margin-left: auto; }
+    .btn-end:hover  { border-color: var(--red); color: var(--red); }
+
+    /* ── Finish banner ── */
+    .finish-banner { display: none; background: rgba(34,197,94,.07); border: 1px solid rgba(34,197,94,.22); border-radius: 14px; padding: 1.1rem 1.25rem; text-align: center; margin-top: 1rem; margin-bottom: 1.25rem; }
+    .finish-banner.bad { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.2); }
+    .finish-banner.show { display: block; }
+    .finish-title { font-size: 1.15rem; font-weight: 800; margin-bottom: .25rem; }
+    .finish-title.ok  { color: var(--green); }
+    .finish-title.bad { color: var(--red); }
+    .finish-detail { font-size: .83rem; color: var(--muted); }
+    .btn-new { display: inline-block; background: var(--accent); color: #000; border: none; border-radius: 8px; padding: .65rem 1.8rem; font-size: .9rem; font-weight: 700; cursor: pointer; letter-spacing: .3px; transition: background .12s, transform .1s; font-family: inherit; margin-top: .85rem; }
+    .btn-new:hover { background: #f8d060; transform: translateY(-1px); }
+
+    /* ── Best path button ── */
+    .btn-best-path { display:none; margin-top:.75rem; background:rgba(240,191,60,.08); border:1px solid rgba(240,191,60,.28); border-radius:8px; padding:.46rem 1.1rem; font-size:.8rem; font-weight:700; color:var(--accent); cursor:pointer; transition:background .12s,border-color .12s; font-family:inherit; }
+    .btn-best-path:hover { background:rgba(240,191,60,.16); border-color:rgba(240,191,60,.5); }
+
+    /* ── Best path display ── */
+    .best-path-wrap { display:none; margin-top:1rem; margin-bottom:1.5rem; border:1px solid rgba(240,191,60,.2); border-radius:14px; overflow:hidden; box-shadow:0 0 0 1px rgba(240,191,60,.04),0 4px 24px rgba(240,191,60,.05); }
+    .bp-header { display:flex; align-items:center; gap:.6rem; padding:.75rem 1rem; background:rgba(240,191,60,.06); border-bottom:1px solid rgba(240,191,60,.12); }
+    .bp-trophy { font-size:.9rem; color:var(--accent); }
+    .bp-title  { font-size:.66rem; font-weight:800; letter-spacing:.13em; color:var(--accent); text-transform:uppercase; flex:1; }
+    .bp-badge  { background:rgba(240,191,60,.14); border:1px solid rgba(240,191,60,.3); border-radius:20px; padding:.18rem .6rem; font-size:.68rem; font-weight:800; color:var(--accent); }
+    .bp-body   { padding:.8rem 1rem; }
+    .bp-step-row { display:flex; align-items:center; gap:.55rem; margin-bottom:.35rem; }
+    .bp-num { width:20px; height:20px; border-radius:50%; background:rgba(240,191,60,.1); border:1px solid rgba(240,191,60,.28); font-size:.58rem; font-weight:900; color:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .bp-card { flex:1; display:flex; align-items:center; gap:.75rem; background:var(--card-bg); border:1px solid rgba(240,191,60,.1); border-radius:10px; padding:.6rem .85rem; }
+    .bp-card.bp-last { border-color:rgba(240,191,60,.38); background:rgba(240,191,60,.05); }
+    .step-poster { width:48px; height:72px; object-fit:cover; border-radius:4px; flex-shrink:0; background:var(--card-border); }
+    .step-poster.hidden { visibility:hidden; }
+    .step-poster-ph { width:48px; height:72px; border-radius:4px; background:var(--card-border); flex-shrink:0; }
+    .step-title  { font-size:.88rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .step-year   { font-size:.72rem; color:var(--muted); }
+    .step-rating { font-size:.9rem; font-weight:800; color:var(--accent); flex-shrink:0; }
+    .step-body   { flex:1; min-width:0; }
+    @keyframes bp-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+    .bp-step-row { animation:bp-in .25s ease both; }
+
+    /* ── Card swap animations ── */
+    @keyframes card-out { to   { opacity:0; transform:translateX(-22px) scale(.965); } }
+    @keyframes card-in  { from { opacity:0; transform:translateX( 22px) scale(.965); } }
+    .card-exiting { animation: card-out .17s ease forwards; pointer-events: none; }
+    .card-entering { animation: card-in .22s ease both; }
+
+    /* ── Win glow on target ── */
+    @keyframes win-glow {
+      0%,100% { box-shadow: 0 0 0 2px rgba(34,197,94,.2),  0 4px 28px rgba(34,197,94,.1); }
+      50%      { box-shadow: 0 0 0 3px rgba(34,197,94,.38), 0 6px 44px rgba(34,197,94,.22); }
+    }
+    .slot-target .stage-card.win { animation: win-glow 1.6s ease infinite; }
+  </style>
+</head>
+<body>
+
+<!-- ── Cine² Navigation ── -->
+<style>
+  #c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+  #c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+  #c2-btn.c2-hide { opacity:0; pointer-events:none; }
+  #c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+  #c2-bd.on { opacity:1; pointer-events:all; }
+  #c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+  #c2-nav.on { transform:translateX(0); }
+  .c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+  .c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+  .c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+  .c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+  .c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+  .c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+  .c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+  .c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+  .c2-link:hover, .c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+  .c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+  .c2-link:hover .c2-pip, .c2-link.c2-on .c2-pip { opacity:1; }
+  .c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+  .c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+  .c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+  .c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+  .c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+</style>
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close navigation">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open);
+  x.addEventListener('click',close);
+  bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+<!-- ── End Navigation ── -->
+
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Failed to load collection</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:300px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in the same folder.</p>
+</div>
+
+<!-- Game -->
+<div id="game-screen">
+
+  <div class="g-header">
+    <span class="brand-sm">Letterboxd <em>Ladder</em></span>
+    <div class="g-actions">
+      <span class="pill">Steps <b id="steps-num">0</b></span>
+      <span class="pill">Best <b id="best-num">--</b></span>
+      <button class="btn-ghost" id="btn-new-game">New Game</button>
+    </div>
+  </div>
+
+  <!-- Side-by-side stage -->
+  <div class="dual-stage">
+    <div class="stage-slot slot-current">
+      <div class="stage-label">Now At</div>
+      <div class="stage-card" id="card-current"></div>
+    </div>
+
+    <div class="stage-bridge">
+      <div class="bridge-steps" id="bridge-steps">0 steps</div>
+      <div class="bridge-arrow" id="bridge-arrow">&#8594;</div>
+      <div class="bridge-conn" id="bridge-conn"></div>
+    </div>
+
+    <div class="stage-slot slot-target">
+      <div class="stage-label">Target</div>
+      <div class="stage-card" id="card-target"></div>
+    </div>
+  </div>
+
+  <!-- Path trail (history thumbnails) -->
+  <div class="path-trail" id="path-trail"></div>
+
+  <!-- Finish banner -->
+  <div class="finish-banner" id="finish-banner">
+    <p class="finish-title" id="finish-title"></p>
+    <p class="finish-detail" id="finish-detail"></p>
+    <br>
+    <button class="btn-best-path" id="btn-best-path">Show Best Path</button>
+    <br>
+    <button class="btn-new" id="btn-play-again">Play Again</button>
+  </div>
+
+  <!-- Best path -->
+  <div class="best-path-wrap" id="best-path-wrap">
+    <div class="bp-header">
+      <span class="bp-trophy">&#9733;</span>
+      <span class="bp-title">Optimal Route</span>
+      <span class="bp-badge" id="best-path-steps"></span>
+    </div>
+    <div id="best-path-chain"></div>
+  </div>
+
+  <div class="strike-bar" id="strike-bar">
+    <span class="strike-label">Strikes</span>
+    <div class="strike-pips">
+      <div class="strike-pip" id="s1"></div>
+      <div class="strike-pip" id="s2"></div>
+      <div class="strike-pip" id="s3"></div>
+    </div>
+  </div>
+
+  <div class="search-area" id="search-area">
+    <p class="search-label" id="search-label"></p>
+    <input class="search-input" id="search-input" type="text"
+           placeholder="Search for a connecting film..." autocomplete="off">
+    <div class="results off" id="results"></div>
+  </div>
+
+  <p class="feedback" id="feedback"></p>
+
+  <!-- Plan trail: compact steps shown while planning mode is active -->
+  <div class="plan-trail" id="plan-trail"></div>
+
+  <div class="bottom-row">
+    <button class="btn-plan" id="btn-plan">Plan Route</button>
+    <button class="btn-plan-execute" id="plan-execute" style="display:none" disabled>Execute Plan</button>
+    <button class="btn-plan-clear" id="plan-clear" style="display:none">Clear</button>
+    <button class="btn-ghost" id="btn-restart" style="color:var(--muted);">Restart</button>
+    <button class="btn-ghost" id="btn-restart-confirm" style="display:none;border-color:rgba(240,191,60,.4);color:var(--accent);">Sure?</button>
+    <button class="btn-ghost" id="btn-restart-cancel" style="display:none;">✕</button>
+    <button class="btn-end" id="btn-end">Give Up</button>
+  </div>
+
+</div>
+
+<script>
+  let allMovies   = [];
+  let chain       = [];   // [{ movie, connection }]
+  let targetMovie = null;
+  let bestSteps   = 0;
+  let strikes     = 0;
+  let gameOver    = false;
+
+  // ── Persistence ──────────────────────────────────────────────
+
+  const saveKey = () => 'c2-ladder';
+
+  function saveState() {
+    try {
+      const win = gameOver && chain.length > 0 && targetMovie &&
+                  chain[chain.length - 1].movie.title === targetMovie.title;
+      localStorage.setItem(saveKey(), JSON.stringify({
+        chainTitles: chain.map(s => ({ title: s.movie.title, connection: s.connection })),
+        targetTitle: targetMovie?.title,
+        bestSteps,
+        strikes,
+        gameOver,
+        gameOverWin: win
+      }));
+    } catch(e) {}
+  }
+
+  function loadState(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      if (!s.chainTitles?.length || !s.targetTitle) return false;
+
+      const movieMap = new Map(allMovies.map(m => [m.title, m]));
+      const restoredChain = s.chainTitles.map(step => {
+        const movie = movieMap.get(step.title);
+        return movie ? { movie, connection: step.connection } : null;
+      }).filter(Boolean);
+      const restoredTarget = movieMap.get(s.targetTitle);
+
+      if (restoredChain.length !== s.chainTitles.length || !restoredTarget) return false;
+
+      chain       = restoredChain;
+      targetMovie = restoredTarget;
+      bestSteps   = s.bestSteps || 0;
+      strikes     = s.strikes   || 0;
+      gameOver    = s.gameOver  || false;
+      return { win: s.gameOverWin || false };
+    } catch(e) { return false; }
+  }
+
+  // ── CSV ──────────────────────────────────────────────────────
+
+  function parseCSV(src) {
+    const rows = [];
+    let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') {
+        if (q && src[i + 1] === '"') { field += '"'; i++; } else q = !q;
+      } else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) {
+        if (c === '\r' && src[i + 1] === '\n') i++;
+        row.push(field); field = ''; rows.push(row); row = [];
+      } else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0];
+    const col = n => h.indexOf(n);
+    const [ti, yi, di, ri, gi, c1, c2, c3, c4, c5, pi, wi] =
+      ['title','year','director','average_rating','genres',
+       'cast_1','cast_2','cast_3','cast_4','cast_5','poster_url','watched_by'].map(col);
+    if (ti < 0 || ri < 0) return [];
+    return rows.slice(1).flatMap(r => {
+      const title  = r[ti]?.trim();
+      const rating = parseFloat(r[ri]);
+      if (!title || isNaN(rating)) return [];
+      const genres = r[gi]?.split(',').map(s => s.trim()).filter(Boolean) || [];
+      const casts  = [c1,c2,c3,c4,c5]
+        .filter(i => i >= 0).map(i => r[i]?.trim()).filter(Boolean)
+        .map(s => s.replace(/\s*\(.*\)\s*$/, '').trim()).filter(Boolean);
+      return [{ title, year: r[yi]?.trim()||'', director: r[di]?.trim()||'', rating, genres, casts, poster: pi>=0 ? r[pi]?.trim():'', watchedBy: wi>=0 ? r[wi]?.trim()||'' : '' }];
+    });
+  }
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter') || 'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy || '').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
+    });
+  }
+
+  // ── Connection logic ─────────────────────────────────────────
+
+  function getConnection(a, b) {
+    if (a.director && b.director && a.director === b.director)
+      return { type: 'Director', value: a.director };
+    const setA = new Set(a.casts);
+    for (const actor of b.casts)
+      if (actor && setA.has(actor)) return { type: 'Actor', value: actor };
+    return null;
+  }
+
+  function getCastConnection(a, b) {
+    const setA = new Set(a.casts);
+    for (const actor of b.casts)
+      if (actor && setA.has(actor)) return { type: 'Actor', value: actor };
+    return null;
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────
+
+  function shuffle(a) {
+    a = [...a];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function currentMovie() { return chain[chain.length - 1]?.movie; }
+
+  function validNextMovies() {
+    const cur = currentMovie();
+    if (!cur) return [];
+    return allMovies.filter(m =>
+      !chain.some(s => s.movie.title === m.title) && getConnection(cur, m)
+    );
+  }
+
+  // ── Meta helper ──────────────────────────────────────────────
+
+  function buildMeta(movie, conn) {
+    const row = (label, val, extra = '') =>
+      `<div class="meta-row"><span class="meta-label">${label}</span><span class="meta-val${extra}">${val}</span></div>`;
+    const hl = v => `<span class="meta-highlight">${esc(v)}</span>`;
+
+    const rows = [];
+    if (movie.director) {
+      const val = conn?.type === 'Director' ? hl(movie.director) : esc(movie.director);
+      rows.push(row('Dir', val, ' meta-dir'));
+    }
+    if (movie.casts.length) {
+      const list = conn?.type === 'Actor' ? movie.casts : movie.casts.slice(0, 4);
+      const castHtml = list.map(c =>
+        conn?.type === 'Actor' && conn.value === c ? hl(c) : esc(c)
+      ).join(' · ');
+      rows.push(row('Cast', castHtml));
+    }
+    return rows.length ? `<div class="step-meta">${rows.join('')}</div>` : '';
+  }
+
+  // ── Stage card renderers ─────────────────────────────────────
+
+  function stageCardHTML(movie, conn) {
+    const poster = movie.poster
+      ? `<img class="stage-poster" src="${esc(movie.poster)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">`
+      : `<div class="stage-poster-ph"></div>`;
+    const meta = buildMeta(movie, conn);
+    return `${poster}
+      <div class="stage-info">
+        <div class="stage-title">${esc(movie.title)}</div>
+        <div class="stage-sub">
+          <span class="stage-year">${esc(movie.year)}</span>
+          <span class="stage-rating">&#9733; ${movie.rating.toFixed(2)}</span>
+        </div>
+        ${meta}
+      </div>`;
+  }
+
+  function renderCurrentCard(conn) {
+    const movie = currentMovie();
+    const el = document.getElementById('card-current');
+    if (!movie || !el) return;
+    el.innerHTML = stageCardHTML(movie, conn || null);
+    el.classList.remove('win');
+  }
+
+  function renderTargetCard(reached) {
+    const el = document.getElementById('card-target');
+    if (!targetMovie || !el) return;
+    el.innerHTML = stageCardHTML(targetMovie, null);
+    el.classList.toggle('win', !!reached);
+  }
+
+  // ── Bridge ───────────────────────────────────────────────────
+
+  let bridgeTimer = null;
+
+  function flashBridge(conn) {
+    const arrow  = document.getElementById('bridge-arrow');
+    const connEl = document.getElementById('bridge-conn');
+    arrow.classList.add('lit');
+    connEl.innerHTML = `<span style="font-size:.5rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);">${esc(conn.type)}</span><br>${esc(conn.value)}`;
+    connEl.classList.add('show');
+    clearTimeout(bridgeTimer);
+    bridgeTimer = setTimeout(() => {
+      arrow.classList.remove('lit');
+      connEl.classList.remove('show');
+    }, 2200);
+  }
+
+  function updateBridgeSteps() {
+    const steps = chain.length - 1;
+    document.getElementById('bridge-steps').textContent = `${steps} step${steps !== 1 ? 's' : ''}`;
+  }
+
+  // ── Path trail ───────────────────────────────────────────────
+
+  function renderTrail() {
+    const el = document.getElementById('path-trail');
+    if (chain.length <= 1) { el.innerHTML = ''; return; }
+    let html = '';
+    chain.forEach((step, i) => {
+      if (i > 0) {
+        const conn = step.connection;
+        html += `<span class="trail-sep">›</span>`;
+        if (conn) {
+          const label = conn.type === 'Director' ? 'Dir' : conn.value.split(' ')[0];
+          html += `<span class="trail-conn">${esc(label)}</span><span class="trail-sep">›</span>`;
+        }
+      }
+      const isCur = i === chain.length - 1;
+      if (step.movie.poster) {
+        html += `<img class="trail-poster${isCur ? ' is-current' : ''}" src="${esc(step.movie.poster)}" title="${esc(step.movie.title)}" loading="lazy" onerror="this.classList.add('hidden')">`;
+      } else {
+        html += `<div class="trail-ph${isCur ? ' is-current' : ''}" title="${esc(step.movie.title)}"></div>`;
+      }
+    });
+    el.innerHTML = html;
+    el.scrollLeft = el.scrollWidth;
+  }
+
+  // ── Stats ────────────────────────────────────────────────────
+
+  function updateStats() {
+    document.getElementById('steps-num').textContent = Math.max(0, chain.length - 1);
+    document.getElementById('best-num').textContent  = bestSteps === 0 ? '--' : bestSteps;
+    updateBridgeSteps();
+  }
+
+  function renderSearchLabel() {
+    const cur = currentMovie();
+    if (!cur || !targetMovie) return;
+    if (planMode) {
+      const head = planHead();
+      document.getElementById('search-label').innerHTML =
+        `<span style="color:var(--indigo);font-weight:700;">Planning</span> from <b>${esc(head.title)}</b> — reach <b style="color:var(--accent)">${esc(targetMovie.title)}</b>`;
+    } else {
+      const n = validNextMovies().length;
+      const countHtml = n > 0
+        ? `<span style="color:var(--muted)"> \xb7 ${n} move${n !== 1 ? 's' : ''} available</span>`
+        : `<span style="color:var(--red)"> \xb7 no valid moves</span>`;
+      document.getElementById('search-label').innerHTML =
+        `From <b>${esc(cur.title)}</b> — reach <b style="color:var(--accent)">${esc(targetMovie.title)}</b>${countHtml}`;
+    }
+  }
+
+  function setFeedback(msg, type) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.className   = 'feedback ' + (type || '');
+  }
+
+  function renderStrikes() {
+    for (let i = 1; i <= 3; i++)
+      document.getElementById(`s${i}`).classList.toggle('hit', i <= strikes);
+  }
+
+  function resetUIForActiveGame() {
+    document.getElementById('finish-banner').classList.remove('show');
+    document.getElementById('best-path-wrap').style.display  = 'none';
+    document.getElementById('btn-best-path').style.display   = 'none';
+    document.getElementById('search-area').style.display     = '';
+    document.getElementById('results').classList.add('off');
+    document.getElementById('search-input').value = '';
+    document.getElementById('btn-end').style.display     = '';
+    document.getElementById('btn-restart').style.display = '';
+    document.getElementById('bridge-conn').classList.remove('show');
+    document.getElementById('bridge-arrow').classList.remove('lit');
+    document.getElementById('card-current').classList.remove('win');
+    document.getElementById('card-target').classList.remove('win');
+    document.getElementById('strike-bar').style.display  = '';
+    document.getElementById('btn-plan').style.display    = '';
+    disablePlanMode();
+    setFeedback('', '');
+  }
+
+  function renderAll() {
+    renderCurrentCard();
+    renderTargetCard(false);
+    renderTrail();
+    updateStats();
+    renderSearchLabel();
+    renderStrikes();
+  }
+
+  // ── Search ───────────────────────────────────────────────────
+
+  let currentResults = [];
+
+  // Returns [{movie, via}] — via=null for title matches, via=name for cast/dir matches
+  function queryMovies(q) {
+    if (!q.trim()) return [];
+    const lq      = q.toLowerCase();
+    const cur     = planMode ? planHead() : currentMovie();
+    const inChain = t => chain.some(s => s.movie.title === t) ||
+                         (planMode && planChain.some(s => s.movie.title === t));
+    const results = [];
+    const seen    = new Set();
+
+    for (const m of allMovies) {
+      if (inChain(m.title)) continue;
+      const titleMatch = m.title.toLowerCase().includes(lq);
+      let via = null;
+      if (!titleMatch) {
+        if (m.director && m.director.toLowerCase().includes(lq)) {
+          via = m.director;
+        } else {
+          via = m.casts.find(c => c.toLowerCase().includes(lq)) || null;
+        }
+      }
+      if ((titleMatch || via) && !seen.has(m.title)) {
+        seen.add(m.title);
+        results.push({ movie: m, via: titleMatch ? null : via });
+      }
+    }
+
+    results.sort((a, b) => {
+      const at = targetMovie && a.movie.title === targetMovie.title;
+      const bt = targetMovie && b.movie.title === targetMovie.title;
+      if (at && !bt) return -1;
+      if (!at && bt) return 1;
+      if (cur) {
+        const ac = !!getConnection(cur, a.movie);
+        const bc = !!getConnection(cur, b.movie);
+        if (ac && !bc) return -1;
+        if (!ac && bc) return 1;
+      }
+      if (!a.via && b.via) return -1;
+      if (a.via && !b.via) return 1;
+      return a.movie.title.localeCompare(b.movie.title);
+    });
+    return results;
+  }
+
+  function renderResults(results) {
+    const el = document.getElementById('results');
+    currentResults = results;
+    if (!results.length) { el.classList.add('off'); return; }
+    el.classList.remove('off');
+    const cur = planMode ? planHead() : currentMovie();
+    el.innerHTML = results.map((r, i) => {
+      const m        = r.movie;
+      const isTarget = targetMovie && m.title === targetMovie.title;
+      const isWinnable = !isTarget || (cur && !!getCastConnection(cur, m));
+      const viaHtml  = r.via ? ` <span class="r-via">via ${esc(r.via)}</span>` : '';
+      let easyInfoHtml = '';
+      const parts = [];
+      if (m.director) parts.push(`<span class="r-easy-lbl">Dir</span>${esc(m.director)}`);
+      if (m.casts.length) parts.push(`<span class="r-easy-lbl">Cast</span>${esc(m.casts.slice(0, 4).join(' · '))}`);
+      if (parts.length) easyInfoHtml = `<div class="r-easy-info">${parts.join('<br>')}</div>`;
+      const targetBadge = isTarget
+        ? ((isWinnable || planMode)
+            ? `<span style="font-size:.65rem;font-weight:800;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;">Target</span>`
+            : `<span style="font-size:.65rem;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;">Target \xb7 no link</span>`)
+        : '';
+      return `<div class="r-item${(!planMode && isTarget && !isWinnable) ? ' r-disabled' : ''}" data-i="${i}" style="${isTarget ? 'background:rgba(240,191,60,.08);' : ''}">
+        <div>
+          <div class="r-title" style="${isTarget ? 'color:var(--accent);' : ''}">${esc(m.title)}</div>
+          <div class="r-meta">${esc(m.year)}${viaHtml}</div>
+          ${easyInfoHtml}
+        </div>
+        ${targetBadge}
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.r-item').forEach(item => {
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        if (planMode) addToPlan(currentResults[+item.dataset.i].movie);
+        else attemptAdd(currentResults[+item.dataset.i].movie);
+      });
+    });
+  }
+
+  let debounce;
+  document.getElementById('search-input').addEventListener('input', e => {
+    setFeedback('', '');
+    clearTimeout(debounce);
+    debounce = setTimeout(() => renderResults(queryMovies(e.target.value)), 80);
+  });
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && currentResults.length) {
+      if (planMode) {
+        addToPlan(currentResults[0].movie);
+      } else {
+        const top = currentResults[0];
+        const isTarget = targetMovie && top.movie.title === targetMovie.title;
+        const cur = currentMovie();
+        const winnable = !isTarget || (cur && !!getCastConnection(cur, top.movie));
+        if (winnable) attemptAdd(top.movie);
+      }
+    }
+  });
+
+  // ── Add to chain (with card swap animation) ──────────────────
+
+  function attemptAdd(movie) {
+    if (gameOver) return;
+    const cur = currentMovie();
+
+    if (chain.some(s => s.movie.title === movie.title)) {
+      setFeedback(`"${movie.title}" is already in your chain.`, 'err'); return;
+    }
+    const conn = getConnection(cur, movie);
+    if (!conn) {
+      strikes++;
+      renderStrikes();
+      saveState();
+      if (strikes >= 3) {
+        document.getElementById('search-input').value = '';
+        document.getElementById('results').classList.add('off');
+        currentResults = [];
+        endGame(false, 'strikes');
+      } else {
+        const left = 3 - strikes;
+        setFeedback(`No connection — Strike ${strikes}/3. ${left} chance${left !== 1 ? 's' : ''} left.`, 'err');
+      }
+      return;
+    }
+
+    // Final step must be via a shared actor, not director
+    if (targetMovie && movie.title === targetMovie.title && conn.type === 'Director') {
+      setFeedback(`Must reach "${esc(targetMovie.title)}" via a shared actor — director connections can't finish the game.`, 'err');
+      return;
+    }
+
+    chain.push({ movie, connection: conn });
+    const steps = chain.length - 1;
+    if (steps > bestSteps) bestSteps = steps;
+    saveState();
+
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+    setFeedback('', '');
+
+    const isWin   = targetMovie && movie.title === targetMovie.title;
+    const cardEl  = document.getElementById('card-current');
+
+    // Slide old card out
+    cardEl.classList.add('card-exiting');
+
+    setTimeout(() => {
+      cardEl.classList.remove('card-exiting');
+
+      if (isWin) {
+        endGame(true);
+      } else {
+        renderCurrentCard();
+        cardEl.classList.add('card-entering');
+        flashBridge(conn);
+        renderTrail();
+        updateStats();
+        renderSearchLabel();
+        setTimeout(() => cardEl.classList.remove('card-entering'), 240);
+      }
+    }, 170);
+  }
+
+  // ── Best path (BFS) ──────────────────────────────────────────
+
+  function findBestPath(start, target) {
+    if (start.title === target.title) return [{ movie: start, connection: null }];
+    const queue   = [[{ movie: start, connection: null }]];
+    const visited = new Set([start.title]);
+    while (queue.length) {
+      const path = queue.shift();
+      const cur  = path[path.length - 1].movie;
+      for (const next of allMovies) {
+        if (visited.has(next.title)) continue;
+        const conn = getConnection(cur, next);
+        if (!conn) continue;
+        const newPath = [...path, { movie: next, connection: conn }];
+        if (next.title === target.title) return newPath;
+        visited.add(next.title);
+        queue.push(newPath);
+      }
+    }
+    return null;
+  }
+
+  function renderBestPath(path) {
+    const wrap    = document.getElementById('best-path-wrap');
+    const chainEl = document.getElementById('best-path-chain');
+    const stepsEl = document.getElementById('best-path-steps');
+    if (!path) {
+      stepsEl.textContent = '';
+      chainEl.innerHTML   = `<div class="bp-body"><p style="color:var(--muted);font-size:.85rem;">No path found between these films under the current rules.</p></div>`;
+      wrap.style.display  = 'block';
+      return;
+    }
+    const steps = path.length - 1;
+    stepsEl.textContent = `${steps} step${steps !== 1 ? 's' : ''}`;
+
+    const filmMeta = (movie, hlMap) => {
+      const span = name => {
+        const c = hlMap.get(name);
+        return c
+          ? `<span style="background:${c.bg};color:${c.fg};font-weight:800;border-radius:3px;padding:0 .17rem;">${esc(name)}</span>`
+          : `<span>${esc(name)}</span>`;
+      };
+      const parts = [];
+      if (movie.director)
+        parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Dir</span>${span(movie.director)}</div>`);
+      if (movie.casts.length) {
+        const castHtml = movie.casts.slice(0, 5).map(span).join('<span class="pt-sep"> · </span>');
+        parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Cast</span>${castHtml}</div>`);
+      }
+      return parts.join('');
+    };
+
+    let html = '<div class="bp-body">';
+    path.forEach((step, i) => {
+      const isLast  = i === path.length - 1;
+      const delay   = `animation-delay:${(i * 0.07).toFixed(2)}s`;
+
+      // Incoming link (what got us here) gets color index i-1; outgoing gets color index i
+      const hlMap   = new Map();
+      if (i > 0 && step.connection)
+        hlMap.set(step.connection.value, PLAN_PALETTE[(i - 1) % PLAN_PALETTE.length]);
+      const outConn = path[i + 1]?.connection;
+      if (outConn)
+        hlMap.set(outConn.value, PLAN_PALETTE[i % PLAN_PALETTE.length]);
+
+      const poster = step.movie.poster
+        ? `<img class="step-poster" src="${esc(step.movie.poster)}" alt="" loading="lazy" onerror="this.classList.add('hidden')">`
+        : `<div class="step-poster-ph"></div>`;
+
+      html += `<div class="bp-step-row" style="${delay}">
+        <div class="bp-num">${i + 1}</div>
+        <div class="bp-card${isLast ? ' bp-last' : ''}">
+          ${poster}
+          <div class="step-body">
+            <p class="step-title">${esc(step.movie.title)}</p>
+            ${step.movie.year ? `<p class="step-year">${esc(step.movie.year)}</p>` : ''}
+            <div class="pt-film-meta">${filmMeta(step.movie, hlMap)}</div>
+          </div>
+          <span class="step-rating">&#9733; ${step.movie.rating.toFixed(2)}</span>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    chainEl.innerHTML  = html;
+    wrap.style.display = 'block';
+  }
+
+  document.getElementById('btn-best-path').addEventListener('click', () => {
+    document.getElementById('btn-best-path').style.display = 'none';
+    renderBestPath(findBestPath(chain[0].movie, targetMovie));
+  });
+
+  // ── End game ─────────────────────────────────────────────────
+
+  function endGame(win, reason) {
+    gameOver = true;
+    const steps = chain.length - 1;
+
+    const banner   = document.getElementById('finish-banner');
+    const titleEl  = document.getElementById('finish-title');
+    const detailEl = document.getElementById('finish-detail');
+
+    if (win) {
+      if (bestSteps === 0 || steps < bestSteps) bestSteps = steps;
+      banner.className  = 'finish-banner show';
+      titleEl.className = 'finish-title ok';
+      titleEl.textContent  = 'Connected!';
+      detailEl.textContent = `Reached "${targetMovie.title}" in ${steps} step${steps !== 1 ? 's' : ''}`;
+      renderCurrentCard();
+      document.getElementById('card-current').classList.add('win');
+      renderTargetCard(true);
+    } else {
+      banner.className  = 'finish-banner bad show';
+      titleEl.className = 'finish-title bad';
+      if (reason === 'strikes') {
+        titleEl.textContent  = '3 Strikes — You\'re Out!';
+        detailEl.textContent = steps > 0
+          ? `Made it ${steps} step${steps !== 1 ? 's' : ''} before using all 3 strikes`
+          : 'Used all 3 strikes before making a single move';
+      } else {
+        titleEl.textContent  = 'Run ended';
+        detailEl.textContent = `${steps} step${steps !== 1 ? 's' : ''} from "${chain[0].movie.title}"`;
+      }
+      renderTargetCard(false);
+    }
+
+    renderTrail();
+    updateStats();
+
+    document.getElementById('strike-bar').style.display  = 'none';
+    document.getElementById('search-area').style.display = 'none';
+    document.getElementById('feedback').className        = 'feedback';
+    document.getElementById('btn-end').style.display     = 'none';
+    document.getElementById('btn-restart').style.display = 'none';
+    document.getElementById('btn-restart-confirm').style.display = 'none';
+    document.getElementById('btn-restart-cancel').style.display  = 'none';
+    document.getElementById('btn-plan').style.display    = 'none';
+    disablePlanMode();
+
+    if (!win && !reason) {
+      // Give Up — auto-show best path immediately
+      document.getElementById('btn-best-path').style.display = 'none';
+      renderBestPath(findBestPath(chain[0].movie, targetMovie));
+    } else {
+      document.getElementById('btn-best-path').style.display = 'block';
+    }
+    saveState();
+  }
+
+  // ── Restart (same movies, clear guesses) ─────────────────────
+
+  function doRestart() {
+    const startMovie = chain[0]?.movie;
+    if (!startMovie || !targetMovie) return;
+    gameOver = false;
+    strikes  = 0;
+    chain    = [{ movie: startMovie, connection: null }];
+    currentResults = [];
+    disablePlanMode();
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    document.getElementById('path-trail').innerHTML = '';
+    resetUIForActiveGame();
+    renderStrikes();
+    renderAll();
+    setFeedback('', '');
+    saveState();
+    // hide confirm buttons, show restart
+    document.getElementById('btn-restart-confirm').style.display = 'none';
+    document.getElementById('btn-restart-cancel').style.display  = 'none';
+    document.getElementById('btn-restart').style.display         = '';
+  }
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    if (gameOver) return;
+    // show confirmation
+    document.getElementById('btn-restart').style.display         = 'none';
+    document.getElementById('btn-restart-confirm').style.display = '';
+    document.getElementById('btn-restart-cancel').style.display  = '';
+  });
+
+  document.getElementById('btn-restart-confirm').addEventListener('click', () => {
+    doRestart();
+  });
+
+  document.getElementById('btn-restart-cancel').addEventListener('click', () => {
+    document.getElementById('btn-restart-confirm').style.display = 'none';
+    document.getElementById('btn-restart-cancel').style.display  = 'none';
+    document.getElementById('btn-restart').style.display         = '';
+  });
+
+  // ── Give up ──────────────────────────────────────────────────
+
+  document.getElementById('btn-end').addEventListener('click', () => {
+    if (!gameOver) endGame(false);
+  });
+
+  // ── New game ─────────────────────────────────────────────────
+
+  function startGame() {
+    gameOver = false;
+    strikes  = 0;
+    chain    = [];
+    currentResults = [];
+    clearTimeout(bridgeTimer);
+    document.getElementById('path-trail').innerHTML = '';
+    resetUIForActiveGame();
+    renderStrikes();
+
+    const pool = shuffle([...allMovies]);
+    targetMovie = pool[0];
+    let startMovie = pool[1];
+    for (const candidate of pool) {
+      if (candidate.title === targetMovie.title) continue;
+      const hasMove = allMovies.some(m => m.title !== candidate.title && getCastConnection(candidate, m));
+      if (hasMove) { startMovie = candidate; break; }
+    }
+
+    chain = [{ movie: startMovie, connection: null }];
+    saveState();
+    renderAll();
+  }
+
+  document.getElementById('btn-new-game').addEventListener('click', startGame);
+  document.getElementById('btn-play-again').addEventListener('click', startGame);
+
+  // ── Planning ─────────────────────────────────────────────────
+
+  let planMode  = false;
+  let planChain = [];  // [{movie, connection}]
+  let dragSrc   = null;
+
+  const PLAN_PALETTE = [
+    { fg:'#f59e0b', bg:'rgba(245,158,11,.15)', border:'rgba(245,158,11,.28)' },
+    { fg:'#818cf8', bg:'rgba(99,102,241,.15)',  border:'rgba(99,102,241,.28)' },
+    { fg:'#4ade80', bg:'rgba(34,197,94,.15)',   border:'rgba(34,197,94,.28)'  },
+    { fg:'#f472b6', bg:'rgba(236,72,153,.15)',  border:'rgba(236,72,153,.28)' },
+    { fg:'#2dd4bf', bg:'rgba(20,184,166,.15)',  border:'rgba(20,184,166,.28)' },
+    { fg:'#fb923c', bg:'rgba(249,115,22,.15)',  border:'rgba(249,115,22,.28)' },
+  ];
+
+  function planFilmMeta(movie, hlMap) {
+    const span = name => {
+      const c = hlMap.get(name);
+      return c
+        ? `<span style="background:${c.bg};color:${c.fg};font-weight:800;border-radius:3px;padding:0 .17rem;">${esc(name)}</span>`
+        : `<span>${esc(name)}</span>`;
+    };
+    const parts = [];
+    if (movie.director)
+      parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Dir</span>${span(movie.director)}</div>`);
+    if (movie.casts.length) {
+      const castHtml = movie.casts.slice(0, 5).map(span).join('<span class="pt-sep"> · </span>');
+      parts.push(`<div class="pt-film-row"><span class="pt-film-lbl">Cast</span>${castHtml}</div>`);
+    }
+    return parts.join('');
+  }
+
+  function planHead() {
+    return planChain.length > 0 ? planChain[planChain.length - 1].movie : currentMovie();
+  }
+
+  function recomputePlanConnections() {
+    let prev = currentMovie();
+    planChain.forEach(step => {
+      step.connection = getConnection(prev, step.movie);
+      prev = step.movie;
+    });
+  }
+
+  function enablePlanMode() {
+    planMode  = true;
+    planChain = [];
+    document.getElementById('btn-plan').classList.add('plan-on');
+    document.getElementById('search-input').classList.add('planning');
+    document.getElementById('search-input').placeholder = 'Search to add to your plan…';
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+    renderPlanTrail();
+    renderSearchLabel();
+    document.getElementById('search-input').focus();
+  }
+
+  function disablePlanMode() {
+    planMode  = false;
+    planChain = [];
+    document.getElementById('btn-plan').classList.remove('plan-on');
+    document.getElementById('search-input').classList.remove('planning');
+    document.getElementById('search-input').placeholder = 'Search for a connecting film…';
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+    document.getElementById('plan-trail').classList.remove('on');
+    document.getElementById('plan-execute').style.display = 'none';
+    document.getElementById('plan-clear').style.display   = 'none';
+    renderSearchLabel();
+  }
+
+  function renderPlanTrail() {
+    const el      = document.getElementById('plan-trail');
+    const execBtn = document.getElementById('plan-execute');
+    const clrBtn  = document.getElementById('plan-clear');
+
+    if (!planMode || planChain.length === 0) {
+      el.classList.remove('on');
+      execBtn.style.display = 'none';
+      clrBtn.style.display  = 'none';
+      return;
+    }
+
+    el.classList.add('on');
+    execBtn.style.display = '';
+    clrBtn.style.display  = '';
+    execBtn.disabled      = planChain.some(s => !s.connection);
+
+    const startMovie = currentMovie();
+    let html = `<div class="pt-hd"><span class="pt-lbl">&#9998; Route Plan</span></div><div class="pt-body">`;
+
+    // Starting film — outgoing connection is planChain[0]
+    if (startMovie) {
+      const outConn = planChain[0]?.connection;
+      const hlMap = new Map();
+      if (outConn) hlMap.set(outConn.value, PLAN_PALETTE[0]);
+      html += `<div class="pt-film">
+        <div class="pt-film-hd">
+          <span class="pt-start-lbl">From</span>
+          <span class="pt-film-title">${esc(startMovie.title)}</span>
+          <span class="pt-film-year">${esc(startMovie.year)}</span>
+        </div>
+        <div class="pt-film-meta">${planFilmMeta(startMovie, hlMap)}</div>
+      </div>`;
+    }
+
+    planChain.forEach((step, i) => {
+      const conn  = step.connection;
+      const color = PLAN_PALETTE[i % PLAN_PALETTE.length];
+
+      // Film — incoming: color i, outgoing: color i+1
+      const hlMap = new Map();
+      if (conn) hlMap.set(conn.value, PLAN_PALETTE[i % PLAN_PALETTE.length]);
+      const nextConn = planChain[i + 1]?.connection;
+      if (nextConn && nextConn.value !== conn?.value)
+        hlMap.set(nextConn.value, PLAN_PALETTE[(i + 1) % PLAN_PALETTE.length]);
+
+      const cardStyle = !conn ? 'border-color:rgba(239,68,68,.35);' : '';
+      html += `<div class="pt-film" draggable="true" data-i="${i}" style="${cardStyle}">
+        <div class="pt-film-hd">
+          <span class="pt-drag" title="Drag to reorder">&#8942;&#8942;</span>
+          <span class="pt-step-num">${i + 1}</span>
+          <span class="pt-film-title">${esc(step.movie.title)}</span>
+          <span class="pt-film-year">${esc(step.movie.year)}</span>
+          ${!conn ? `<span style="font-size:.58rem;color:var(--red);margin-left:auto;margin-right:.3rem;">no link</span>` : ''}
+          <button class="pt-rm" data-i="${i}">&#10005;</button>
+        </div>
+        <div class="pt-film-meta">${planFilmMeta(step.movie, hlMap)}</div>
+      </div>`;
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+
+    el.querySelectorAll('.pt-rm').forEach(btn => {
+      btn.addEventListener('click', () => {
+        planChain.splice(+btn.dataset.i, 1);
+        recomputePlanConnections();
+        renderPlanTrail();
+        renderSearchLabel();
+        const q = document.getElementById('search-input').value;
+        if (q.trim()) renderResults(queryMovies(q));
+      });
+    });
+
+    el.querySelectorAll('.pt-film[draggable]').forEach(card => {
+      card.addEventListener('dragstart', e => {
+        dragSrc = +card.dataset.i;
+        card.classList.add('pt-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('pt-dragging');
+        el.querySelectorAll('.pt-film').forEach(c => c.classList.remove('pt-drag-over'));
+      });
+      card.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.querySelectorAll('.pt-film').forEach(c => c.classList.remove('pt-drag-over'));
+        card.classList.add('pt-drag-over');
+      });
+      card.addEventListener('drop', e => {
+        e.preventDefault();
+        const dst = +card.dataset.i;
+        if (dragSrc === null || dragSrc === dst) return;
+        const [moved] = planChain.splice(dragSrc, 1);
+        planChain.splice(dst, 0, moved);
+        recomputePlanConnections();
+        renderPlanTrail();
+        renderSearchLabel();
+        const q = document.getElementById('search-input').value;
+        if (q.trim()) renderResults(queryMovies(q));
+        dragSrc = null;
+      });
+    });
+  }
+
+  function addToPlan(movie) {
+    const conn = getConnection(planHead(), movie);
+    planChain.push({ movie, connection: conn });
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+    setFeedback('', '');
+    renderPlanTrail();
+    renderSearchLabel();
+    document.getElementById('search-input').focus();
+  }
+
+  function executePlan() {
+    if (planChain.length === 0 || gameOver) return;
+    let cur = currentMovie();
+    for (const step of planChain) {
+      const conn = getConnection(cur, step.movie);
+      if (!conn) {
+        setFeedback(`No connection: "${step.movie.title}" doesn't link from here.`, 'err');
+        return;
+      }
+      if (step.movie.title === targetMovie?.title && conn.type === 'Director') {
+        setFeedback(`Can't reach the target via director — must use a shared actor.`, 'err');
+        return;
+      }
+      cur = step.movie;
+    }
+    const moves = planChain.map(s => s.movie);
+    disablePlanMode();
+    let idx = 0;
+    function next() {
+      if (idx >= moves.length || gameOver) return;
+      attemptAdd(moves[idx++]);
+      if (idx < moves.length) setTimeout(next, 230);
+    }
+    next();
+  }
+
+  document.getElementById('btn-plan').addEventListener('click', () => {
+    if (gameOver) return;
+    planMode ? disablePlanMode() : enablePlanMode();
+  });
+  document.getElementById('plan-execute').addEventListener('click', executePlan);
+  document.getElementById('plan-clear').addEventListener('click', () => {
+    planChain = [];
+    renderPlanTrail();
+    renderSearchLabel();
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').classList.add('off');
+    currentResults = [];
+  });
+
+  // ── Load data ────────────────────────────────────────────────
+
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error(); return r.text(); })
+    .then(text => {
+      allMovies = applyDatasetFilter(loadCSV(text));
+      if (allMovies.length < 5) throw new Error();
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display   = 'block';
+
+      const restored = loadState(saveKey());
+      if (restored) {
+        if (gameOver) {
+          endGame(restored.win);
+        } else {
+          resetUIForActiveGame();
+          renderAll();
+        }
+      } else {
+        startGame();
+      }
+    })
+    .catch(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('error-screen').style.display  = 'flex';
+    });
+</script>
+</body>
+</html>
