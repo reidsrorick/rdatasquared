@@ -198,6 +198,11 @@
     .pt-conn-type { font-size:.54rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
     .pt-rm { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.65rem; padding:.1rem .22rem; font-family:inherit; transition:color .1s; flex-shrink:0; line-height:1; margin-left:auto; }
     .pt-rm:hover { color:var(--red); }
+    .pt-drag { color:var(--muted); cursor:grab; font-size:.7rem; padding:.1rem .18rem; opacity:.35; flex-shrink:0; line-height:1; user-select:none; }
+    .pt-drag:hover { opacity:.7; }
+    .pt-film[draggable="true"] { cursor:default; }
+    .pt-film.pt-dragging { opacity:.35; }
+    .pt-film.pt-drag-over { border-color:var(--indigo); box-shadow:0 0 0 1px rgba(99,102,241,.3); }
     /* In plan mode the search box glows indigo */
     .search-input.planning { border-color:rgba(99,102,241,.4); box-shadow:0 0 0 3px rgba(99,102,241,.08); }
 
@@ -303,6 +308,7 @@
     <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
     <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
     <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
     <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
     <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
     <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
@@ -1148,6 +1154,7 @@
 
   let planMode  = false;
   let planChain = [];  // [{movie, connection}]
+  let dragSrc   = null;
 
   const PLAN_PALETTE = [
     { fg:'#f59e0b', bg:'rgba(245,158,11,.15)', border:'rgba(245,158,11,.28)' },
@@ -1177,6 +1184,14 @@
 
   function planHead() {
     return planChain.length > 0 ? planChain[planChain.length - 1].movie : currentMovie();
+  }
+
+  function recomputePlanConnections() {
+    let prev = currentMovie();
+    planChain.forEach(step => {
+      step.connection = getConnection(prev, step.movie);
+      prev = step.movie;
+    });
   }
 
   function enablePlanMode() {
@@ -1255,8 +1270,9 @@
         hlMap.set(nextConn.value, PLAN_PALETTE[(i + 1) % PLAN_PALETTE.length]);
 
       const cardStyle = !conn ? 'border-color:rgba(239,68,68,.35);' : '';
-      html += `<div class="pt-film" style="${cardStyle}">
+      html += `<div class="pt-film" draggable="true" data-i="${i}" style="${cardStyle}">
         <div class="pt-film-hd">
+          <span class="pt-drag" title="Drag to reorder">&#8942;&#8942;</span>
           <span class="pt-step-num">${i + 1}</span>
           <span class="pt-film-title">${esc(step.movie.title)}</span>
           <span class="pt-film-year">${esc(step.movie.year)}</span>
@@ -1272,11 +1288,43 @@
 
     el.querySelectorAll('.pt-rm').forEach(btn => {
       btn.addEventListener('click', () => {
-        planChain = planChain.slice(0, +btn.dataset.i);
+        planChain.splice(+btn.dataset.i, 1);
+        recomputePlanConnections();
         renderPlanTrail();
         renderSearchLabel();
         const q = document.getElementById('search-input').value;
         if (q.trim()) renderResults(queryMovies(q));
+      });
+    });
+
+    el.querySelectorAll('.pt-film[draggable]').forEach(card => {
+      card.addEventListener('dragstart', e => {
+        dragSrc = +card.dataset.i;
+        card.classList.add('pt-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('pt-dragging');
+        el.querySelectorAll('.pt-film').forEach(c => c.classList.remove('pt-drag-over'));
+      });
+      card.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.querySelectorAll('.pt-film').forEach(c => c.classList.remove('pt-drag-over'));
+        card.classList.add('pt-drag-over');
+      });
+      card.addEventListener('drop', e => {
+        e.preventDefault();
+        const dst = +card.dataset.i;
+        if (dragSrc === null || dragSrc === dst) return;
+        const [moved] = planChain.splice(dragSrc, 1);
+        planChain.splice(dst, 0, moved);
+        recomputePlanConnections();
+        renderPlanTrail();
+        renderSearchLabel();
+        const q = document.getElementById('search-input').value;
+        if (q.trim()) renderResults(queryMovies(q));
+        dragSrc = null;
       });
     });
   }
