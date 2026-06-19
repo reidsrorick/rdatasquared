@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timesheet / PTO Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>if(localStorage.getItem('ts_sidebar_collapsed')==='1')document.documentElement.classList.add('sidebar-pre-collapse');</script>
+</head>
+<body>
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <svg class="sidebar-logo-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <div class="sidebar-title">
+                <strong>Timesheet /</strong>
+                <span>PTO Tracker</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a class="nav-item" data-view="dashboard" href="#">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-item" data-view="timesheets" href="#">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>Timesheets</span>
+            </a>
+            <a class="nav-item" data-view="utilization" href="#">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                    <line x1="2" y1="20" x2="22" y2="20"/>
+                </svg>
+                <span>Utilization</span>
+            </a>
+            <a class="nav-item" data-view="pto" href="#">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>PTO</span>
+            </a>
+            <a class="nav-item" data-view="settings" href="#">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span>Settings</span>
+            </a>
+        </nav>
+        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" title="Collapse sidebar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </button>
+    </aside>
+
+    <div class="main-wrapper">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="btn btn-icon mobile-menu-btn" id="mobile-menu-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <h1 class="header-title">
+                    <span id="header-view-name">Timesheet</span>
+                    <span class="header-subtitle"> / PTO Tracker</span>
+                </h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="btn-add-entry">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add Time Entry
+                </button>
+                <button class="btn btn-secondary" id="btn-export">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export Excel
+                </button>
+                <button class="btn btn-icon" id="btn-import" title="Import CSV">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </button>
+                <button class="btn btn-icon" id="btn-more" title="More options">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Pay Period Bar -->
+        <div class="pay-period-bar" id="pay-period-bar">
+            <div class="pay-period-nav">
+                <button class="btn btn-icon" id="btn-prev-week" title="Previous week">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
+                <span class="pay-period-label" id="pay-period-label">Loading...</span>
+                <button class="btn btn-icon" id="btn-next-week" title="Next week">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </button>
+                <button class="btn btn-ghost btn-sm" id="btn-today">Today</button>
+            </div>
+            <div class="header-user">
+                <div class="user-avatar" id="user-avatar">JD</div>
+                <span class="user-name" id="user-name">John Doe</span>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div class="view hidden" id="view-dashboard">
+                <!-- Row 1: KPI Cards (rendered by JS) -->
+                <div class="kpi-grid" id="dash-kpi-grid"></div>
+
+                <!-- Row 2: Stacked weekly chart (wider) + PTO balances -->
+                <div class="dash-main-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Hours by Week</h3>
+                            <div id="dash-weekly-legend" class="dash-legend"></div>
+                        </div>
+                        <div id="dash-weekly-chart" class="dash-chart-wrap"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>PTO Balances</h3>
+                            <a href="#" class="card-link" data-view="pto">Details →</a>
+                        </div>
+                        <div id="dashboard-pto" style="padding:8px 16px 12px"></div>
+                    </div>
+                </div>
+
+                <!-- Row 3: YTD line chart by project -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Hours by Project</h3>
+                        <div class="dash-ytd-controls">
+                            <div class="filter-tabs" id="ytd-mode-tabs">
+                                <button class="filter-tab active" data-mode="hours">Hours</button>
+                                <button class="filter-tab" data-mode="utilization">Utilization</button>
+                            </div>
+                            <div class="filter-tabs" id="ytd-grain-tabs">
+                                <button class="filter-tab" data-grain="day">Day</button>
+                                <button class="filter-tab" data-grain="week">Week</button>
+                                <button class="filter-tab" data-grain="biweek">Bi-Weekly</button>
+                                <button class="filter-tab active" data-grain="month">Month</button>
+                            </div>
+                            <div class="ytd-range-controls">
+                                <label class="ytd-range-label">From</label>
+                                <input type="date" id="ytd-date-from" class="input-sm ytd-date-input">
+                                <label class="ytd-range-label">To</label>
+                                <input type="date" id="ytd-date-to" class="input-sm ytd-date-input">
+                                <button class="btn btn-ghost btn-sm" id="ytd-range-reset">YTD</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="dash-ytd-legend" class="dash-legend" style="padding:0 16px 8px"></div>
+                    <div id="dash-ytd-chart" class="dash-ytd-wrap"></div>
+                </div>
+
+                <!-- Row 4: This week by project -->
+                <div class="card" style="margin-top:14px">
+                    <div class="card-header">
+                        <h3>This Week by Project</h3>
+                        <a href="#" class="card-link" data-view="timesheets">Open Timesheet →</a>
+                    </div>
+                    <div id="dash-project-breakdown"></div>
+                </div>
+            </div>
+
+            <!-- Timesheets View -->
+            <div class="view hidden" id="view-timesheets">
+                <div class="timesheet-layout">
+                    <div class="timesheet-main">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Weekly Timesheet</h3>
+                                <div class="card-header-right">
+                                    <div class="filter-tabs" id="filter-tabs">
+                                        <button class="filter-tab active" data-filter="all">All</button>
+                                        <button class="filter-tab" data-filter="billable">Billable</button>
+                                        <button class="filter-tab" data-filter="nonbillable">Non-Billable</button>
+                                    </div>
+                                    <div class="search-box">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                        </svg>
+                                        <input type="text" id="timesheet-search" placeholder="Search..." class="search-input">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-wrap">
+                                <table class="timesheet-table" id="timesheet-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-date sortable" data-col="date">Date <span class="sort-icon">↕</span></th>
+                                            <th class="col-project sortable" data-col="project">Project <span class="sort-icon">↕</span></th>
+                                            <th class="col-time">Start</th>
+                                            <th class="col-time">End</th>
+                                            <th class="col-break">Break</th>
+                                            <th class="col-hours sortable" data-col="hours">Hours <span class="sort-icon">↕</span></th>
+                                            <th class="col-billable">Billable</th>
+                                            <th class="col-notes">Notes</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="timesheet-tbody"></tbody>
+                                    <tfoot>
+                                        <tr class="totals-row">
+                                            <td colspan="4" class="totals-label">Weekly Total</td>
+                                            <td class="totals-break" id="footer-break">—</td>
+                                            <td class="totals-hours" id="footer-hours">0.0</td>
+                                            <td class="totals-billable" id="footer-billable"></td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="table-actions">
+                                <button class="btn btn-ghost" id="btn-add-row">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                    </svg>
+                                    Add Row
+                                </button>
+                                <button class="btn btn-ghost" id="btn-copy-week">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                    </svg>
+                                    Copy From Week…
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel -->
+                    <div class="timesheet-sidebar">
+                        <div class="card pto-panel">
+                            <div class="card-header">
+                                <h3 class="pto-panel-title">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                    PTO Tracker
+                                </h3>
+                                <button class="btn btn-icon" id="btn-edit-pto-panel" title="Edit balances">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="pto-panel-content"></div>
+                            <div class="pto-legend">
+                                <span class="legend-item"><span class="legend-dot dot-pto"></span>PTO</span>
+                                <span class="legend-item"><span class="legend-dot dot-sick"></span>Sick</span>
+                                <span class="legend-item"><span class="legend-dot dot-floating"></span>Floating</span>
+                            </div>
+                        </div>
+                        <div class="card mini-cal-card">
+                            <div class="mini-cal-header">
+                                <button class="btn btn-icon btn-sm" id="mini-cal-prev">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="15 18 9 12 15 6"/>
+                                    </svg>
+                                </button>
+                                <span class="mini-cal-title" id="mini-cal-title"></span>
+                                <button class="btn btn-icon btn-sm" id="mini-cal-next">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mini-cal-grid" id="mini-cal-grid"></div>
+                            <div class="cal-legend">
+                                <span class="legend-item"><span class="legend-dot dot-cal-pto"></span>PTO</span>
+                                <span class="legend-item"><span class="legend-dot dot-weekend"></span>Weekend</span>
+                                <span class="legend-item"><span class="legend-dot dot-submitted"></span>Submitted</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Utilization View -->
+            <div class="view hidden" id="view-utilization">
+                <div class="kpi-grid" id="util-kpi-grid"></div>
+                <div class="dashboard-grid">
+                    <div class="card" style="grid-column:1/-1">
+                        <div class="card-header">
+                            <h3>Weekly Utilization</h3>
+                            <span class="card-sub" id="util-chart-sub"></span>
+                        </div>
+                        <div id="util-weekly-chart" class="dash-chart-wrap"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>By Project</h3>
+                        <span class="card-sub" id="util-proj-sub"></span>
+                    </div>
+                    <div id="util-project-breakdown"></div>
+                </div>
+                <div class="card" style="margin-top:14px">
+                    <div class="card-header">
+                        <h3>By Month</h3>
+                    </div>
+                    <div id="util-monthly-breakdown"></div>
+                </div>
+            </div>
+
+            <!-- PTO View -->
+            <div class="view hidden" id="view-pto">
+                <div class="pto-balance-cards" id="pto-balance-cards"></div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>PTO History</h3>
+                        <span class="card-sub" id="pto-history-sub"></span>
+                    </div>
+                    <div id="pto-history-container"></div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div class="view hidden" id="view-settings">
+                <div class="settings-layout">
+                    <div class="card settings-card">
+                        <div class="card-header"><h3>Appearance</h3></div>
+                        <div class="settings-body">
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label">Theme</label>
+                                    <span class="setting-desc">Switch between light and dark mode</span>
+                                </div>
+                                <div class="theme-toggle-group" id="theme-toggle">
+                                    <button class="theme-btn active" data-theme-val="light">☀ Light</button>
+                                    <button class="theme-btn" data-theme-val="dark">☾ Dark</button>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label" for="setting-username">User Name</label>
+                                    <span class="setting-desc">Your display name</span>
+                                </div>
+                                <input type="text" id="setting-username" class="input-sm" placeholder="John Doe">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card settings-card">
+                        <div class="card-header"><h3>Work Configuration</h3></div>
+                        <div class="settings-body">
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label" for="setting-weekly-hours">Default Weekly Hours</label>
+                                    <span class="setting-desc">Standard work hours per week</span>
+                                </div>
+                                <input type="number" id="setting-weekly-hours" class="input-sm input-num" min="1" max="80">
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label" for="setting-overtime">Overtime Threshold (hrs)</label>
+                                    <span class="setting-desc">Hours before overtime kicks in</span>
+                                </div>
+                                <input type="number" id="setting-overtime" class="input-sm input-num" min="1" max="80">
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label" for="setting-util-target">Utilization Target (%)</label>
+                                    <span class="setting-desc">Target billable utilization rate</span>
+                                </div>
+                                <input type="number" id="setting-util-target" class="input-sm input-num" min="1" max="100">
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label" for="setting-time-format">Time Format</label>
+                                    <span class="setting-desc">How times are displayed</span>
+                                </div>
+                                <select id="setting-time-format" class="input-sm select-field">
+                                    <option value="12h">12-hour (AM/PM)</option>
+                                    <option value="24h">24-hour</option>
+                                </select>
+                            </div>
+                            <div class="setting-row setting-row-stacked">
+                                <div class="setting-info">
+                                    <label class="setting-label">Projects</label>
+                                    <span class="setting-desc">Available in the timesheet dropdown — click a name to edit, drag to reorder</span>
+                                </div>
+                                <div class="project-list-editor" id="project-list-editor"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card settings-card">
+                        <div class="card-header"><h3>PTO Allowances</h3></div>
+                        <div class="settings-body">
+                            <div class="setting-row setting-row-stacked">
+                                <div class="setting-info">
+                                    <label class="setting-label">PTO Types</label>
+                                    <span class="setting-desc">Your annual allotments — changes save immediately</span>
+                                </div>
+                                <div class="pto-allowances-editor" id="pto-allowances-editor"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card settings-card">
+                        <div class="card-header"><h3>Data Management</h3></div>
+                        <div class="settings-body">
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label">Export Data</label>
+                                    <span class="setting-desc">Download all data as CSV backup</span>
+                                </div>
+                                <button class="btn btn-secondary" id="settings-export">Export Excel</button>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label class="setting-label">Import Data</label>
+                                    <span class="setting-desc">Restore from a CSV backup file</span>
+                                </div>
+                                <button class="btn btn-secondary" id="settings-import">Import Excel</button>
+                            </div>
+                            <div class="setting-row setting-row-danger">
+                                <div class="setting-info">
+                                    <label class="setting-label">Reset All Data</label>
+                                    <span class="setting-desc">Permanently delete all data from this browser</span>
+                                </div>
+                                <button class="btn btn-danger" id="btn-reset-data">Reset Data</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-footer">
+                        <button class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay hidden" id="confirm-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="confirm-title">Confirm</h3>
+            <button class="btn btn-icon close-modal-btn" data-modal="confirm-modal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-message"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+            <button class="btn btn-danger" id="confirm-ok">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay hidden" id="import-modal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3>Import CSV Backup</h3>
+            <button class="btn btn-icon close-modal-btn" data-modal="import-modal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="drop-zone" id="drop-zone">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p class="drop-zone-text">Drop Excel file here or <label class="file-label" for="file-input">browse</label></p>
+                <p class="drop-zone-hint">Supported: .xlsx files exported from this app</p>
+                <input type="file" id="file-input" accept=".xlsx" class="hidden-file">
+            </div>
+            <div id="import-preview" class="import-preview hidden">
+                <div class="import-file-row">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span id="import-filename">file.csv</span>
+                    <button class="btn btn-icon btn-sm" id="import-clear-file">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <p id="import-summary" class="import-summary"></p>
+                <div class="warning-box">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>This will overwrite ALL existing data. This action cannot be undone.</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="import-cancel">Cancel</button>
+            <button class="btn btn-primary hidden" id="import-confirm">Import Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Copy Week Modal -->
+<div class="modal-overlay hidden" id="copy-week-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Copy From Week</h3>
+            <button class="btn btn-icon close-modal-btn" data-modal="copy-week-modal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="copy-week-list" class="copy-week-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Note Modal -->
+<div class="modal-overlay hidden" id="note-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="note-modal-title">Note</h3>
+            <button class="btn btn-icon close-modal-btn" data-modal="note-modal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <textarea id="note-textarea" class="input-field note-textarea" rows="6"
+                placeholder="Enter notes for this day…"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="note-clear-btn" style="margin-right:auto">Clear Note</button>
+            <button class="btn btn-secondary close-modal-btn" data-modal="note-modal">Cancel</button>
+            <button class="btn btn-primary" id="note-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Tooltip -->
+<div id="chart-tooltip" class="chart-tooltip hidden"></div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

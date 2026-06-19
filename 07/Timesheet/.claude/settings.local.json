@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\Reid \\(Work\\)\\\\Desktop\\\\Claude\\\\Timesheet\\\\\" | Select-Object Name, Length; Write-Host \"---\"; \\(Get-Content \"c:\\\\Users\\\\Reid \\(Work\\)\\\\Desktop\\\\Claude\\\\Timesheet\\\\index.html\"\\).Count; \\(Get-Content \"c:\\\\Users\\\\Reid \\(Work\\)\\\\Desktop\\\\Claude\\\\Timesheet\\\\styles.css\"\\).Count; \\(Get-Content \"c:\\\\Users\\\\Reid \\(Work\\)\\\\Desktop\\\\Claude\\\\Timesheet\\\\app.js\"\\).Count)",
+      "PowerShell(Start-Process \"c:\\\\Users\\\\Reid \\(Work\\)\\\\Desktop\\\\Claude\\\\Timesheet\\\\index.html\")",
+      "PowerShell(Start-Sleep -Seconds 3; Add-Type -AssemblyName System.Windows.Forms; $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bitmap = New-Object System.Drawing.Bitmap\\($screen.Width, $screen.Height\\); $graphics = [System.Drawing.Graphics]::FromImage\\($bitmap\\); $graphics.CopyFromScreen\\($screen.Location, [System.Drawing.Point]::Empty, $screen.Size\\); $bitmap.Save\\(\"$env:TEMP\\\\app_screenshot.png\"\\); Write-Host \"Screenshot saved to $env:TEMP\\\\app_screenshot.png\")",
+      "PowerShell(Start-Sleep -Seconds 3; Add-Type -AssemblyName System.Windows.Forms; $s = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp = New-Object System.Drawing.Bitmap\\($s.Width, $s.Height\\); $g = [System.Drawing.Graphics]::FromImage\\($bmp\\); $g.CopyFromScreen\\($s.Location, [System.Drawing.Point]::Empty, $s.Size\\); $bmp.Save\\(\"$env:TEMP\\\\ts2.png\"\\); \"done\")"
+    ]
+  }
+}
