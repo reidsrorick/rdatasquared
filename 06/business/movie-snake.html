@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Snake — Cine²</title>
+<style>
+:root {
+  --bg:#0c0c14; --card-bg:#14141f; --card-border:#23233a; --card-hover:#1b1b2c;
+  --text:#dcdcf0; --text-dim:#9090b8; --muted:#6868a0;
+  --accent:#f0bf3c; --green:#22c55e; --red:#ef4444; --indigo:#6366f1; --fuchsia:#d946ef;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── NAV ── */
+#c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+#c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+#c2-btn.c2-hide { opacity:0; pointer-events:none; }
+#c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+#c2-bd.on { opacity:1; pointer-events:all; }
+#c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+#c2-nav.on { transform:translateX(0); }
+.c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+.c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+.c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+.c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+.c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+.c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+.c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+.c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+.c2-link:hover,.c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+.c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+.c2-link:hover .c2-pip,.c2-link.c2-on .c2-pip { opacity:1; }
+.c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+.c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+.c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+.c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+.c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+
+/* ── GAME WRAP ── */
+.game-wrap { max-width:680px; margin:0 auto; padding:1.25rem 1rem 5rem; }
+.game-top { text-align:center; margin-bottom:1rem; padding-top:.5rem; }
+.game-title { font-size:1.55rem; font-weight:900; letter-spacing:.05em; }
+.game-title span { color:var(--fuchsia); }
+.game-sub { font-size:.78rem; color:var(--muted); margin-top:.28rem; }
+
+/* ── STATS ── */
+.stat-strip { display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin:1rem auto .2rem; }
+.stat { background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; padding:.5rem .9rem; text-align:center; min-width:80px; }
+.stat-v { font-size:1.3rem; font-weight:900; color:var(--accent); line-height:1; }
+.stat-l { font-size:.55rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:.3rem; }
+.lives { display:inline-flex; gap:.15rem; }
+
+/* ── CURRENT HEAD ── */
+.head-card { background:linear-gradient(180deg, rgba(217,70,239,.08), var(--card-bg)); border:1px solid rgba(217,70,239,.35); border-radius:14px; padding:1rem 1.2rem; margin:1.1rem auto 0; max-width:560px; text-align:center; }
+.head-lbl { font-size:.56rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--fuchsia); margin-bottom:.35rem; }
+.head-title { font-size:1.25rem; font-weight:800; line-height:1.2; }
+.head-meta { font-size:.78rem; color:var(--text-dim); margin-top:.35rem; }
+.head-conn { font-size:.72rem; color:var(--muted); margin-top:.55rem; line-height:1.5; }
+.head-conn b { color:var(--text-dim); font-weight:700; }
+
+/* ── GUESS BAR ── */
+.guess-bar { display:flex; gap:.5rem; max-width:560px; margin:1rem auto 0; position:relative; }
+.guess-wrap { flex:1; position:relative; }
+#guess-input { width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; padding:.62rem 1rem; font-size:.9rem; color:var(--text); outline:none; font-family:inherit; transition:border-color .15s; }
+#guess-input:focus { border-color:rgba(217,70,239,.5); }
+#guess-input:disabled { opacity:.5; }
+#guess-input.shake { animation:shake .3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+.guess-dd { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; z-index:60; max-height:240px; overflow-y:auto; box-shadow:0 8px 28px rgba(0,0,0,.55); }
+.guess-dd.off { display:none; }
+.guess-opt { padding:.44rem .9rem; font-size:.84rem; cursor:pointer; transition:background .1s; display:flex; justify-content:space-between; gap:.6rem; }
+.guess-opt:hover,.guess-opt.hi { background:rgba(255,255,255,.07); }
+.guess-opt .go-n { color:var(--muted); font-size:.75rem; }
+#guess-submit { background:var(--fuchsia); border:none; border-radius:9px; padding:.62rem 1.35rem; font-size:.9rem; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; white-space:nowrap; transition:opacity .15s; }
+#guess-submit:hover { opacity:.85; }
+#guess-submit:disabled { opacity:.35; cursor:default; }
+.feedback { text-align:center; font-size:.8rem; min-height:1.2em; margin-top:.6rem; }
+.feedback.bad { color:var(--red); } .feedback.good { color:var(--green); }
+
+/* ── SNAKE TRAIL ── */
+.trail-lbl { font-size:.62rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin:1.5rem 0 .6rem; }
+.trail { display:flex; flex-direction:column; gap:0; }
+.link { display:flex; align-items:center; gap:.7rem; padding:.5rem .2rem; }
+.link .dot { width:10px; height:10px; border-radius:50%; background:var(--fuchsia); flex-shrink:0; opacity:.5; }
+.link.is-head .dot { opacity:1; box-shadow:0 0 0 4px rgba(217,70,239,.18); }
+.link .lt { font-weight:700; font-size:.92rem; }
+.link .ly { color:var(--muted); font-size:.78rem; font-weight:600; }
+.connector { display:flex; align-items:center; gap:.7rem; padding:.05rem .2rem; }
+.connector .bar { width:10px; display:flex; justify-content:center; flex-shrink:0; }
+.connector .bar::before { content:''; width:2px; height:18px; background:rgba(217,70,239,.3); }
+.connector .ctxt { font-size:.7rem; color:var(--muted); }
+.connector .ctxt b { color:var(--fuchsia); font-weight:700; }
+
+/* ── END PANEL ── */
+#end-panel { display:none; text-align:center; padding:1.6rem 1rem 0; margin-top:1.2rem; border-top:1px solid var(--card-border); }
+#end-panel.on { display:block; }
+.end-label { font-size:.65rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin:1.2rem 0 .45rem; }
+.end-score { font-size:3.4rem; font-weight:900; color:var(--fuchsia); line-height:1; }
+.end-of { font-size:.85rem; color:var(--muted); margin-top:.2rem; }
+.end-best { font-size:.8rem; color:var(--muted); margin-top:.4rem; } .end-best strong { color:var(--text); }
+.end-actions { display:flex; gap:.75rem; justify-content:center; margin-top:1.3rem; flex-wrap:wrap; }
+.btn-again { background:var(--fuchsia); border:none; border-radius:10px; padding:.68rem 2rem; font-size:.92rem; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; transition:opacity .15s; }
+.btn-again:hover { opacity:.85; }
+.btn-give { background:none; border:1px solid var(--card-border); border-radius:10px; padding:.68rem 1.5rem; font-size:.92rem; font-weight:700; color:var(--text-dim); cursor:pointer; font-family:inherit; transition:border-color .15s,color .15s; }
+.btn-give:hover { border-color:var(--red); color:var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="cast-grid.html" style="--cp:#06b6d4"><span class="c2-pip"></span><span class="c2-n">08</span><span>Cast Grid</span></a>
+    <a class="c2-link" href="actorle.html" style="--cp:#ec4899"><span class="c2-pip"></span><span class="c2-n">09</span><span>Actorle</span></a>
+    <a class="c2-link" href="moviedle.html" style="--cp:#3b82f6"><span class="c2-pip"></span><span class="c2-n">10</span><span>Moviedle</span></a>
+    <a class="c2-link" href="movie-redacle.html" style="--cp:#84cc16"><span class="c2-pip"></span><span class="c2-n">11</span><span>Movie Redacle</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <a class="c2-link" href="movie-snake.html" style="--cp:#d946ef"><span class="c2-pip"></span><span class="c2-n">13</span><span>Movie Snake</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open); x.addEventListener('click',close); bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+
+<!-- ── Loading / Error ── -->
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Not enough connected films</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:320px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in this folder and your dataset has films sharing cast, directors, or genres.</p>
+</div>
+
+<!-- ── Game ── -->
+<div id="game-screen" style="display:none;">
+<div class="game-wrap">
+
+  <div class="game-top">
+    <div class="game-title">Movie <span>Snake</span></div>
+    <p class="game-sub">Chain films together — each must share an actor, director, or genre with the last. No repeats.</p>
+  </div>
+
+  <div class="stat-strip">
+    <div class="stat"><div class="stat-v" id="stat-len">1</div><div class="stat-l">Chain</div></div>
+    <div class="stat"><div class="stat-v lives" id="stat-lives"></div><div class="stat-l">Lives</div></div>
+    <div class="stat"><div class="stat-v" id="stat-best">0</div><div class="stat-l">Best</div></div>
+  </div>
+
+  <div class="head-card">
+    <div class="head-lbl">Current Film — connect to this</div>
+    <div class="head-title" id="head-title">—</div>
+    <div class="head-meta" id="head-meta"></div>
+    <div class="head-conn" id="head-conn"></div>
+  </div>
+
+  <div class="guess-bar">
+    <div class="guess-wrap">
+      <input id="guess-input" type="text" placeholder="Name a connected film…" autocomplete="off" spellcheck="false">
+      <div id="guess-dd" class="guess-dd off"></div>
+    </div>
+    <button id="guess-submit">Link</button>
+  </div>
+  <div class="feedback" id="feedback"></div>
+
+  <div class="trail-lbl">Your Snake</div>
+  <div class="trail" id="trail"></div>
+
+  <div id="end-panel">
+    <div class="end-label" id="end-label">Game Over</div>
+    <div class="end-score" id="end-score">0</div>
+    <div class="end-of">films chained</div>
+    <div class="end-best" id="end-best"></div>
+    <div class="end-actions">
+      <button class="btn-again" id="btn-again">New Snake</button>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:1.2rem;">
+    <button class="btn-give" id="btn-give">End Run</button>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  function parseCSV(src) {
+    const rows = []; let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') { if (q && src[i+1] === '"') { field += '"'; i++; } else q = !q; }
+      else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) { if (c === '\r' && src[i+1] === '\n') i++; row.push(field); field = ''; rows.push(row); row = []; }
+      else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0]; const col = n => h.indexOf(n);
+    const ti = col('title'), yi = col('year'), di = col('director'), gi = col('genres'), wi = col('watched_by');
+    const castCols = [];
+    for (let k = 1; k <= 10; k++) { const c = col('cast_'+k); if (c >= 0) castCols.push(c); }
+    if (ti < 0) return [];
+    return rows.slice(1).flatMap(r => {
+      const title = r[ti]?.trim();
+      if (!title) return [];
+      const casts = castCols.map(i=>r[i]?.trim()).filter(Boolean)
+        .map(s=>s.replace(/\s*\(.*\)\s*$/,'').trim()).filter(Boolean);
+      return [{
+        title, year: r[yi]?.trim()||'',
+        director: di>=0 ? r[di]?.trim()||'' : '',
+        genres: (r[gi]||'').split(',').map(s=>s.trim()).filter(Boolean),
+        casts,
+        watchedBy: wi>=0 ? (r[wi]?.trim()||'') : '',
+      }];
+    });
+  }
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter')||'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy||'').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
+    });
+  }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function normTitle(s) { return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/^(the |a |an )/,'').replace(/\s+/g,' ').trim(); }
+  function normName(s) { return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim(); }
+
+  // connections between two movies → list of {type,label}
+  function connections(a, b) {
+    const out = [];
+    const ad = normName(a.director), bd = normName(b.director);
+    if (ad && ad === bd) out.push({ type:'Director', label:a.director });
+    const aCast = new Set(a.casts.map(normName));
+    for (const c of b.casts) { if (aCast.has(normName(c))) out.push({ type:'Actor', label:c }); }
+    const aG = new Set(a.genres.map(g=>g.toLowerCase()));
+    for (const g of b.genres) { if (aG.has(g.toLowerCase())) out.push({ type:'Genre', label:g }); }
+    // de-dup by label
+    const seen = new Set(); return out.filter(o => { const k=o.type+'|'+normName(o.label); if(seen.has(k))return false; seen.add(k); return true; });
+  }
+
+  const MAX_LIVES = 3;
+  let allMovies = [], byTitle = {};
+  let snake = [];        // [{movie, conns:[...]}] conns connect to previous
+  let used = new Set();  // normTitle of used movies
+  let lives = MAX_LIVES, over = false;
+
+  function head() { return snake[snake.length-1].movie; }
+
+  function hasContinuation(m) {
+    // at least one unused movie connects to m
+    for (const o of allMovies) {
+      if (used.has(normTitle(o.title)) || normTitle(o.title)===normTitle(m.title)) continue;
+      if (connections(m, o).length) return true;
+    }
+    return false;
+  }
+
+  function pickStart() {
+    // start movie must have multiple continuations (per brief)
+    const shuffled = allMovies.slice();
+    for (let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
+    for (const m of shuffled) {
+      let cnt = 0;
+      for (const o of allMovies) { if (o!==m && connections(m,o).length) { cnt++; if (cnt>=2) break; } }
+      if (cnt>=2) return m;
+    }
+    return shuffled[0]||null;
+  }
+
+  function startRound() {
+    const start = pickStart();
+    if (!start) { showError(); return; }
+    snake = [{ movie: start, conns: [] }];
+    used = new Set([normTitle(start.title)]);
+    lives = MAX_LIVES; over = false;
+    document.getElementById('end-panel').classList.remove('on');
+    const inp = document.getElementById('guess-input');
+    inp.disabled = false; inp.value = '';
+    document.getElementById('guess-submit').disabled = false;
+    document.getElementById('btn-give').style.display = '';
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('stat-best').textContent = parseInt(localStorage.getItem('c2-snake-best')||'0');
+    render();
+    inp.focus();
+  }
+
+  function render() {
+    const h = head();
+    document.getElementById('head-title').textContent = h.title;
+    document.getElementById('head-meta').textContent = [h.year, h.director, h.genres.slice(0,3).join(' · ')].filter(Boolean).join('  ·  ');
+    document.getElementById('head-conn').innerHTML = `Lead cast: <b>${esc(h.casts.slice(0,4).join(', ')||'—')}</b>`;
+    document.getElementById('stat-len').textContent = snake.length;
+    let hearts = ''; for (let i=0;i<MAX_LIVES;i++) hearts += `<span style="color:${i<lives?'var(--red)':'var(--card-border)'}">&#9829;</span>`;
+    document.getElementById('stat-lives').innerHTML = hearts;
+
+    // trail (most recent first)
+    const trail = document.getElementById('trail');
+    let html = '';
+    for (let i = snake.length-1; i >= 0; i--) {
+      const node = snake[i];
+      const isHead = i === snake.length-1;
+      html += `<div class="link${isHead?' is-head':''}"><span class="dot"></span><span class="lt">${esc(node.movie.title)}</span><span class="ly">${node.movie.year?('('+node.movie.year+')'):''}</span></div>`;
+      if (i > 0) {
+        const c = node.conns[0];
+        const more = node.conns.length>1 ? ` +${node.conns.length-1}` : '';
+        html += `<div class="connector"><span class="bar"></span><span class="ctxt">${c?`<b>${esc(c.type)}:</b> ${esc(c.label)}${more}`:'linked'}</span></div>`;
+      }
+    }
+    trail.innerHTML = html;
+  }
+
+  function flash(msg, good) {
+    const fb = document.getElementById('feedback');
+    fb.textContent = msg; fb.className = 'feedback ' + (good?'good':'bad');
+  }
+
+  function submitGuess(raw) {
+    if (over) return;
+    const n = normTitle(raw);
+    if (!n) return;
+    const m = byTitle[n];
+    if (!m) { flash('Not in your collection.', false); shake(); return; }
+    if (used.has(n)) { flash('Already used that film.', false); shake(); return; }
+
+    const conns = connections(head(), m);
+    if (!conns.length) {
+      lives--;
+      flash(`No link between “${head().title}” and “${m.title}”.`, false);
+      shake();
+      render();
+      if (lives <= 0) endGame(false);
+      return;
+    }
+
+    // valid link
+    snake.push({ movie: m, conns });
+    used.add(n);
+    document.getElementById('guess-input').value = '';
+    closeDD();
+    const c0 = conns[0];
+    flash(`Linked by ${c0.type.toLowerCase()}: ${c0.label}${conns.length>1?` (+${conns.length-1} more)`:''}`, true);
+    render();
+
+    // dead-end check: if no continuation possible, end on a high note
+    if (!hasContinuation(m)) {
+      flash(`No more films connect to “${m.title}” — end of the line!`, true);
+      endGame(true);
+    }
+  }
+
+  function endGame(deadEnd) {
+    over = true;
+    document.getElementById('guess-input').disabled = true;
+    document.getElementById('guess-submit').disabled = true;
+    document.getElementById('btn-give').style.display = 'none';
+    closeDD();
+    const score = snake.length;
+    const best = parseInt(localStorage.getItem('c2-snake-best')||'0');
+    const isBest = score > best;
+    if (isBest) localStorage.setItem('c2-snake-best', score);
+    document.getElementById('end-label').textContent = deadEnd ? 'Dead End!' : 'Out of Lives';
+    document.getElementById('end-score').textContent = score;
+    document.getElementById('end-best').innerHTML = isBest
+      ? `<strong style="color:var(--green)">New best!</strong>`
+      : `Best: <strong>${Math.max(best,score)}</strong>`;
+    document.getElementById('stat-best').textContent = Math.max(best,score);
+    document.getElementById('end-panel').classList.add('on');
+    document.getElementById('end-panel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function shake() { const inp = document.getElementById('guess-input'); inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); }
+
+  // autocomplete
+  let ddActive = -1;
+  function openDD(q) {
+    const dd = document.getElementById('guess-dd'); const lq = q.toLowerCase();
+    const matches = allMovies.filter(m => !used.has(normTitle(m.title)) && m.title.toLowerCase().includes(lq)).slice(0, 9);
+    if (!matches.length) { closeDD(); return; }
+    dd.innerHTML = matches.map((m, idx) =>
+      `<div class="guess-opt" data-idx="${idx}" data-title="${esc(m.title)}"><span>${esc(m.title)}</span><span class="go-n">${esc(m.year)}</span></div>`
+    ).join('');
+    dd.classList.remove('off'); ddActive = -1;
+    dd.querySelectorAll('.guess-opt').forEach(el => {
+      el.addEventListener('mousedown', e => { e.preventDefault(); document.getElementById('guess-input').value = el.dataset.title; closeDD(); submitGuess(el.dataset.title); });
+    });
+  }
+  function closeDD() { document.getElementById('guess-dd').classList.add('off'); ddActive = -1; }
+  function moveDD(dir) {
+    const opts = document.getElementById('guess-dd').querySelectorAll('.guess-opt');
+    if (!opts.length) return;
+    opts[ddActive]?.classList.remove('hi');
+    ddActive = (ddActive + dir + opts.length) % opts.length;
+    opts[ddActive].classList.add('hi');
+    document.getElementById('guess-input').value = opts[ddActive].dataset.title;
+  }
+
+  const inp = document.getElementById('guess-input');
+  inp.addEventListener('input', () => { const q = inp.value.trim(); if (q.length>=1) openDD(q); else closeDD(); });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); moveDD(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); moveDD(-1); }
+    else if (e.key === 'Enter') { closeDD(); submitGuess(inp.value); }
+    else if (e.key === 'Escape') { closeDD(); }
+  });
+  inp.addEventListener('blur', () => setTimeout(closeDD, 120));
+  document.getElementById('guess-submit').addEventListener('click', () => { closeDD(); submitGuess(inp.value); });
+  document.getElementById('btn-give').addEventListener('click', () => { if (!over) endGame(false); });
+  document.getElementById('btn-again').addEventListener('click', startRound);
+
+  function showError() {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('error-screen').style.display = 'flex';
+  }
+
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(text => {
+      allMovies = applyDatasetFilter(loadCSV(text));
+      byTitle = {}; allMovies.forEach(m => { byTitle[normTitle(m.title)] = m; });
+      if (allMovies.length < 5 || !pickStart()) throw new Error('not enough');
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = '';
+      startRound();
+    })
+    .catch(() => showError());
+
+})();
+</script>
+</body>
+</html>

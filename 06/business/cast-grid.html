@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cast Grid — Cine²</title>
+<style>
+:root {
+  --bg:#0c0c14; --card-bg:#14141f; --card-border:#23233a; --card-hover:#1b1b2c;
+  --text:#dcdcf0; --text-dim:#9090b8; --muted:#6868a0;
+  --accent:#f0bf3c; --green:#22c55e; --red:#ef4444; --indigo:#6366f1; --cyan:#06b6d4;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── NAV ── */
+#c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+#c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+#c2-btn.c2-hide { opacity:0; pointer-events:none; }
+#c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+#c2-bd.on { opacity:1; pointer-events:all; }
+#c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+#c2-nav.on { transform:translateX(0); }
+.c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+.c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+.c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+.c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+.c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+.c2-inner { flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+.c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+.c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+.c2-link:hover,.c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+.c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+.c2-link:hover .c2-pip,.c2-link.c2-on .c2-pip { opacity:1; }
+.c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+.c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+.c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+.c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+.c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+
+/* ── GAME WRAP ── */
+.game-wrap { max-width:960px; margin:0 auto; padding:1.25rem 1rem 5rem; }
+
+/* ── TOP ── */
+.game-top { text-align:center; margin-bottom:1.4rem; padding-top:.5rem; }
+.game-title { font-size:1.55rem; font-weight:900; letter-spacing:.05em; }
+.game-title span { color:var(--cyan); }
+.game-sub { font-size:.78rem; color:var(--muted); margin-top:.28rem; }
+
+/* ── GRID WRAPPER ── */
+.grid-scroll { overflow-x:auto; }
+.actor-grid {
+  display:grid;
+  gap:7px;
+  min-width:480px;
+}
+
+/* ── CORNER ── */
+.cg-corner {
+  background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:.4rem; padding:.6rem;
+}
+.corner-score { font-size:1.5rem; font-weight:900; color:var(--cyan); line-height:1; }
+.corner-label { font-size:.6rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.corner-btns { display:flex; flex-direction:column; gap:.3rem; width:100%; }
+.cbtn { background:none; border:1px solid var(--card-border); border-radius:7px; padding:.28rem .5rem; font-size:.68rem; font-weight:700; color:var(--muted); cursor:pointer; font-family:inherit; transition:all .12s; text-align:center; }
+.cbtn:hover { border-color:var(--cyan); color:var(--cyan); }
+.cbtn.cbtn-give { border-color:rgba(239,68,68,.3); color:rgba(239,68,68,.6); }
+.cbtn.cbtn-give:hover { border-color:var(--red); color:var(--red); }
+
+/* ── MOVIE HEADER CARDS ── */
+.cg-hd {
+  background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:.5rem .4rem; gap:.2rem; overflow:hidden; text-align:center;
+}
+.hd-poster { width:100%; max-height:64px; object-fit:cover; border-radius:6px; display:block; margin-bottom:.2rem; }
+.hd-title { font-size:.75rem; font-weight:800; line-height:1.25; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.hd-year { font-size:.62rem; color:var(--muted); }
+
+/* ── CELLS ── */
+.cg-cell {
+  background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  font-family:inherit; transition:all .15s; position:relative; overflow:hidden;
+}
+button.cg-cell { font-size:.8rem; font-weight:800; color:#0c0c14; background:var(--cyan); border-color:var(--cyan); }
+button.cg-cell:hover { opacity:.85; transform:scale(.97); }
+.cg-cell.cg-filled { background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.35); cursor:default; flex-direction:column; gap:.18rem; padding:.4rem; }
+.cg-cell.cg-revealed { background:rgba(255,255,255,.03); border-color:rgba(255,255,255,.08); cursor:default; flex-direction:column; gap:.18rem; padding:.4rem; }
+.cell-actor { font-size:.72rem; font-weight:700; color:var(--text); text-align:center; line-height:1.3; }
+.cg-filled .cell-actor { color:var(--green); }
+.cg-revealed .cell-actor { color:var(--muted); }
+.cell-check { font-size:.85rem; color:var(--green); }
+.cell-skip-icon { font-size:.75rem; color:var(--muted); opacity:.5; }
+
+/* ── MODAL ── */
+.modal-bd { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; padding:1rem; }
+.modal-bd.off { display:none; }
+.modal-box { background:#0d0d18; border:1px solid var(--card-border); border-radius:14px; width:100%; max-width:420px; padding:1.4rem 1.4rem 1.2rem; display:flex; flex-direction:column; gap:.85rem; box-shadow:0 20px 60px rgba(0,0,0,.8); }
+.modal-hd { display:flex; align-items:center; justify-content:space-between; }
+.modal-title-txt { font-size:.88rem; font-weight:800; color:var(--text); }
+.modal-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.2rem; line-height:1; padding:.2rem .35rem; border-radius:5px; font-family:inherit; transition:color .1s; }
+.modal-close:hover { color:var(--text); }
+.modal-films { display:flex; align-items:center; gap:.5rem; }
+.mf-film { flex:1; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:.4rem .55rem; font-size:.75rem; font-weight:700; color:var(--text); line-height:1.3; text-align:center; }
+.mf-x { font-size:.85rem; color:var(--muted); flex-shrink:0; }
+.modal-inp-wrap { position:relative; }
+#modal-inp { width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; padding:.65rem 1rem; font-size:.92rem; color:var(--text); outline:none; font-family:inherit; transition:border-color .15s; }
+#modal-inp:focus { border-color:rgba(6,182,212,.45); }
+#modal-inp.shake { animation:shake .3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+.modal-dd { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; z-index:60; max-height:180px; overflow-y:auto; box-shadow:0 8px 28px rgba(0,0,0,.55); }
+.modal-dd.off { display:none; }
+.modal-opt { padding:.44rem .9rem; font-size:.84rem; cursor:pointer; transition:background .1s; }
+.modal-opt:hover,.modal-opt.hi { background:rgba(255,255,255,.07); }
+.modal-err { font-size:.78rem; color:var(--red); min-height:1.1em; }
+.modal-sub { background:var(--cyan); border:none; border-radius:9px; padding:.65rem 1.5rem; font-size:.9rem; font-weight:700; color:#0c0c14; cursor:pointer; font-family:inherit; transition:opacity .15s; align-self:flex-end; }
+.modal-sub:hover { opacity:.85; }
+
+/* ── HOW-TO OVERLAY ── */
+.howto-bd { position:fixed; inset:0; z-index:600; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; padding:1rem; }
+.howto-bd.off { display:none; }
+.howto-box { background:#0d0d18; border:1px solid var(--card-border); border-radius:14px; max-width:400px; width:100%; padding:1.5rem; }
+.howto-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+.howto-title { font-size:1rem; font-weight:800; }
+.howto-body { font-size:.84rem; color:var(--text-dim); line-height:1.7; display:flex; flex-direction:column; gap:.6rem; }
+.howto-body strong { color:var(--text); }
+
+/* ── END BANNER ── */
+.end-banner { display:none; background:rgba(6,182,212,.07); border:1px solid rgba(6,182,212,.25); border-radius:12px; padding:1.2rem 1.4rem; text-align:center; margin-top:.75rem; }
+.end-banner.on { display:block; }
+.end-banner h2 { font-size:1.2rem; font-weight:900; color:var(--cyan); }
+.end-banner p { font-size:.82rem; color:var(--text-dim); margin-top:.3rem; }
+.end-banner button { margin-top:.9rem; background:var(--cyan); border:none; border-radius:9px; padding:.6rem 1.8rem; font-size:.88rem; font-weight:700; color:#0c0c14; cursor:pointer; font-family:inherit; transition:opacity .15s; }
+.end-banner button:hover { opacity:.85; }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="cast-grid.html" style="--cp:#06b6d4"><span class="c2-pip"></span><span class="c2-n">08</span><span>Cast Grid</span></a>
+    <a class="c2-link" href="actorle.html" style="--cp:#ec4899"><span class="c2-pip"></span><span class="c2-n">09</span><span>Actorle</span></a>
+    <a class="c2-link" href="moviedle.html" style="--cp:#3b82f6"><span class="c2-pip"></span><span class="c2-n">10</span><span>Moviedle</span></a>
+    <a class="c2-link" href="movie-redacle.html" style="--cp:#84cc16"><span class="c2-pip"></span><span class="c2-n">11</span><span>Movie Redacle</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <a class="c2-link" href="movie-snake.html" style="--cp:#d946ef"><span class="c2-pip"></span><span class="c2-n">13</span><span>Movie Snake</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open); x.addEventListener('click',close); bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+
+<!-- ── Loading / Error ── -->
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p id="loading-msg" style="color:var(--muted);font-size:.9rem;">Loading collection…</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">Could not build a grid</p>
+  <p id="error-msg" style="color:var(--muted);font-size:.85rem;max-width:340px;line-height:1.5;"></p>
+  <button onclick="location.reload()" style="margin-top:1rem;background:var(--cyan);border:none;border-radius:8px;padding:.55rem 1.5rem;font-size:.88rem;font-weight:700;color:#0c0c14;cursor:pointer;font-family:inherit;">Try Again</button>
+</div>
+
+<!-- ── Game ── -->
+<div id="game-screen" style="display:none;">
+<div class="game-wrap">
+
+  <div class="game-top">
+    <div class="game-title">Cast <span>Grid</span></div>
+    <p class="game-sub">Fill each cell with an actor who appeared in <em>both</em> films</p>
+  </div>
+
+  <div class="grid-scroll">
+    <div class="actor-grid" id="actor-grid"></div>
+  </div>
+
+  <div class="end-banner" id="end-banner">
+    <h2 id="end-title">Puzzle Complete!</h2>
+    <p id="end-sub"></p>
+    <button id="end-new">New Game</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ── Guess Modal ── -->
+<div class="modal-bd off" id="guess-modal">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span class="modal-title-txt">Find a common actor</span>
+      <button class="modal-close" id="modal-close">&#10005;</button>
+    </div>
+    <div class="modal-films">
+      <div class="mf-film" id="mf-row"></div>
+      <div class="mf-x">&#10005;</div>
+      <div class="mf-film" id="mf-col"></div>
+    </div>
+    <div class="modal-inp-wrap">
+      <input id="modal-inp" type="text" placeholder="Actor name…" autocomplete="off" spellcheck="false">
+      <div id="modal-dd" class="modal-dd off"></div>
+    </div>
+    <p id="modal-err" class="modal-err"></p>
+    <button class="modal-sub" id="modal-submit">Submit</button>
+  </div>
+</div>
+
+<!-- ── How To ── -->
+<div class="howto-bd off" id="howto-modal">
+  <div class="howto-box">
+    <div class="howto-hd">
+      <span class="howto-title">How to play</span>
+      <button class="modal-close" id="howto-close">&#10005;</button>
+    </div>
+    <div class="howto-body">
+      <p>The grid shows <strong>movies across the top</strong> and <strong>movies down the left</strong>.</p>
+      <p>Click any <strong>Guess</strong> cell and name an actor who appeared in <strong>both</strong> the column film and the row film.</p>
+      <p>Fill as many cells as you can. Use <strong>Give Up</strong> to reveal any remaining answers.</p>
+      <p>Actor names must match your collection data exactly — use the autocomplete to help with spelling.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── CSV ──────────────────────────────────────────────────────
+  function parseCSV(src) {
+    const rows = [];
+    let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') {
+        if (q && src[i+1] === '"') { field += '"'; i++; } else q = !q;
+      } else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) {
+        if (c === '\r' && src[i+1] === '\n') i++;
+        row.push(field); field = ''; rows.push(row); row = [];
+      } else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0];
+    const col = n => h.indexOf(n);
+    const ti=col('title'), yi=col('year'), di=col('director'), ri=col('average_rating');
+    const gi=col('genres'), c1=col('cast_1'), c2=col('cast_2'), c3=col('cast_3'), c4=col('cast_4'), c5=col('cast_5');
+    const pi=col('poster_url'), wi=col('watched_by');
+    if (ti < 0 || ri < 0) return [];
+    return rows.slice(1).flatMap(r => {
+      const title = r[ti]?.trim();
+      const rating = parseFloat(r[ri]);
+      if (!title || isNaN(rating)) return [];
+      const casts = [c1,c2,c3,c4,c5].filter(i => i >= 0)
+        .map(i => r[i]?.trim()).filter(Boolean)
+        .map(s => s.replace(/\s*\(.*\)\s*$/, '').trim()).filter(Boolean);
+      return [{ title, year: r[yi]?.trim()||'', rating, casts, poster: pi>=0 ? r[pi]?.trim()||'' : '', watchedBy: wi>=0 ? r[wi]?.trim()||'' : '' }];
+    });
+  }
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter')||'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy||'').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
+    });
+  }
+
+  // ── Grid generation ──────────────────────────────────────────
+  function buildGrid(movies) {
+    setLoadMsg('Building puzzle…');
+    const n = movies.length;
+
+    // Precompute shared actors for all pairs
+    const shared = new Map();
+    for (let i = 0; i < n; i++) {
+      const setA = new Set(movies[i].casts.filter(Boolean));
+      if (!setA.size) continue;
+      for (let j = i + 1; j < n; j++) {
+        const common = movies[j].casts.filter(a => a && setA.has(a));
+        if (common.length) {
+          shared.set(`${i},${j}`, common);
+          shared.set(`${j},${i}`, common);
+        }
+      }
+    }
+
+    // Rank movies by number of other movies they share actors with
+    const conn = movies.map((_, i) => {
+      let c = 0;
+      for (let j = 0; j < n; j++) if (j !== i && shared.has(`${i},${j}`)) c++;
+      return c;
+    });
+    const ranked = movies.map((_, i) => i).sort((a, b) => conn[b] - conn[a]);
+    const pool = ranked.slice(0, Math.min(60, n));
+
+    const trySize = (size) => {
+      const p = [...pool];
+      for (let attempt = 0; attempt < 1200; attempt++) {
+        // Fisher-Yates shuffle
+        for (let k = p.length - 1; k > 0; k--) {
+          const j = Math.floor(Math.random() * (k + 1));
+          [p[k], p[j]] = [p[j], p[k]];
+        }
+        const cols = p.slice(0, size);
+        const rows = p.slice(size, size * 2);
+
+        let ok = true;
+        const answers = [];
+        for (const r of rows) {
+          const row = [];
+          for (const c of cols) {
+            const s = shared.get(`${r},${c}`);
+            if (!s || !s.length) { ok = false; break; }
+            row.push(s);
+          }
+          if (!ok) break;
+          answers.push(row);
+        }
+        if (ok) return { cols: cols.map(i => movies[i]), rows: rows.map(i => movies[i]), answers, size };
+      }
+      return null;
+    };
+
+    return trySize(4) || trySize(3);
+  }
+
+  // ── State ────────────────────────────────────────────────────
+  let allMovies = [];
+  let allActors = [];
+  let grid = null;
+  let filled = [];   // filled[r][c] = actor name | null
+  let correct = 0;
+  let totalGuesses = 0;
+  let gameOver = false;
+  let activeCell = null;  // {r, c}
+  let ddActive = -1;
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function normActor(s) { return s.toLowerCase().trim(); }
+
+  function totalCells() { return grid.size * grid.size; }
+
+  function isValidAnswer(r, c, input) {
+    const normIn = normActor(input);
+    return grid.answers[r][c].some(a => normActor(a) === normIn);
+  }
+
+  // ── Render ───────────────────────────────────────────────────
+  function render() {
+    const container = document.getElementById('actor-grid');
+    const sz = grid.size;
+
+    // CSS grid template
+    container.style.gridTemplateColumns = `130px repeat(${sz}, minmax(100px, 1fr))`;
+
+    let html = '';
+
+    // Corner
+    html += `<div class="cg-corner">
+      <div class="corner-score" id="corner-score">${correct} / ${totalCells()}</div>
+      <div class="corner-label">filled</div>
+      <div class="corner-btns">
+        <button class="cbtn" id="btn-howto">How to?</button>
+        <button class="cbtn cbtn-give" id="btn-giveup">Give Up</button>
+        <button class="cbtn" id="btn-new">New Game</button>
+      </div>
+    </div>`;
+
+    // Column headers
+    for (let c = 0; c < sz; c++) {
+      const m = grid.cols[c];
+      html += `<div class="cg-hd">
+        ${m.poster ? `<img class="hd-poster" src="${esc(m.poster)}" alt="" onerror="this.style.display='none'" loading="lazy">` : ''}
+        <div class="hd-title">${esc(m.title)}</div>
+        <div class="hd-year">${esc(m.year)}</div>
+      </div>`;
+    }
+
+    // Rows
+    for (let r = 0; r < sz; r++) {
+      // Row header
+      const rm = grid.rows[r];
+      html += `<div class="cg-hd">
+        ${rm.poster ? `<img class="hd-poster" src="${esc(rm.poster)}" alt="" onerror="this.style.display='none'" loading="lazy">` : ''}
+        <div class="hd-title">${esc(rm.title)}</div>
+        <div class="hd-year">${esc(rm.year)}</div>
+      </div>`;
+
+      // Cells
+      for (let c = 0; c < sz; c++) {
+        const actor = filled[r][c];
+        if (actor === null) {
+          // Empty — check if it was revealed (game over unfilled = revealed with answer)
+          html += `<button class="cg-cell" data-r="${r}" data-c="${c}">Guess</button>`;
+        } else if (actor === '__revealed__') {
+          const ans = grid.answers[r][c][0];
+          html += `<div class="cg-cell cg-revealed">
+            <div class="cell-actor">${esc(ans)}</div>
+            <div class="cell-skip-icon">&#8212;</div>
+          </div>`;
+        } else {
+          html += `<div class="cg-cell cg-filled">
+            <div class="cell-actor">${esc(actor)}</div>
+            <div class="cell-check">&#10003;</div>
+          </div>`;
+        }
+      }
+    }
+
+    container.innerHTML = html;
+
+    // Wire cell click
+    container.querySelectorAll('button.cg-cell').forEach(btn => {
+      if (!gameOver) btn.addEventListener('click', () => openModal(+btn.dataset.r, +btn.dataset.c));
+    });
+
+    // Wire corner buttons
+    document.getElementById('btn-howto')?.addEventListener('click', () => document.getElementById('howto-modal').classList.remove('off'));
+    document.getElementById('btn-giveup')?.addEventListener('click', giveUp);
+    document.getElementById('btn-new')?.addEventListener('click', newGame);
+
+    document.getElementById('corner-score').textContent = `${correct} / ${totalCells()}`;
+  }
+
+  // ── Modal ────────────────────────────────────────────────────
+  function openModal(r, c) {
+    if (gameOver || filled[r][c] !== null) return;
+    activeCell = { r, c };
+    document.getElementById('mf-row').textContent = `${grid.rows[r].title} (${grid.rows[r].year})`;
+    document.getElementById('mf-col').textContent = `${grid.cols[c].title} (${grid.cols[c].year})`;
+    document.getElementById('modal-err').textContent = '';
+    document.getElementById('modal-inp').value = '';
+    document.getElementById('modal-dd').classList.add('off');
+    document.getElementById('guess-modal').classList.remove('off');
+    setTimeout(() => document.getElementById('modal-inp').focus(), 50);
+  }
+
+  function closeModal() {
+    document.getElementById('guess-modal').classList.add('off');
+    document.getElementById('modal-dd').classList.add('off');
+    activeCell = null;
+    ddActive = -1;
+  }
+
+  function submitGuess(name) {
+    if (!activeCell) return;
+    const { r, c } = activeCell;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    totalGuesses++;
+
+    if (isValidAnswer(r, c, trimmed)) {
+      // Find the canonical form from our answers list
+      const normIn = normActor(trimmed);
+      const canon = grid.answers[r][c].find(a => normActor(a) === normIn) || trimmed;
+      filled[r][c] = canon;
+      correct++;
+      closeModal();
+      render();
+      if (correct === totalCells()) endGame(true);
+    } else {
+      const inp = document.getElementById('modal-inp');
+      inp.classList.remove('shake');
+      void inp.offsetWidth;
+      inp.classList.add('shake');
+      document.getElementById('modal-err').textContent = `"${trimmed}" is not in both films — try again`;
+    }
+  }
+
+  // ── Autocomplete ─────────────────────────────────────────────
+  function openDD(q) {
+    const dd = document.getElementById('modal-dd');
+    const lq = q.toLowerCase();
+    const matches = allActors.filter(a => a.toLowerCase().includes(lq)).slice(0, 8);
+    if (!matches.length) { dd.classList.add('off'); return; }
+    dd.innerHTML = matches.map((a, i) => `<div class="modal-opt" data-name="${esc(a)}">${esc(a)}</div>`).join('');
+    dd.classList.remove('off');
+    ddActive = -1;
+    dd.querySelectorAll('.modal-opt').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        document.getElementById('modal-inp').value = el.dataset.name;
+        dd.classList.add('off');
+        submitGuess(el.dataset.name);
+      });
+    });
+  }
+
+  function moveDD(dir) {
+    const opts = document.getElementById('modal-dd').querySelectorAll('.modal-opt');
+    if (!opts.length) return;
+    opts[ddActive]?.classList.remove('hi');
+    ddActive = (ddActive + dir + opts.length) % opts.length;
+    opts[ddActive].classList.add('hi');
+    document.getElementById('modal-inp').value = opts[ddActive].dataset.name;
+  }
+
+  // ── Give Up / End ────────────────────────────────────────────
+  function giveUp() {
+    gameOver = true;
+    for (let r = 0; r < grid.size; r++)
+      for (let c = 0; c < grid.size; c++)
+        if (filled[r][c] === null) filled[r][c] = '__revealed__';
+    render();
+    endGame(false);
+  }
+
+  function endGame(won) {
+    gameOver = true;
+    closeModal();
+    const banner = document.getElementById('end-banner');
+    const total = totalCells();
+    document.getElementById('end-title').textContent = won ? 'Puzzle Complete!' : 'Game Over';
+    document.getElementById('end-sub').textContent =
+      won ? `You filled all ${total} cells in ${totalGuesses} guess${totalGuesses !== 1 ? 'es' : ''}.`
+          : `You filled ${correct} of ${total} cells.`;
+    banner.classList.add('on');
+    banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('end-new').onclick = newGame;
+  }
+
+  function newGame() {
+    grid    = buildGrid(allMovies);
+    if (!grid) { showError('Not enough connected films in your collection for a puzzle. Try a larger dataset.'); return; }
+    filled  = Array.from({ length: grid.size }, () => Array(grid.size).fill(null));
+    correct = 0;
+    totalGuesses = 0;
+    gameOver = false;
+    document.getElementById('end-banner').classList.remove('on');
+    render();
+  }
+
+  // ── Events ───────────────────────────────────────────────────
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('guess-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+  document.getElementById('howto-close').addEventListener('click', () => document.getElementById('howto-modal').classList.add('off'));
+  document.getElementById('howto-modal').addEventListener('click', e => { if (e.target === e.currentTarget) document.getElementById('howto-modal').classList.add('off'); });
+  document.getElementById('modal-submit').addEventListener('click', () => submitGuess(document.getElementById('modal-inp').value));
+
+  const minp = document.getElementById('modal-inp');
+  minp.addEventListener('input', () => { const q = minp.value.trim(); q.length >= 1 ? openDD(q) : document.getElementById('modal-dd').classList.add('off'); });
+  minp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown')  { e.preventDefault(); moveDD(1); }
+    if (e.key === 'ArrowUp')    { e.preventDefault(); moveDD(-1); }
+    if (e.key === 'Enter')      { document.getElementById('modal-dd').classList.add('off'); submitGuess(minp.value); }
+    if (e.key === 'Escape')     { document.getElementById('modal-dd').classList.add('off'); closeModal(); }
+  });
+  minp.addEventListener('blur', () => setTimeout(() => document.getElementById('modal-dd').classList.add('off'), 120));
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function setLoadMsg(msg) { document.getElementById('loading-msg').textContent = msg; }
+
+  function showError(msg) {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('error-msg').textContent = msg;
+    document.getElementById('error-screen').style.display = 'flex';
+  }
+
+  // ── Boot ─────────────────────────────────────────────────────
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error('csv'); return r.text(); })
+    .then(text => {
+      allMovies = applyDatasetFilter(loadCSV(text));
+      if (allMovies.length < 6) throw new Error('small');
+
+      // Build actor list for autocomplete
+      const actorSet = new Set();
+      allMovies.forEach(m => m.casts.forEach(a => { if (a) actorSet.add(a); }));
+      allActors = [...actorSet].sort((a, b) => a.localeCompare(b));
+
+      // Build grid (may take a moment)
+      setTimeout(() => {
+        grid = buildGrid(allMovies);
+        if (!grid) { showError('Not enough cast overlap between films in your collection. Try the "All" dataset filter.'); return; }
+
+        filled = Array.from({ length: grid.size }, () => Array(grid.size).fill(null));
+
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = '';
+        render();
+      }, 20);
+    })
+    .catch(err => {
+      const msg = err.message === 'small'
+        ? 'Your filtered collection is too small (need at least 6 films).'
+        : 'Could not load letterboxd_scraped.csv — make sure it\'s in the same folder.';
+      showError(msg);
+    });
+
+})();
+</script>
+</body>
+</html>

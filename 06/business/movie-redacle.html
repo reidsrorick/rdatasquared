@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Redacle — Cine²</title>
+<style>
+:root {
+  --bg:#0c0c14; --card-bg:#14141f; --card-border:#23233a; --card-hover:#1b1b2c;
+  --text:#dcdcf0; --text-dim:#9090b8; --muted:#6868a0;
+  --accent:#f0bf3c; --green:#22c55e; --red:#ef4444; --indigo:#6366f1; --lime:#84cc16;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── NAV ── */
+#c2-btn { position:fixed; left:12px; top:12px; z-index:1001; width:36px; height:36px; background:#14141f; border:1px solid #23233a; border-radius:8px; color:#9090b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; line-height:1; transition:background .12s,color .12s,border-color .12s,opacity .18s; font-family:inherit; }
+#c2-btn:hover { background:#1b1b2c; color:#f0bf3c; border-color:rgba(240,191,60,.4); }
+#c2-btn.c2-hide { opacity:0; pointer-events:none; }
+#c2-bd { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s; }
+#c2-bd.on { opacity:1; pointer-events:all; }
+#c2-nav { position:fixed; left:0; top:0; height:100vh; width:230px; z-index:1000; background:#0d0d18; border-right:1px solid #23233a; display:flex; flex-direction:column; transform:translateX(-100%); transition:transform .26s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+#c2-nav.on { transform:translateX(0); }
+.c2-hd { display:flex; align-items:center; gap:.6rem; padding:.65rem .75rem; border-bottom:1px solid #23233a; flex-shrink:0; }
+.c2-x { background:none; border:1px solid transparent; border-radius:6px; color:#9090b8; cursor:pointer; font-size:1.05rem; line-height:1; padding:.28rem .38rem; transition:color .12s,border-color .12s,background .12s; font-family:inherit; flex-shrink:0; }
+.c2-x:hover { color:#dcdcf0; border-color:#23233a; background:#14141f; }
+.c2-home { font-size:1.15rem; font-weight:900; letter-spacing:.04em; color:#dcdcf0; text-decoration:none; }
+.c2-home sup { font-size:.48em; color:#f0bf3c; vertical-align:super; }
+.c2-inner { flex:1; overflow-y:auto; padding:1rem 1rem 1rem; display:flex; flex-direction:column; scrollbar-width:thin; scrollbar-color:#23233a transparent; }
+.c2-lbl { font-size:.6rem; font-weight:700; letter-spacing:.13em; color:#6868a0; text-transform:uppercase; padding:.1rem .4rem; margin-bottom:.35rem; }
+.c2-link { display:flex; align-items:center; gap:.5rem; padding:.42rem .55rem; border-radius:7px; text-decoration:none; color:#9090b8; font-size:.81rem; font-weight:600; transition:background .1s,color .1s; margin-bottom:.08rem; }
+.c2-link:hover,.c2-link.c2-on { background:#14141f; color:#dcdcf0; }
+.c2-pip { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--cp); opacity:.35; }
+.c2-link:hover .c2-pip,.c2-link.c2-on .c2-pip { opacity:1; }
+.c2-n { font-size:.61rem; font-weight:800; letter-spacing:.06em; color:var(--cp); opacity:.8; min-width:1.7em; }
+.c2-flt-wrap { display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.25rem; }
+.c2-flt { flex:1; min-width:0; background:none; border:1px solid #23233a; border-radius:6px; padding:.28rem .3rem; font-size:.65rem; font-weight:700; color:#6868a0; cursor:pointer; font-family:inherit; transition:background .12s,color .12s,border-color .12s; }
+.c2-flt:hover { border-color:rgba(240,191,60,.5); color:#f0bf3c; }
+.c2-flt.c2-flt-on { background:rgba(240,191,60,.12); border-color:rgba(240,191,60,.4); color:#f0bf3c; }
+
+/* ── GAME WRAP ── */
+.game-wrap { max-width:640px; margin:0 auto; padding:1.25rem 1rem 5rem; }
+.game-top { text-align:center; margin-bottom:1rem; padding-top:.5rem; }
+.game-title { font-size:1.55rem; font-weight:900; letter-spacing:.05em; }
+.game-title span { color:var(--lime); }
+.game-sub { font-size:.78rem; color:var(--muted); margin-top:.28rem; }
+
+/* ── META ── */
+.meta-strip { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; margin:.9rem auto .2rem; }
+.meta-pill { background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; padding:.35rem .75rem; font-size:.76rem; }
+.meta-pill .ml { font-size:.55rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-right:.4rem; }
+.meta-pill .mv { font-weight:700; color:var(--text); }
+.meta-pill.locked .mv { color:var(--muted); }
+
+/* ── SYNOPSIS ── */
+.synopsis-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; padding:1.2rem 1.3rem; margin-top:1rem; line-height:2.1; font-size:.98rem; }
+.syn-lbl { font-size:.58rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+.word { display:inline; }
+.blk { display:inline-block; background:linear-gradient(#2a2a3e,#222234); border-radius:4px; color:transparent; user-select:none; vertical-align:middle; height:1.05em; margin:0 1px; }
+.blk.title { background:linear-gradient(#3a2a1e,#33281c); }
+.reveal-word { color:var(--lime); transition:color .3s; }
+
+/* ── GUESS BAR ── */
+.guess-bar { display:flex; gap:.5rem; max-width:520px; margin:1.1rem auto 0; position:relative; }
+.guess-wrap { flex:1; position:relative; }
+#guess-input { width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; padding:.62rem 1rem; font-size:.9rem; color:var(--text); outline:none; font-family:inherit; transition:border-color .15s; }
+#guess-input:focus { border-color:rgba(132,204,22,.5); }
+#guess-input:disabled { opacity:.5; }
+#guess-input.shake { animation:shake .3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+.guess-dd { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:9px; z-index:60; max-height:220px; overflow-y:auto; box-shadow:0 8px 28px rgba(0,0,0,.55); }
+.guess-dd.off { display:none; }
+.guess-opt { padding:.44rem .9rem; font-size:.84rem; cursor:pointer; transition:background .1s; }
+.guess-opt:hover,.guess-opt.hi { background:rgba(255,255,255,.07); }
+.guess-opt .go-n { color:var(--muted); font-size:.75rem; }
+#guess-submit { background:var(--lime); border:none; border-radius:9px; padding:.62rem 1.35rem; font-size:.9rem; font-weight:700; color:#0c0c14; cursor:pointer; font-family:inherit; white-space:nowrap; transition:opacity .15s; }
+#guess-submit:hover { opacity:.85; }
+#guess-submit:disabled { opacity:.35; cursor:default; }
+
+/* ── GUESS ROWS ── */
+.guesses { max-width:520px; margin:1rem auto 0; display:flex; flex-direction:column; gap:.4rem; }
+.grow { display:flex; align-items:center; gap:.6rem; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:.5rem .8rem; font-size:.85rem; }
+.grow.wrong { border-color:rgba(239,68,68,.3); }
+.grow.right { border-color:rgba(34,197,94,.5); background:rgba(34,197,94,.06); }
+.grow .gn { color:var(--muted); font-weight:800; font-size:.75rem; }
+.grow .gt { flex:1; font-weight:600; }
+.grow .gi { font-size:.95rem; }
+.tries-left { text-align:center; font-size:.74rem; color:var(--muted); margin-top:.7rem; }
+
+/* ── END PANEL ── */
+#end-panel { display:none; text-align:center; padding:1.6rem 1rem 0; margin-top:1.2rem; }
+#end-panel.on { display:block; }
+.end-label { font-size:.65rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.45rem; }
+.end-name { font-size:1.45rem; font-weight:900; line-height:1.15; }
+.end-name.win { color:var(--green); } .end-name.lose { color:var(--red); }
+.end-stat { font-size:.82rem; color:var(--muted); margin-top:.5rem; }
+.end-stat strong { color:var(--text); }
+.end-actions { display:flex; gap:.75rem; justify-content:center; margin-top:1.3rem; flex-wrap:wrap; }
+.btn-again { background:var(--lime); border:none; border-radius:10px; padding:.68rem 2rem; font-size:.92rem; font-weight:700; color:#0c0c14; cursor:pointer; font-family:inherit; transition:opacity .15s; }
+.btn-again:hover { opacity:.85; }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<div id="c2-bd"></div>
+<button id="c2-btn" aria-label="Open navigation">&#9776;</button>
+<nav id="c2-nav" aria-label="Game navigation">
+  <div class="c2-hd">
+    <button class="c2-x" id="c2-x" aria-label="Close">&#9776;</button>
+    <a class="c2-home" href="index.html">Cine<sup>2</sup></a>
+  </div>
+  <div class="c2-inner">
+    <p class="c2-lbl" style="margin-top:.2rem;">Games</p>
+    <a class="c2-link" href="letterboxd-ladder.html" style="--cp:#6366f1"><span class="c2-pip"></span><span class="c2-n">02</span><span>Letterboxd Ladder</span></a>
+    <a class="c2-link" href="movie-family-feud.html" style="--cp:#ef4444"><span class="c2-pip"></span><span class="c2-n">03</span><span>Movie Family Feud</span></a>
+    <a class="c2-link" href="plot-imposter.html" style="--cp:#a855f7"><span class="c2-pip"></span><span class="c2-n">04</span><span>Plot Imposter</span></a>
+    <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
+    <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
+    <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="cast-grid.html" style="--cp:#06b6d4"><span class="c2-pip"></span><span class="c2-n">08</span><span>Cast Grid</span></a>
+    <a class="c2-link" href="actorle.html" style="--cp:#ec4899"><span class="c2-pip"></span><span class="c2-n">09</span><span>Actorle</span></a>
+    <a class="c2-link" href="moviedle.html" style="--cp:#3b82f6"><span class="c2-pip"></span><span class="c2-n">10</span><span>Moviedle</span></a>
+    <a class="c2-link" href="movie-redacle.html" style="--cp:#84cc16"><span class="c2-pip"></span><span class="c2-n">11</span><span>Movie Redacle</span></a>
+    <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <a class="c2-link" href="movie-snake.html" style="--cp:#d946ef"><span class="c2-pip"></span><span class="c2-n">13</span><span>Movie Snake</span></a>
+    <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
+    <div class="c2-flt-wrap">
+      <button class="c2-flt" data-f="all">All</button>
+      <button class="c2-flt" data-f="reid">Reid</button>
+      <button class="c2-flt" data-f="zach">Zach</button>
+      <button class="c2-flt" data-f="both">Both</button>
+    </div>
+  </div>
+</nav>
+<script>
+(function(){
+  var btn=document.getElementById('c2-btn'),nav=document.getElementById('c2-nav'),bd=document.getElementById('c2-bd'),x=document.getElementById('c2-x');
+  function open(){nav.classList.add('on');bd.classList.add('on');btn.classList.add('c2-hide');}
+  function close(){nav.classList.remove('on');bd.classList.remove('on');btn.classList.remove('c2-hide');}
+  btn.addEventListener('click',open); x.addEventListener('click',close); bd.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var page=location.pathname.split('/').pop()||'index.html';
+  document.querySelectorAll('.c2-link').forEach(function(a){if(a.getAttribute('href')===page)a.classList.add('c2-on');});
+  var flt=localStorage.getItem('c2-filter')||'all';
+  document.querySelectorAll('.c2-flt').forEach(function(b){
+    b.classList.toggle('c2-flt-on',b.dataset.f===flt);
+    b.addEventListener('click',function(){localStorage.setItem('c2-filter',b.dataset.f);location.reload();});
+  });
+})();
+</script>
+
+<!-- ── Loading / Error ── -->
+<div id="loading-screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:.75rem;">
+  <div style="width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <p style="color:var(--muted);font-size:.9rem;">Loading collection...</p>
+</div>
+<div id="error-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem;gap:.5rem;">
+  <p style="font-size:1rem;font-weight:700;color:var(--red);">No synopses to play with</p>
+  <p style="color:var(--muted);font-size:.85rem;max-width:320px;line-height:1.5;">Make sure <strong style="color:var(--text)">letterboxd_scraped.csv</strong> is in this folder and has films with synopsis text.</p>
+</div>
+
+<!-- ── Game ── -->
+<div id="game-screen" style="display:none;">
+<div class="game-wrap">
+
+  <div class="game-top">
+    <div class="game-title">Movie <span>Redacle</span></div>
+    <p class="game-sub">Guess the film from its censored synopsis. Each miss un-redacts more words.</p>
+  </div>
+
+  <div class="meta-strip" id="meta-strip"></div>
+
+  <div class="synopsis-card">
+    <div class="syn-lbl">Synopsis</div>
+    <div id="synopsis-body"></div>
+  </div>
+
+  <div class="guesses" id="guesses"></div>
+  <div class="tries-left" id="tries-left"></div>
+
+  <div class="guess-bar">
+    <div class="guess-wrap">
+      <input id="guess-input" type="text" placeholder="Guess a movie…" autocomplete="off" spellcheck="false">
+      <div id="guess-dd" class="guess-dd off"></div>
+    </div>
+    <button id="guess-submit">Guess</button>
+  </div>
+
+  <div id="end-panel">
+    <div class="end-label" id="end-label"></div>
+    <div class="end-name" id="end-name">—</div>
+    <div class="end-stat" id="end-stat"></div>
+    <div class="end-actions">
+      <button class="btn-again" id="btn-again">New Synopsis</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  function parseCSV(src) {
+    const rows = []; let field = '', row = [], q = false;
+    for (let i = 0; i <= src.length; i++) {
+      const c = src[i];
+      if (i === src.length) { row.push(field); if (row.some(Boolean)) rows.push(row); break; }
+      if (c === '"') { if (q && src[i+1] === '"') { field += '"'; i++; } else q = !q; }
+      else if (c === ',' && !q) { row.push(field); field = ''; }
+      else if ((c === '\n' || c === '\r') && !q) { if (c === '\r' && src[i+1] === '\n') i++; row.push(field); field = ''; rows.push(row); row = []; }
+      else { field += c; }
+    }
+    return rows;
+  }
+
+  function loadCSV(src) {
+    const rows = parseCSV(src);
+    if (!rows.length) return [];
+    const h = rows[0]; const col = n => h.indexOf(n);
+    const ti = col('title'), yi = col('year'), di = col('director'), ri = col('average_rating');
+    const gi = col('genres'), rti = col('runtime'), syi = col('synopsis'), wi = col('watched_by');
+    if (ti < 0 || syi < 0) return [];
+    return rows.slice(1).flatMap(r => {
+      const title = r[ti]?.trim(); const syn = r[syi]?.trim();
+      if (!title || !syn || syn.split(/\s+/).length < 12) return [];
+      const rating = parseFloat(r[ri]);
+      return [{
+        title, year: r[yi]?.trim()||'', director: r[di]?.trim()||'',
+        rating: isNaN(rating)?0:rating,
+        genres: (r[gi]||'').split(',').map(s=>s.trim()).filter(Boolean),
+        runtime: rti>=0 ? r[rti]?.trim()||'' : '',
+        synopsis: syn,
+        watchedBy: wi>=0 ? (r[wi]?.trim()||'') : '',
+      }];
+    });
+  }
+
+  function applyDatasetFilter(movies) {
+    var f = (localStorage.getItem('c2-filter')||'all').toLowerCase();
+    if (f === 'all') return movies;
+    return movies.filter(function(m) {
+      var wb = (m.watchedBy||'').toLowerCase();
+      if (f === 'reid') return wb.includes('reid');
+      if (f === 'zach') return wb.includes('zach');
+      if (f === 'both') return wb.includes('reid') && wb.includes('zach');
+      return true;
+    });
+  }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function normTitle(s) { return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/^(the |a |an )/,'').replace(/\s+/g,' ').trim(); }
+
+  const STOP = new Set(('the a an and or but of to in on at for with from by as is are was were be been being his her its their our your my he she they we it this that these those who whom which what when where while into over under after before about between against during through is am into not no so if then than too very can will just out up down off again once here there all any both each more most other some such own same').split(' '));
+
+  const MAX_TRIES = 6;
+
+  let allMovies = [], answer = null, tries = 0, won = false, over = false;
+  let tokens = [];   // { text, isWord, redactable, isTitle, shown }
+  let revealOrder = []; // indices of redactable non-title tokens, shuffled
+
+  function buildTokens(m) {
+    const titleWords = new Set(normTitle(m.title).split(' ').filter(w=>w.length>2));
+    const parts = m.synopsis.split(/(\s+)/); // keep whitespace
+    tokens = parts.map(p => {
+      if (/^\s+$/.test(p) || p === '') return { text:p, isWord:false };
+      const core = p.toLowerCase().replace(/[^a-z0-9]/g,'');
+      const isTitle = core.length>2 && titleWords.has(core);
+      // redact informative words: length>=5 and not stopword, OR title words, OR capitalized proper nouns
+      const isProper = /^[A-Z][a-z]/.test(p) && core.length>2;
+      const redactable = isTitle || (core.length>=5 && !STOP.has(core)) || isProper;
+      return { text:p, isWord:true, redactable, isTitle, shown: !redactable };
+    });
+    // build reveal order for non-title redactable words
+    revealOrder = [];
+    tokens.forEach((t, i) => { if (t.isWord && t.redactable && !t.isTitle) revealOrder.push(i); });
+    for (let i = revealOrder.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [revealOrder[i],revealOrder[j]]=[revealOrder[j],revealOrder[i]]; }
+  }
+
+  function revealBatch() {
+    // reveal ~ a fraction of remaining hidden non-title words per miss
+    const total = revealOrder.length;
+    const perMiss = Math.ceil(total / (MAX_TRIES + 1));
+    let n = perMiss;
+    for (const idx of revealOrder) {
+      if (n<=0) break;
+      if (!tokens[idx].shown) { tokens[idx].shown = true; n--; }
+    }
+  }
+
+  function startRound() {
+    answer = allMovies[Math.floor(Math.random()*allMovies.length)];
+    tries = 0; won = false; over = false;
+    buildTokens(answer);
+    document.getElementById('end-panel').classList.remove('on');
+    document.getElementById('guesses').innerHTML = '';
+    const inp = document.getElementById('guess-input');
+    inp.disabled = false; inp.value = '';
+    document.getElementById('guess-submit').disabled = false;
+    renderMeta(); renderSyn(); renderTries();
+    inp.focus();
+  }
+
+  const META = [
+    { l:'Year',    get:m=>m.year||'—',          at:0 },
+    { l:'Genre',   get:m=>m.genres[0]||'—',     at:0 },
+    { l:'Runtime', get:m=>m.runtime?m.runtime+'m':'—', at:2 },
+    { l:'Director',get:m=>m.director||'—',       at:4 },
+  ];
+
+  function renderMeta() {
+    document.getElementById('meta-strip').innerHTML = META.map(h => {
+      const unlocked = (won||over) || tries >= h.at;
+      return `<div class="meta-pill${unlocked?'':' locked'}"><span class="ml">${esc(h.l)}</span><span class="mv">${unlocked?esc(h.get(answer)):'???'}</span></div>`;
+    }).join('');
+  }
+
+  function renderSyn() {
+    const body = document.getElementById('synopsis-body');
+    let html = '';
+    for (const t of tokens) {
+      if (!t.isWord) { html += t.text.replace(/\n/g,'<br>'); continue; }
+      const show = t.shown || won || over;
+      if (show) {
+        if ((won||over) && t.isTitle) html += `<span class="word reveal-word">${esc(t.text)}</span>`;
+        else html += `<span class="word">${esc(t.text)}</span>`;
+      } else {
+        const w = Math.max(1.6, t.text.replace(/[^A-Za-z0-9]/g,'').length * 0.62);
+        html += `<span class="blk${t.isTitle?' title':''}" style="width:${w.toFixed(1)}ch">${esc(t.text)}</span>`;
+      }
+    }
+    body.innerHTML = html;
+  }
+
+  function renderTries() {
+    const el = document.getElementById('tries-left');
+    if (won||over) { el.textContent = ''; return; }
+    const left = MAX_TRIES - tries;
+    el.textContent = `${left} guess${left===1?'':'es'} left`;
+  }
+
+  function addGuessRow(title, correct) {
+    const box = document.getElementById('guesses');
+    const div = document.createElement('div');
+    div.className = 'grow ' + (correct ? 'right' : 'wrong');
+    div.innerHTML = `<span class="gn">${box.children.length+1}</span><span class="gt">${esc(title)}</span><span class="gi">${correct?'&#10003;':'&#10007;'}</span>`;
+    box.appendChild(div);
+  }
+
+  function submitGuess(raw) {
+    if (over) return;
+    const n = normTitle(raw);
+    if (!n) return;
+    const match = allMovies.find(m => normTitle(m.title) === n);
+    if (!match) { shake(); return; }
+
+    if (normTitle(match.title) === normTitle(answer.title)) {
+      addGuessRow(match.title, true);
+      won = true; over = true; endGame(); return;
+    }
+    addGuessRow(match.title, false);
+    tries++;
+    document.getElementById('guess-input').value = '';
+    closeDD();
+    if (tries >= MAX_TRIES) { over = true; endGame(); return; }
+    revealBatch();
+    renderMeta(); renderSyn(); renderTries();
+  }
+
+  function endGame() {
+    document.getElementById('guess-input').disabled = true;
+    document.getElementById('guess-submit').disabled = true;
+    closeDD();
+    renderMeta(); renderSyn(); renderTries();
+
+    const played = parseInt(localStorage.getItem('c2-redacle-played')||'0')+1;
+    const wins = parseInt(localStorage.getItem('c2-redacle-wins')||'0') + (won?1:0);
+    localStorage.setItem('c2-redacle-played', played);
+    localStorage.setItem('c2-redacle-wins', wins);
+
+    const nm = document.getElementById('end-name');
+    if (won) {
+      document.getElementById('end-label').textContent = 'Got it!';
+      nm.className = 'end-name win'; nm.textContent = answer.title + (answer.year?` (${answer.year})`:'');
+      const used = tries + 1;
+      document.getElementById('end-stat').innerHTML = `solved in <strong>${used}</strong> guess${used>1?'es':''} · ${wins}/${played} win rate`;
+    } else {
+      document.getElementById('end-label').textContent = 'Out of guesses — it was';
+      nm.className = 'end-name lose'; nm.textContent = answer.title + (answer.year?` (${answer.year})`:'');
+      document.getElementById('end-stat').innerHTML = `${wins}/${played} win rate`;
+    }
+    document.getElementById('end-panel').classList.add('on');
+    document.getElementById('end-panel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function shake() { const inp = document.getElementById('guess-input'); inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); }
+
+  // autocomplete
+  let ddActive = -1;
+  function openDD(q) {
+    const dd = document.getElementById('guess-dd'); const lq = q.toLowerCase();
+    const matches = allMovies.filter(m => m.title.toLowerCase().includes(lq)).slice(0, 9);
+    if (!matches.length) { closeDD(); return; }
+    dd.innerHTML = matches.map((m, idx) =>
+      `<div class="guess-opt" data-idx="${idx}" data-title="${esc(m.title)}">${esc(m.title)} <span class="go-n">(${esc(m.year)})</span></div>`
+    ).join('');
+    dd.classList.remove('off'); ddActive = -1;
+    dd.querySelectorAll('.guess-opt').forEach(el => {
+      el.addEventListener('mousedown', e => { e.preventDefault(); document.getElementById('guess-input').value = el.dataset.title; closeDD(); submitGuess(el.dataset.title); });
+    });
+  }
+  function closeDD() { document.getElementById('guess-dd').classList.add('off'); ddActive = -1; }
+  function moveDD(dir) {
+    const opts = document.getElementById('guess-dd').querySelectorAll('.guess-opt');
+    if (!opts.length) return;
+    opts[ddActive]?.classList.remove('hi');
+    ddActive = (ddActive + dir + opts.length) % opts.length;
+    opts[ddActive].classList.add('hi');
+    document.getElementById('guess-input').value = opts[ddActive].dataset.title;
+  }
+
+  const inp = document.getElementById('guess-input');
+  inp.addEventListener('input', () => { const q = inp.value.trim(); if (q.length>=1) openDD(q); else closeDD(); });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); moveDD(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); moveDD(-1); }
+    else if (e.key === 'Enter') { closeDD(); submitGuess(inp.value); }
+    else if (e.key === 'Escape') { closeDD(); }
+  });
+  inp.addEventListener('blur', () => setTimeout(closeDD, 120));
+  document.getElementById('guess-submit').addEventListener('click', () => { closeDD(); submitGuess(inp.value); });
+  document.getElementById('btn-again').addEventListener('click', startRound);
+
+  fetch('./letterboxd_scraped.csv')
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(text => {
+      allMovies = applyDatasetFilter(loadCSV(text));
+      if (!allMovies.length) throw new Error('no synopses');
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = '';
+      startRound();
+    })
+    .catch(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('error-screen').style.display = 'flex';
+    });
+
+})();
+</script>
+</body>
+</html>

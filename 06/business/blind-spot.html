@@ -103,7 +103,7 @@ body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui
 .h-cell.sp3 { grid-column:span 3; }
 .h-lbl { font-size:.57rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
 .h-val { font-size:.8rem; line-height:1.5; color:var(--text-dim); }
-.h-val img { width:68px; border-radius:6px; display:block; margin-top:.15rem; }
+.h-val img { width:260px; max-width:100%; border-radius:8px; display:block; margin-top:.15rem; box-shadow:0 4px 16px rgba(0,0,0,.5); }
 .rv-btn { background:none; border:1px solid var(--card-border); border-radius:6px; padding:.25rem .55rem; font-size:.7rem; font-weight:700; color:var(--muted); cursor:pointer; font-family:inherit; transition:border-color .12s,color .12s; white-space:nowrap; }
 .rv-btn:hover { border-color:rgba(240,191,60,.4); color:var(--accent); }
 .rv-btn.pricey { border-color:rgba(239,68,68,.22); color:rgba(239,68,68,.65); }
@@ -149,7 +149,12 @@ body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui
     <a class="c2-link" href="release-order.html" style="--cp:#22c55e"><span class="c2-pip"></span><span class="c2-n">05</span><span>Release Order</span></a>
     <a class="c2-link" href="blind-spot.html" style="--cp:#f97316"><span class="c2-pip"></span><span class="c2-n">06</span><span>Blind Spot</span></a>
     <a class="c2-link" href="genre-grid.html" style="--cp:#14b8a6"><span class="c2-pip"></span><span class="c2-n">07</span><span>Genre Grid</span></a>
+    <a class="c2-link" href="cast-grid.html" style="--cp:#06b6d4"><span class="c2-pip"></span><span class="c2-n">08</span><span>Cast Grid</span></a>
+    <a class="c2-link" href="actorle.html" style="--cp:#ec4899"><span class="c2-pip"></span><span class="c2-n">09</span><span>Actorle</span></a>
+    <a class="c2-link" href="moviedle.html" style="--cp:#3b82f6"><span class="c2-pip"></span><span class="c2-n">10</span><span>Moviedle</span></a>
+    <a class="c2-link" href="movie-redacle.html" style="--cp:#84cc16"><span class="c2-pip"></span><span class="c2-n">11</span><span>Movie Redacle</span></a>
     <a class="c2-link" href="rating-wars.html" style="--cp:#f0bf3c"><span class="c2-pip"></span><span class="c2-n">12</span><span>Rating Wars</span></a>
+    <a class="c2-link" href="movie-snake.html" style="--cp:#d946ef"><span class="c2-pip"></span><span class="c2-n">13</span><span>Movie Snake</span></a>
     <p class="c2-lbl" style="margin-top:1rem;">Dataset</p>
     <div class="c2-flt-wrap">
       <button class="c2-flt" data-f="all">All</button>
@@ -326,7 +331,7 @@ body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui
     { key:'cast2',    label:'Actor 2',  cost:50,  span:1, get: m => m.casts[1]            || '' },
     { key:'cast3',    label:'Actor 3',  cost:40,  span:1, get: m => m.casts[2]            || '' },
     { key:'synopsis', label:'Synopsis', cost:100, span:3, get: m => m.synopsis            || '' },
-    { key:'poster',   label:'Poster',   cost:75,  span:1, get: m => m.poster              || '' },
+    { key:'poster',   label:'Poster',   cost:150, span:1, get: m => m.poster              || '' },
   ];
 
   // ── State ────────────────────────────────────────────────────
