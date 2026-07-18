@@ -3,6 +3,19 @@
   const view = document.getElementById("view");
   const $ = (s, r = document) => r.querySelector(s);
 
+  // In-memory UI state: kept while navigating between views, reset on a full
+  // page refresh (it lives only for this page's JS session — no storage APIs).
+  const UIState = {
+    overview: { sortKey: null, sortDir: null },
+    players: { search: "", team: "", sortKey: null, sortDir: null },
+    teams: { sortKey: null, sortDir: null },
+    matches: { event: "", team: "", status: "" },
+    maps: { mode: "", sortKey: null, sortDir: null },
+    events: { sortKey: null, sortDir: null },
+    h2h: { mode: "teams", teams: { a: null, b: null }, players: { a: null, b: null } },
+    history: { mode: "team", team: null, player: null },
+  };
+
   // ---------- small helpers ------------------------------------------------
   const kd = (r) => r.kd;
   const fx = (v, d = 2) => (v == null || isNaN(v)) ? "—" : Number(v).toFixed(d);
@@ -61,6 +74,7 @@
       mount.querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
         const k = th.dataset.key;
         if (k === sortKey) dir = -dir; else { sortKey = k; dir = colByKey[k].asc ? 1 : -1; }
+        if (opts.onSort) opts.onSort(sortKey, dir);
         render();
       }));
       if (opts.onRow) mount.querySelectorAll("tbody tr").forEach((tr) =>
@@ -209,7 +223,12 @@
       { key: "w", label: "W", render: (r) => `<b>${r.w}</b>`, d: 0 },
       { key: "l", label: "L", render: (r) => r.l, d: 0 },
       { key: "wp", label: "Win %", render: (r) => DB.pct(r.wp) },
-    ], standings, { sort: "wp", onRow: (r) => teamDetail(r.t.id) });
+    ], standings, {
+      sort: UIState.overview.sortKey || "wp",
+      dir: UIState.overview.sortDir != null ? UIState.overview.sortDir : -1,
+      onSort: (k, d) => { UIState.overview.sortKey = k; UIState.overview.sortDir = d; },
+      onRow: (r) => teamDetail(r.t.id),
+    });
   };
 
   Views.players = function () {
@@ -242,10 +261,19 @@
       { key: "snd_bp_rating", label: "SnD Rtg", title: "Search & Destroy rating", render: (r) => fx(r.snd_bp_rating, 1) },
       { key: "ovl_kd", label: "OVL K/D", title: "Overload K/D", render: (r) => fx(r.ovl_kd, 2) },
     ];
-    const table = new SortableTable($("#ptable"), cols, rows, { sort: "bp_rating", onRow: (r) => playerDetail(r.player_id) });
+    const S = UIState.players;
+    const table = new SortableTable($("#ptable"), cols, rows, {
+      sort: S.sortKey || "bp_rating",
+      dir: S.sortDir != null ? S.sortDir : -1,
+      onSort: (k, d) => { S.sortKey = k; S.sortDir = d; },
+      onRow: (r) => playerDetail(r.player_id),
+    });
+    $("#psearch").value = S.search || "";
+    $("#pteam").value = S.team || "";
     const apply = () => {
-      const q = $("#psearch").value.trim().toLowerCase();
-      const tf = $("#pteam").value;
+      S.search = $("#psearch").value; S.team = $("#pteam").value;
+      const q = S.search.trim().toLowerCase();
+      const tf = S.team;
       const f = rows.filter((r) =>
         (!q || r.player_tag.toLowerCase().includes(q)) &&
         (!tf || String(r.team_id) === tf));
@@ -276,7 +304,12 @@
       { key: "hp_map_win_percentage", label: "HP Win%", render: (r) => DB.pct(r.hp_map_win_percentage) },
       { key: "snd_map_win_percentage", label: "SnD Win%", render: (r) => DB.pct(r.snd_map_win_percentage) },
       { key: "ovl_map_win_percentage", label: "OVL Win%", render: (r) => DB.pct(r.ovl_map_win_percentage) },
-    ], rows, { sort: "kd", onRow: (r) => teamDetail(r.team_id) });
+    ], rows, {
+      sort: UIState.teams.sortKey || "kd",
+      dir: UIState.teams.sortDir != null ? UIState.teams.sortDir : -1,
+      onSort: (k, d) => { UIState.teams.sortKey = k; UIState.teams.sortDir = d; },
+      onRow: (r) => teamDetail(r.team_id),
+    });
   };
 
   Views.matches = function () {
@@ -306,8 +339,10 @@
         <div class="match-meta" style="text-align:right">Bo${m.best_of || "?"}</div>
       </div>`;
     }
+    const S = UIState.matches;
     function apply() {
-      const ev = $("#mevent").value, tm = $("#mteam").value, st = $("#mstatus").value;
+      S.event = $("#mevent").value; S.team = $("#mteam").value; S.status = $("#mstatus").value;
+      const ev = S.event, tm = S.team, st = S.status;
       const f = matches.filter((m) =>
         (!ev || String(m.event_id) === ev) &&
         (!tm || String(m.team_1_id) === tm || String(m.team_2_id) === tm) &&
@@ -317,6 +352,7 @@
       $("#mlist").querySelectorAll(".match-row[data-id]").forEach((r) =>
         r.addEventListener("click", () => matchDetail(+r.dataset.id)));
     }
+    $("#mevent").value = S.event || ""; $("#mteam").value = S.team || ""; $("#mstatus").value = S.status || "";
     ["#mevent", "#mteam", "#mstatus"].forEach((s) => $(s).addEventListener("change", apply));
     apply();
   };
@@ -336,7 +372,8 @@
       <h3 class="sub">Map pool</h3><div id="maptable"></div>`;
 
     function draw() {
-      const mf = $("#mapmode").value ? +$("#mapmode").value : null;
+      UIState.maps.mode = $("#mapmode").value;
+      const mf = UIState.maps.mode ? +UIState.maps.mode : null;
       const agg = mapAggregates(mf).sort((a, b) => b.games - a.games);
       $("#mapbars").innerHTML = Charts.hbar(agg.slice(0, 10).map((a) => ({
         label: DB.mapName(a.map_id), value: a.games, display: a.games, color: "var(--accent)" })), { labelW: 110 });
@@ -353,8 +390,13 @@
         { key: "games", label: "Played" },
         { key: "avgk", label: "Avg kills / map", value: (r) => r.kills / r.games, render: (r) => fx(r.kills / r.games, 0) },
         { key: "avgt", label: "Avg length", value: (r) => r.secs / r.games, render: (r) => `${Math.floor((r.secs / r.games) / 60)}m ${Math.round((r.secs / r.games) % 60)}s` },
-      ], agg, { sort: "games" });
+      ], agg, {
+        sort: UIState.maps.sortKey || "games",
+        dir: UIState.maps.sortDir != null ? UIState.maps.sortDir : -1,
+        onSort: (k, d) => { UIState.maps.sortKey = k; UIState.maps.sortDir = d; },
+      });
     }
+    $("#mapmode").value = UIState.maps.mode || "";
     $("#mapmode").addEventListener("change", draw);
     draw();
   };
@@ -377,7 +419,12 @@
       { key: "number_of_teams", label: "Teams", render: (r) => r.number_of_teams || "—" },
       { key: "prizepool", label: "Prize", value: (r) => r.prizepool || 0, render: (r) => r.prizepool ? "$" + DB.num(r.prizepool) : "—" },
       { key: "location", label: "Location", left: true, value: (r) => r.location || "", render: (r) => `<span class="muted">${r.location || "—"}</span>` },
-    ], rows, { sort: "start_date", dir: 1, onRow: (r) => eventDetail(r.id) });
+    ], rows, {
+      sort: UIState.events.sortKey || "start_date",
+      dir: UIState.events.sortDir != null ? UIState.events.sortDir : 1,
+      onSort: (k, d) => { UIState.events.sortKey = k; UIState.events.sortDir = d; },
+      onRow: (r) => eventDetail(r.id),
+    });
   };
 
   // ---- shared H2H render helpers -----------------------------------------
@@ -395,15 +442,21 @@
       </div>
       <div class="toolbar" id="h2hCtrl"></div>
       <div id="h2hBody"></div>`;
-    let mode = "teams";
+    const S = UIState.h2h;
+    let mode = S.mode;
     let selA = null, selB = null;
 
     function controls() {
       const list = mode === "teams" ? teamSelectOptions() : playerSelectOptions();
       const ph = mode === "teams" ? "Search teams…" : "Search players…";
+      const valid = new Set(list.map((o) => o.value));
+      const saved = S[mode];
+      const aVal = saved.a != null && valid.has(saved.a) ? saved.a : (list[0] && list[0].value);
+      const bVal = saved.b != null && valid.has(saved.b) ? saved.b : (list[1] && list[1].value);
+      saved.a = aVal; saved.b = bVal;
       $("#h2hCtrl").innerHTML = `<div id="selA"></div><span class="muted">vs</span><div id="selB"></div>`;
-      selA = new SearchSelect($("#selA"), list, { value: list[0] && list[0].value, placeholder: ph, onChange: render });
-      selB = new SearchSelect($("#selB"), list, { value: list[1] && list[1].value, placeholder: ph, onChange: render });
+      selA = new SearchSelect($("#selA"), list, { value: aVal, placeholder: ph, onChange: (v) => { saved.a = v; render(); } });
+      selB = new SearchSelect($("#selB"), list, { value: bVal, placeholder: ph, onChange: (v) => { saved.b = v; render(); } });
       render();
     }
     function render() {
@@ -413,11 +466,14 @@
       $("#h2hBody").querySelectorAll(".match-row[data-id]").forEach((r) => r.addEventListener("click", () => matchDetail(+r.dataset.id)));
       $("#h2hBody").querySelectorAll("[data-pid]").forEach((r) => r.addEventListener("click", () => playerDetail(+r.dataset.pid)));
     }
-    $("#h2hMode").querySelectorAll(".seg-btn").forEach((btn) => btn.addEventListener("click", () => {
-      mode = btn.dataset.m;
-      $("#h2hMode").querySelectorAll(".seg-btn").forEach((x) => x.classList.toggle("active", x === btn));
-      controls();
-    }));
+    $("#h2hMode").querySelectorAll(".seg-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.m === mode);
+      btn.addEventListener("click", () => {
+        mode = btn.dataset.m; S.mode = mode;
+        $("#h2hMode").querySelectorAll(".seg-btn").forEach((x) => x.classList.toggle("active", x === btn));
+        controls();
+      });
+    });
     controls();
   };
 
@@ -509,16 +565,20 @@
         <div id="hPick"></div>
       </div>
       <div id="hBody"></div>`;
-    let mode = "team";
+    const S = UIState.history;
+    let mode = S.mode;
     let sel = null;
 
     function pick() {
       const list = mode === "team" ? teamSelectOptions() : playerSelectOptions();
+      const valid = new Set(list.map((o) => o.value));
+      const val = S[mode] != null && valid.has(S[mode]) ? S[mode] : (list[0] && list[0].value);
+      S[mode] = val;
       $("#hPick").innerHTML = `<div id="hSel"></div>`;
       sel = new SearchSelect($("#hSel"), list, {
-        value: list[0] && list[0].value,
+        value: val,
         placeholder: mode === "team" ? "Search teams…" : "Search players…",
-        onChange: render,
+        onChange: (v) => { S[mode] = v; render(); },
       });
       render();
     }
@@ -527,11 +587,14 @@
       $("#hBody").innerHTML = mode === "team" ? teamHistory(id) : playerHistory(id);
       $("#hBody").querySelectorAll("[data-pid]").forEach((e) => e.addEventListener("click", () => playerDetail(+e.dataset.pid)));
     }
-    $("#hMode").querySelectorAll(".seg-btn").forEach((btn) => btn.addEventListener("click", () => {
-      mode = btn.dataset.m;
-      $("#hMode").querySelectorAll(".seg-btn").forEach((x) => x.classList.toggle("active", x === btn));
-      pick();
-    }));
+    $("#hMode").querySelectorAll(".seg-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.m === mode);
+      btn.addEventListener("click", () => {
+        mode = btn.dataset.m; S.mode = mode;
+        $("#hMode").querySelectorAll(".seg-btn").forEach((x) => x.classList.toggle("active", x === btn));
+        pick();
+      });
+    });
     pick();
   };
 
