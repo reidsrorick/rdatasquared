@@ -1,0 +1,1547 @@
+[
+  {
+    "id": 38,
+    "name": "6 Star",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2024-04-10T00:41:27.04705+00:00",
+    "updated_at": "2024-04-10T00:41:27.04705+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/6%20Star.jpg",
+    "since_when": "2024-04-10",
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Apocalypse",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:16:07.774194+00:00",
+    "updated_at": "2023-09-17T02:16:07.774194+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Apocalypse.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "name": "Ardennes Forest",
+    "title_id": 6,
+    "season_id": 2018,
+    "created_at": "2025-11-06T17:45:09.029448+00:00",
+    "updated_at": "2025-11-06T17:45:09.029448+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/WW2/Ardennes_Forest_WWII.webp",
+    "since_when": "2017-11-03",
+    "till_when": "2018-10-11",
+    "name_short": "ARDN",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 6
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "name": "Arklov Peak",
+    "title_id": 8,
+    "season_id": 2020,
+    "created_at": "2025-09-06T18:37:54.864399+00:00",
+    "updated_at": "2025-09-06T18:37:54.864399+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MW19/ArklovPeak_MW.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "PEAK",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "name": "Arsenal",
+    "title_id": 7,
+    "season_id": 2019,
+    "created_at": "2025-09-26T15:37:06.919928+00:00",
+    "updated_at": "2025-09-26T15:37:06.919928+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO4/Arsenal.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "ARS",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "name": "Azhir Cave",
+    "title_id": 8,
+    "season_id": 2020,
+    "created_at": "2025-09-06T18:39:22.578802+00:00",
+    "updated_at": "2025-09-06T18:39:22.578802+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MW19/AzhirCave_MW.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "CAVE",
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "name": "Berlin",
+    "title_id": 10,
+    "season_id": 2022,
+    "created_at": "2023-09-17T02:29:37.618397+00:00",
+    "updated_at": "2023-09-17T02:29:37.618397+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Berlin.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "name": "Blackheart",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-25T22:57:19.523396+00:00",
+    "updated_at": "2025-11-25T22:57:19.523396+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Blackheart_BO7.webp",
+    "since_when": "2025-11-18",
+    "till_when": null,
+    "name_short": "BHRT",
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "name": "Bocage",
+    "title_id": 10,
+    "season_id": 2022,
+    "created_at": "2023-09-17T02:32:46.704911+00:00",
+    "updated_at": "2023-09-17T02:32:46.704911+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Tuscan.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "name": "Checkmate",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:15:30.498525+00:00",
+    "updated_at": "2023-09-17T02:15:30.498525+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Checkmate.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 80,
+    "name": "Cliff Town",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2026-04-15T23:47:03.51105+00:00",
+    "updated_at": "2026-04-15T23:47:03.51105+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/clifftown-bo7.webp",
+    "since_when": "2026-04-13",
+    "till_when": null,
+    "name_short": "CLTWN",
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "name": "Colossus",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:01:25.99227+00:00",
+    "updated_at": "2025-11-18T06:01:25.99227+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Colossus_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "COLUS",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "name": "Cortex",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:00:40.806107+00:00",
+    "updated_at": "2025-11-18T06:00:40.806107+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Cortex_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "CORTX",
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Crossroads",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:14:06.333229+00:00",
+    "updated_at": "2023-09-17T02:14:06.333229+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Crossroads.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "name": "Dealership",
+    "title_id": 13,
+    "season_id": 2025,
+    "created_at": "2025-03-31T21:11:53.098943+00:00",
+    "updated_at": "2025-03-31T21:11:53.098943+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps//Dealership.webp",
+    "since_when": "2025-03-25",
+    "till_when": null,
+    "name_short": "DEA",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 68,
+    "name": "Den",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:01:51.916749+00:00",
+    "updated_at": "2025-11-18T06:01:51.916749+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Den_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "DEN",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 5
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "name": "Desert Siege",
+    "title_id": 10,
+    "season_id": 2022,
+    "created_at": "2023-09-17T02:30:10.922286+00:00",
+    "updated_at": "2023-09-17T02:30:10.922286+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Desert%20Siege.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "El Asilo",
+    "title_id": 11,
+    "season_id": 2023,
+    "created_at": "2023-01-04T21:21:28.919273+00:00",
+    "updated_at": "2023-01-04T21:21:28.919273+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/El%20Asilo.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "name": "Embassy",
+    "title_id": 11,
+    "season_id": 2023,
+    "created_at": "2023-01-04T21:22:24.413428+00:00",
+    "updated_at": "2023-01-04T21:22:24.413428+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Embassy.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Expo",
+    "title_id": 11,
+    "season_id": 2023,
+    "created_at": "2023-04-23T22:34:44.140379+00:00",
+    "updated_at": "2023-04-23T22:34:44.140379+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Expo.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 69,
+    "name": "Exposure",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:02:45.921223+00:00",
+    "updated_at": "2025-11-18T06:02:45.921223+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Exposure_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "EXPS",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 5
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "name": "Express",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:17:26.792238+00:00",
+    "updated_at": "2023-09-17T02:17:26.792238+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Express.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "name": "Express",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:03:14.618962+00:00",
+    "updated_at": "2025-11-18T06:03:14.618962+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Express_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "EXPR",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "name": "Flak Tower",
+    "title_id": 6,
+    "season_id": 2018,
+    "created_at": "2025-11-06T17:45:49.45904+00:00",
+    "updated_at": "2025-11-06T17:45:49.45904+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/WW2/Flak_Tower_WWII.webp",
+    "since_when": "2017-11-03",
+    "till_when": "2018-10-11",
+    "name_short": "FLAK",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 6
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Fortress",
+    "title_id": 11,
+    "season_id": 2023,
+    "created_at": "2023-01-04T21:20:19.386966+00:00",
+    "updated_at": "2023-01-04T21:20:19.386966+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Fortress.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "name": "Frequency",
+    "title_id": 7,
+    "season_id": 2019,
+    "created_at": "2025-09-26T15:37:31.245786+00:00",
+    "updated_at": "2025-09-26T15:37:31.245786+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO4/Frequency.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "FREQ",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 79,
+    "name": "Fringe",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2026-04-15T23:46:17.87129+00:00",
+    "updated_at": "2026-04-15T23:46:17.87129+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/fringe-bo7.webp",
+    "since_when": "2026-04-13",
+    "till_when": null,
+    "name_short": "FRNGE",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Garrison",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:02:51.575052+00:00",
+    "updated_at": "2023-09-17T02:02:51.575052+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Garrison.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "name": "Gavutu",
+    "title_id": 10,
+    "season_id": 2022,
+    "created_at": "2023-09-17T02:28:37.97227+00:00",
+    "updated_at": "2023-09-17T02:28:37.97227+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Gavutu.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "name": "Gibraltar",
+    "title_id": 6,
+    "season_id": 2018,
+    "created_at": "2025-11-06T17:46:49.114823+00:00",
+    "updated_at": "2025-11-06T17:46:49.114823+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/WW2/Gibraltar_WWII.webp",
+    "since_when": "2017-11-03",
+    "till_when": "2018-10-11",
+    "name_short": "GIBR",
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 78,
+    "name": "Gridlock",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2026-04-15T23:45:05.891546+00:00",
+    "updated_at": "2026-04-15T23:45:05.891546+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/gridlock-bo7.webp",
+    "since_when": "2026-04-13",
+    "till_when": null,
+    "name_short": "GRLK",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 5
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "name": "Gridlock",
+    "title_id": 7,
+    "season_id": 2019,
+    "created_at": "2025-09-26T15:38:37.741163+00:00",
+    "updated_at": "2025-09-26T15:38:37.741163+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO4/Gridlock.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "GRID",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "name": "Gun Runner",
+    "title_id": 8,
+    "season_id": 2020,
+    "created_at": "2025-09-06T18:40:09.53923+00:00",
+    "updated_at": "2025-09-06T18:40:09.53923+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MW19/GunRunner_MW.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "GUNR",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 4
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "name": "Hacienda",
+    "title_id": 13,
+    "season_id": 2025,
+    "created_at": "2025-01-10T19:33:15.925166+00:00",
+    "updated_at": "2025-01-10T19:33:15.925166+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Hacienda_MenuScreen_BO4.webp?t=2025-01-10T19%3A32%3A51.061Z",
+    "since_when": "2025-01-10",
+    "till_when": null,
+    "name_short": "HACI",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "name": "Hacienda",
+    "title_id": 7,
+    "season_id": 2019,
+    "created_at": "2025-09-26T15:39:09.647458+00:00",
+    "updated_at": "2025-09-26T15:39:09.647458+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO4/Hacienda.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "HACI",
+    "modes": [
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 82,
+    "name": "Hacienda",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2026-05-29T18:26:05.057458+00:00",
+    "updated_at": "2026-05-29T18:26:05.057458+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Hacienda_BO7.webp",
+    "since_when": "2026-05-27",
+    "till_when": null,
+    "name_short": "HACI",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "name": "Hackney Yard",
+    "title_id": 8,
+    "season_id": 2020,
+    "created_at": "2025-09-06T18:40:40.47599+00:00",
+    "updated_at": "2025-09-06T18:40:40.47599+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MW19/HackneyYard_MW.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "HACK",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 4
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "name": "Highrise",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2023-11-27T03:22:05.5616+00:00",
+    "updated_at": "2023-11-27T03:22:05.5616+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MWIII-HIGHRISE.webp?t=2023-11-27T05%3A19%3A04.643Z",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Hotel",
+    "title_id": 11,
+    "season_id": 2023,
+    "created_at": "2023-01-04T21:20:55.658924+00:00",
+    "updated_at": "2023-01-04T21:20:55.658924+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Hotel.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Hydro",
+    "title_id": 11,
+    "season_id": 2023,
+    "created_at": "2023-01-04T21:23:25.492909+00:00",
+    "updated_at": "2023-01-04T21:23:25.492909+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Hydro.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "name": "Imprint",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:04:32.100212+00:00",
+    "updated_at": "2025-11-18T06:04:32.100212+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Imprint_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "IMPT",
+    "modes": [
+      {
+        "id": 5
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "name": "Invasion",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2023-11-27T03:15:50.979016+00:00",
+    "updated_at": "2023-11-27T03:15:50.979016+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MWIII-INVASION.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "name": "Karachi",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2023-11-27T03:20:09.554389+00:00",
+    "updated_at": "2023-11-27T03:20:09.554389+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MWIII-KARACHI.webp?t=2023-11-27T05%3A18%3A02.920Z",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "name": "London Docks",
+    "title_id": 6,
+    "season_id": 2018,
+    "created_at": "2025-11-06T17:47:27.724272+00:00",
+    "updated_at": "2025-11-06T17:47:27.724272+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/WW2/London_Docks_WWII.webp",
+    "since_when": "2017-11-03",
+    "till_when": "2018-10-11",
+    "name_short": "LDDK",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 6
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Mercado",
+    "title_id": 11,
+    "season_id": 2023,
+    "created_at": "2023-01-04T21:23:00.230336+00:00",
+    "updated_at": "2023-01-04T21:23:00.230336+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Mercado.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "name": "Miami",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:16:46.798541+00:00",
+    "updated_at": "2023-09-17T02:16:46.798541+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Miami.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "name": "Moscow",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:13:28.210149+00:00",
+    "updated_at": "2023-09-17T02:13:28.210149+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Moscow.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "name": "Payload",
+    "title_id": 7,
+    "season_id": 2019,
+    "created_at": "2025-09-26T15:39:32.385971+00:00",
+    "updated_at": "2025-09-26T15:39:32.385971+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO4/Payload.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "PAY",
+    "modes": [
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "name": "Piccadilly",
+    "title_id": 8,
+    "season_id": 2020,
+    "created_at": "2025-09-06T18:41:07.162193+00:00",
+    "updated_at": "2025-09-06T18:41:07.162193+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MW19/Piccadilly_MW.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "PICC",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 81,
+    "name": "Plaza",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2026-04-15T23:50:51.575811+00:00",
+    "updated_at": "2026-04-15T23:50:51.575811+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/plaza-bo7.webp",
+    "since_when": "2026-04-13",
+    "till_when": null,
+    "name_short": "PLAZA",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "name": "Protocol",
+    "title_id": 13,
+    "season_id": 2025,
+    "created_at": "2024-11-06T21:33:25.180244+00:00",
+    "updated_at": "2024-11-06T21:33:25.180244+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Protocol.webp?t=2024-11-06T21%3A39%3A23.225Z",
+    "since_when": "2024-10-24",
+    "till_when": null,
+    "name_short": "PRO",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "name": "Raid",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:14:47.38664+00:00",
+    "updated_at": "2023-09-17T02:14:47.38664+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Raid.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 73,
+    "name": "Raid",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:04:57.961851+00:00",
+    "updated_at": "2025-11-18T06:04:57.961851+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Raid_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "RAID",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "name": "Rammaza",
+    "title_id": 8,
+    "season_id": 2020,
+    "created_at": "2025-09-06T18:41:29.923834+00:00",
+    "updated_at": "2025-09-06T18:41:29.923834+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MW19/Rammaza_MW.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "RAMZ",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "name": "Red Card",
+    "title_id": 13,
+    "season_id": 2025,
+    "created_at": "2024-11-06T21:33:07.940642+00:00",
+    "updated_at": "2024-11-06T21:33:07.940642+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Red%20Card.webp?t=2024-11-06T21%3A39%3A34.230Z",
+    "since_when": "2024-10-24",
+    "till_when": null,
+    "name_short": "RED",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 75,
+    "name": "Retrieval",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T16:13:48.216581+00:00",
+    "updated_at": "2025-11-18T16:13:48.216581+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Retrieval_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "RTVL",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "name": "Rewind",
+    "title_id": 13,
+    "season_id": 2025,
+    "created_at": "2024-11-06T21:32:33.786041+00:00",
+    "updated_at": "2024-11-06T21:32:33.786041+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Rewind.webp?t=2024-11-06T21%3A39%3A43.360Z",
+    "since_when": "2024-10-24",
+    "till_when": null,
+    "name_short": "RWD",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "name": "Rio",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2024-02-16T19:26:50.010343+00:00",
+    "updated_at": "2024-02-16T19:26:50.010343+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Rio.webp?t=2024-02-16T19%3A28%3A46.901Z",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "name": "Saint Marie Du Mont",
+    "title_id": 6,
+    "season_id": 2018,
+    "created_at": "2025-11-06T17:48:00.650824+00:00",
+    "updated_at": "2025-11-06T17:48:00.650824+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/WW2/Sainte_Marie_du_Mont_WWII.webp",
+    "since_when": "2017-11-03",
+    "till_when": "2018-10-11",
+    "name_short": "SAINT",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 77,
+    "name": "Sake",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2026-04-15T23:44:15.003991+00:00",
+    "updated_at": "2026-04-15T23:44:15.003991+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Sake-Bo7.webp",
+    "since_when": "2026-04-13",
+    "till_when": null,
+    "name_short": "SAKE",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 74,
+    "name": "Scar",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:05:21.946022+00:00",
+    "updated_at": "2025-11-18T06:05:21.946022+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/Scar_BO7.webp",
+    "since_when": "2025-11-14",
+    "till_when": null,
+    "name_short": "SCAR",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 5
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "name": "Seaside",
+    "title_id": 7,
+    "season_id": 2019,
+    "created_at": "2025-09-26T15:39:55.809575+00:00",
+    "updated_at": "2025-09-26T15:39:55.809575+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO4/Seaside.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "SEA",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "name": "Skidrow",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2023-11-27T03:24:20.655003+00:00",
+    "updated_at": "2023-11-27T03:24:20.655003+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MWIII-SKIDROW.webp?t=2023-11-27T05%3A19%3A28.885Z",
+    "since_when": null,
+    "till_when": "2024-04-11",
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "name": "Skyline",
+    "title_id": 13,
+    "season_id": 2025,
+    "created_at": "2024-11-06T21:33:42.228076+00:00",
+    "updated_at": "2024-11-06T21:33:42.228076+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Skyline.webp?t=2024-11-06T21%3A39%3A12.111Z",
+    "since_when": "2024-10-24",
+    "till_when": null,
+    "name_short": "SKY",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "name": "St. Petrograd",
+    "title_id": 8,
+    "season_id": 2020,
+    "created_at": "2025-09-06T18:41:56.108061+00:00",
+    "updated_at": "2025-09-06T18:41:56.108061+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MW19/StPetrograd_MW.webp",
+    "since_when": null,
+    "till_when": null,
+    "name_short": "PETRO",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 4
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "name": "Standoff",
+    "title_id": 9,
+    "season_id": 2021,
+    "created_at": "2023-09-17T02:17:58.146363+00:00",
+    "updated_at": "2023-09-17T02:17:58.146363+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Standoff.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "name": "Sub Base",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2023-11-27T03:27:37.016453+00:00",
+    "updated_at": "2023-11-27T03:27:37.016453+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MWIII-SUB_BASE.webp?t=2023-11-27T05%3A18%3A20.126Z",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "name": "Terminal",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2023-11-27T03:25:20.579553+00:00",
+    "updated_at": "2023-11-27T03:25:20.579553+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/MWIII-TERMINAL.webp?t=2023-11-27T05%3A20%3A12.400Z",
+    "since_when": null,
+    "till_when": "2024-04-11",
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 71,
+    "name": "The Forge",
+    "title_id": 14,
+    "season_id": 2026,
+    "created_at": "2025-11-18T06:04:00.336111+00:00",
+    "updated_at": "2025-11-18T06:04:00.336111+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/BO7/TheForge_BO7.webp",
+    "since_when": "2025-11-04",
+    "till_when": null,
+    "name_short": "FORG",
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "name": "Tuscan",
+    "title_id": 10,
+    "season_id": 2022,
+    "created_at": "2023-09-17T02:29:21.579289+00:00",
+    "updated_at": "2023-09-17T02:29:21.579289+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Tuscan.png",
+    "since_when": null,
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "name": "USS Texas",
+    "title_id": 6,
+    "season_id": 2018,
+    "created_at": "2025-11-06T17:49:21.049113+00:00",
+    "updated_at": "2025-11-06T17:49:21.049113+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/WW2/USS_Texas_WWII.webp",
+    "since_when": "2017-11-03",
+    "till_when": "2018-10-11",
+    "name_short": "USSTX",
+    "modes": [
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "name": "Valkyrie",
+    "title_id": 6,
+    "season_id": 2018,
+    "created_at": "2025-11-06T17:49:58.240326+00:00",
+    "updated_at": "2025-11-06T17:49:58.240326+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/WW2/Valkyrie_WWII.webp",
+    "since_when": "2018-01-30",
+    "till_when": "2018-10-11",
+    "name_short": "VALK",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "name": "Vault",
+    "title_id": 13,
+    "season_id": 2025,
+    "created_at": "2024-11-06T21:33:53.185071+00:00",
+    "updated_at": "2024-11-06T21:33:53.185071+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Vault.webp?t=2024-11-06T21%3A39%3A01.304Z",
+    "since_when": "2024-10-24",
+    "till_when": null,
+    "name_short": "VLT",
+    "modes": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "name": "Vista",
+    "title_id": 12,
+    "season_id": 2024,
+    "created_at": "2024-04-04T23:04:37.361401+00:00",
+    "updated_at": "2024-04-04T23:04:37.361401+00:00",
+    "deleted_at": null,
+    "image": "https://dfpiiufxcciujugzjvgx.supabase.co/storage/v1/object/public/maps/Vista_LoadingScreen_MWIII.webp?t=2024-04-04T23%3A03%3A07.322Z",
+    "since_when": "2024-04-10",
+    "till_when": null,
+    "name_short": null,
+    "modes": [
+      {
+        "id": 1
+      }
+    ]
+  }
+]

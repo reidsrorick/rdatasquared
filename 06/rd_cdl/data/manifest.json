@@ -1,0 +1,20 @@
+{
+  "season_id": 2026,
+  "generated": "2026-07-17 18:57:13",
+  "source": "breakingpoint.gg tRPC API",
+  "datasets": {
+    "maps.json": 74,
+    "modes.json": 6,
+    "players.json": 753,
+    "matches.json": 290,
+    "events.json": 11,
+    "teams.json": 16,
+    "match_details.json": 282,
+    "games.json": 1103,
+    "rosters.json": 284,
+    "player_stats_season.json": 77,
+    "player_stats_by_event.json": 1,
+    "team_stats_season.json": 12,
+    "team_stats_by_event.json": 1
+  }
+}
