@@ -1,0 +1,172 @@
+/* ==========================================================================
+   components.css — reusable interactive parts: fields, buttons, the histogram,
+   mapping tiles, crib-drag rows, bit cells, toggles, data readouts.
+   ========================================================================== */
+
+/* ---- form fields ---- */
+label { font-family: var(--font-mono); font-size: var(--step--1); color: var(--ink-soft); display: block; margin-bottom: var(--sp-1); letter-spacing: 0.05em; }
+.field { margin-bottom: var(--sp-3); }
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  font-family: var(--font-mono);
+  font-size: var(--step-0);
+  color: var(--ink);
+  background: var(--paper-3);
+  border: var(--rule) solid var(--ink-soft);
+  border-radius: var(--radius);
+  padding: var(--sp-2);
+  width: 100%;
+}
+textarea { resize: vertical; min-height: 4.5rem; line-height: 1.5; }
+input[type="range"] { width: 100%; accent-color: var(--indigo); }
+
+.output {
+  font-family: var(--font-mono);
+  background: var(--paper-3);
+  border: var(--rule) solid var(--grid);
+  border-radius: var(--radius);
+  padding: var(--sp-2);
+  min-height: 2.4rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+.output--big { font-size: var(--step-1); letter-spacing: 0.06em; }
+
+/* ---- buttons ---- */
+button, .btn {
+  font-family: var(--font-mono);
+  font-size: var(--step-0);
+  color: var(--paper);
+  background: var(--indigo);
+  border: var(--rule) solid var(--indigo);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease;
+}
+button:hover, .btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 4px 0 rgba(30,37,48,0.18); }
+button:active, .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(30,37,48,0.14); }
+button.secondary {
+  color: var(--indigo);
+  background: transparent;
+  box-shadow: none;
+}
+button.danger { background: var(--break); border-color: var(--break); }
+button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.controls { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: end; margin: var(--sp-3) 0; }
+.controls > .field { margin-bottom: 0; flex: 1 1 12rem; }
+
+.two-col { display: grid; grid-template-columns: 1fr; gap: var(--sp-3); }
+@media (min-width: 640px) { .two-col { grid-template-columns: 1fr 1fr; } }
+
+.stat { font-family: var(--font-mono); }
+.stat__num { font-size: var(--step-2); color: var(--indigo); display: block; }
+.stat__label { font-size: var(--step--1); color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase; }
+
+.pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  padding: 0.1em 0.6em;
+  border-radius: 999px;
+  border: var(--rule) solid currentColor;
+}
+.pill--ok    { color: var(--indigo); }
+.pill--break { color: var(--break); background: var(--break-wash); }
+.pill--mark  { color: #7a5c14; background: var(--mark-wash); border-color: var(--mark); }
+
+/* ---- frequency histogram ---- */
+.histo { display: grid; grid-template-columns: repeat(26, 1fr); gap: 2px; align-items: end; height: 180px; margin: var(--sp-3) 0 var(--sp-2); }
+.histo__col { position: relative; height: 100%; display: flex; align-items: flex-end; }
+.histo__bar { width: 100%; background: var(--indigo); border-radius: 2px 2px 0 0; min-height: 1px; transition: height 0.25s ease; }
+.histo__base { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--break); pointer-events: none; }
+.histo__labels { display: grid; grid-template-columns: repeat(26, 1fr); gap: 2px; font-family: var(--font-mono); font-size: 0.62rem; text-align: center; color: var(--ink-soft); }
+.histo__legend { display: flex; gap: var(--sp-3); font-family: var(--font-mono); font-size: var(--step--1); flex-wrap: wrap; }
+.swatch { display: inline-block; width: 0.9em; height: 0.9em; vertical-align: -1px; margin-right: 0.3em; }
+.swatch--cipher { background: var(--indigo); }
+.swatch--english { background: transparent; border-bottom: 2px dashed var(--break); height: 0; width: 1.2em; vertical-align: middle; }
+
+/* ---- letter-mapping board (drag substitution crack) ---- */
+.mapboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.2rem, 1fr)); gap: 4px; }
+.mapcell {
+  font-family: var(--font-mono);
+  text-align: center;
+  border: var(--rule) solid var(--grid);
+  background: var(--paper-3);
+  border-radius: var(--radius);
+  padding: 4px 0;
+}
+.mapcell__cipher { font-size: var(--step--1); color: var(--ink-soft); border-bottom: var(--rule) dashed var(--grid); }
+.mapcell__guess { font-size: var(--step-1); color: var(--indigo); min-height: 1.4em; }
+.mapcell input {
+  width: 100%; border: 0; background: transparent; text-align: center;
+  font-family: var(--font-mono); font-size: var(--step-1); color: var(--indigo);
+  text-transform: uppercase; padding: 0;
+}
+.mapcell input:focus { background: var(--mark-wash); outline-offset: 0; }
+.mapcell--locked { background: var(--mark-wash); border-color: var(--mark); }
+
+/* rendered plaintext-guess with fixed/uncertain glyphs */
+.decode-view { font-family: var(--font-mono); font-size: var(--step-1); line-height: 2; letter-spacing: 0.05em; overflow-wrap: anywhere; }
+.decode-view .fixed { color: var(--ink); background: var(--mark-wash); padding: 0 1px; }
+.decode-view .open  { color: var(--indigo-soft); }
+
+/* ---- bit cells (CTR bit-flipping / two-time pad) ---- */
+.bits { display: flex; flex-wrap: wrap; gap: 3px; font-family: var(--font-mono); }
+.bit {
+  width: 1.5rem; height: 1.5rem; line-height: 1.5rem; text-align: center;
+  border: var(--rule) solid var(--grid); background: var(--paper-3);
+  border-radius: var(--radius); cursor: pointer; user-select: none; font-size: var(--step--1);
+}
+.bit:hover { border-color: var(--indigo); }
+.bit--flipped { background: var(--break); color: var(--paper); border-color: var(--break); }
+.bit--changed { box-shadow: 0 0 0 2px var(--break); }
+
+/* ---- crib-drag ---- */
+.cribrow { font-family: var(--font-mono); display: grid; grid-template-columns: 7rem 1fr; gap: var(--sp-2); align-items: center; padding: 2px 0; }
+.cribrow__pos { color: var(--ink-soft); font-size: var(--step--1); }
+.cribtext { letter-spacing: 0.12em; overflow-wrap: anywhere; }
+.cribtext .hit { background: var(--mark-wash); color: var(--ink); }
+.cribtext .readable { color: var(--ink); }
+.cribtext .noise { color: var(--indigo-soft); }
+
+/* ---- sortable chips (encoding vs hashing exercise) ---- */
+.sortbins { display: grid; grid-template-columns: 1fr; gap: var(--sp-3); margin-top: var(--sp-3); }
+@media (min-width: 720px) { .sortbins { grid-template-columns: repeat(3, 1fr); } }
+.bin { border: var(--rule) dashed var(--ink-soft); border-radius: var(--radius); padding: var(--sp-2); min-height: 8rem; background: var(--paper-3); }
+.bin--over { border-color: var(--indigo); background: var(--mark-wash); }
+.bin__title { font-family: var(--font-mono); font-size: var(--step--1); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: var(--sp-2); }
+.chip {
+  font-family: var(--font-mono); font-size: var(--step--1);
+  background: var(--paper-2); border: var(--rule) solid var(--ink);
+  border-radius: var(--radius); padding: var(--sp-1) var(--sp-2); margin: 3px 0;
+  cursor: grab; box-shadow: var(--shadow); display: block;
+}
+.chip:active { cursor: grabbing; }
+.chip--correct { border-color: var(--indigo); background: var(--mark-wash); }
+.chip--wrong { border-color: var(--break); background: var(--break-wash); }
+
+/* ---- canvas rows (ECB penguin) ---- */
+.canvas-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--sp-3); margin: var(--sp-3) 0; }
+.canvas-cell { text-align: center; font-family: var(--font-mono); font-size: var(--step--1); }
+.canvas-cell canvas { width: 100%; height: auto; image-rendering: pixelated; border: var(--rule) solid var(--ink); background: var(--paper-3); border-radius: var(--radius); }
+.canvas-cell figcaption { margin-top: var(--sp-1); color: var(--ink-soft); }
+.canvas-cell--break figcaption { color: var(--break); font-weight: 700; }
+
+/* ---- timing chart (side channel) ---- */
+.timing-chart { width: 100%; height: 200px; border: var(--rule) solid var(--indigo-soft); border-radius: var(--radius); background: var(--paper-3); display: block; }
+
+/* ---- small note ---- */
+.note { font-size: var(--step--1); color: var(--ink-soft); font-style: italic; }
+.kbd-hint { font-family: var(--font-mono); font-size: var(--step--1); color: var(--ink-soft); }
+
+/* ---- data table ---- */
+table.data { border-collapse: collapse; font-family: var(--font-mono); font-size: var(--step--1); width: 100%; }
+table.data th, table.data td { border: var(--rule) solid var(--grid); padding: var(--sp-1) var(--sp-2); text-align: left; }
+table.data th { background: var(--paper-2); }

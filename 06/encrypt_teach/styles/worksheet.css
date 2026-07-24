@@ -1,0 +1,199 @@
+/* ==========================================================================
+   worksheet.css — the page as a scrolling cryptanalyst's worksheet.
+   The three beats (WORKS / BREAKS / FORCED), stamp headers, intercept panels,
+   and the quadrille working surface that the interactive tools snap to.
+   ========================================================================== */
+
+/* ---- site header / masthead ---- */
+.masthead {
+  border-bottom: var(--rule) solid var(--ink);
+  background: var(--paper-2);
+}
+.masthead__bar {
+  max-width: 78ch;
+  margin: 0 auto;
+  padding: var(--sp-2) var(--sp-3);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.masthead__title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--step-0);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.masthead__title::before { content: "▚ "; color: var(--indigo); }
+.masthead__meta {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+/* ---- the spine / progress chain (top of every lesson) ---- */
+.chain {
+  max-width: 78ch;
+  margin: 0 auto;
+  padding: var(--sp-2) var(--sp-3);
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+}
+.chain__link {
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 2px 7px;
+  border: var(--rule) solid transparent;
+  white-space: nowrap;
+}
+.chain__link:hover { color: var(--indigo); border-color: var(--grid); }
+.chain__link[aria-current="page"] {
+  color: var(--paper);
+  background: var(--indigo);
+  border-color: var(--indigo);
+}
+.chain__sep { color: var(--indigo-soft); align-self: center; padding: 0 1px; }
+
+/* ---- lesson head ---- */
+.lesson-head {
+  padding: var(--sp-5) 0 var(--sp-3);
+}
+.lesson-head__kicker {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--indigo);
+  margin: 0 0 var(--sp-2);
+}
+.lesson-head__lede {
+  font-size: var(--step-1);
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+/* ---- the three beats: stamp-headed sections ---- */
+.beat { padding: var(--sp-5) 0; border-top: var(--rule) dashed var(--indigo-soft); }
+.beat__stamp {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--step--1);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 0.3em 0.8em;
+  margin: 0 0 var(--sp-3);
+  border: 2px solid currentColor;
+  border-radius: var(--radius);
+  transform: rotate(-1.2deg);
+}
+.beat--works .beat__stamp  { color: var(--indigo); }
+.beat--breaks .beat__stamp { color: var(--break); }
+.beat--forced .beat__stamp { color: var(--ink); }
+
+.beat--breaks {
+  /* the break is not an appendix: give it a faint alarm wash so it reads as
+     the emotional center of the page, not a footnote. */
+  background:
+    linear-gradient(var(--break-wash), var(--break-wash));
+  background-blend-mode: multiply;
+  margin: 0 calc(-1 * var(--sp-3));
+  padding-left: var(--sp-3);
+  padding-right: var(--sp-3);
+  border-radius: var(--radius);
+}
+@media (prefers-color-scheme: dark) {
+  .beat--breaks { background: none; box-shadow: inset 0 0 0 var(--rule) var(--break); }
+}
+
+.beat__forced-line {
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  line-height: 1.4;
+  border-left: 4px solid var(--indigo);
+  padding-left: var(--sp-3);
+  max-width: var(--measure);
+}
+.beat__forced-line b { color: var(--indigo); }
+
+/* ---- worksheet panel / intercept slip ---- */
+.panel {
+  background: var(--paper-2);
+  border: var(--rule) solid var(--ink);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  margin: var(--sp-3) 0;
+}
+.panel__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 var(--sp-2);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+/* ---- the persistent toy-crypto warning ---- */
+.toy-warning {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--break);
+  background: var(--break-wash);
+  border: var(--rule) solid var(--break);
+  border-left-width: 5px;
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-3);
+  margin: var(--sp-3) 0;
+}
+.toy-warning::before { content: "⚠"; font-size: 1.1em; line-height: 1; }
+.toy-warning b { font-weight: 700; }
+@media (prefers-color-scheme: dark) {
+  .toy-warning { background: var(--break-wash); }
+}
+
+/* ---- footer ---- */
+.site-foot {
+  border-top: var(--rule) solid var(--ink);
+  background: var(--paper-2);
+  margin-top: var(--sp-6);
+  padding: var(--sp-4) 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+.site-foot__nav {
+  max-width: 78ch;
+  margin: 0 auto;
+  padding: 0 var(--sp-3);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.site-foot a { color: var(--indigo); }
+
+/* ---- the quadrille working surface for interactive tools ---- */
+.grid-surface {
+  background-color: var(--paper-3);
+  background-image:
+    linear-gradient(to right,  var(--grid) var(--rule), transparent var(--rule)),
+    linear-gradient(to bottom, var(--grid) var(--rule), transparent var(--rule));
+  background-size: var(--cell) var(--cell);
+  border: var(--rule) solid var(--indigo-soft);
+  border-radius: var(--radius);
+  padding: var(--cell);
+  overflow-x: auto;
+}

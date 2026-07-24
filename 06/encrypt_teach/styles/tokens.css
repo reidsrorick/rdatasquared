@@ -1,0 +1,78 @@
+/* ==========================================================================
+   tokens.css — the whole visual system in one place.
+   Direction: the cryptanalyst's worksheet. Ink on pale squared ledger paper.
+   Rule that makes the site legible: indigo = construction, red = cryptanalysis.
+   --break (red) is SEMANTIC ONLY. It never appears as decoration.
+   ========================================================================== */
+
+:root {
+  /* ---- palette: 6 named values, nothing else ---- */
+  --paper:  #e8ebe4;   /* worksheet surface — cool grey-green, deliberately not cream */
+  --grid:   #ccd4cb;   /* the quadrille rule — quiet, faint */
+  --ink:    #1e2530;   /* body text — iron-gall ink */
+  --indigo: #324a72;   /* primary: headings, tool chrome, "the cipher" */
+  --break:  #9e2b2b;   /* SEMANTIC: breaks, danger, toy-crypto warnings. Never decorative */
+  --mark:   #d7a43a;   /* pencil highlighter: matched cribs, correct mappings, "you got it" */
+
+  /* ---- derived surfaces (tints of the six, not new hues) ---- */
+  --paper-2:   #dfe3da;   /* raised panel / intercept slip */
+  --paper-3:   #f3f5ef;   /* inset field (inputs, code) */
+  --ink-soft:  #4a5464;   /* secondary text */
+  --indigo-soft: #6d82a6; /* disabled / hairlines in indigo family */
+  --break-wash:  #f0dede; /* faint red fill behind broken/danger regions */
+  --mark-wash:   #f4e6c4; /* faint highlighter fill */
+
+  /* ---- type ---- */
+  /* Native stacks — zero weight, works instantly off file://. Mono carries the
+     teleprinter/intercept voice; it is used for display AND data. */
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas",
+               "Liberation Mono", "Menlo", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+               "Helvetica Neue", Arial, sans-serif;
+
+  --step--1: clamp(0.78rem, 0.75rem + 0.15vw, 0.86rem);
+  --step-0:  clamp(0.98rem, 0.94rem + 0.2vw, 1.06rem);
+  --step-1:  clamp(1.18rem, 1.1rem + 0.4vw, 1.4rem);
+  --step-2:  clamp(1.42rem, 1.28rem + 0.7vw, 1.85rem);
+  --step-3:  clamp(1.7rem, 1.45rem + 1.2vw, 2.5rem);
+  --step-4:  clamp(2rem, 1.6rem + 2vw, 3.2rem);
+
+  /* ---- geometry ---- */
+  --cell: 22px;              /* the quadrille cell — the site's structural unit */
+  --measure: 66ch;          /* reading measure */
+  --radius: 3px;            /* barely there; worksheets aren't rounded */
+  --rule: 1.5px;
+  --focus: 3px;
+
+  /* ---- spacing scale (multiples of the cell feel where it counts) ---- */
+  --sp-1: 0.35rem;
+  --sp-2: 0.7rem;
+  --sp-3: 1.1rem;
+  --sp-4: 1.75rem;
+  --sp-5: 2.75rem;
+  --sp-6: 4rem;
+
+  --shadow: 2px 3px 0 rgba(30, 37, 48, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* A worksheet read under a desk lamp at 2am — same ink logic, inverted paper.
+     Red stays red; it must remain the alarm color in either scheme. */
+  :root {
+    --paper:  #1a1f27;
+    --grid:   #2b333f;
+    --ink:    #d7dce2;
+    --indigo: #8fa8d0;
+    --break:  #e07a7a;
+    --mark:   #e0b452;
+
+    --paper-2:   #212833;
+    --paper-3:   #141920;
+    --ink-soft:  #9aa4b2;
+    --indigo-soft: #56688a;
+    --break-wash:  #3a2323;
+    --mark-wash:   #3a3320;
+
+    --shadow: 2px 3px 0 rgba(0, 0, 0, 0.4);
+  }
+}

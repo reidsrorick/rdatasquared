@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diffie–Hellman — The Broken Chain</title>
+  <meta name="description" content="Agree on a secret over a public wire. A passive eavesdropper is stopped by hard math; a man in the middle walks straight in.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="dh" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 7</p>
+      <h1>Diffie–Hellman</h1>
+      <p class="lesson-head__lede">Symmetric crypto is solved — <em>if</em> both sides already share a key. But how do
+        two strangers agree on a secret while an eavesdropper records every word? In 1976 the impossible turned out to be
+        easy: mix public values so that only the two participants can compute the shared result. Its security rests on a
+        one-way street called the <b>discrete logarithm</b>.</p>
+    </div>
+
+    <div class="toy-warning"><span><b>Toy primes.</b> The exchange below uses an ~11-bit prime so the attack runs
+      instantly. Real deployments use a prime of <b>at least 2048 bits</b>, or an elliptic curve such as X25519. The
+      genuine Web-Crypto version is shown at the bottom.</span></div>
+
+    <section class="beat beat--works" aria-labelledby="w7">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w7">Public mixing, private result</h2>
+      <p>Everyone agrees on a prime <var>p</var> and base <var>g</var> (public). Alice picks a secret <var>a</var>, Bob
+        picks a secret <var>b</var>. They exchange <var>g<sup>a</sup></var> and <var>g<sup>b</sup></var> in the open.
+        Each raises the other's value to their own secret, and both land on <var>g<sup>ab</sup></var> — a number nobody
+        on the wire can compute.</p>
+      <div class="controls">
+        <div class="field" style="flex:1 1 6rem"><label for="p">prime p</label><input id="p" type="number" value="2087"></div>
+        <div class="field" style="flex:1 1 5rem"><label for="g">base g</label><input id="g" type="number" value="5"></div>
+        <div class="field" style="flex:1 1 8rem"><label for="a">Alice secret a</label><input id="a" type="number" value="123"></div>
+        <div class="field" style="flex:1 1 8rem"><label for="b">Bob secret b</label><input id="b" type="number" value="456"></div>
+      </div>
+      <div class="two-col">
+        <div class="panel"><div class="panel__label"><span>Sent in the open</span></div>
+          <div class="output mono" id="public"></div></div>
+        <div class="panel"><div class="panel__label"><span>Shared secret (both compute the same)</span></div>
+          <div class="output mono" id="shared"></div></div>
+      </div>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b7">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b7">Two attackers, two very different outcomes</h2>
+
+      <h3>Eve, listening (passive)</h3>
+      <p>Eve records <var>p</var>, <var>g</var>, <var>g<sup>a</sup></var>, <var>g<sup>b</sup></var>. To get the secret she
+        must invert the exponentiation — the discrete log. With a real 2048-bit prime that is infeasible. With our toy
+        prime, she just tries every exponent:</p>
+      <div class="controls"><button id="eve">Eve brute-forces the discrete log</button></div>
+      <div class="panel"><div class="output mono" id="eve-out" aria-live="polite">—</div></div>
+      <p class="note">This does <em>not</em> mean DH is weak — it means the prime must be big. Passive eavesdropping is
+        defeated by size alone.</p>
+
+      <h3>Mallory, in the middle (active)</h3>
+      <p>Now the real problem. Mallory doesn't listen — she <em>intercepts</em>. She runs one DH exchange with Alice and
+        a separate one with Bob, pretending to each that she is the other. Both think they're secure; Mallory holds both
+        keys and relays (reading, editing) everything. No amount of prime-size helps, because the math never told anyone
+        <em>who</em> was on the far end.</p>
+      <div class="controls"><button id="mallory" class="danger">Run the man-in-the-middle</button></div>
+      <div class="panel"><div class="output mono" id="mallory-out" aria-live="polite">—</div></div>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f7">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f7">The real thing, and what's missing</h2>
+      <p>For contrast, here is a genuine key agreement using the browser's Web Crypto <b>ECDH</b> on curve P-256 — the
+        same idea, over math where the discrete log is truly hard:</p>
+      <div class="controls"><button id="ecdh">Run real ECDH (P-256)</button></div>
+      <div class="panel"><div class="output mono" id="ecdh-out" style="word-break:break-all" aria-live="polite">—</div></div>
+
+      <p class="beat__forced-line">Diffie–Hellman defeats the eavesdropper but not the impostor. Secrecy is not enough;
+        you need to bind a key to an <b>identity</b> — a way to prove &ldquo;this public value really is Bob's.&rdquo;
+        That demands a trapdoor tied to a secret only Bob holds, usable for signing and for encrypting to him. Enter the
+        most famous public-key system of all: <b>RSA</b>.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/ciphers/toy-rsa.js"></script>
+  <script src="../src/ciphers/toy-dh.js"></script>
+  <script src="../src/crypto/ecdh.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const B = C101.bytes;
+    const $ = function (id) { return document.getElementById(id); };
+
+    function vals() {
+      return {
+        p: BigInt($("p").value || "2087"),
+        g: BigInt($("g").value || "5"),
+        a: BigInt($("a").value || "1"),
+        b: BigInt($("b").value || "1"),
+      };
+    }
+
+    function works() {
+      try {
+        const { p, g, a, b } = vals();
+        const A = C101.toyDH.publicValue(a, g, p);
+        const B_ = C101.toyDH.publicValue(b, g, p);
+        const sA = C101.toyDH.sharedSecret(B_, a, p);
+        const sB = C101.toyDH.sharedSecret(A, b, p);
+        $("public").innerHTML =
+          "g<sup>a</sup> mod p = <b>" + A + "</b><br>g<sup>b</sup> mod p = <b>" + B_ + "</b>";
+        $("shared").innerHTML =
+          "Alice: B<sup>a</sup> = <b>" + sA + "</b><br>Bob:&nbsp;&nbsp; A<sup>b</sup> = <b>" + sB + "</b><br>" +
+          (sA === sB ? '<span class="pill pill--ok">match ✓</span>' : '<span class="pill pill--break">mismatch</span>');
+      } catch (e) { $("shared").textContent = "Check your numbers (p should be prime)."; }
+    }
+    ["p", "g", "a", "b"].forEach(function (id) { $(id).addEventListener("input", works); });
+    works();
+
+    $("eve").addEventListener("click", function () {
+      const { p, g, a } = vals();
+      const A = C101.toyDH.publicValue(a, g, p);
+      const t0 = performance.now();
+      const found = C101.toyDH.crackDiscreteLog(A, g, p);
+      const ms = (performance.now() - t0).toFixed(1);
+      if (found == null) { $("eve-out").textContent = "No solution found in range."; return; }
+      const secret = C101.toyDH.sharedSecret(C101.toyDH.publicValue(vals().b, g, p), found, p);
+      $("eve-out").innerHTML =
+        "Recovered Alice's secret a = <b>" + found + "</b> in " + ms + " ms by trying exponents.<br>" +
+        "→ Eve now computes the same shared secret <b>" + secret + "</b>.<br>" +
+        '<span class="note">With a 2048-bit prime this same search would outlast the Sun.</span>';
+    });
+
+    $("mallory").addEventListener("click", function () {
+      const { p, g, a, b } = vals();
+      const m1 = 77n, m2 = 88n; // Mallory's two private exponents
+      const A = C101.toyDH.publicValue(a, g, p);
+      const Bpub = C101.toyDH.publicValue(b, g, p);
+      const M1 = C101.toyDH.publicValue(m1, g, p);
+      const M2 = C101.toyDH.publicValue(m2, g, p);
+      // Alice thinks she shares with Bob, actually with Mallory(M1)
+      const aliceKey = C101.toyDH.sharedSecret(M1, a, p);
+      const malloryAlice = C101.toyDH.sharedSecret(A, m1, p);
+      // Bob thinks he shares with Alice, actually with Mallory(M2)
+      const bobKey = C101.toyDH.sharedSecret(M2, b, p);
+      const malloryBob = C101.toyDH.sharedSecret(Bpub, m2, p);
+      $("mallory-out").innerHTML =
+        "Alice ⇄ Mallory shared key: <b>" + aliceKey + "</b>  (Mallory has it too: " + malloryAlice + ")<br>" +
+        "Bob&nbsp;&nbsp; ⇄ Mallory shared key: <b>" + bobKey + "</b>  (Mallory has it too: " + malloryBob + ")<br>" +
+        '<span style="color:var(--break)">Alice and Bob never share a key with each other. Mallory sits between, ' +
+        "decrypting and re-encrypting both directions. The prime size is irrelevant.</span>";
+    });
+
+    $("ecdh").addEventListener("click", async function () {
+      if (!C101.ecdh.available) { $("ecdh-out").textContent = "Web Crypto unavailable here."; return; }
+      const alice = await C101.ecdh.generateParty();
+      const bob = await C101.ecdh.generateParty();
+      const sA = await C101.ecdh.deriveShared(alice.privateKey, bob.publicKey);
+      const sB = await C101.ecdh.deriveShared(bob.privateKey, alice.publicKey);
+      $("ecdh-out").innerHTML =
+        "Alice's derived secret: " + B.bytesToHex(sA) + "<br>" +
+        "Bob's derived secret:&nbsp;&nbsp; " + B.bytesToHex(sB) + "<br>" +
+        (B.bytesToHex(sA) === B.bytesToHex(sB)
+          ? '<span class="pill pill--ok">identical ✓ — and no brute force on Earth inverts P-256</span>'
+          : '<span class="pill pill--break">mismatch</span>');
+    });
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

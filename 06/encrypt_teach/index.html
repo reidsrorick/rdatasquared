@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Broken Chain — a field manual in cryptanalysis</title>
+  <meta name="description" content="Learn encryption as an adversarial chain: every cipher exists because the last one broke. Interactive attacks you run yourself.">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/worksheet.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <style>
+    /* index-only: the spine as a vertical worksheet flow */
+    .hero { padding: var(--sp-6) 0 var(--sp-4); }
+    .hero h1 { font-size: var(--step-4); max-width: 18ch; }
+    .hero__thesis { font-size: var(--step-2); color: var(--ink-soft); max-width: 30ch; font-family: var(--font-mono); line-height: 1.3; }
+    .spine { list-style: none; padding: 0; margin: var(--sp-4) 0; max-width: 60ch; }
+    .link { display: block; text-decoration: none; color: inherit; margin: 0; }
+    .node {
+      border: var(--rule) solid var(--ink); background: var(--paper-2);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: var(--sp-3); transition: transform 0.1s ease;
+    }
+    .link:hover .node { transform: translate(-2px, -2px); box-shadow: 4px 5px 0 rgba(30,37,48,0.18); }
+    .node__n { font-family: var(--font-mono); color: var(--indigo); font-size: var(--step--1); letter-spacing: 0.1em; }
+    .node__name { font-family: var(--font-mono); font-size: var(--step-2); margin: 2px 0 var(--sp-2); color: var(--ink); }
+    .node__break { color: var(--break); font-family: var(--font-mono); font-size: var(--step--1); }
+    .node__break b { text-transform: uppercase; letter-spacing: 0.08em; }
+    .node__forced { margin: var(--sp-1) 0 0; font-size: var(--step--1); color: var(--ink-soft); }
+    .drop { text-align: center; font-family: var(--font-mono); color: var(--break); font-size: var(--step-1); line-height: 1; padding: var(--sp-1) 0; }
+    .drop span { display: inline-block; }
+    .howto { max-width: var(--measure); }
+    .beats-key { display: grid; grid-template-columns: 1fr; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--step--1); margin: var(--sp-3) 0; }
+    @media (min-width: 640px) { .beats-key { grid-template-columns: repeat(3, 1fr); } }
+    .beats-key div { border: var(--rule) solid var(--grid); border-radius: var(--radius); padding: var(--sp-2); }
+    .beats-key b { display: block; letter-spacing: 0.1em; }
+    .beats-key .b1 b { color: var(--indigo); }
+    .beats-key .b2 b { color: var(--break); }
+    .beats-key .b3 b { color: var(--ink); }
+  </style>
+</head>
+<body data-page="home" data-root=".">
+  <main id="main" class="wrap">
+    <section class="hero">
+      <p class="lesson-head__kicker">Intercept ▚ read ▚ break ▚ repeat</p>
+      <h1>Every cipher is a tombstone for the one before it.</h1>
+      <p class="hero__thesis">This is not a museum of ciphers in glass cases. It is one long argument. Each method on this site exists because you are about to break the previous one — yourself, in the browser.</p>
+    </section>
+
+    <section aria-labelledby="spine-h">
+      <h2 id="spine-h" class="visually-hidden">The chain of ciphers and their breaks</h2>
+      <ol class="spine">
+        <li><a class="link" href="lessons/00-encoding-hashing-encryption.html"><div class="node">
+          <span class="node__n">STOP 0 · GROUND-CLEARING</span>
+          <div class="node__name">Encoding ≠ Encryption</div>
+          <div class="node__break"><b>Break ·</b> Base64 reverses with no key, in front of you.</div>
+          <p class="node__forced">Forces the word that runs the rest of the site: <em>key</em> — and the question of who holds it.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ too few keys</span></li>
+
+        <li><a class="link" href="lessons/01-caesar.html"><div class="node">
+          <span class="node__n">STOP 1</span>
+          <div class="node__name">Caesar</div>
+          <div class="node__break"><b>Break ·</b> brute-force all 25 shifts at once.</div>
+          <p class="node__forced">Forced a bigger key.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ statistics leak</span></li>
+
+        <li><a class="link" href="lessons/02-substitution.html"><div class="node">
+          <span class="node__n">STOP 2 · THE BIG IDEA</span>
+          <div class="node__name">Keyed substitution</div>
+          <div class="node__break"><b>Break ·</b> frequency analysis. 2⁸⁸ keys and it still falls — you crack it by hand.</div>
+          <p class="node__forced">Forced flattening the letter statistics: many alphabets, not one.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ the key repeats</span></li>
+
+        <li><a class="link" href="lessons/03-vigenere.html"><div class="node">
+          <span class="node__n">STOP 3</span>
+          <div class="node__name">Vigenère</div>
+          <div class="node__break"><b>Break ·</b> Kasiski &amp; Friedman find the period; it collapses into Caesars.</div>
+          <p class="node__forced">Forced a key with no period — as long as the message.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ reuse the key once</span></li>
+
+        <li><a class="link" href="lessons/04-one-time-pad.html"><div class="node">
+          <span class="node__n">STOP 4</span>
+          <div class="node__name">One-time pad</div>
+          <div class="node__break"><b>Break ·</b> two-time pad — reuse the key and it cancels; crib-drag both messages out.</div>
+          <p class="node__forced">Perfect but unusable. Forced short keys stretched by a pseudo-random permutation.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ identical blocks show</span></li>
+
+        <li><a class="link" href="lessons/05-block-ciphers-ecb.html"><div class="node">
+          <span class="node__n">STOP 5</span>
+          <div class="node__name">Block ciphers &amp; ECB</div>
+          <div class="node__break"><b>Break ·</b> the ECB penguin — correct AES, correct key, the picture survives.</div>
+          <p class="node__forced">Forced modes that hide position.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ ciphertext is malleable</span></li>
+
+        <li><a class="link" href="lessons/06-modes-malleability.html"><div class="node">
+          <span class="node__n">STOP 6</span>
+          <div class="node__name">Modes &amp; malleability</div>
+          <div class="node__break"><b>Break ·</b> flip one ciphertext bit, flip one plaintext bit — without the key.</div>
+          <p class="node__forced">Encryption is not authentication. Forced AEAD.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ but how do we share a key?</span></li>
+
+        <li><a class="link" href="lessons/07-diffie-hellman.html"><div class="node">
+          <span class="node__n">STOP 7</span>
+          <div class="node__name">Diffie–Hellman</div>
+          <div class="node__break"><b>Break ·</b> a passive eavesdropper fails — but a man in the middle walks straight in.</div>
+          <p class="node__forced">Forced a way to bind a key to an identity.</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ who are you talking to?</span></li>
+
+        <li><a class="link" href="lessons/08-rsa.html"><div class="node">
+          <span class="node__n">STOP 8</span>
+          <div class="node__name">RSA</div>
+          <div class="node__break"><b>Break ·</b> textbook RSA is deterministic — encrypt twice, get the same thing, and lose IND-CPA.</div>
+          <p class="node__forced">Forced a formal adversary model, and padding (OAEP).</p>
+        </div></a></li>
+        <li class="drop"><span>│<br>▼ theory meets the machine</span></li>
+
+        <li><a class="link" href="lessons/09-dont-roll-your-own.html"><div class="node">
+          <span class="node__n">STOP 9 · THE REAL WORLD</span>
+          <div class="node__name">Don't roll your own — the mechanism</div>
+          <div class="node__break"><b>Break ·</b> measure a timing side channel live; watch a biased RNG make correlated keys.</div>
+          <p class="node__forced">Not a commandment. A demonstrated reason.</p>
+        </div></a></li>
+      </ol>
+    </section>
+
+    <section class="howto" aria-labelledby="howto-h">
+      <h2 id="howto-h">How to read this</h2>
+      <p>Take the stops in order — each one only makes sense as an answer to the last one's failure. Every lesson has the same three beats:</p>
+      <div class="beats-key">
+        <div class="b1"><b>How it works</b> Encrypt and decrypt it yourself.</div>
+        <div class="b2"><b>How it breaks</b> Run the attack with your own hands.</div>
+        <div class="b3"><b>What it forced</b> The design the break demanded.</div>
+      </div>
+      <p>Toy and classical ciphers are implemented in readable JavaScript you can open in <code>src/</code>. Anything modern — AES, SHA-256, HMAC, ECDH — uses the browser's real <a href="https://developer.mozilla.org/docs/Web/API/Web_Crypto_API">Web Crypto</a>; it is never hand-rolled. Teaching implementations carry a standing warning that they are not for production.</p>
+      <p class="note">Everything runs locally in your browser. No text you type here leaves the page.</p>
+    </section>
+  </main>
+
+  <script src="src/util/bytes.js"></script>
+  <script src="src/util/english.js"></script>
+  <script src="src/ciphers/caesar.js"></script>
+  <script src="src/ui/shell.js"></script>
+</body>
+</html>

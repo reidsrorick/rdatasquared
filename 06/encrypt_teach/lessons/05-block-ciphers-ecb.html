@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Block ciphers &amp; ECB — The Broken Chain</title>
+  <meta name="description" content="Confusion and diffusion as engineered pseudo-randomness — and the ECB penguin: correct AES, correct key, catastrophic result.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="ecb" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 5</p>
+      <h1>Block ciphers &amp; ECB</h1>
+      <p class="lesson-head__lede">The one-time pad needed randomness we could not afford. A block cipher like
+        <b>AES</b> is a machine that <em>manufactures</em> randomness from a short key: a fixed, reversible scramble of a
+        16-byte block that behaves like a random permutation. Claude Shannon named the two ingredients —
+        <b>confusion</b> and <b>diffusion</b>. Get them right and the block looks random. Then bolt it to your data the
+        obvious way, and watch it fail anyway.</p>
+    </div>
+
+    <section class="beat beat--works" aria-labelledby="w5">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w5">Diffusion: one input bit should move half the output</h2>
+      <p>This is real AES-128 (via the browser's Web Crypto), encrypting a single 16-byte block. Flip one bit of the
+        input and a good cipher repaints roughly <b>half</b> the output bits — the <em>avalanche effect</em>. That
+        sensitivity is how a deterministic function imitates a random one.</p>
+      <div class="field">
+        <label for="pt">Plaintext block (16 bytes; text is padded/trimmed)</label>
+        <input id="pt" type="text" value="YELLOW SUBMARINE" autocomplete="off">
+      </div>
+      <div class="panel">
+        <div class="panel__label"><span>Ciphertext (hex)</span></div>
+        <div class="output mono" id="ct" style="word-break:break-all"></div>
+      </div>
+      <div class="controls">
+        <button id="flip">Flip one plaintext bit &amp; compare</button>
+      </div>
+      <div class="panel">
+        <div class="panel__label"><span>After flipping one bit</span><span id="avalanche" class="note"></span></div>
+        <div class="output mono" id="ct2" style="word-break:break-all"></div>
+        <div class="bits" id="diffbits" style="margin-top:var(--sp-2)"></div>
+      </div>
+      <p class="note">Confusion (each output bit depends on the key in a tangled way) and diffusion (each output bit
+        depends on many input bits) are engineered approximations of the pad's true randomness — cheap enough to use,
+        strong enough to trust.</p>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b5">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b5">The ECB penguin</h2>
+      <p>A block cipher only encrypts 16 bytes. To encrypt a whole image you must chop it into blocks and choose how to
+        chain them. The simplest choice — <b>ECB</b>, Electronic Code Book — encrypts each block on its own. Nothing is
+        wrong with the cipher or the key. But identical plaintext blocks become identical ciphertext blocks, so every
+        flat region of the picture keeps its shape. The encryption below is genuine AES with a random key:</p>
+
+      <div id="ecb"></div>
+
+      <p class="beat__forced-line" style="border-color:var(--break)"><b style="color:var(--break)">The lesson.</b>
+        A strong primitive used naïvely is a weak system. The cipher did its job on every block; the <em>mode</em> — how
+        blocks relate — is where the secret leaked.</p>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f5">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f5" class="visually-hidden">What it forced</h2>
+      <p class="beat__forced-line">To hide position, each block's encryption must depend on where it sits — on a
+        counter or on the previous block, plus a unique starting value (the IV/nonce). That is what <b>modes of
+        operation</b> (CBC, CTR, …) provide. But making ciphertext unpredictable is not the same as making it
+        <em>unforgeable</em> — and the next stop shows an attacker rewriting your message without ever knowing the
+        key.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/crypto/aes.js"></script>
+  <script src="../src/ui/ecb-canvas.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const B = C101.bytes;
+
+    function block16(text) {
+      const raw = B.strToBytes(text);
+      const out = new Uint8Array(16);
+      out.set(raw.subarray(0, 16));
+      return out;
+    }
+
+    const pt = document.getElementById("pt");
+    let key = null, lastCt = null;
+
+    async function encryptBlock(bytes) {
+      if (!C101.aes.available) return null;
+      if (!key) key = await C101.aes.randomKeyBytes(128);
+      const ct = await C101.aes.ecbEncrypt(key, bytes);
+      return ct.subarray(0, 16);
+    }
+
+    async function works() {
+      if (!C101.aes.available) { document.getElementById("ct").textContent = "(Web Crypto unavailable here)"; return; }
+      const ct = await encryptBlock(block16(pt.value));
+      lastCt = ct;
+      document.getElementById("ct").textContent = B.bytesToHex(ct);
+      document.getElementById("ct2").textContent = "";
+      document.getElementById("diffbits").innerHTML = "";
+      document.getElementById("avalanche").textContent = "";
+    }
+
+    document.getElementById("flip").addEventListener("click", async function () {
+      if (!lastCt) return;
+      const bytes = block16(pt.value);
+      bytes[0] ^= 0x01; // flip the lowest bit of the first byte
+      const ct2 = await encryptBlock(bytes);
+      document.getElementById("ct2").textContent = B.bytesToHex(ct2);
+      // count differing bits across the 16-byte outputs
+      let diff = 0;
+      const bitsEl = document.getElementById("diffbits");
+      bitsEl.innerHTML = "";
+      const a = B.bytesToBitArray(lastCt), c = B.bytesToBitArray(ct2);
+      for (let i = 0; i < a.length; i++) {
+        if (a[i] !== c[i]) diff++;
+        const b = document.createElement("span");
+        b.className = "bit" + (a[i] !== c[i] ? " bit--flipped" : "");
+        b.textContent = a[i] !== c[i] ? "×" : "·";
+        b.setAttribute("aria-hidden", "true");
+        bitsEl.appendChild(b);
+      }
+      document.getElementById("avalanche").textContent =
+        diff + " of 128 output bits changed (" + Math.round(diff / 128 * 100) + "%) from one input-bit flip";
+    });
+
+    pt.addEventListener("input", works);
+    works();
+
+    C101.ecbCanvas.mount(document.getElementById("ecb"));
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

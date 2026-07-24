@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modes &amp; malleability — The Broken Chain</title>
+  <meta name="description" content="Flip one ciphertext bit, flip one plaintext bit — without the key. Encryption is not authentication. AEAD is the fix.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="modes" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 6</p>
+      <h1>Modes &amp; malleability</h1>
+      <p class="lesson-head__lede">CTR mode fixes ECB by turning the block cipher into a keystream generator:
+        <var>C = P ⊕ keystream</var>. The ciphertext is now unpredictable — but it is also <b>editable</b>. Confusing
+        &ldquo;the attacker can't read it&rdquo; with &ldquo;the attacker can't change it&rdquo; is one of the most
+        expensive mistakes in the field.</p>
+    </div>
+
+    <section class="beat beat--works" aria-labelledby="w6">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w6">CTR is a pad you can regenerate</h2>
+      <p>AES encrypts a running counter to produce a keystream, which is XORed with the plaintext — exactly the
+        one-time-pad operation, but the pad comes from a short key you can reuse safely (with a fresh nonce each time).
+        This hides content well. Notice, though, that XOR is <em>linear</em>: the relationship between ciphertext and
+        plaintext is a simple, attacker-controllable one.</p>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b6">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b6">Bit-flipping: rewrite the message without the key</h2>
+      <p>Because <var>C = P ⊕ keystream</var>, flipping ciphertext bit <var>i</var> flips plaintext bit <var>i</var> when
+        the receiver decrypts — and touches nothing else. The keystream is unknown to you and it does not matter. Here is
+        an access token encrypted with real AES-CTR. You are on the wire with the ciphertext and no key. Turn
+        <span class="mono">admin=0</span> into <span class="mono">admin=1</span>.</p>
+
+      <div id="bitflip"></div>
+
+      <p class="beat__forced-line" style="border-color:var(--break)"><b style="color:var(--break)">The lesson.</b>
+        <b>Encryption is not authentication.</b> Secrecy hid the message; it did nothing to prove the message arrived
+        unaltered. A confidential channel with no integrity is a channel an attacker can forge on.</p>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f6">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f6">AEAD — encrypt <em>and</em> authenticate</h2>
+      <p>The fix is to attach a cryptographic tag that verifies on decryption, so any tampering is <b>rejected</b>
+        instead of silently decrypted. Modern schemes combine both jobs into one primitive: <b>AEAD</b> (Authenticated
+        Encryption with Associated Data), e.g. <b>AES-GCM</b>. Same token, same kind of key, now with a tag — try the
+        same attack:</p>
+
+      <div class="controls">
+        <button id="gcm-run">Encrypt token with AES-GCM</button>
+        <button id="gcm-tamper" class="danger" disabled>Flip one ciphertext bit &amp; deliver</button>
+      </div>
+      <div class="panel">
+        <div class="panel__label"><span>Receiver's result</span></div>
+        <div class="output output--big" id="gcm-out" aria-live="polite">—</div>
+      </div>
+      <p class="beat__forced-line">Tampering no longer edits the message — it <b>destroys</b> it, and the receiver knows.
+        With confidentiality and integrity finally in one box, symmetric cryptography is essentially solved. One enormous
+        problem remains, and it is not about hiding messages at all: <b>how do two people who have never met agree on a
+        secret key in the first place?</b> That question opens the asymmetric world — Diffie–Hellman is next.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/crypto/aes.js"></script>
+  <script src="../src/ui/bitflip.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const B = C101.bytes;
+
+    // CTR bit-flipping widget. targetByte 17 = the '0' in "admin=0"; LSB flip -> '1'.
+    C101.bitflip.mount({
+      rootEl: document.getElementById("bitflip"),
+      plaintext: "role=guest;admin=0",
+      targetByte: 17,
+      targetBit: 7,
+    });
+
+    // AEAD demo
+    const TOKEN = "role=guest;admin=0";
+    let key = null, iv = null, ct = null;
+    const out = document.getElementById("gcm-out");
+    const tamperBtn = document.getElementById("gcm-tamper");
+
+    document.getElementById("gcm-run").addEventListener("click", async function () {
+      if (!C101.aes.available) { out.textContent = "Web Crypto unavailable here."; return; }
+      key = await C101.aes.randomKeyBytes(128);
+      const r = await C101.aes.gcmEncrypt(key, B.strToBytes(TOKEN));
+      iv = r.iv; ct = r.ciphertext.slice();
+      // sanity: it decrypts cleanly untampered
+      const clean = await C101.aes.gcmDecrypt(key, ct, iv);
+      out.textContent = "Delivered untouched → “" + B.bytesToStr(clean) + "”  (tag verified ✓)";
+      out.style.color = "var(--indigo)";
+      tamperBtn.disabled = false;
+    });
+
+    tamperBtn.addEventListener("click", async function () {
+      if (!ct) return;
+      const forged = ct.slice();
+      forged[forged.length - 1] ^= 0x01; // flip a bit, same move that worked on CTR
+      try {
+        const dec = await C101.aes.gcmDecrypt(key, forged, iv);
+        out.textContent = "Decrypted to “" + B.bytesToStr(dec) + "” — (unexpected: tag should have failed)";
+        out.style.color = "var(--break)";
+      } catch (e) {
+        out.textContent = "REJECTED. The authentication tag failed — the receiver discards the forged message entirely. Your bit-flip is dead on arrival.";
+        out.style.color = "var(--break)";
+      }
+    });
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

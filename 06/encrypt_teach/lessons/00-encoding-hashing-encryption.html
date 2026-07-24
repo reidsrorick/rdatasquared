@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Encoding ≠ Hashing ≠ Encryption — The Broken Chain</title>
+  <meta name="description" content="Base64 is not encryption. Sort each transform by whether it's reversible, and by whom.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="encoding" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 0 · Ground-clearing</p>
+      <h1>Encoding ≠ Hashing ≠ Encryption</h1>
+      <p class="lesson-head__lede">Before any cipher, one confusion has to go. People say a string is
+        &ldquo;encrypted&rdquo; when it is merely <em>encoded</em>. The difference is not cosmetic — it is the whole
+        question of <b>who can undo it</b>. That question introduces the single word the rest of this site turns on:
+        the <b>key</b>.</p>
+    </div>
+
+    <section class="beat beat--works" aria-labelledby="w0">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w0">Three things happen to your text — only one keeps a secret</h2>
+      <p>Type a message. Watch each transform. Notice which ones hand the original straight back with no key at all.</p>
+
+      <div class="field">
+        <label for="src">Plaintext</label>
+        <input id="src" type="text" value="attack at dawn" autocomplete="off">
+      </div>
+
+      <div class="panel">
+        <div class="panel__label"><span>Base64 · encoding</span><span class="pill pill--ok">reversible by anyone</span></div>
+        <div class="output" id="b64out"></div>
+        <p class="note" id="b64back"></p>
+      </div>
+
+      <div class="panel">
+        <div class="panel__label"><span>ROT13 · encoding in disguise</span><span class="pill pill--ok">reversible by anyone</span></div>
+        <div class="output" id="rotout"></div>
+        <p class="note">It <em>looks</em> scrambled. It is a Caesar shift of 13, its own inverse, and it has no key. This is the trap.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel__label"><span>SHA-256 · hashing</span><span class="pill pill--break">not reversible at all</span></div>
+        <div class="output mono" id="shaout" style="word-break:break-all"></div>
+        <p class="note">A fingerprint. There is no &ldquo;decode&rdquo; button, for anyone, ever — even the person who made it.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel__label"><span>AES-GCM · encryption</span><span class="pill pill--mark">reversible only with the key</span></div>
+        <div class="output mono" id="aesout" style="word-break:break-all"></div>
+        <p class="note" id="aesback"></p>
+      </div>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b0">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b0">Sort them yourself: reversible, and by whom?</h2>
+      <p>Here is the test that dissolves the confusion. Put each transform in the right bin. Drag it, or focus a chip
+        and press <span class="kbd-hint">1</span>, <span class="kbd-hint">2</span>, or <span class="kbd-hint">3</span>
+        to send it to a bin.</p>
+
+      <div id="tray" class="panel" aria-label="Unsorted transforms">
+        <div class="panel__label"><span>Unsorted</span></div>
+        <div id="tray-chips"></div>
+      </div>
+
+      <div class="sortbins">
+        <div class="bin" data-bin="encoding" aria-label="Bin 1: reversible by anyone">
+          <div class="bin__title">1 · Reversible by <em>anyone</em><br><span class="note">encoding</span></div>
+        </div>
+        <div class="bin" data-bin="encryption" aria-label="Bin 2: reversible only with the key">
+          <div class="bin__title">2 · Reversible only with the <em>key</em><br><span class="note">encryption</span></div>
+        </div>
+        <div class="bin" data-bin="hashing" aria-label="Bin 3: not reversible at all">
+          <div class="bin__title">3 · <em>Not</em> reversible at all<br><span class="note">hashing</span></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="check">Check my sorting</button>
+        <button class="secondary" id="reset">Reset</button>
+      </div>
+      <p class="output" id="verdict" role="status" aria-live="polite">Sort all six, then check.</p>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f0">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f0" class="visually-hidden">What it forced</h2>
+      <p class="beat__forced-line">Only one bin needs a <b>key</b> — a secret that decides who can reverse the
+        transform. Everything else on this site is the centuries-long fight over that secret: how to make it, how big
+        it must be, how to share it, and how it keeps leaking anyway. Next: the smallest possible key.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/util/english.js"></script>
+  <script src="../src/ciphers/caesar.js"></script>
+  <script src="../src/ciphers/encoding.js"></script>
+  <script src="../src/crypto/hmac.js"></script>
+  <script src="../src/crypto/aes.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const B = C101.bytes;
+    const src = document.getElementById("src");
+
+    // shared AES key for the demo round-trip
+    let aesKey = null, lastCipher = null, lastIv = null;
+
+    async function render() {
+      const s = src.value;
+      document.getElementById("b64out").textContent = C101.encoding.base64.encode(s) || "—";
+      document.getElementById("b64back").textContent =
+        "decode → " + (C101.encoding.base64.decode(C101.encoding.base64.encode(s)) || "—") + "  (no key needed)";
+      document.getElementById("rotout").textContent = C101.encoding.rot13.encode(s) || "—";
+
+      if (C101.hmac.available) {
+        const digest = await C101.hmac.sha256(B.strToBytes(s));
+        document.getElementById("shaout").textContent = B.bytesToHex(digest);
+      } else {
+        document.getElementById("shaout").textContent = "(Web Crypto unavailable here)";
+      }
+
+      if (C101.aes.available) {
+        if (!aesKey) aesKey = await C101.aes.randomKeyBytes(256);
+        const r = await C101.aes.gcmEncrypt(aesKey, B.strToBytes(s));
+        lastCipher = r.ciphertext; lastIv = r.iv;
+        document.getElementById("aesout").textContent = B.bytesToHex(r.ciphertext);
+        const back = await C101.aes.gcmDecrypt(aesKey, lastCipher, lastIv);
+        document.getElementById("aesback").textContent =
+          "decrypt WITH the key → " + B.bytesToStr(back) + "   ·   without the key → impossible";
+      } else {
+        document.getElementById("aesout").textContent = "(Web Crypto unavailable here)";
+      }
+    }
+    src.addEventListener("input", render);
+    render();
+
+    // ---- sorting exercise ----
+    const ITEMS = [
+      { id: "base64", label: "Base64", answer: "encoding" },
+      { id: "hex",    label: "Hexadecimal", answer: "encoding" },
+      { id: "rot13",  label: "ROT13", answer: "encoding" },
+      { id: "sha",    label: "SHA-256", answer: "hashing" },
+      { id: "aes",    label: "AES-256", answer: "encryption" },
+      { id: "hmac",   label: "HMAC-SHA-256", answer: "hashing" },
+    ];
+    const tray = document.getElementById("tray-chips");
+    const bins = Array.from(document.querySelectorAll(".bin"));
+
+    function makeChip(item) {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.type = "button";
+      chip.textContent = item.label;
+      chip.setAttribute("draggable", "true");
+      chip.dataset.id = item.id;
+      chip.dataset.answer = item.answer;
+      chip.setAttribute("aria-describedby", "sort-hint");
+      chip.addEventListener("dragstart", function (e) {
+        e.dataTransfer.setData("text/plain", item.id);
+        chip.style.opacity = "0.4";
+      });
+      chip.addEventListener("dragend", function () { chip.style.opacity = ""; });
+      // keyboard: 1/2/3 route to a bin
+      chip.addEventListener("keydown", function (e) {
+        const map = { "1": bins[0], "2": bins[1], "3": bins[2] };
+        if (map[e.key]) { e.preventDefault(); map[e.key].appendChild(chip); chip.focus(); }
+      });
+      return chip;
+    }
+
+    function reset() {
+      tray.innerHTML = "";
+      ITEMS.forEach(function (it) { tray.appendChild(makeChip(it)); });
+      document.getElementById("verdict").textContent = "Sort all six, then check.";
+      bins.forEach(function (b) {
+        Array.from(b.querySelectorAll(".chip")).forEach(function (c) { c.remove(); });
+      });
+    }
+
+    bins.forEach(function (bin) {
+      bin.addEventListener("dragover", function (e) { e.preventDefault(); bin.classList.add("bin--over"); });
+      bin.addEventListener("dragleave", function () { bin.classList.remove("bin--over"); });
+      bin.addEventListener("drop", function (e) {
+        e.preventDefault();
+        bin.classList.remove("bin--over");
+        const id = e.dataTransfer.getData("text/plain");
+        const chip = document.querySelector('.chip[data-id="' + id + '"]');
+        if (chip) bin.appendChild(chip);
+      });
+    });
+
+    document.getElementById("check").addEventListener("click", function () {
+      let correct = 0, placed = 0;
+      ITEMS.forEach(function (it) {
+        const chip = document.querySelector('.chip[data-id="' + it.id + '"]');
+        chip.classList.remove("chip--correct", "chip--wrong");
+        const bin = chip.closest(".bin");
+        if (!bin) return;
+        placed++;
+        if (bin.dataset.bin === it.answer) { chip.classList.add("chip--correct"); correct++; }
+        else chip.classList.add("chip--wrong");
+      });
+      const v = document.getElementById("verdict");
+      if (placed < ITEMS.length) v.textContent = "Place all six first (" + placed + "/6 sorted).";
+      else if (correct === ITEMS.length) v.textContent =
+        "All six correct. Notice: only the encryption bin needs a key. Encoding and hashing are keyless — one is reversible by anyone, the other by no one.";
+      else v.textContent = correct + "/6 correct. Red chips are misfiled. Ask of each: can it be undone, and does undoing it require a secret?";
+    });
+    document.getElementById("reset").addEventListener("click", reset);
+    reset();
+  })();
+  </script>
+  <p id="sort-hint" class="visually-hidden">Drag to a bin, or press 1, 2, or 3 to file this chip.</p>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

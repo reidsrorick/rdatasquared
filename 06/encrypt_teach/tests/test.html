@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tests — The Broken Chain</title>
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <style>
+    .wrap { max-width: 70ch; padding: var(--sp-4) var(--sp-3); }
+    .t { font-family: var(--font-mono); font-size: var(--step--1); padding: 3px 0; border-bottom: 1px solid var(--grid); }
+    .t.pass::before { content: "PASS "; color: var(--indigo); font-weight: 700; }
+    .t.fail::before { content: "FAIL "; color: var(--break); font-weight: 700; }
+    .t.fail { color: var(--break); background: var(--break-wash); }
+    #summary { font-family: var(--font-mono); font-size: var(--step-1); margin: var(--sp-3) 0; padding: var(--sp-2); border: 2px solid var(--ink); border-radius: var(--radius); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1 style="font-family:var(--font-mono)">Unit tests</h1>
+    <p class="note">Pure-function tests for the classical ciphers and cryptanalysis. Opens directly off the filesystem —
+      no build step. Web Crypto tests run only where <code>crypto.subtle</code> is available.</p>
+    <div id="summary">running…</div>
+    <div id="results"></div>
+  </main>
+
+  <!-- load everything under test -->
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/util/english.js"></script>
+  <script src="../src/ciphers/caesar.js"></script>
+  <script src="../src/ciphers/substitution.js"></script>
+  <script src="../src/ciphers/vigenere.js"></script>
+  <script src="../src/ciphers/otp.js"></script>
+  <script src="../src/ciphers/encoding.js"></script>
+  <script src="../src/ciphers/toy-rsa.js"></script>
+  <script src="../src/ciphers/toy-dh.js"></script>
+  <script src="../src/analysis/frequency.js"></script>
+  <script src="../src/analysis/kasiski.js"></script>
+  <script src="../src/analysis/ioc.js"></script>
+  <script src="../src/analysis/cribdrag.js"></script>
+  <script src="../src/crypto/aes.js"></script>
+  <script src="../src/crypto/hmac.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const B = C101.bytes;
+    let pass = 0, fail = 0;
+    const out = document.getElementById("results");
+
+    function log(name, ok, detail) {
+      const d = document.createElement("div");
+      d.className = "t " + (ok ? "pass" : "fail");
+      d.textContent = name + (ok ? "" : "  — " + (detail || ""));
+      out.appendChild(d);
+      ok ? pass++ : fail++;
+    }
+    function eq(name, a, b) { log(name, a === b, "got " + JSON.stringify(a) + " expected " + JSON.stringify(b)); }
+    function ok(name, cond, detail) { log(name, !!cond, detail); }
+
+    // ---- bytes ----
+    eq("bytes: hex roundtrip", B.bytesToHex(B.hexToBytes("de ad be ef")), "deadbeef");
+    eq("bytes: base64 roundtrip", B.bytesToStr(B.b64ToBytes(B.bytesToB64(B.strToBytes("hello ✓")))), "hello ✓");
+    ok("bytes: xor self is zero", B.xorBytes(B.strToBytes("abc"), B.strToBytes("abc")).every(function (x) { return x === 0; }));
+
+    // ---- english ----
+    const englishText = "the quick brown fox jumps over the lazy dog and then some more english prose here";
+    const randomish = "qzxjkvbwpmzxqjkvbwpxzqjkvmwbpxzqjkvbwmpxzqjk";
+    ok("english: chi² lower for English", C101.english.chiSquared(englishText) < C101.english.chiSquared(randomish));
+    ok("english: IoC English > random", C101.english.indexOfCoincidence(englishText.repeat(3)) > C101.english.IOC_RANDOM);
+
+    // ---- caesar ----
+    eq("caesar: encrypt", C101.caesar.encrypt("ABCxyz", 3), "DEFabc");
+    eq("caesar: roundtrip", C101.caesar.decrypt(C101.caesar.encrypt("Hello, World!", 7), 7), "Hello, World!");
+    (function () {
+      const ct = C101.caesar.encrypt("the quick brown fox jumps over the lazy dog", 11);
+      const best = C101.caesar.bruteForce(ct)[0];
+      eq("caesar: bruteForce finds shift 11", best.shift, 11);
+    })();
+
+    // ---- substitution ----
+    (function () {
+      const key = C101.substitution.keyFromSeed("test");
+      ok("substitution: key is a permutation", C101.substitution.normalizeKey(key) === key);
+      eq("substitution: roundtrip",
+        C101.substitution.decrypt(C101.substitution.encrypt("Attack at Dawn!", key), key), "Attack at Dawn!");
+      ok("substitution: bad key rejected", C101.substitution.normalizeKey("ABC") === null);
+    })();
+
+    // ---- vigenere ----
+    (function () {
+      eq("vigenere: roundtrip",
+        C101.vigenere.decrypt(C101.vigenere.encrypt("Meet at noon", "LEMON"), "LEMON"), "Meet at noon");
+      const plain = "the strength of the vigenere cipher was believed absolute for centuries but its " +
+        "repeating keyword betrays it whenever common words align with the same slice of the key again and again";
+      const ct = C101.vigenere.encrypt(plain, "STORM");
+      const period = C101.ioc.bestPeriod(ct, 12);
+      eq("ioc: bestPeriod recovers 5", period, 5);
+      const recovered = C101.vigenere.recoverKey(ct, period);
+      eq("vigenere: recoverKey == STORM", recovered, "STORM");
+      const kasiski = C101.kasiski.likelyKeyLengths(ct, 3, 12);
+      ok("kasiski: 5 among likely factors", kasiski.slice(0, 3).some(function (f) { return f.factor === 5; }));
+    })();
+
+    // ---- otp / cribdrag ----
+    (function () {
+      const key = C101.otp.randomKey(8);
+      const pt = B.strToBytes("secret!!");
+      const ct = C101.otp.xor(pt, key);
+      eq("otp: decrypt roundtrip", C101.otp.decryptToString(ct, key), "secret!!");
+      const p1 = B.strToBytes("the attack begins at dawn tonight");
+      const p2 = B.strToBytes("send reinforcements to north gate");
+      const n = Math.min(p1.length, p2.length);
+      const k = C101.otp.randomKey(n);
+      const c1 = C101.otp.xor(p1.subarray(0, n), k);
+      const c2 = C101.otp.xor(p2.subarray(0, n), k);
+      const xored = C101.cribdrag.combine(c1, c2);
+      // xored must equal p1 ^ p2 exactly (key cancelled)
+      const direct = B.xorBytes(p1.subarray(0, n), p2.subarray(0, n));
+      ok("cribdrag: C1^C2 == P1^P2 (key cancels)", B.bytesToHex(xored) === B.bytesToHex(direct));
+      // crib " the " should reveal readable text somewhere with high score
+      const drags = C101.cribdrag.dragCrib(xored, "the ");
+      ok("cribdrag: a crib offset scores high", drags[0].score >= 0.75);
+    })();
+
+    // ---- encoding ----
+    eq("encoding: base64 roundtrip", C101.encoding.base64.decode(C101.encoding.base64.encode("hi there")), "hi there");
+    eq("encoding: rot13 is its own inverse", C101.encoding.rot13.decode(C101.encoding.rot13.encode("Zebra")), "Zebra");
+    ok("encoding: base64 marked reversible-by-anyone", C101.encoding.base64.reversibleByWhom === "anyone");
+
+    // ---- frequency ----
+    (function () {
+      const key = C101.substitution.keyFromSeed("freq");
+      const ct = C101.substitution.encrypt(englishText.repeat(2), key);
+      const seed = C101.frequency.frequencySeedMap(ct);
+      ok("frequency: seed map covers 26 letters", Object.keys(seed).length === 26);
+    })();
+
+    // ---- toy RSA ----
+    (function () {
+      ok("toyRSA: isPrime(10007)", C101.toyRSA.isPrime(10007n));
+      ok("toyRSA: !isPrime(10008)", !C101.toyRSA.isPrime(10008n));
+      const kp = C101.toyRSA.keypair(10007, 10009, 65537);
+      const c = C101.toyRSA.encrypt(42n, kp);
+      eq("toyRSA: encrypt/decrypt roundtrip", C101.toyRSA.decrypt(c, kp).toString(), "42");
+      const c2 = C101.toyRSA.encrypt(42n, kp);
+      ok("toyRSA: deterministic (textbook)", c === c2);
+    })();
+
+    // ---- toy DH ----
+    (function () {
+      const p = 2087n, g = 5n, a = 123n, b = 456n;
+      const A = C101.toyDH.publicValue(a, g, p);
+      const Bp = C101.toyDH.publicValue(b, g, p);
+      const sA = C101.toyDH.sharedSecret(Bp, a, p);
+      const sB = C101.toyDH.sharedSecret(A, b, p);
+      ok("toyDH: both sides agree", sA === sB);
+      const cracked = C101.toyDH.crackDiscreteLog(A, g, p);
+      eq("toyDH: discrete log crack recovers a", cracked.toString(), "123");
+    })();
+
+    // ---- Web Crypto (async, optional) ----
+    async function cryptoTests() {
+      if (!C101.aes.available) { log("web crypto: unavailable — skipped", true); return; }
+      const key = await C101.aes.randomKeyBytes(128);
+      const data = B.strToBytes("YELLOW SUBMARINE");
+      const gcm = await C101.aes.gcmEncrypt(key, data);
+      const back = await C101.aes.gcmDecrypt(key, gcm.ciphertext, gcm.iv);
+      eq("aes-gcm: roundtrip", B.bytesToStr(back), "YELLOW SUBMARINE");
+      // tamper -> reject
+      const forged = gcm.ciphertext.slice(); forged[0] ^= 1;
+      let rejected = false;
+      try { await C101.aes.gcmDecrypt(key, forged, gcm.iv); } catch (e) { rejected = true; }
+      ok("aes-gcm: rejects tampering", rejected);
+      // ECB repeats identical blocks
+      const block = new Uint8Array(32); // two identical 16-byte zero blocks
+      const ecb = await C101.aes.ecbEncrypt(key, block);
+      ok("aes-ecb: identical blocks -> identical ciphertext",
+        B.bytesToHex(ecb.subarray(0, 16)) === B.bytesToHex(ecb.subarray(16, 32)));
+      // hmac tag deterministic + constant-time compare
+      const hkey = crypto.getRandomValues(new Uint8Array(32));
+      const t1 = await C101.hmac.tag(hkey, B.strToBytes("msg"));
+      const t2 = await C101.hmac.tag(hkey, B.strToBytes("msg"));
+      ok("hmac: tag deterministic", B.bytesToHex(t1) === B.bytesToHex(t2));
+      ok("hmac: constantTimeEqual true for equal", C101.hmac.constantTimeEqual(t1, t2));
+    }
+
+    cryptoTests().catch(function (e) { log("web crypto tests threw", false, e.message); }).then(function () {
+      const s = document.getElementById("summary");
+      s.textContent = pass + " passed, " + fail + " failed";
+      s.style.color = fail ? "var(--break)" : "var(--indigo)";
+      s.style.borderColor = fail ? "var(--break)" : "var(--indigo)";
+    });
+  })();
+  </script>
+</body>
+</html>

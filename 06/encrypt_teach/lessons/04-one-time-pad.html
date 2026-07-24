@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>One-time pad — The Broken Chain</title>
+  <meta name="description" content="Provably unbreakable — until you reuse the key once. XOR two ciphertexts, the key cancels, and crib-drag recovers both messages.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="otp" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 4</p>
+      <h1>One-time pad</h1>
+      <p class="lesson-head__lede">XOR the message with a truly random key that is as long as the message and never
+        reused. This is the summit: <b>provably</b> unbreakable. Every possible plaintext of the right length is exactly
+        as consistent with the ciphertext, so the ciphertext reveals nothing. And it is almost useless — for one
+        operational reason that, when broken, is catastrophic.</p>
+    </div>
+
+    <section class="beat beat--works" aria-labelledby="w4">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w4">Perfect secrecy, one bit at a time</h2>
+      <p>Encryption and decryption are the same operation: XOR with the key. Because the key is random, each ciphertext
+        bit is a fair coin flip, independent of the plaintext.</p>
+      <div class="field">
+        <label for="pt">Plaintext</label>
+        <input id="pt" type="text" value="meet at midnight" autocomplete="off">
+      </div>
+      <div class="controls">
+        <button id="genkey">Generate a fresh random key</button>
+        <span class="note" id="keynote"></span>
+      </div>
+      <div class="two-col">
+        <div class="panel"><div class="panel__label"><span>Key (random bytes, hex)</span></div><div class="output mono" id="keyhex" style="word-break:break-all"></div></div>
+        <div class="panel"><div class="panel__label"><span>Ciphertext = plaintext ⊕ key</span></div><div class="output mono" id="cthex" style="word-break:break-all"></div></div>
+      </div>
+      <div class="panel"><div class="panel__label"><span>Decrypt = ciphertext ⊕ key</span></div><div class="output" id="ptback"></div></div>
+      <p class="note">A different key would decrypt the very same ciphertext into a different, equally sensible message.
+        That is what &ldquo;reveals nothing&rdquo; means, and why it is provably secure.</p>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b4">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b4">The two-time pad: reuse the key once, lose everything</h2>
+      <p>The word <em>one-time</em> is load-bearing. Suppose the same pad <var>K</var> encrypts two messages. Watch what
+        happens when the attacker XORs the two ciphertexts together:</p>
+
+      <div class="panel grid-surface">
+        <div class="mono" style="line-height:1.9">
+          C1 = P1 ⊕ K<br>
+          C2 = P2 ⊕ K<br>
+          <span style="color:var(--break)">C1 ⊕ C2 = (P1 ⊕ K) ⊕ (P2 ⊕ K) = P1 ⊕ P2 ⊕ (K ⊕ K) = P1 ⊕ P2</span>
+        </div>
+        <p class="note">The key XORs against itself and <b>vanishes</b>. The attacker is left holding P1 ⊕ P2 — two
+          English messages laid over each other, and <em>no key was ever needed</em>.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="field"><label for="m1">Message 1</label><input id="m1" type="text" value="the general attacks at dawn tomorrow" autocomplete="off"></div>
+        <div class="field"><label for="m2">Message 2</label><input id="m2" type="text" value="send more ammunition to the north gate" autocomplete="off"></div>
+      </div>
+      <div class="panel"><div class="panel__label"><span>C1 ⊕ C2  =  P1 ⊕ P2  (key already gone, shown as printable bytes)</span></div>
+        <div class="output mono" id="xored"></div></div>
+
+      <h3>Crib-drag both messages out</h3>
+      <p>Now peel them apart. Guess a common word (a <em>crib</em>) that appears in one message and slide it along
+        P1&nbsp;⊕&nbsp;P2. Where it lands on real text in one message, it reveals the other message underneath.</p>
+      <div id="cribdrag"></div>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f4">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f4" class="visually-hidden">What it forced</h2>
+      <p class="beat__forced-line">The one-time pad is perfect and impractical: the key must be truly random, as long as
+        all the traffic combined, shared in advance, and destroyed after one use. Reuse a single byte and it collapses.
+        The working compromise: keep a <b>short</b> key and stretch it into a long, random-<em>looking</em> keystream
+        with a machine you can re-key safely. Building that machine — approximating randomness by design — is the job of
+        the <b>block cipher</b>.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/util/english.js"></script>
+  <script src="../src/ciphers/otp.js"></script>
+  <script src="../src/analysis/cribdrag.js"></script>
+  <script src="../src/ui/cribdrag-ui.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const B = C101.bytes;
+
+    // ---- how it works ----
+    const pt = document.getElementById("pt");
+    let key = null;
+    function ensureKey(len) {
+      if (!key || key.length < len) key = C101.otp.randomKey(Math.max(len, 16));
+    }
+    function works() {
+      const bytes = B.strToBytes(pt.value);
+      ensureKey(bytes.length);
+      const ct = C101.otp.xor(bytes, key);
+      document.getElementById("keyhex").textContent = B.bytesToHex(key.subarray(0, bytes.length)) || "—";
+      document.getElementById("cthex").textContent = B.bytesToHex(ct) || "—";
+      document.getElementById("ptback").textContent = C101.otp.decryptToString(ct, key);
+      document.getElementById("keynote").textContent = key.length + " random bytes ready";
+    }
+    document.getElementById("genkey").addEventListener("click", function () { key = null; works(); });
+    pt.addEventListener("input", works);
+    works();
+
+    // ---- the break ----
+    const m1 = document.getElementById("m1");
+    const m2 = document.getElementById("m2");
+    const xoredEl = document.getElementById("xored");
+    const cd = C101.cribdragUI.mount({ rootEl: document.getElementById("cribdrag"), xored: new Uint8Array() });
+
+    function recompute() {
+      const p1 = B.strToBytes(m1.value);
+      const p2 = B.strToBytes(m2.value);
+      // ONE reused key encrypts both; we then show C1^C2 which equals P1^P2.
+      const n = Math.min(p1.length, p2.length);
+      const reusedKey = C101.otp.randomKey(n);
+      const c1 = C101.otp.xor(p1.subarray(0, n), reusedKey);
+      const c2 = C101.otp.xor(p2.subarray(0, n), reusedKey);
+      const xored = B.xorBytes(c1, c2); // == P1 ^ P2
+      let printable = "";
+      for (let i = 0; i < xored.length; i++) printable += B.printable(xored[i]);
+      xoredEl.textContent = printable || "—";
+      cd.setXored(xored);
+    }
+    m1.addEventListener("input", recompute);
+    m2.addEventListener("input", recompute);
+    recompute();
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

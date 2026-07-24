@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keyed substitution — The Broken Chain</title>
+  <meta name="description" content="26! keys, and it still falls. Crack a substitution cipher by hand with frequency analysis. Keyspace size is not security.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="substitution" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 2 · The big idea</p>
+      <h1>Keyed substitution</h1>
+      <p class="lesson-head__lede">Caesar died of a tiny keyspace, so we make the keyspace astronomical: the key is
+        now a full scramble of the alphabet, one of <b>26! ≈ 4×10²⁶ ≈ 2⁸⁸</b> orderings. Brute force is finished —
+        trying every key would outlast the universe. And it does not matter in the slightest.</p>
+    </div>
+
+    <div class="toy-warning"><span><b>Teaching cipher.</b> A monoalphabetic substitution is broken by a schoolchild
+      with a pencil. It is here to make one point unforgettable. Never use it for anything real.</span></div>
+
+    <section class="beat beat--works" aria-labelledby="w2">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w2">Every letter gets a fixed stand-in</h2>
+      <p>The key maps A→? , B→? , … , Z→? — a fixed, one-to-one substitution. Same plaintext letter, same ciphertext
+        letter, every time. That consistency is exactly the leak.</p>
+      <div class="controls">
+        <div class="field" style="flex:2 1 20rem">
+          <label for="key">Key (a permutation of A–Z)</label>
+          <input id="key" type="text" value="QWERTYUIOPASDFGHJKLZXCVBNM" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="secondary" id="shuffle">Shuffle a new key</button>
+      </div>
+      <div class="field">
+        <label for="pt">Plaintext</label>
+        <textarea id="pt" rows="2">the quick brown fox jumps over the lazy dog</textarea>
+      </div>
+      <div class="panel">
+        <div class="panel__label"><span>Ciphertext</span></div>
+        <div class="output" id="ct" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b2">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b2">Frequency analysis — you crack it, not the computer</h2>
+      <p>The cipher hid <em>which</em> letter is which, but not <em>how often</em> each appears. English leans hard on
+        E, T, A, O, N; it barely touches Q, X, Z. That fingerprint survives substitution untouched. Below is an
+        intercepted message. Its letter histogram is drawn against the English baseline — the shapes rhyme.</p>
+
+      <div class="panel">
+        <div class="panel__label"><span>Intercepted ciphertext</span><span id="ct-len" class="note"></span></div>
+        <div class="output" id="intercept" style="max-height:9rem;overflow:auto"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__label"><span>Letter frequencies · ciphertext vs English</span></div>
+        <div id="histo"></div>
+      </div>
+
+      <h3>The mapping board</h3>
+      <p>Now do what the histogram suggests. For each ciphertext letter (ordered most-common first), type your guess for
+        the plaintext letter it stands for. The message resolves live above. Start with the tall bars → <b>E, T, A</b>;
+        look for one-letter words (<b>A</b>, <b>I</b>) and the ubiquitous <b>THE</b>. Or let the machine seed a first
+        pass from frequencies alone — then finish it by reading.</p>
+
+      <div class="controls">
+        <button id="seed">Seed from frequencies</button>
+        <button class="secondary" id="clearmap">Clear board</button>
+        <button class="secondary" id="cheat">Reveal (give up)</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel__label"><span>Your decryption</span></div>
+        <div class="decode-view" id="decode" aria-live="polite"></div>
+        <p class="note" id="mapstatus" role="status"></p>
+      </div>
+
+      <div class="grid-surface">
+        <div class="mapboard" id="board" role="group" aria-label="Letter mapping board"></div>
+      </div>
+
+      <p class="beat__forced-line" style="border-color:var(--break)"><b style="color:var(--break)">The lesson.</b>
+        You just searched a space of 2⁸⁸ keys without trying a single key. <b>Keyspace size is not security.</b> A cipher
+        leaks through any structure it fails to destroy — here, letter frequencies. Size bought nothing.</p>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f2">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f2" class="visually-hidden">What it forced</h2>
+      <p class="beat__forced-line">To survive frequency analysis, a cipher must stop mapping each letter the same way
+        every time. The answer: use <b>many</b> substitution alphabets and rotate between them, so one plaintext letter
+        becomes many different ciphertext letters and the tell-tale histogram flattens. That is the <b>polyalphabetic
+        cipher</b> — next, Vigenère.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/util/english.js"></script>
+  <script src="../src/ciphers/caesar.js"></script>
+  <script src="../src/ciphers/substitution.js"></script>
+  <script src="../src/analysis/frequency.js"></script>
+  <script src="../src/ui/histogram.js"></script>
+  <script src="../src/ui/mapping-board.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    // ---- how it works ----
+    const keyEl = document.getElementById("key");
+    const ptEl = document.getElementById("pt");
+    const ctEl = document.getElementById("ct");
+    function works() {
+      try {
+        ctEl.textContent = C101.substitution.encrypt(ptEl.value, keyEl.value);
+        ctEl.style.color = "";
+      } catch (e) {
+        ctEl.textContent = "Key must be a permutation of all 26 letters (each once).";
+        ctEl.style.color = "var(--break)";
+      }
+    }
+    keyEl.addEventListener("input", works);
+    ptEl.addEventListener("input", works);
+    document.getElementById("shuffle").addEventListener("click", function () {
+      keyEl.value = C101.substitution.keyFromSeed("seed-" + Date.now() + "-" + ctEl.textContent.length);
+      works();
+    });
+    works();
+
+    // ---- the break: a real paragraph encrypted with a hidden key ----
+    const PLAIN =
+      "In cryptanalysis we do not fight the key, we fight the message. Language leaves " +
+      "fingerprints that no simple substitution can wipe away. The letter E arrives again " +
+      "and again, common words repeat their shapes, and the eye that knows what to look for " +
+      "reads straight through the disguise. This is why a larger key alone can never save a " +
+      "cipher that preserves the structure of the text it hides.";
+    const HIDDEN_KEY = C101.substitution.keyFromSeed("intercept-alpha-42");
+    const CIPHER = C101.substitution.encrypt(PLAIN, HIDDEN_KEY);
+
+    document.getElementById("intercept").textContent = CIPHER;
+    document.getElementById("ct-len").textContent =
+      CIPHER.replace(/[^A-Za-z]/g, "").length + " letters";
+
+    const histo = C101.histogram.mount(document.getElementById("histo"));
+    histo.update(CIPHER);
+
+    const board = C101.mappingBoard.mount({
+      boardEl: document.getElementById("board"),
+      decodeEl: document.getElementById("decode"),
+      statusEl: document.getElementById("mapstatus"),
+    });
+    board.setCipher(CIPHER);
+
+    document.getElementById("seed").addEventListener("click", board.seedFromFrequencies);
+    document.getElementById("clearmap").addEventListener("click", board.clear);
+    document.getElementById("cheat").addEventListener("click", function () {
+      // fill the board with the true inverse mapping
+      const maps = C101.substitution.maps(HIDDEN_KEY);
+      // set each input to the correct plaintext for its ciphertext letter
+      board.clear();
+      const inputs = document.querySelectorAll("#board input");
+      inputs.forEach(function (inp) {
+        const cipherLetter = inp.id.slice(4);
+        inp.value = maps.dec[cipherLetter] || "";
+        inp.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

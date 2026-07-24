@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vigenère — The Broken Chain</title>
+  <meta name="description" content="Polyalphabetic substitution. Break it by finding the period with Kasiski and Friedman, then crack each column as a Caesar.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="vigenere" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 3</p>
+      <h1>Vigenère</h1>
+      <p class="lesson-head__lede">A keyword picks a different Caesar shift for each successive letter, so one
+        plaintext letter becomes many ciphertext letters and the frequency histogram flattens. For three centuries this
+        was called <em>le chiffre indéchiffrable</em>. Then someone noticed the keyword <b>repeats</b>.</p>
+    </div>
+
+    <div class="toy-warning"><span><b>Teaching cipher.</b> Vigenère falls to a pencil, some patience, and the two
+      tests below. Never use it for anything real.</span></div>
+
+    <section class="beat beat--works" aria-labelledby="w3">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w3">A rolling key</h2>
+      <p>Write the keyword under the message, repeating it. Each plaintext letter is Caesar-shifted by the letter above
+        it. <code>A</code>=shift&nbsp;0, <code>B</code>=shift&nbsp;1, and so on.</p>
+      <div class="controls">
+        <div class="field" style="flex:1 1 10rem">
+          <label for="key">Keyword</label>
+          <input id="key" type="text" value="LEMON" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="field">
+        <label for="pt">Plaintext</label>
+        <textarea id="pt" rows="2">attack at dawn</textarea>
+      </div>
+      <div class="panel">
+        <div class="panel__label"><span>Ciphertext</span></div>
+        <div class="output output--big" id="ct" aria-live="polite"></div>
+      </div>
+      <p class="note">Same plaintext letter, different output — the single-letter frequencies smear out. That is why
+        the substitution attack stalls here.</p>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b3">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b3">Find the period, and it collapses into Caesars</h2>
+      <p>The keyword's length is the whole game. If it is <em>k</em>, then letters 1, 1+k, 1+2k… were all shifted by the
+        same keyword letter — so they form a single Caesar cipher. Find <em>k</em> and Vigenère falls apart into
+        <em>k</em> easy problems. Two tests point at <em>k</em>:</p>
+
+      <div class="panel">
+        <div class="panel__label"><span>Intercepted ciphertext</span><span id="ct-len" class="note"></span></div>
+        <div class="output" id="intercept" style="max-height:8rem;overflow:auto"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel__label"><span>Test 1 · Friedman (index of coincidence)</span></div>
+          <p class="note">For each guessed period, split into that many columns and average their coincidence rate.
+            English ≈ 0.067, random ≈ 0.038. A period whose bar reaches toward 0.067 is likely right.</p>
+          <table class="data" id="ioc"><thead><tr><th>k</th><th>avg IoC</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="panel">
+          <div class="panel__label"><span>Test 2 · Kasiski (repeated sequences)</span></div>
+          <p class="note">Repeats in the ciphertext are usually the same word hitting the same slice of key. The gaps
+            between them are multiples of <em>k</em>. Which factor keeps recurring?</p>
+          <table class="data" id="kasiski"><thead><tr><th>factor</th><th>times it divides a gap</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="field" style="flex:1 1 8rem">
+          <label for="period">Period k to try</label>
+          <input id="period" type="number" min="1" max="16" value="1">
+        </div>
+        <button id="autobreak">Auto-break with this k</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel__label"><span>Recovered key</span><span id="keyout" class="mono"></span></div>
+        <div class="output" id="decout" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f3">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f3" class="visually-hidden">What it forced</h2>
+      <p class="beat__forced-line">Vigenère leaks because the key <b>repeats</b>, creating a period to find. Kill the
+        repetition and you kill the attack: use a key <b>as long as the message and never repeated</b>. Take that idea to
+        its limit — a truly random key, used once — and you arrive at the only cipher that is provably unbreakable: the
+        <b>one-time pad</b>.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/util/english.js"></script>
+  <script src="../src/ciphers/caesar.js"></script>
+  <script src="../src/ciphers/vigenere.js"></script>
+  <script src="../src/analysis/kasiski.js"></script>
+  <script src="../src/analysis/ioc.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const E = C101.english;
+    // ---- how it works ----
+    const keyEl = document.getElementById("key");
+    const ptEl = document.getElementById("pt");
+    const ctEl = document.getElementById("ct");
+    function works() {
+      try { ctEl.textContent = C101.vigenere.encrypt(ptEl.value, keyEl.value); ctEl.style.color=""; }
+      catch (e) { ctEl.textContent = "Keyword needs at least one letter."; ctEl.style.color = "var(--break)"; }
+    }
+    keyEl.addEventListener("input", works); ptEl.addEventListener("input", works); works();
+
+    // ---- the break ----
+    const PLAIN =
+      "The strength of the Vigenere cipher was believed to be absolute for centuries, yet its " +
+      "secret keyword betrays it by repeating along the whole length of the message. Wherever a " +
+      "common word in the plaintext lines up with the same part of the keyword, the ciphertext " +
+      "repeats too, and those repetitions mark out the period like footprints in fresh snow. Once " +
+      "the period is known the cipher is no stronger than a handful of Caesar wheels turning side by side.";
+    const HIDDEN = "STORM";
+    const CIPHER = C101.vigenere.encrypt(PLAIN, HIDDEN);
+    document.getElementById("intercept").textContent = CIPHER;
+    document.getElementById("ct-len").textContent = CIPHER.replace(/[^A-Za-z]/g,"").length + " letters";
+
+    // Friedman table
+    const iocScores = C101.ioc.scorePeriods(CIPHER, 12);
+    const best = C101.ioc.bestPeriod(CIPHER, 12);
+    const iocBody = document.querySelector("#ioc tbody");
+    iocScores.forEach(function (s) {
+      const tr = document.createElement("tr");
+      const barw = Math.max(2, Math.min(100, (s.ioc / 0.075) * 100));
+      const hot = Math.abs(s.ioc - E.IOC_ENGLISH) < 0.008;
+      tr.innerHTML = "<td>" + s.period + "</td><td>" + s.ioc.toFixed(4) + "</td>" +
+        '<td><div style="height:10px;width:' + barw + '%;background:' +
+        (hot ? "var(--mark)" : "var(--indigo)") + '"></div></td>';
+      if (s.period === best) tr.style.background = "var(--mark-wash)";
+      iocBody.appendChild(tr);
+    });
+
+    // Kasiski table
+    const factors = C101.kasiski.likelyKeyLengths(CIPHER, 3, 12).slice(0, 8);
+    const kBody = document.querySelector("#kasiski tbody");
+    factors.forEach(function (f) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + f.factor + "</td><td>" + f.count + "</td>";
+      if (f.factor === best) tr.style.background = "var(--mark-wash)";
+      kBody.appendChild(tr);
+    });
+
+    // period picker + auto-break
+    const periodEl = document.getElementById("period");
+    periodEl.value = best;
+    function breakIt() {
+      const k = Math.max(1, Math.min(16, +periodEl.value || 1));
+      const key = C101.vigenere.recoverKey(CIPHER, k);
+      document.getElementById("keyout").textContent = "k=" + k + " → " + key;
+      document.getElementById("decout").textContent = C101.vigenere.decrypt(CIPHER, key);
+    }
+    document.getElementById("autobreak").addEventListener("click", breakIt);
+    periodEl.addEventListener("input", breakIt);
+    breakIt();
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

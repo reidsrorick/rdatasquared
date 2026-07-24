@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RSA — The Broken Chain</title>
+  <meta name="description" content="RSA as a trapdoor permutation — and why textbook RSA, being deterministic, is not IND-CPA secure. Why 'secure' needs a formal adversary.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="rsa" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 8</p>
+      <h1>RSA</h1>
+      <p class="lesson-head__lede">Diffie–Hellman needed a way to tie a key to an identity. RSA delivers it with a
+        <b>trapdoor permutation</b>: a function anyone can compute forwards (encrypt with the public key) but only the
+        holder of the secret factors can invert (decrypt with the private key). It works. And the &ldquo;obvious&rdquo;
+        way to use it hides a flaw that forced the whole field to define what &ldquo;secure&rdquo; even means.</p>
+    </div>
+
+    <div class="toy-warning"><span><b>Toy primes.</b> The keys below are ~27-bit. Real RSA uses a modulus of at least
+      <b>2048 bits</b> (primes ~1024 bits) with randomized padding (OAEP). This code is textbook RSA for teaching —
+      deterministic and unpadded on purpose. Never use it for anything real.</span></div>
+
+    <section class="beat beat--works" aria-labelledby="w8">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w8">One-way, unless you know the factors</h2>
+      <p>Pick two primes <var>p</var>, <var>q</var>; their product <var>n</var> is public. Encryption is
+        <var>c = m<sup>e</sup> mod n</var>; decryption is <var>m = c<sup>d</sup> mod n</var>, where <var>d</var> is
+        computable only from <var>p</var> and <var>q</var>. Factoring <var>n</var> back into <var>p·q</var> is the hard
+        problem that protects <var>d</var>.</p>
+      <div class="controls">
+        <div class="field" style="flex:1 1 6rem"><label for="p">prime p</label><input id="p" type="number" value="10007"></div>
+        <div class="field" style="flex:1 1 6rem"><label for="q">prime q</label><input id="q" type="number" value="10009"></div>
+        <div class="field" style="flex:1 1 6rem"><label for="e">exponent e</label><input id="e" type="number" value="65537"></div>
+      </div>
+      <div class="panel"><div class="panel__label"><span>Public / private key</span></div>
+        <div class="output mono" id="keyout"></div></div>
+      <div class="controls">
+        <div class="field" style="flex:1 1 8rem"><label for="msg">message m (a number &lt; n)</label><input id="msg" type="number" value="42"></div>
+      </div>
+      <div class="two-col">
+        <div class="panel"><div class="panel__label"><span>Encrypt: c = mᵉ mod n</span></div><div class="output mono" id="encout"></div></div>
+        <div class="panel"><div class="panel__label"><span>Decrypt: cᵈ mod n</span></div><div class="output mono" id="decout"></div></div>
+      </div>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b8">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b8">Textbook RSA is deterministic — so it leaks</h2>
+      <p>Notice something about the encryption above: the same <var>m</var> always gives the same <var>c</var>. There is
+        no randomness. That feels harmless until the attacker knows your message comes from a <em>small set</em> of
+        possibilities — a yes/no, a price, a command. Then determinism is fatal: the attacker simply encrypts every
+        possibility with your <b>public</b> key and looks for a match. No private key. No factoring.</p>
+
+      <p>Here a field commander sends one of three orders, RSA-encrypted with the public key. You intercept only the
+        ciphertext — and you know the doctrine, so you know the three possible messages:</p>
+
+      <div class="controls">
+        <button id="send">Commander encrypts a secret order</button>
+        <button id="attack" class="danger" disabled>Attacker matches it against the three</button>
+      </div>
+      <div class="panel"><div class="panel__label"><span>Intercepted ciphertext</span></div>
+        <div class="output mono" id="secret-ct">—</div></div>
+      <div class="panel"><div class="panel__label"><span>Attacker's dictionary (public key only)</span></div>
+        <table class="data" id="dict"><thead><tr><th>candidate order</th><th>encrypts to</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="output" id="attack-verdict" role="status" aria-live="polite" style="margin-top:var(--sp-2)">—</div>
+      </div>
+
+      <h3>Now add randomness</h3>
+      <p>Randomized padding (real RSA uses <b>OAEP</b>) mixes fresh random bits into every encryption, so the same order
+        encrypts to a different ciphertext each time and the dictionary attack collapses. Press repeatedly:</p>
+      <div class="controls"><button id="padded">Encrypt the same order, padded</button></div>
+      <div class="panel"><div class="output mono" id="padded-out" aria-live="polite">—</div></div>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f8">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f8">Why &ldquo;secure&rdquo; needs an adversary, not a vibe</h2>
+      <p class="beat__forced-line">Textbook RSA is a perfectly good trapdoor and a broken encryption scheme. The gap is
+        that &ldquo;hard to invert&rdquo; is not the same as &ldquo;leaks nothing.&rdquo; To rule out attacks like the
+        one you just ran, cryptographers stopped arguing from intuition and defined security as a <b>game</b>:
+        <b>IND-CPA</b> — an adversary who picks two messages and gets one encrypted must not guess which, better than a
+        coin flip. Deterministic encryption loses that game instantly (encrypt both candidates yourself and compare).
+        The fix — randomized padding — is exactly what makes RSA win it. This is the moment cryptography became a
+        science with definitions instead of a bag of tricks. The last stop asks whether the <em>implementations</em> of
+        all this theory actually hold up.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/ciphers/toy-rsa.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const $ = function (id) { return document.getElementById(id); };
+    let pub = null, priv = null;
+
+    const ORDERS = [
+      { label: "ATTACK AT DAWN", m: 111n },
+      { label: "HOLD POSITION",  m: 222n },
+      { label: "RETREAT SOUTH",  m: 333n },
+    ];
+    let secretOrder = null, secretCt = null;
+
+    function rebuild() {
+      try {
+        const kp = C101.toyRSA.keypair($("p").value, $("q").value, $("e").value);
+        pub = { e: kp.e, n: kp.n }; priv = { d: kp.d, n: kp.n };
+        $("keyout").innerHTML =
+          "public  (e, n) = (" + kp.e + ", " + kp.n + ")<br>" +
+          "private (d, n) = (" + kp.d + ", " + kp.n + ")<br>" +
+          '<span class="note">modulus is ' + kp.bits + " bits — real RSA uses ≥ 2048</span>";
+        recompute();
+        buildDict();
+      } catch (err) {
+        $("keyout").innerHTML = '<span style="color:var(--break)">' + err.message + "</span>";
+      }
+    }
+    function recompute() {
+      if (!pub) return;
+      try {
+        const m = BigInt($("msg").value || "0");
+        if (m >= pub.n) { $("encout").textContent = "m must be < n"; $("decout").textContent = "—"; return; }
+        const c = C101.toyRSA.encrypt(m, pub);
+        $("encout").textContent = c.toString();
+        $("decout").textContent = C101.toyRSA.decrypt(c, priv).toString();
+      } catch (e) { $("encout").textContent = e.message; }
+    }
+    ["p", "q", "e"].forEach(function (id) { $(id).addEventListener("input", rebuild); });
+    $("msg").addEventListener("input", recompute);
+
+    function buildDict() {
+      const tb = $("#dict tbody") || document.querySelector("#dict tbody");
+      tb.innerHTML = "";
+      ORDERS.forEach(function (o) {
+        const c = C101.toyRSA.encrypt(o.m, pub);
+        const tr = document.createElement("tr");
+        tr.dataset.ct = c.toString();
+        tr.innerHTML = "<td>" + o.label + "</td><td class='mono'>" + c.toString() + "</td><td></td>";
+        tb.appendChild(tr);
+      });
+    }
+
+    $("send").addEventListener("click", function () {
+      secretOrder = ORDERS[crypto.getRandomValues(new Uint32Array(1))[0] % ORDERS.length];
+      secretCt = C101.toyRSA.encrypt(secretOrder.m, pub);
+      $("secret-ct").textContent = secretCt.toString();
+      $("attack").disabled = false;
+      $("attack-verdict").textContent = "Ciphertext intercepted. The attacker has only this and the public key.";
+      document.querySelectorAll("#dict tbody tr td:last-child").forEach(function (td) { td.textContent = ""; td.parentElement.style.background = ""; });
+    });
+
+    $("attack").addEventListener("click", function () {
+      if (!secretCt) return;
+      let found = null;
+      document.querySelectorAll("#dict tbody tr").forEach(function (tr) {
+        const match = tr.dataset.ct === secretCt.toString();
+        tr.querySelector("td:last-child").textContent = match ? "◄ MATCH" : "";
+        tr.style.background = match ? "var(--break-wash)" : "";
+        if (match) found = tr.querySelector("td").textContent;
+      });
+      $("attack-verdict").innerHTML = found
+        ? '<span style="color:var(--break)">Order recovered: <b>' + found + "</b> — by encrypting three guesses with the public key. The private key was never touched.</span>"
+        : "No match (unexpected).";
+    });
+
+    // padded / randomized encryption: pack m into the high part with fresh random low bits
+    $("padded").addEventListener("click", function () {
+      if (!pub) return;
+      const order = ORDERS[1]; // always the SAME order...
+      // scheme: value = order.m * 100000 + random(0..99999), all < n; decrypt via /100000
+      const r = BigInt(crypto.getRandomValues(new Uint32Array(1))[0] % 100000);
+      const value = order.m * 100000n + r;
+      if (value >= pub.n) { $("padded-out").textContent = "toy modulus too small for this padding; enlarge p,q"; return; }
+      const c = C101.toyRSA.encrypt(value, pub);
+      const recovered = C101.toyRSA.decrypt(c, priv) / 100000n; // strips the random low bits
+      const recLabel = (ORDERS.find(function (o) { return o.m === recovered; }) || { label: "?" }).label;
+      $("padded-out").innerHTML =
+        "order = <b>" + order.label + "</b> (always the same)  ·  random pad = " + r + "<br>" +
+        "ciphertext = <b>" + c.toString() + "</b>  ← changes every time<br>" +
+        '<span class="note">receiver strips the pad → recovers <b>' + recLabel +
+        "</b>. The dictionary of three fixed ciphertexts no longer matches anything.</span>";
+    });
+
+    rebuild();
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

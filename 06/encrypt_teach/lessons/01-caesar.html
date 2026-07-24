@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caesar — The Broken Chain</title>
+  <meta name="description" content="The shift cipher: one number for a key. Break it by brute-forcing all 25 shifts at once.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="caesar" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 1</p>
+      <h1>Caesar</h1>
+      <p class="lesson-head__lede">Every letter slides the same number of places along the alphabet. The entire
+        secret — the key — is that <b>one number</b>, from 1 to 25. A cipher is only as strong as the effort needed to
+        try every key, and here that effort is: try 25 things.</p>
+    </div>
+
+    <div class="toy-warning"><span><b>Teaching cipher.</b> Caesar has no security. It is here to establish what a key is,
+      and what &ldquo;too small&rdquo; means. Never use it for anything real.</span></div>
+
+    <section class="beat beat--works" aria-labelledby="w1">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w1">Turn the dial</h2>
+      <div class="field">
+        <label for="pt">Plaintext</label>
+        <input id="pt" type="text" value="the die is cast" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="shift">Shift (the key): <span id="shiftval" class="mono">3</span> — A becomes <span id="ademo" class="mono">D</span></label>
+        <input id="shift" type="range" min="0" max="25" value="3">
+      </div>
+      <div class="panel">
+        <div class="panel__label"><span>Ciphertext</span></div>
+        <div class="output output--big" id="ct" aria-live="polite"></div>
+      </div>
+      <p class="note">Decryption is the same dial turned the other way. There is nothing else to it.</p>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b1">
+      <span class="beat__stamp">How it breaks</span>
+      <h2 id="b1">Brute force: lay out all 25 and read</h2>
+      <p>You don't need to know the key. Paste any Caesar ciphertext and the strip below shows every possible
+        decryption at once. The real message is the one line that reads as English — your eye finds it in a second, and
+        so does the chi-squared score (lower = more English-like), which sorts the likeliest to the top.</p>
+      <div class="field">
+        <label for="attack-ct">Intercepted ciphertext</label>
+        <input id="attack-ct" type="text" value="wkh glh lv fdvw" autocomplete="off">
+      </div>
+      <div class="grid-surface">
+        <table class="data" id="strip">
+          <thead><tr><th>shift</th><th>decryption</th><th>score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note">25 keys is not a keyspace. It is a list.</p>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f1">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f1" class="visually-hidden">What it forced</h2>
+      <p class="beat__forced-line">The fix looks obvious: make the key <b>enormous</b>. Instead of shifting the whole
+        alphabet by one number, scramble it into any of its 26! ≈ 2⁸⁸ possible orderings. That is the
+        <b>substitution cipher</b> — and the next stop is where we discover that a titanic keyspace saves you from
+        brute force and from nothing else.</p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/util/english.js"></script>
+  <script src="../src/ciphers/caesar.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const pt = document.getElementById("pt");
+    const shift = document.getElementById("shift");
+    function works() {
+      const n = +shift.value;
+      document.getElementById("shiftval").textContent = n;
+      document.getElementById("ademo").textContent = C101.caesar.encrypt("A", n);
+      document.getElementById("ct").textContent = C101.caesar.encrypt(pt.value, n) || "—";
+    }
+    pt.addEventListener("input", works);
+    shift.addEventListener("input", works);
+    works();
+
+    const attackCt = document.getElementById("attack-ct");
+    const tbody = document.querySelector("#strip tbody");
+    function attack() {
+      const rows = C101.caesar.bruteForce(attackCt.value);
+      tbody.innerHTML = "";
+      // best score gets the highlight
+      const best = rows[0];
+      rows.forEach(function (r) {
+        const tr = document.createElement("tr");
+        const isBest = r === best;
+        tr.innerHTML =
+          "<td>" + r.shift + "</td>" +
+          '<td' + (isBest ? ' style="background:var(--mark-wash);color:var(--ink);font-weight:700"' : "") +
+            ">" + escapeHtml(r.text) + "</td>" +
+          "<td>" + (isFinite(r.score) ? r.score.toFixed(0) : "—") + (isBest ? " ◄ likeliest" : "") + "</td>";
+        tbody.appendChild(tr);
+      });
+    }
+    function escapeHtml(s) { return s.replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+    attackCt.addEventListener("input", attack);
+    attack();
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>

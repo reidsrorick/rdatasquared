@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Don't roll your own — the mechanism — The Broken Chain</title>
+  <meta name="description" content="A commandment convinces nobody. Measure a timing side channel live, and watch a weak RNG make predictable keys.">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/worksheet.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-page="diy" data-root="..">
+  <main id="main" class="wrap">
+    <div class="lesson-head">
+      <p class="lesson-head__kicker">Stop 9 · The real world</p>
+      <h1>Don't roll your own — the mechanism</h1>
+      <p class="lesson-head__lede">&ldquo;Don't roll your own crypto&rdquo; is repeated so often it has stopped meaning
+        anything. So forget the commandment. Here are two systems built from <em>correct</em> primitives — a real MAC, a
+        real cipher — that leak everything anyway, because of how they were <b>implemented</b>. You will run both
+        attacks yourself. The reason is the lesson.</p>
+    </div>
+
+    <section class="beat beat--works" aria-labelledby="w9">
+      <span class="beat__stamp">How it works</span>
+      <h2 id="w9">The primitives are fine</h2>
+      <p>HMAC-SHA-256 is an excellent way to authenticate a message: attach a tag, and the receiver recomputes it and
+        checks for equality. AES is an excellent cipher. Neither is what breaks below. What breaks is the
+        <em>equality check</em> and the <em>randomness source</em> — the unglamorous plumbing around the math.</p>
+      <div class="controls">
+        <div class="field" style="flex:2 1 16rem"><label for="mac-msg">Message to authenticate</label>
+          <input id="mac-msg" type="text" value="transfer $100 to alice" autocomplete="off"></div>
+        <button id="mac-tag">Compute real HMAC-SHA-256 tag</button>
+      </div>
+      <div class="panel"><div class="panel__label"><span>Tag (hex)</span></div><div class="output mono" id="mac-out" style="word-break:break-all">—</div></div>
+    </section>
+
+    <section class="beat beat--breaks" aria-labelledby="b9">
+      <span class="beat__stamp">How it breaks</span>
+
+      <h2 id="b9">Break 1 — a timing side channel on the tag check</h2>
+      <p>A common, natural, wrong way to verify a tag is <code>if (provided === real)</code> — a compare that stops at
+        the first wrong byte. That means a tag with a correct first byte takes <em>infinitesimally longer</em> to reject
+        than one that's wrong immediately. Do that measurement enough times and the secret tag falls out one byte at a
+        time — the attacker never sees it. One honest wrinkle: the <em>last</em> byte leaves no timing trace (matching or
+        missing it, the compare ends at the same length), so the attack times every byte but the last, then brute-forces
+        that final byte against the plain accept/reject answer. Below, a secret tag is checked by exactly such a compare.
+        The chart times all 256 values for the current byte position; the tallest bar is the correct byte. (The work
+        auto-calibrates to your machine, so a full recovery takes a handful of seconds.)</p>
+
+      <div class="panel">
+        <div class="panel__label"><span>Timing profile · current byte position</span><span id="pos-label" class="note"></span></div>
+        <canvas id="chart" class="timing-chart" width="800" height="200" role="img" aria-label="Timing per candidate byte"></canvas>
+      </div>
+      <div class="controls">
+        <button id="profile">Profile one byte position</button>
+        <button id="auto">Auto-recover the whole tag</button>
+        <label style="display:flex;align-items:center;gap:.4rem;margin:0"><input type="checkbox" id="secure" style="width:auto"> use constant-time compare (the fix)</label>
+      </div>
+      <div class="panel"><div class="panel__label"><span>Recovered vs actual secret tag</span></div>
+        <div class="output mono" id="timing-out" aria-live="polite">—</div></div>
+      <p class="note">Real remote attacks do this over a network with statistical filtering across millions of requests.
+        Toggle the constant-time compare and watch the chart go flat — the signal vanishes because the check no longer
+        depends on how much of the guess was right.</p>
+
+      <hr>
+
+      <h2>Break 2 — a weak RNG makes predictable keys</h2>
+      <p>Every key on this whole site assumed one thing: real randomness. Seed your generator from something guessable —
+        say, the current time in seconds, a genuine historical bug — and your &ldquo;random&rdquo; key lives in a space
+        an attacker can search in a blink. Two keys made in the same second are <em>identical</em>.</p>
+      <div class="controls">
+        <button id="weak-gen">Generate a key (time-seeded RNG)</button>
+        <button id="weak-gen2">Generate again (quickly)</button>
+        <button id="weak-attack" class="danger">Attacker predicts the key</button>
+      </div>
+      <div class="panel"><div class="panel__label"><span>Weak generator</span></div><div class="output mono" id="weak-out" style="word-break:break-all">—</div></div>
+      <div class="controls">
+        <button id="good-gen" class="secondary">Generate a key (crypto.getRandomValues)</button>
+      </div>
+      <div class="panel"><div class="panel__label"><span>Cryptographic generator</span></div><div class="output mono" id="good-out" style="word-break:break-all">—</div></div>
+    </section>
+
+    <section class="beat beat--forced" aria-labelledby="f9">
+      <span class="beat__stamp">What it forced</span>
+      <h2 id="f9" class="visually-hidden">What it forced</h2>
+      <p class="beat__forced-line">Neither attack touched the mathematics. They exploited a comparison that returned too
+        early and a generator seeded from something guessable. This is the real content of &ldquo;don't roll your
+        own&rdquo;: correctness of a cryptosystem lives in constant-time code, uniform randomness, correct nonces,
+        padding, and a hundred other details that vetted libraries have already gotten wrong once and fixed. Use
+        <b>AES-GCM</b>, <b>HMAC</b>, <b>X25519</b> from an audited implementation — not because a rule says so, but
+        because you have now watched what the plumbing costs when it leaks.</p>
+      <p class="note">You've walked the whole chain: from a shift of three letters to the reason we distrust our own
+        implementations. Every link was a break that forced the next design. <a href="../index.html">Back to the
+        start ▚</a></p>
+    </section>
+  </main>
+
+  <script src="../src/util/bytes.js"></script>
+  <script src="../src/crypto/hmac.js"></script>
+  <script src="../src/ui/timing.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const B = C101.bytes;
+    const $ = function (id) { return document.getElementById(id); };
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // ---- how it works: real HMAC tag ----
+    let macKey = null;
+    $("mac-tag").addEventListener("click", async function () {
+      if (!C101.hmac.available) { $("mac-out").textContent = "Web Crypto unavailable here."; return; }
+      if (!macKey) macKey = crypto.getRandomValues(new Uint8Array(32));
+      const t = await C101.hmac.tag(macKey, B.strToBytes($("mac-msg").value));
+      $("mac-out").textContent = B.bytesToHex(t);
+    });
+
+    // ---- break 1: timing side channel ----
+    const T = C101.timing;
+    T.newSecret();
+    const canvas = $("chart");
+    const cx = canvas.getContext("2d");
+    let known = new Uint8Array(T.TAG_LEN);
+    let knownCount = 0;
+    let lastByteBrute = false;
+
+    function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#333"; }
+
+    function drawChart(times, winnerByte, lockedByte) {
+      const W = canvas.width, H = canvas.height, pad = 4;
+      cx.clearRect(0, 0, W, H);
+      if (!times) return;
+      let max = 0, min = Infinity;
+      times.forEach(function (t) {
+        if (!isFinite(t.time)) return;
+        if (t.time > max) max = t.time; if (t.time < min) min = t.time;
+      });
+      const range = (max - min) || 1;
+      const bw = (W - pad * 2) / 256;
+      times.forEach(function (t, i) {
+        const h = isFinite(t.time) ? ((t.time - min) / range) * (H - pad * 2) : 0;
+        const isWin = t.byte === winnerByte;
+        const isLocked = lockedByte != null && t.byte === lockedByte;
+        cx.fillStyle = isLocked ? cssVar("--mark") : isWin ? cssVar("--break") : cssVar("--indigo");
+        cx.fillRect(pad + i * bw, H - pad - h, Math.max(1, bw - 0.5), h);
+      });
+    }
+
+    function renderRecovered() {
+      const actual = T.getSecret();
+      let rec = "";
+      for (let i = 0; i < T.TAG_LEN; i++) rec += (i < knownCount) ? B.bytesToHex(known.subarray(i, i + 1)) + " " : "?? ";
+      const ok = knownCount === T.TAG_LEN && B.bytesToHex(known) === B.bytesToHex(actual);
+      const timedOk = knownCount === T.TAG_LEN &&
+        B.bytesToHex(known.subarray(0, T.TAG_LEN - 1)) === B.bytesToHex(actual.subarray(0, T.TAG_LEN - 1));
+      let verdict = "";
+      if (knownCount === T.TAG_LEN) {
+        if (ok) verdict = '<span class="pill pill--break">tag recovered ✓ — ' +
+          (T.TAG_LEN - 1) + ' bytes by timing' + (lastByteBrute ? ', last byte by brute force' : '') + '</span>';
+        else if (!timedOk) verdict = '<span class="note">timing was noisy this run (a timed byte is off) — hit “Auto-recover” again; a quieter machine needs fewer retries</span>';
+        else verdict = '<span class="note">timed bytes correct; final byte search did not confirm — retry</span>';
+      }
+      $("timing-out").innerHTML =
+        "recovered: <b>" + rec + "</b><br>actual:&nbsp;&nbsp;&nbsp; " +
+        B.bytesToHex(actual).replace(/(..)/g, "$1 ") + (verdict ? "<br>" + verdict : "");
+    }
+
+    let busy = false;
+    function setButtons(disabled) { $("profile").disabled = disabled; $("auto").disabled = disabled; }
+
+    $("profile").addEventListener("click", async function () {
+      if (busy) return; busy = true; setButtons(true);
+      T.setSecureMode($("secure").checked);
+      const pos = Math.min(knownCount, T.TAG_LEN - 1);
+      $("pos-label").textContent = "measuring position " + pos + "…";
+      const r = await T.profilePosition(known, pos, function (v, times, best) { drawChart(times, best); });
+      drawChart(r.times, r.bestByte);
+      $("pos-label").textContent = "position " + pos +
+        ($("secure").checked ? " · constant-time: chart is flat, no byte stands out" :
+          " · tallest bar = byte 0x" + r.bestByte.toString(16).padStart(2, "0"));
+      busy = false; setButtons(false);
+    });
+
+    $("auto").addEventListener("click", async function () {
+      if (busy) return; busy = true; setButtons(true);
+      T.setSecureMode($("secure").checked);
+      known = new Uint8Array(T.TAG_LEN); knownCount = 0;
+      lastByteBrute = false;
+      renderRecovered();
+      // time the first n-1 bytes (the last byte carries no timing signal)
+      for (let pos = 0; pos < T.TAG_LEN - 1; pos++) {
+        $("pos-label").textContent = "timing position " + pos + " of " + (T.TAG_LEN - 1) + "…";
+        const r = await T.profilePosition(known, pos, function (v, times, best) { drawChart(times, best); });
+        drawChart(r.times, r.bestByte, r.bestByte);
+        known[pos] = r.bestByte; knownCount = pos + 1;
+        renderRecovered();
+        await new Promise(function (res) { setTimeout(res, reduceMotion ? 0 : 120); });
+      }
+      // the final byte has no timing signal: brute-force it against accept/reject
+      $("pos-label").textContent = "final byte: brute-forcing against accept/reject…";
+      const last = T.bruteForceLastByte(known);
+      known[T.TAG_LEN - 1] = (last == null ? 0 : last);
+      knownCount = T.TAG_LEN; lastByteBrute = true;
+      renderRecovered();
+      $("pos-label").textContent = "done";
+      busy = false; setButtons(false);
+    });
+
+    $("secure").addEventListener("change", function () {
+      $("timing-out").innerHTML = $("secure").checked
+        ? '<span class="note">Constant-time mode on. Run the attack again — the chart flattens and recovery fails.</span>'
+        : "—";
+    });
+    renderRecovered();
+
+    // ---- break 2: weak RNG ----
+    function weakRng(seedSeconds) {
+      // LCG seeded from second-resolution time: a real, historic bug.
+      let s = (seedSeconds >>> 0);
+      const out = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        s = (Math.imul(s, 1103515245) + 12345) >>> 0;
+        out[i] = (s >>> 24) & 0xff;
+      }
+      return out;
+    }
+    let lastWeakSeed = null;
+    function genWeak() {
+      const seed = Math.floor(Date.now() / 1000);
+      lastWeakSeed = seed;
+      const key = weakRng(seed);
+      $("weak-out").innerHTML = "seed (time, seconds) = " + seed + "<br>key = <b>" + B.bytesToHex(key) + "</b>";
+    }
+    $("weak-gen").addEventListener("click", genWeak);
+    $("weak-gen2").addEventListener("click", genWeak);
+    $("weak-attack").addEventListener("click", function () {
+      if (lastWeakSeed == null) { $("weak-out").innerHTML += "<br>Generate a key first."; return; }
+      // attacker knows the key was made "around now"; search a window of seeds
+      const now = Math.floor(Date.now() / 1000);
+      const target = B.bytesToHex(weakRng(lastWeakSeed));
+      let found = null, tried = 0;
+      for (let d = 0; d <= 100000 && found == null; d++) {
+        tried++;
+        if (B.bytesToHex(weakRng(now - d)) === target) found = now - d;
+      }
+      $("weak-out").innerHTML +=
+        "<br><span style='color:var(--break)'>Attacker recovered the seed " + found +
+        " after " + tried + " guesses — the entire keyspace was a few thousand seconds. Every byte of the key is now known.</span>";
+    });
+    $("good-gen").addEventListener("click", function () {
+      const key = crypto.getRandomValues(new Uint8Array(16));
+      $("good-out").innerHTML = "key = <b>" + B.bytesToHex(key) + "</b><br>" +
+        '<span class="note">drawn from a CSPRNG: 2¹²⁸ possibilities, no seed to guess, never repeats. Nothing to search.</span>';
+    });
+  })();
+  </script>
+  <script src="../src/ui/shell.js"></script>
+</body>
+</html>
