@@ -587,19 +587,80 @@
     scheduleUpdate();
   }
 
-  $("logoFile").addEventListener("change", (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
+  function loadImageFile(file, resetInputOnError) {
+    if (!file || !/^image\//.test(file.type)) {
+      flashLogoHint("That doesn't look like an image.");
+      return;
+    }
     if (file.size > 3 * 1024 * 1024) {
-      alert("Please pick an image under 3 MB.");
-      e.target.value = "";
+      flashLogoHint("Image is over 3 MB — please use a smaller one.");
+      if (resetInputOnError) $("logoFile").value = "";
       return;
     }
     const reader = new FileReader();
     reader.onload = () => setLogo(reader.result);
+    reader.onerror = () => flashLogoHint("Couldn't read that image.");
     reader.readAsDataURL(file);
+  }
+
+  let hintTimer = null;
+  function flashLogoHint(msg) {
+    const el = $("logoHint");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add("warn");
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => {
+      el.textContent = el.dataset.default;
+      el.classList.remove("warn");
+    }, 4000);
+  }
+
+  $("logoFile").addEventListener("change", (e) => {
+    loadImageFile(e.target.files && e.target.files[0], true);
   });
   $("logoClear").addEventListener("click", () => setLogo(null));
+
+  // Paste an image anywhere on the page (clipboard from a screenshot tool,
+  // "copy image" in a browser, an image file copied in the OS file manager…).
+  window.addEventListener("paste", (e) => {
+    const tag = (document.activeElement && document.activeElement.tagName) || "";
+    // Don't hijack a paste the user means for a text field.
+    if (tag === "TEXTAREA" || tag === "INPUT") {
+      const items = e.clipboardData && e.clipboardData.items;
+      const hasImage = items && [...items].some((it) => it.type.indexOf("image") === 0);
+      if (!hasImage) return;
+    }
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (const it of items) {
+      if (it.kind === "file" && it.type.indexOf("image") === 0) {
+        e.preventDefault();
+        loadImageFile(it.getAsFile());
+        return;
+      }
+    }
+  });
+
+  // Drag & drop an image onto the logo panel.
+  const dropZone = $("logoDrop");
+  if (dropZone) {
+    ["dragenter", "dragover"].forEach((ev) =>
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragging");
+      })
+    );
+    ["dragleave", "dragend", "drop"].forEach((ev) =>
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        if (ev === "drop" || e.target === dropZone) dropZone.classList.remove("dragging");
+      })
+    );
+    dropZone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      loadImageFile(file);
+    });
+  }
 
   /* ---------------- export ---------------- */
   function currentFileName() {

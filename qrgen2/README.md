@@ -8,9 +8,11 @@ No build step, no backend, no tracking — everything runs in the visitor's brow
 - **Content types:** Website, Text, Email, Phone, SMS, WiFi, Contact (vCard),
   Calendar event (iCal), Location, LinkedIn, Discord, Spotify, X / Twitter,
   YouTube, WhatsApp, PayPal, and Crypto.
-- **Center logo / image:** upload a PNG, JPG, or SVG. Always centered, with an
-  optional cleared area behind it and adjustable size / padding. Error correction
-  is nudged up automatically when a logo is added.
+- **Center logo / image:** add a PNG, JPG, or SVG by choosing a file, **pasting**
+  an image from the clipboard (Ctrl/⌘+V anywhere on the page), or **dragging** one
+  onto the box. Always centered, with an optional cleared area behind it and
+  adjustable size / padding. Error correction is nudged up automatically when a
+  logo is added.
 - **Styling:** foreground & background colors, transparent background, dot styles
   (square, dots, rounded, extra-rounded, classy, classy-rounded), corner frame /
   center styles and colors, quiet-zone margin, output size, and error-correction
