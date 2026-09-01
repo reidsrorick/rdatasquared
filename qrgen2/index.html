@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QR Code Creator</title>
+<meta name="description" content="Generate customizable QR codes for text, URLs, WiFi, vCard, email, calendar events and more. Add a logo and style the code. Everything runs in your browser." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23111'/%3E%3Cg fill='%23fff'%3E%3Crect x='16' y='16' width='24' height='24'/%3E%3Crect x='60' y='16' width='24' height='24'/%3E%3Crect x='16' y='60' width='24' height='24'/%3E%3Crect x='52' y='52' width='12' height='12'/%3E%3Crect x='72' y='52' width='12' height='12'/%3E%3Crect x='52' y='72' width='12' height='12'/%3E%3Crect x='72' y='72' width='12' height='12'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <h1><span class="logo-mark" aria-hidden="true"></span> QR Code Creator</h1>
+    <p class="tagline">Free, private, and offline-capable. Nothing you type ever leaves your browser.</p>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <!-- ============ LEFT: content + style ============ -->
+  <section class="panel builder">
+    <nav class="tabs" id="typeTabs" aria-label="QR code type"></nav>
+
+    <form id="contentForm" class="fields" autocomplete="off"></form>
+
+    <details class="style-block" open>
+      <summary>Design &amp; colors</summary>
+      <div class="style-grid">
+        <label class="fld">
+          <span>Foreground</span>
+          <input type="color" id="fgColor" value="#000000" />
+        </label>
+        <label class="fld">
+          <span>Background</span>
+          <input type="color" id="bgColor" value="#ffffff" />
+        </label>
+        <label class="fld check">
+          <input type="checkbox" id="bgTransparent" />
+          <span>Transparent background</span>
+        </label>
+        <label class="fld">
+          <span>Dot style</span>
+          <select id="dotStyle">
+            <option value="square" selected>Square (classic)</option>
+            <option value="dots">Dots</option>
+            <option value="rounded">Rounded</option>
+            <option value="extra-rounded">Extra rounded</option>
+            <option value="classy">Classy</option>
+            <option value="classy-rounded">Classy rounded</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Corner frame</span>
+          <select id="cornerSquareStyle">
+            <option value="" selected>Match dots</option>
+            <option value="square">Square</option>
+            <option value="dot">Dot</option>
+            <option value="extra-rounded">Extra rounded</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Corner center</span>
+          <select id="cornerDotStyle">
+            <option value="" selected>Match dots</option>
+            <option value="square">Square</option>
+            <option value="dot">Dot</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Corner color</span>
+          <input type="color" id="cornerColor" value="#000000" />
+        </label>
+        <label class="fld check">
+          <input type="checkbox" id="cornerColorLink" checked />
+          <span>Corners match foreground</span>
+        </label>
+        <label class="fld">
+          <span>Error correction</span>
+          <select id="ecLevel">
+            <option value="L">L &ndash; 7%</option>
+            <option value="M">M &ndash; 15%</option>
+            <option value="Q" selected>Q &ndash; 25%</option>
+            <option value="H">H &ndash; 30% (best with logo)</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Size (px)</span>
+          <input type="number" id="sizePx" min="128" max="2000" step="16" value="320" />
+        </label>
+        <label class="fld">
+          <span>Quiet zone / margin</span>
+          <input type="number" id="marginPx" min="0" max="120" step="2" value="16" />
+        </label>
+      </div>
+    </details>
+
+    <details class="style-block" open>
+      <summary>Center logo / image</summary>
+      <div class="style-grid">
+        <label class="fld wide">
+          <span>Image file (PNG, JPG, SVG)</span>
+          <input type="file" id="logoFile" accept="image/*" />
+        </label>
+        <div class="fld wide logo-actions" hidden id="logoActions">
+          <img id="logoThumb" alt="Selected logo preview" />
+          <button type="button" id="logoClear" class="btn-ghost">Remove image</button>
+        </div>
+        <label class="fld">
+          <span>Logo size</span>
+          <input type="range" id="logoSize" min="0.1" max="0.6" step="0.02" value="0.4" />
+        </label>
+        <label class="fld">
+          <span>Logo padding</span>
+          <input type="range" id="logoMargin" min="0" max="30" step="1" value="6" />
+        </label>
+        <label class="fld check">
+          <input type="checkbox" id="hideBgDots" checked />
+          <span>Clear dots behind logo</span>
+        </label>
+      </div>
+      <p class="hint">The logo is always centered. With a logo, error correction Q or H is recommended so the code still scans.</p>
+    </details>
+
+    <div class="reset-row">
+      <button type="button" id="resetBtn" class="btn-ghost">Reset to black &amp; white default</button>
+    </div>
+  </section>
+
+  <!-- ============ RIGHT: preview + export ============ -->
+  <aside class="panel preview">
+    <div class="preview-stage">
+      <div id="qrHolder" class="qr-holder"></div>
+    </div>
+    <p id="qrError" class="qr-error" hidden></p>
+    <div class="export">
+      <label class="fld">
+        <span>File name</span>
+        <input type="text" id="fileName" value="qr-code" />
+      </label>
+      <div class="btn-row">
+        <button type="button" data-ext="png" class="btn-primary dl">PNG</button>
+        <button type="button" data-ext="svg" class="btn-primary dl">SVG</button>
+        <button type="button" data-ext="jpeg" class="btn-primary dl">JPEG</button>
+      </div>
+      <button type="button" id="copyBtn" class="btn-ghost">Copy PNG to clipboard</button>
+    </div>
+    <div class="data-peek">
+      <span>Encoded data</span>
+      <code id="dataPeek"></code>
+    </div>
+  </aside>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Built with <a href="https://github.com/kozakdenys/qr-code-styling" rel="noopener">qr-code-styling</a>. Runs entirely client-side &mdash; safe to host on GitHub Pages.</p>
+  </div>
+</footer>
+
+<script src="vendor/qr-code-styling.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
