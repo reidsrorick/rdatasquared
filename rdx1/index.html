@@ -1,1 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1E40D4" />
+  <meta name="description" content="Rolodex One (RDX1) — a private, offline contact & relationship tracker." />
+  <title>RDX1 — Rolodex One</title>
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
+  <header class="app-bar">
+    <a class="brand" href="#/">
+      <img src="icons/icon-192.png" alt="" width="28" height="28" />
+      <span>RDX1</span>
+    </a>
+    <div class="app-bar-search">
+      <input id="global-search" type="search" placeholder="Search contacts…" autocomplete="off" aria-label="Search contacts" />
+    </div>
+    <button id="theme-toggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">◐</button>
+  </header>
+
+  <div id="backup-banner" class="backup-banner" hidden>
+    <span></span>
+    <span class="backup-banner-actions">
+      <button data-act="export" class="btn btn-sm">Export now</button>
+      <button data-act="dismiss" class="btn btn-sm btn-ghost">Later</button>
+    </span>
+  </div>
+
+  <main id="main" tabindex="-1"></main>
+
+  <nav class="tab-bar">
+    <a href="#/" data-tab="dashboard"><span class="tab-ico">◎</span>Home</a>
+    <a href="#/contacts" data-tab="contacts"><span class="tab-ico">☰</span>Contacts</a>
+    <a href="#/add" data-tab="add" class="tab-add"><span class="tab-ico">＋</span>Add</a>
+    <a href="#/settings" data-tab="settings"><span class="tab-ico">⚙</span>Settings</a>
+  </nav>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
