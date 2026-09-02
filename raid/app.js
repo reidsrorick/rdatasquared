@@ -2,17 +2,21 @@
   "use strict";
 
   // ---------- Constants ----------
-  var TYPES = ["Risk", "Action", "Issue", "Decision"];   // RAID types (shared / team)
+  var TYPES = ["Risk", "Action", "Issue", "Decision"];   // RAID types
   var ALL_TYPES = ["Risk", "Action", "Issue", "Decision", "Task"];
   var STATUSES = ["Open", "In Progress", "Blocked", "Resolved", "Closed"];
   var PRIORITIES = ["Low", "Medium", "High", "Critical"];
   var LMH = ["Low", "Medium", "High"];
   var SEVERITIES = ["Low", "Medium", "High", "Critical"];
   var RECUR = ["None", "Daily", "Weekdays", "Weekly", "Bi-weekly", "Monthly"];
-  var UNASSIGNED = "• Unassigned";   // sentinel used only in the Owner filter
+  var UNASSIGNED = "• Unassigned";       // sentinel — Owner filter
+  var NO_WORKSTREAM = "• No workstream";  // sentinel — Workstream filter
+  var DEFAULT_WORKSTREAMS = ["Payments", "Data migration", "Customer portal", "Platform", "Compliance"];
   var TEAM = ["Alex Chen", "Priya Patel", "Sam Rivera", "Jordan Lee", "Morgan Blake", "Taylor Kim", "Dana Okafor"];
   var CURRENT_USER = "Reid";
   var STORAGE_KEY = "raidlog.v1";
+  var PREFS_KEY = "raidlog.prefs";
+  var SETTINGS_KEY = "raidlog.settings";
   var TYPE_ICON = { Risk: "⚠", Action: "✔", Issue: "●", Decision: "◆", Task: "☑" };
 
   // ---------- Utilities ----------
@@ -71,6 +75,13 @@
   function avatarEl(name, lg) {
     return '<span class="avatar' + (lg ? " lg" : "") + '" style="background:' + avatarColor(name) + '" title="' + esc(name) + '">' + esc(initials(name)) + "</span>";
   }
+  function ownerAvatars(it) {
+    var os = it.owners || [];
+    if (!os.length) return '<span class="avatar unassigned" title="Unassigned">?</span>';
+    var shown = os.slice(0, 3).map(function (o) { return avatarEl(o); }).join("");
+    var extra = os.length > 3 ? '<span class="avatar unassigned" title="' + esc(os.slice(3).join(", ")) + '">+' + (os.length - 3) + "</span>" : "";
+    return '<span class="avatar-stack" title="' + esc(os.join(", ")) + '">' + shown + extra + "</span>";
+  }
   var LMH_VAL = { Low: 1, Medium: 2, High: 3 };
   function riskScore(item) {
     if (item.type !== "Risk") return null;
@@ -95,38 +106,43 @@
   var store = {
     items: [],
     counter: 1,
+    settings: { workstreams: DEFAULT_WORKSTREAMS.slice() },
     ui: {
       scope: "raid",          // raid | tasks
       view: "board",          // board | list | matrix
-      typeView: null,         // when a "by type" nav is selected (raid only)
+      typeView: null,
       showDash: true,
-      filters: { search: "", type: "", status: "", priority: "", owner: "", tag: "" },
+      filters: { search: "", type: "", status: "", priority: "", owner: "", tag: "", workstream: "" },
       sort: { key: "id", dir: "asc" },
       selectedId: null
     }
   };
+  function emptyFilters() { return { search: "", type: "", status: "", priority: "", owner: "", tag: "", workstream: "" }; }
 
   function persist() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: store.items, counter: store.counter }));
-    } catch (e) { /* sandboxed / unavailable — in-memory only */ }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: store.items, counter: store.counter })); }
+    catch (e) { /* sandboxed — in-memory only */ }
+  }
+  function migrateItem(it) {
+    it.owners = Array.isArray(it.owners) ? it.owners : (it.owner ? [it.owner] : []);
+    if ("owner" in it) delete it.owner;
+    if (typeof it.workstream !== "string") it.workstream = "";
+    if (it.recurrence === "Every 2 weeks") it.recurrence = "Bi-weekly";
+    it.activity = Array.isArray(it.activity) ? it.activity : [];
+    it.tags = Array.isArray(it.tags) ? it.tags : [];
+    it.links = Array.isArray(it.links) ? it.links : [];
   }
   function tryLoad() {
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return false;
-      var data = JSON.parse(raw);
+      var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
       if (!data || !Array.isArray(data.items) || !data.items.length) return false;
       store.items = data.items;
-      store.items.forEach(function (it) { if (it.recurrence === "Every 2 weeks") it.recurrence = "Bi-weekly"; });
+      store.items.forEach(migrateItem);
       store.counter = data.counter || (data.items.length + 1);
       return true;
     } catch (e) { return false; }
   }
 
-  function nextId() { return "RAID-" + (store.counter++); }
-
-  var PREFS_KEY = "raidlog.prefs";
   function persistPrefs() {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify({ showDash: store.ui.showDash })); } catch (e) {}
   }
@@ -136,8 +152,19 @@
       if (typeof p.showDash === "boolean") store.ui.showDash = p.showDash;
     } catch (e) {}
   }
+  function persistSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(store.settings)); } catch (e) {}
+  }
+  function loadSettings() {
+    try {
+      var s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
+      if (s && Array.isArray(s.workstreams)) store.settings.workstreams = s.workstreams;
+    } catch (e) {}
+  }
 
-  var ACTIVITY_MAX = 200;   // per item; comments + creation are always kept, oldest auto-changes are dropped past this
+  function nextId() { return "RAID-" + (store.counter++); }
+
+  var ACTIVITY_MAX = 200;   // per item; comments + creation always kept, oldest auto-changes dropped past this
   function trimActivity(item) {
     if (!item.activity || item.activity.length <= ACTIVITY_MAX) return;
     var over = item.activity.length - ACTIVITY_MAX;
@@ -155,11 +182,13 @@
   function seed() {
     store.items = [];
     store.counter = 1;
+    store.settings.workstreams = DEFAULT_WORKSTREAMS.slice();
     function mk(o) {
       var base = {
         id: nextId(), type: o.type, title: o.title, description: o.description || "",
         status: o.status || "Open", priority: o.priority || "Medium",
-        owner: o.owner || (o.type === "Task" ? CURRENT_USER : TEAM[0]),
+        workstream: o.workstream || "",
+        owners: o.owners || (o.owner ? [o.owner] : []),
         reporter: o.reporter || CURRENT_USER,
         createdDate: o.createdDate || todayISO(-14), dueDate: o.dueDate || "",
         resolvedDate: o.resolvedDate || null, links: o.links || [], tags: o.tags || [],
@@ -181,7 +210,7 @@
       mk({
         type: "Risk", title: "Key integration vendor may miss the API delivery deadline",
         description: "Vendor Acme has flagged resourcing constraints for the payments API. If the delivery slips past 30 Sep, the UAT window compresses to under a week.",
-        status: "In Progress", priority: "High", owner: "Priya Patel", reporter: "Reid",
+        status: "In Progress", priority: "High", workstream: "Payments", owner: "Priya Patel", reporter: "Reid",
         createdDate: todayISO(-20), dueDate: todayISO(12), likelihood: "High", impact: "High",
         mitigationPlan: "Weekly check-ins with the vendor's account manager. In parallel, spike a lightweight in-house adapter against the v1 API so launch is not fully dependent on Acme. Pre-book two extra UAT days for the week of 6 Oct.",
         tags: ["vendor", "payments", "schedule"],
@@ -194,14 +223,14 @@
         type: "Action", title: "Finalize and dry-run the data migration runbook",
         description: "Consolidate the migration steps into a single runbook and complete one full dry run against a production-sized dataset.",
         nextStep: "Book the staging dry-run slot with the DBA team for next Tuesday.",
-        status: "In Progress", priority: "High", owner: "Sam Rivera", reporter: "Reid",
+        status: "In Progress", priority: "High", workstream: "Data migration", owner: "Sam Rivera", reporter: "Reid",
         createdDate: todayISO(-16), dueDate: todayISO(5), links: ["RAID-1"], tags: ["migration", "release"],
         comments: [{ text: "Runbook draft is at 80%. Rollback section still needs review.", who: "Sam Rivera", ts: todayISO(-3) + "T16:40:00.000Z" }]
       }),
       mk({
         type: "Issue", title: "Staging environment intermittently returns HTTP 500 on checkout",
         description: "Roughly 1 in 20 checkout calls on staging fail with a 500. Logs point at a connection-pool exhaustion under concurrent load.",
-        status: "Blocked", priority: "Critical", severity: "High", owner: "Alex Chen", reporter: "Dana Okafor",
+        status: "Blocked", priority: "Critical", severity: "High", workstream: "Platform", owner: "Alex Chen", reporter: "Dana Okafor",
         createdDate: todayISO(-9), dueDate: todayISO(-1), tags: ["staging", "checkout", "bug"],
         comments: [
           { text: "Blocked on infra raising the RDS max_connections limit — ticket INFRA-2231.", who: "Alex Chen", ts: todayISO(-4) + "T11:20:00.000Z" }
@@ -212,13 +241,13 @@
         description: "Framework selection for the greenfield portal. Options weighed: React, Vue, and server-rendered templates.",
         decisionMade: "The portal will be built as a React + TypeScript single-page app, bundled with Vite.",
         rationale: "Team already has deep React experience, the component ecosystem covers our needs, and hiring is easier. Vue was close but the existing skill set tipped it.",
-        status: "Resolved", priority: "Medium", owner: "Reid", reporter: "Reid",
+        status: "Resolved", priority: "Medium", workstream: "Customer portal", owner: "Reid", reporter: "Reid",
         createdDate: todayISO(-25), resolvedDate: todayISO(-18), tags: ["architecture", "frontend"]
       }),
       mk({
         type: "Risk", title: "Insufficient QA capacity for the compressed release window",
         description: "With one QA engineer on leave in the release week, regression coverage for the payments flow may be incomplete.",
-        status: "Open", priority: "Medium", owner: "Jordan Lee", reporter: "Priya Patel",
+        status: "Open", priority: "Medium", workstream: "Payments", owner: "Jordan Lee", reporter: "Priya Patel",
         createdDate: todayISO(-11), dueDate: todayISO(9), likelihood: "Medium", impact: "High",
         mitigationPlan: "Cross-train two engineers on the payments regression suite this sprint. Automate the top 10 checkout paths so manual effort in the release week drops. Line up a contract QA resource on standby.",
         links: ["RAID-1"], tags: ["qa", "capacity"]
@@ -227,13 +256,13 @@
         type: "Action", title: "Schedule the pre-launch security review with InfoSec",
         description: "InfoSec needs two weeks' notice for a full review. Get on their calendar and share the threat model doc.",
         nextStep: "Send the review request form to InfoSec today with the architecture diagram attached.",
-        status: "Open", priority: "Medium", owner: "Morgan Blake", reporter: "Reid",
+        status: "Open", priority: "Medium", workstream: "Compliance", owner: "Morgan Blake", reporter: "Reid",
         createdDate: todayISO(-5), dueDate: todayISO(3), tags: ["security", "compliance"]
       }),
       mk({
         type: "Issue", title: "Customer CSV import fails for files that are not UTF-8 encoded",
         description: "Imports of Latin-1 / Windows-1252 CSV exports throw a decode error instead of falling back or reporting a friendly message.",
-        status: "Open", priority: "Low", severity: "Medium", owner: "Taylor Kim", reporter: "Dana Okafor",
+        status: "Open", priority: "Low", severity: "Medium", workstream: "Customer portal", owner: "Taylor Kim", reporter: "Dana Okafor",
         createdDate: todayISO(-7), dueDate: todayISO(20), tags: ["import", "bug", "encoding"]
       }),
       mk({
@@ -241,23 +270,23 @@
         description: "Whether to include enterprise SSO in the initial launch scope.",
         decisionMade: "SSO is out of scope for launch and moves to Phase 2 (Q1 next year).",
         rationale: "Only two prospects require it at launch and both accepted a Phase 2 commitment. Including it now would push the date by ~3 weeks.",
-        status: "Closed", priority: "Low", owner: "Reid", reporter: "Morgan Blake",
+        status: "Closed", priority: "Low", workstream: "Customer portal", owner: "Reid", reporter: "Morgan Blake",
         createdDate: todayISO(-30), resolvedDate: todayISO(-22), tags: ["scope", "auth"]
       }),
       mk({
         type: "Task", title: "Send my updated availability to the PMO for capacity planning",
         description: "They need it before the weekly Thursday capacity call.",
-        status: "Open", priority: "Medium", recurrence: "Weekly",
+        status: "Open", priority: "Medium", recurrence: "Weekly", owners: ["Reid"],
         createdDate: todayISO(-2), dueDate: todayISO(1), tags: ["admin"]
       }),
       mk({
         type: "Task", title: "Review the vendor contract redlines before the 1:1 with Legal",
         description: "Focus on the SLA section and the termination clause — flag anything that shifts risk onto us.",
-        status: "In Progress", priority: "High", createdDate: todayISO(-4), dueDate: todayISO(-1), tags: ["contract", "prep"],
+        status: "In Progress", priority: "High", workstream: "Compliance", owners: ["Reid", "Morgan Blake"],
+        createdDate: todayISO(-4), dueDate: todayISO(-1), tags: ["contract", "prep"],
         comments: [{ text: "First pass done. SLA credits look thin — need to raise this.", who: "Reid", ts: todayISO(-1) + "T08:15:00.000Z" }]
       })
     ];
-    // make seeded links bidirectional
     store.items.forEach(function (it) {
       (it.links || []).forEach(function (lid) {
         var other = store.items.find(function (x) { return x.id === lid; });
@@ -265,6 +294,7 @@
       });
     });
     persist();
+    persistSettings();
   }
 
   // ---------- Scope / filtering / sorting ----------
@@ -289,14 +319,19 @@
       if (f.status && it.status !== f.status) return false;
       if (f.priority && it.priority !== f.priority) return false;
       if (f.owner) {
-        if (f.owner === UNASSIGNED) { if (it.owner) return false; }
-        else if (it.owner !== f.owner) return false;
+        var os = it.owners || [];
+        if (f.owner === UNASSIGNED) { if (os.length) return false; }
+        else if (os.indexOf(f.owner) === -1) return false;
+      }
+      if (f.workstream) {
+        if (f.workstream === NO_WORKSTREAM) { if (it.workstream) return false; }
+        else if (it.workstream !== f.workstream) return false;
       }
       if (f.tag && (it.tags || []).indexOf(f.tag) === -1) return false;
       if (q) {
-        var hay = (it.id + " " + it.title + " " + it.description + " " + (it.nextStep || "") + " " +
-          (it.mitigationPlan || "") + " " + (it.decisionMade || "") + " " + (it.rationale || "") + " " +
-          (it.tags || []).join(" ")).toLowerCase();
+        var hay = (it.id + " " + it.title + " " + it.description + " " + (it.workstream || "") + " " +
+          (it.owners || []).join(" ") + " " + (it.nextStep || "") + " " + (it.mitigationPlan || "") + " " +
+          (it.decisionMade || "") + " " + (it.rationale || "") + " " + (it.tags || []).join(" ")).toLowerCase();
         if (hay.indexOf(q) === -1) return false;
       }
       return true;
@@ -314,12 +349,31 @@
         case "priority": av = pOrder[a.priority]; bv = pOrder[b.priority]; break;
         case "status": av = stOrder[a.status]; bv = stOrder[b.status]; break;
         case "dueDate": av = a.dueDate || "9999"; bv = b.dueDate || "9999"; break;
+        case "owner": av = (a.owners || []).join(", ").toLowerCase(); bv = (b.owners || []).join(", ").toLowerCase(); break;
         default: av = (a[s.key] || "").toString().toLowerCase(); bv = (b[s.key] || "").toString().toLowerCase();
       }
       if (av < bv) return -1 * dir;
       if (av > bv) return 1 * dir;
       return 0;
     });
+  }
+
+  function uniqueOwners() {
+    var s = {};
+    store.items.forEach(function (i) { (i.owners || []).forEach(function (o) { if (o) s[o] = 1; }); });
+    s[CURRENT_USER] = 1;
+    return Object.keys(s).sort();
+  }
+  function uniqueTags() {
+    var s = {};
+    store.items.forEach(function (i) { (i.tags || []).forEach(function (t) { if (t) s[t] = 1; }); });
+    return Object.keys(s).sort();
+  }
+  function workstreamList() {
+    var out = (store.settings.workstreams || []).slice();
+    var seen = {}; out.forEach(function (w) { seen[w] = 1; });
+    store.items.forEach(function (i) { if (i.workstream && !seen[i.workstream]) { seen[i.workstream] = 1; out.push(i.workstream); } });
+    return out;
   }
 
   // ---------- Renderers ----------
@@ -334,7 +388,7 @@
     document.getElementById("dash").classList.toggle("hidden", !ui.showDash);
 
     var title;
-    if (isTasksScope()) title = ui.view === "list" ? "Task list" : "My Tasks";
+    if (isTasksScope()) title = ui.view === "list" ? "Task list" : "Tasks";
     else if (ui.typeView) title = ui.typeView + "s";
     else if (ui.view === "matrix") title = "Risk Matrix";
     else if (ui.view === "list") title = "List";
@@ -411,42 +465,43 @@
       return i.dueDate && i.dueDate <= todayISO() && i.status !== "Resolved" && i.status !== "Closed";
     }).length;
     d.innerHTML =
-      dcard("My tasks", items.length, open + " open · " + (items.length - open) + " done") +
+      dcard("Tasks", items.length, open + " open · " + (items.length - open) + " done") +
       '<div class="dash-card ' + (overdue ? "warn" : "") + '"><div class="label">Overdue</div><div class="value">' + overdue +
         '</div><div class="sub">past due, not done</div></div>' +
       dcard("Due today or sooner", dueSoon, "open tasks") +
       dcard("High / Critical", byPrio.High + byPrio.Critical, "need attention");
   }
 
+  function selectHtml(id, label, opts, val) {
+    return '<select id="' + id + '"><option value="">' + label + ": Any</option>" +
+      opts.map(function (o) { return '<option ' + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
+      "</select>";
+  }
+
   function renderFilters() {
     var f = store.ui.filters;
-    var tags = uniqueTags();
     var tasks = isTasksScope();
     var wrap = document.getElementById("filters");
     wrap.innerHTML =
-      '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search title, description, tags…" value="' + esc(f.search) + '"></div>' +
+      '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search title, description, owners, workstream, tags…" value="' + esc(f.search) + '"></div>' +
       (store.ui.typeView || tasks ? "" : selectHtml("fType", "Type", TYPES, f.type)) +
       selectHtml("fStatus", "Status", STATUSES, f.status) +
       selectHtml("fPriority", "Priority", PRIORITIES, f.priority) +
-      (tasks ? "" : selectHtml("fOwner", "Owner",
-        (baseItems().some(function (i) { return !i.owner; }) ? [UNASSIGNED] : []).concat(uniqueOwners()), f.owner)) +
-      selectHtml("fTag", "Label", tags, f.tag) +
+      selectHtml("fOwner", "Owner",
+        (baseItems().some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners()), f.owner) +
+      selectHtml("fWorkstream", "Workstream",
+        (baseItems().some(function (i) { return !i.workstream; }) ? [NO_WORKSTREAM] : []).concat(workstreamList()), f.workstream) +
+      selectHtml("fTag", "Label", uniqueTags(), f.tag) +
       activeChips();
 
-    function selectHtml(id, label, opts, val) {
-      return '<select id="' + id + '"><option value="">' + label + ": Any</option>" +
-        opts.map(function (o) { return '<option ' + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
-        "</select>";
-    }
     function activeChips() {
       var chips = [];
       var af = store.ui.filters;
+      var lbls = { type: "Type", status: "Status", priority: "Priority", owner: "Owner", workstream: "Workstream", tag: "Label" };
       Object.keys(af).forEach(function (k) {
-        if (af[k] && k !== "search") {
-          if (tasks && (k === "type" || k === "owner")) return;
-          var lbl = { type: "Type", status: "Status", priority: "Priority", owner: "Owner", tag: "Label" }[k];
-          chips.push('<span class="chip">' + lbl + ": " + esc(af[k]) + '<button data-clear="' + k + '">×</button></span>');
-        }
+        if (!af[k] || k === "search") return;
+        if (tasks && k === "type") return;
+        chips.push('<span class="chip">' + lbls[k] + ": " + esc(af[k]) + '<button data-clear="' + k + '">×</button></span>');
       });
       if (af.search) chips.push('<span class="chip">"' + esc(af.search) + '"<button data-clear="search">×</button></span>');
       if (chips.length > 1) chips.push('<button class="btn subtle" id="clearAll">Clear all</button>');
@@ -454,19 +509,10 @@
     }
   }
 
-  function uniqueOwners() {
-    var s = {}; store.items.forEach(function (i) { if (i.owner) s[i.owner] = 1; });
-    TEAM.forEach(function (t) { s[t] = 1; });
-    return Object.keys(s).sort();
-  }
-  function uniqueTags() {
-    var s = {}; baseItems().forEach(function (i) { (i.tags || []).forEach(function (t) { s[t] = 1; }); });
-    return Object.keys(s).sort();
-  }
-
   function cardHtml(it) {
     var over = isOverdue(it);
     var score = riskScore(it);
+    var hasChips = it.workstream || (it.tags && it.tags.length);
     return '<div class="card" draggable="true" data-id="' + it.id + '" data-type="' + it.type + '">' +
       '<div class="labels">' +
         '<span class="badge ' + it.type + '">' + it.type + "</span>" +
@@ -476,17 +522,16 @@
           ? '<span class="sev-tag" style="background:var(--task-bg);color:#0c4a4a">↻ ' + esc(it.recurrence) + "</span>" : "") +
       "</div>" +
       '<div class="title">' + esc(it.title) + "</div>" +
-      (it.tags && it.tags.length ? '<div class="labels">' + it.tags.slice(0, 4).map(function (t) {
-        return '<span class="label-tag">' + esc(t) + "</span>";
-      }).join("") + "</div>" : "") +
+      (hasChips ? '<div class="labels">' +
+        (it.workstream ? '<span class="ws-tag">' + esc(it.workstream) + "</span>" : "") +
+        (it.tags || []).slice(0, 4).map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join("") +
+        "</div>" : "") +
       '<div class="meta">' +
         '<span class="id">' + it.id + "</span>" +
         '<span class="flag" data-p="' + it.priority + '" title="' + it.priority + ' priority"></span>' +
         '<span class="spacer"></span>' +
         (it.dueDate ? '<span class="due ' + (over ? "overdue" : "") + '" title="Due ' + fmtDate(it.dueDate) + '">' + fmtDate(it.dueDate) + "</span>" : "") +
-        (it.type === "Task" ? "" : (it.owner
-          ? avatarEl(it.owner)
-          : '<span class="avatar unassigned" title="Unassigned">?</span>')) +
+        ownerAvatars(it) +
       "</div></div>";
   }
 
@@ -518,10 +563,11 @@
       case "type": return '<td><span class="badge ' + it.type + '">' + it.type + "</span></td>";
       case "title": return '<td class="title-cell">' + esc(it.title) +
         (it.tags && it.tags.length ? " " + it.tags.map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join(" ") : "") + "</td>";
+      case "workstream": return "<td>" + (it.workstream ? esc(it.workstream) : '<span style="color:var(--text-faint)">—</span>') + "</td>";
       case "status": return '<td><span class="pill" data-st="' + esc(it.status) + '">' + it.status + "</span></td>";
       case "priority": return '<td><span class="flag" data-p="' + it.priority + '">' + it.priority + "</span></td>";
-      case "owner": return it.owner
-        ? '<td><span style="display:flex;align-items:center;gap:6px">' + avatarEl(it.owner) + esc(it.owner) + "</span></td>"
+      case "owner": return (it.owners || []).length
+        ? '<td><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + ownerAvatars(it) + "<span>" + esc((it.owners || []).join(", ")) + "</span></span></td>"
         : '<td><span style="color:var(--text-faint)">Unassigned</span></td>';
       case "dueDate": return '<td style="' + (over ? "color:var(--issue);font-weight:600" : "") + '">' + fmtDate(it.dueDate) + (over ? " ⚠" : "") + "</td>";
     }
@@ -533,8 +579,8 @@
     var s = store.ui.sort;
     function arrow(k) { return s.key === k ? '<span class="arrow">' + (s.dir === "asc" ? "▲" : "▼") + "</span>" : ""; }
     var cols = isTasksScope()
-      ? [["id", "ID"], ["title", "Title"], ["status", "Status"], ["priority", "Priority"], ["dueDate", "Due date"]]
-      : [["id", "ID"], ["type", "Type"], ["title", "Title"], ["status", "Status"], ["priority", "Priority"], ["owner", "Owner"], ["dueDate", "Due date"]];
+      ? [["id", "ID"], ["title", "Title"], ["workstream", "Workstream"], ["status", "Status"], ["priority", "Priority"], ["owner", "Owner"], ["dueDate", "Due date"]]
+      : [["id", "ID"], ["type", "Type"], ["title", "Title"], ["workstream", "Workstream"], ["status", "Status"], ["priority", "Priority"], ["owner", "Owner"], ["dueDate", "Due date"]];
     if (!items.length) {
       viewEl.innerHTML = '<div class="table-wrap"><div class="empty"><div class="big">Nothing here yet</div><div>Try clearing a filter, or use + Create.</div></div></div>';
       return;
@@ -552,9 +598,9 @@
   function renderMatrix() {
     var risks = store.items.filter(function (i) { return i.type === "Risk"; });
     var band = [
-      ["m-med", "m-high", "m-crit"],   // impact High
-      ["m-low", "m-med", "m-high"],     // impact Medium
-      ["m-low", "m-low", "m-med"]       // impact Low
+      ["m-med", "m-high", "m-crit"],
+      ["m-low", "m-med", "m-high"],
+      ["m-low", "m-low", "m-med"]
     ];
     var impacts = ["High", "Medium", "Low"];
     var likelihoods = ["Low", "Medium", "High"];
@@ -592,6 +638,7 @@
 
   function closeModal() { modalRoot.innerHTML = ""; store.ui.selectedId = null; }
   function openItem(id) { store.ui.selectedId = id; renderDetailModal(id); }
+  function multiSingular(k) { return { owners: "owner", tags: "label" }[k] || k; }
 
   function updateField(id, field, value, label) {
     var it = getItem(id);
@@ -604,9 +651,7 @@
       var wasDone = old === "Resolved" || old === "Closed";
       if (doneNow && !it.resolvedDate) it.resolvedDate = todayISO();
       if (!doneNow) it.resolvedDate = null;
-      if (doneNow && !wasDone && it.type === "Task" && it.recurrence && it.recurrence !== "None") {
-        spawnRecurrence(it);
-      }
+      if (doneNow && !wasDone && it.type === "Task" && it.recurrence && it.recurrence !== "None") spawnRecurrence(it);
     }
     var from = old == null || old === "" ? "empty" : old;
     var to = value == null || value === "" ? "empty" : value;
@@ -625,7 +670,8 @@
     var copy = {
       id: nextId(), type: "Task", title: done.title,
       description: done.description || "", status: "Open",
-      priority: done.priority, owner: done.owner, reporter: done.reporter,
+      priority: done.priority, workstream: done.workstream || "",
+      owners: (done.owners || []).slice(), reporter: done.reporter,
       createdDate: todayISO(), dueDate: nextDue, resolvedDate: null,
       links: [], tags: (done.tags || []).slice(), recurrence: done.recurrence,
       activity: [{ id: "c0", kind: "create", text: "created automatically from recurring task " + done.id, who: CURRENT_USER, ts: nowISO() }]
@@ -681,6 +727,19 @@
       opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
       "</select>" + (hint ? '<div class="hint">' + hint + "</div>" : "") + "</div>";
   }
+  function workstreamOptionsHtml(current) {
+    return '<option value=""' + (!current ? " selected" : "") + ">— None —</option>" +
+      workstreamList().map(function (w) { return "<option " + (w === current ? "selected" : "") + ">" + esc(w) + "</option>"; }).join("");
+  }
+  function multiFieldHtml(labelText, key, values, listId, placeholder) {
+    return '<div class="field"><label>' + labelText + "</label>" +
+      '<div class="tag-input-row">' +
+      (values || []).map(function (v) {
+        return '<span class="tag-pill">' + esc(v) + '<button data-multi-remove="' + key + '" data-val="' + esc(v) + '">×</button></span>';
+      }).join("") +
+      '<input type="text" data-multi-add="' + key + '"' + (listId ? ' list="' + listId + '"' : "") +
+      ' placeholder="' + esc(placeholder) + '" autocomplete="off"></div></div>';
+  }
 
   function renderDetailModal(id) {
     var it = getItem(id);
@@ -724,10 +783,6 @@
         "</div>";
     }
 
-    var tagsHtml = (it.tags || []).map(function (t) {
-      return '<span class="tag-pill">' + esc(t) + '<button data-untag="' + esc(t) + '">×</button></span>';
-    }).join("");
-
     var activity = it.activity.slice().sort(function (a, b) { return a.ts > b.ts ? -1 : 1; });
     var actHtml = activity.map(function (a) {
       return '<div class="act ' + a.kind + '">' + avatarEl(a.who) +
@@ -736,8 +791,9 @@
     }).join("");
 
     var descLabel = isTask ? "Notes" : "Description";
-    var ownerOptions = '<datalist id="ownerOptions">' +
-      uniqueOwners().map(function (o) { return '<option value="' + esc(o) + '"></option>'; }).join("") + "</datalist>";
+    var lists =
+      '<datalist id="ownerOptions">' + uniqueOwners().map(function (o) { return '<option value="' + esc(o) + '"></option>'; }).join("") + "</datalist>" +
+      '<datalist id="tagOptions">' + uniqueTags().map(function (t) { return '<option value="' + esc(t) + '"></option>'; }).join("") + "</datalist>";
 
     var overlay = el(
       '<div class="overlay" id="overlay">' +
@@ -751,13 +807,12 @@
           "</select>" +
           '<button class="close" id="closeModal">×</button>' +
         "</div>" +
-        '<div class="modal-body">' + ownerOptions + '<div class="modal-cols">' +
+        '<div class="modal-body">' + lists + '<div class="modal-cols">' +
           "<div>" +
             '<div class="field"><label>Title</label><input type="text" data-field="title" data-id="' + id + '" value="' + esc(it.title) + '"></div>' +
             '<div class="field"><label>' + descLabel + '</label><textarea data-field="description" data-id="' + id + '" style="min-height:90px">' + esc(it.description || "") + "</textarea></div>" +
             typeSpecific +
-            '<div class="field"><label>Labels</label><div class="tag-input-row" id="tagRow">' + tagsHtml +
-              '<input type="text" id="tagInput" placeholder="Add label + Enter"></div></div>' +
+            multiFieldHtml("Labels", "tags", it.tags, "tagOptions", "Add label + Enter") +
             linksBlock +
             '<div class="activity"><h3>Activity &amp; ' + (isTask ? "notes" : "comments") + '</h3>' +
               '<div class="comment-box">' + avatarEl(CURRENT_USER) +
@@ -772,11 +827,11 @@
               '<div class="n" style="color:' + sev.color + '">' + score + '</div><div class="lbl" style="color:' + sev.color + '">' + sev.label + "</div></div>" +
               '<div class="hint" style="margin-top:8px">' + it.likelihood + " likelihood × " + it.impact + " impact</div></div>" : "") +
             '<div class="side-box"><h4>Details</h4>' +
-              sideSelect(id, "priority", "Priority", PRIORITIES, it.priority) +
-              (isTask ? "" : '<div class="field" style="margin-bottom:8px"><label>Owner</label>' +
-                '<input type="text" list="ownerOptions" data-field="owner" data-id="' + id + '" value="' + esc(it.owner || "") + '" placeholder="Unassigned — type a name" autocomplete="off"></div>') +
-              '<div class="field" style="margin:8px 0 0"><label>Due date</label><input type="date" data-field="dueDate" data-id="' + id + '" value="' + esc(it.dueDate || "") + '"></div>' +
-              (isTask ? '<div class="field" style="margin:8px 0 0"><label>Repeat</label><select data-field="recurrence" data-id="' + id + '">' +
+              selectField(id, "priority", "Priority", PRIORITIES, it.priority) +
+              multiFieldHtml("Owners", "owners", it.owners, "ownerOptions", "Add owner + Enter") +
+              '<div class="field"><label>Workstream</label><select data-field="workstream" data-id="' + id + '">' + workstreamOptionsHtml(it.workstream) + "</select></div>" +
+              '<div class="field"><label>Due date</label><input type="date" data-field="dueDate" data-id="' + id + '" value="' + esc(it.dueDate || "") + '"></div>' +
+              (isTask ? '<div class="field" style="margin-bottom:0"><label>Repeat</label><select data-field="recurrence" data-id="' + id + '">' +
                 RECUR.map(function (o) { return "<option " + (o === (it.recurrence || "None") ? "selected" : "") + ">" + o + "</option>"; }).join("") +
                 '</select><div class="hint">A new occurrence is created when you mark this done.</div></div>' : "") +
             "</div>" +
@@ -797,12 +852,6 @@
     modalRoot.innerHTML = "";
     modalRoot.appendChild(overlay);
     wireDetailModal(id);
-
-    function sideSelect(id, field, label, opts, val) {
-      return '<div class="field" style="margin-bottom:8px"><label>' + label + "</label>" +
-        '<select data-field="' + field + '" data-id="' + id + '">' +
-        opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") + "</select></div>";
-    }
   }
 
   function wireDetailModal(id) {
@@ -820,35 +869,35 @@
       });
     });
 
-    var ci = document.getElementById("commentInput");
-    document.getElementById("addComment").addEventListener("click", function () {
-      addComment(id, ci.value); ci.value = "";
-    });
-    ci.addEventListener("keydown", function (e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { addComment(id, ci.value); ci.value = ""; }
-    });
-
-    var tagInput = document.getElementById("tagInput");
-    tagInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && tagInput.value.trim()) {
+    // generic multi-value chip fields (owners, labels)
+    overlay.querySelectorAll("[data-multi-add]").forEach(function (inp) {
+      inp.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" || !inp.value.trim()) return;
         e.preventDefault();
-        var it = getItem(id);
-        var v = tagInput.value.trim();
-        if ((it.tags || []).indexOf(v) === -1) {
-          it.tags = it.tags || []; it.tags.push(v);
-          log(it, "change", "added label <b>" + esc(v) + "</b>");
+        var key = inp.getAttribute("data-multi-add");
+        var it = getItem(id); it[key] = it[key] || [];
+        var v = inp.value.trim();
+        if (it[key].indexOf(v) === -1) {
+          it[key].push(v);
+          log(it, "change", "added " + multiSingular(key) + " <b>" + esc(v) + "</b>");
           persist(); renderDetailModal(id); renderBoardOrList();
-        }
-      }
+        } else { inp.value = ""; }
+      });
     });
-    overlay.querySelectorAll("[data-untag]").forEach(function (b) {
+    overlay.querySelectorAll("[data-multi-remove]").forEach(function (b) {
       b.addEventListener("click", function () {
+        var key = b.getAttribute("data-multi-remove"), v = b.getAttribute("data-val");
         var it = getItem(id);
-        var v = b.getAttribute("data-untag");
-        it.tags = it.tags.filter(function (t) { return t !== v; });
-        log(it, "change", "removed label <b>" + esc(v) + "</b>");
+        it[key] = (it[key] || []).filter(function (x) { return x !== v; });
+        log(it, "change", "removed " + multiSingular(key) + " <b>" + esc(v) + "</b>");
         persist(); renderDetailModal(id); renderBoardOrList();
       });
+    });
+
+    var ci = document.getElementById("commentInput");
+    document.getElementById("addComment").addEventListener("click", function () { addComment(id, ci.value); ci.value = ""; });
+    ci.addEventListener("keydown", function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { addComment(id, ci.value); ci.value = ""; }
     });
 
     var addLink = document.getElementById("addLink");
@@ -881,7 +930,6 @@
     });
 
     document.getElementById("dupItem").addEventListener("click", function () { duplicateItem(id); });
-
     document.getElementById("deleteItem").addEventListener("click", function () {
       var it = getItem(id);
       if (!confirm("Delete " + id + " — “" + it.title + "”? This cannot be undone.")) return;
@@ -894,15 +942,65 @@
 
   // ---------- Create modal ----------
   function openCreate() {
-    var chosen = isTasksScope() ? "Task" : "Risk";
+    var chosen = store.ui.typeView || (isTasksScope() ? "Task" : "Risk");
+    var createState = { owners: [], tags: [] };
     var overlay = el('<div class="overlay" id="overlay"><div class="modal"><div class="modal-head"><b>Create item</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div><div class="modal-body" id="createBody"></div><div class="modal-foot"><button class="btn" id="cCancel">Cancel</button><button class="btn primary" id="cSave">Create</button></div></div></div>');
     modalRoot.innerHTML = ""; modalRoot.appendChild(overlay);
+
+    function fieldSelect(fid, label, opts, val) {
+      return '<div class="field"><label>' + label + '</label><select id="' + fid + '">' +
+        opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") + "</select></div>";
+    }
+    var COMMON_FIELDS = ["nTitle", "nDesc", "nPriority", "nStatus", "nWorkstream", "nDue"];
+    var chipCfg = {
+      nOwnerRow: { key: "owners", list: "ownerOptions", ph: "Add owner + Enter" },
+      nTagRow: { key: "tags", list: "tagOptions", ph: "Add label + Enter" }
+    };
+    function snapshotCommon() {
+      var f = {};
+      COMMON_FIELDS.forEach(function (k) { var e = document.getElementById(k); if (e) f[k] = e.value; });
+      return f;
+    }
+    function restoreCommon(f) {
+      Object.keys(f || {}).forEach(function (k) { var e = document.getElementById(k); if (e) e.value = f[k]; });
+    }
+    function chipRowInner(rowId) {
+      var cfg = chipCfg[rowId];
+      return createState[cfg.key].map(function (v) {
+        return '<span class="tag-pill">' + esc(v) + '<button type="button" data-cs-remove="' + rowId + '" data-val="' + esc(v) + '">×</button></span>';
+      }).join("") +
+        '<input type="text" id="' + rowId + 'Input" list="' + cfg.list + '" placeholder="' + cfg.ph + '" autocomplete="off">';
+    }
+    function wireChipRow(rowId) {
+      var cfg = chipCfg[rowId];
+      var row = document.getElementById(rowId);
+      var inp = document.getElementById(rowId + "Input");
+      if (inp) inp.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" || !inp.value.trim()) return;
+        e.preventDefault();
+        var v = inp.value.trim();
+        if (createState[cfg.key].indexOf(v) === -1) createState[cfg.key].push(v);
+        refreshChipRow(rowId);
+      });
+      row.querySelectorAll("[data-cs-remove]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          createState[cfg.key] = createState[cfg.key].filter(function (x) { return x !== btn.getAttribute("data-val"); });
+          refreshChipRow(rowId);
+        });
+      });
+    }
+    function refreshChipRow(rowId) {
+      document.getElementById(rowId).innerHTML = chipRowInner(rowId);
+      wireChipRow(rowId);
+      var i = document.getElementById(rowId + "Input"); if (i) i.focus();
+    }
 
     function body() {
       var isTask = chosen === "Task";
       var b = document.getElementById("createBody");
       b.innerHTML =
         '<datalist id="ownerOptions">' + uniqueOwners().map(function (o) { return '<option value="' + esc(o) + '"></option>'; }).join("") + "</datalist>" +
+        '<datalist id="tagOptions">' + uniqueTags().map(function (t) { return '<option value="' + esc(t) + '"></option>'; }).join("") + "</datalist>" +
         '<div class="field"><label>Type</label><div class="type-picker">' +
           ALL_TYPES.map(function (t) {
             return '<button type="button" class="type-opt ' + (t === chosen ? "sel" : "") + '" data-type="' + t + '"><span class="ic">' + TYPE_ICON[t] + "</span>" + t + "</button>";
@@ -916,15 +1014,23 @@
           fieldSelect("nStatus", "Status", STATUSES, "Open") +
         "</div>" +
         '<div class="row2">' +
-          (isTask ? "" : '<div class="field"><label>Owner</label><input type="text" id="nOwner" list="ownerOptions" value="" placeholder="Unassigned — type a name" autocomplete="off"></div>') +
+          '<div class="field"><label>Workstream</label><select id="nWorkstream">' + workstreamOptionsHtml("") + "</select></div>" +
           '<div class="field"><label>Due date</label><input type="date" id="nDue"></div>' +
         "</div>" +
-        '<div class="field"><label>Labels (comma-separated)</label><input type="text" id="nTags" placeholder="e.g. release, payments"></div>' +
-        (isTask ? '<div class="hint">Tasks are personal — owner is you, and they stay out of the RAID board and the Excel export.</div>' : "");
+        '<div class="field"><label>Owners</label><div class="tag-input-row" id="nOwnerRow">' + chipRowInner("nOwnerRow") + "</div></div>" +
+        '<div class="field"><label>Labels</label><div class="tag-input-row" id="nTagRow">' + chipRowInner("nTagRow") + "</div></div>" +
+        (isTask ? '<div class="hint">Tasks stay off the RAID board and out of the Excel export.</div>' : "");
 
       b.querySelectorAll(".type-opt").forEach(function (opt) {
-        opt.addEventListener("click", function () { chosen = opt.getAttribute("data-type"); body(); });
+        opt.addEventListener("click", function () {
+          var keep = snapshotCommon();
+          chosen = opt.getAttribute("data-type");
+          body();
+          restoreCommon(keep);
+        });
       });
+      wireChipRow("nOwnerRow");
+      wireChipRow("nTagRow");
 
       function typeFields(isTask) {
         if (isTask) return fieldSelect("nRecur", "Repeat", RECUR, "None");
@@ -934,10 +1040,6 @@
         if (chosen === "Issue") return fieldSelect("nSeverity", "Severity", SEVERITIES, "Medium");
         if (chosen === "Decision") return '<div class="field"><label>Decision made</label><textarea id="nDecision" placeholder="The outcome…"></textarea></div><div class="field"><label>Rationale</label><textarea id="nRationale" placeholder="Why…"></textarea></div>';
         return "";
-      }
-      function fieldSelect(id, label, opts, val) {
-        return '<div class="field"><label>' + label + '</label><select id="' + id + '">' +
-          opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") + "</select></div>";
       }
     }
     body();
@@ -950,18 +1052,22 @@
       var isTask = chosen === "Task";
       var title = document.getElementById("nTitle").value.trim();
       if (!title) { document.getElementById("nTitle").focus(); toast("Title is required"); return; }
-      var ownerInput = document.getElementById("nOwner");
+      [["nOwnerRowInput", "owners"], ["nTagRowInput", "tags"]].forEach(function (p) {
+        var inp = document.getElementById(p[0]);
+        if (inp && inp.value.trim() && createState[p[1]].indexOf(inp.value.trim()) === -1) createState[p[1]].push(inp.value.trim());
+      });
       var it = {
         id: nextId(), type: chosen, title: title,
         description: document.getElementById("nDesc").value.trim(),
         status: document.getElementById("nStatus").value,
         priority: document.getElementById("nPriority").value,
-        owner: isTask ? CURRENT_USER : (ownerInput ? ownerInput.value.trim() : ""),
+        workstream: document.getElementById("nWorkstream").value,
+        owners: createState.owners.slice(),
         reporter: CURRENT_USER,
         createdDate: todayISO(),
         dueDate: document.getElementById("nDue").value || "",
         resolvedDate: null, links: [],
-        tags: document.getElementById("nTags").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean),
+        tags: createState.tags.slice(),
         activity: []
       };
       if (chosen === "Risk") { it.likelihood = document.getElementById("nLikelihood").value; it.impact = document.getElementById("nImpact").value; it.mitigationPlan = document.getElementById("nMitigation").value.trim(); }
@@ -974,7 +1080,11 @@
       store.items.push(it);
 
       if (isTask) { store.ui.scope = "tasks"; store.ui.view = "board"; store.ui.typeView = null; }
-      else { store.ui.scope = "raid"; if (store.ui.view === "matrix") store.ui.view = "board"; store.ui.typeView = null; }
+      else {
+        store.ui.scope = "raid";
+        if (store.ui.view === "matrix") store.ui.view = "board";
+        if (store.ui.typeView && store.ui.typeView !== chosen) store.ui.typeView = null;
+      }
 
       persist(); close(); render();
       toast(it.id + " created");
@@ -1070,7 +1180,7 @@
   }
 
   function exportXLSX() {
-    var headers = ["ID", "Type", "Title", "Description", "Status", "Priority", "Owner", "Reporter",
+    var headers = ["ID", "Type", "Title", "Description", "Workstream", "Status", "Priority", "Owners", "Reporter",
       "Created", "Due date", "Resolved", "Likelihood", "Impact", "Risk score", "Mitigation plan",
       "Next step", "Severity", "Decision made", "Rationale", "Linked items", "Labels", "Comments"];
     var rows = [headers];
@@ -1080,15 +1190,15 @@
         .map(function (a) { return a.who + " (" + a.ts.slice(0, 10) + "): " + a.text; }).join(" | ");
       var rs = riskScore(it);
       rows.push([
-        it.id, it.type, it.title, it.description || "", it.status, it.priority, it.owner, it.reporter,
+        it.id, it.type, it.title, it.description || "", it.workstream || "", it.status, it.priority,
+        (it.owners || []).join(", "), it.reporter,
         it.createdDate || "", it.dueDate || "", it.resolvedDate || "", it.likelihood || "", it.impact || "",
         rs == null ? "" : rs, it.mitigationPlan || "", it.nextStep || "", it.severity || "",
         it.decisionMade || "", it.rationale || "", (it.links || []).join(" "), (it.tags || []).join(" "), comments
       ]);
     });
     var data = makeXlsx("RAID Log", rows);
-    downloadFile("raid-log-" + todayISO() + ".xlsx", data,
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    downloadFile("raid-log-" + todayISO() + ".xlsx", data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     toast("Exported " + exported.length + " items to Excel");
   }
 
@@ -1101,13 +1211,11 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
-
   function exportJSON() {
-    var payload = { app: "raid-log", version: 1, exportedAt: nowISO(), counter: store.counter, items: store.items };
+    var payload = { app: "raid-log", version: 2, exportedAt: nowISO(), counter: store.counter, settings: store.settings, items: store.items };
     downloadFile("raid-log-backup-" + todayISO() + ".json", JSON.stringify(payload, null, 2), "application/json");
     toast("Backup downloaded (" + store.items.length + " items)");
   }
-
   function importJSON(file) {
     var reader = new FileReader();
     reader.onload = function () {
@@ -1118,13 +1226,9 @@
       var bad = items.filter(function (it) { return !it || !it.id || !it.type || !it.title; });
       if (bad.length) { toast("File has " + bad.length + " malformed item(s) — not loaded"); return; }
       if (!confirm("Load " + items.length + " items from this backup? This replaces everything currently in the log.")) return;
-      items.forEach(function (it) {
-        it.activity = Array.isArray(it.activity) ? it.activity : [];
-        it.tags = Array.isArray(it.tags) ? it.tags : [];
-        it.links = Array.isArray(it.links) ? it.links : [];
-        if (it.recurrence === "Every 2 weeks") it.recurrence = "Bi-weekly";
-      });
+      items.forEach(migrateItem);
       store.items = items;
+      if (data && data.settings && Array.isArray(data.settings.workstreams)) { store.settings = data.settings; persistSettings(); }
       var maxNum = items.reduce(function (m, it) {
         var n = parseInt(String(it.id).split("-")[1], 10);
         return isNaN(n) ? m : Math.max(m, n);
@@ -1151,6 +1255,12 @@
       '<div class="overlay" id="overlay"><div class="modal">' +
         '<div class="modal-head"><b>Settings &amp; data</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div>' +
         '<div class="modal-body">' +
+          '<div class="settings-group"><h4>Workstreams</h4>' +
+            '<div class="hint" style="margin-bottom:8px">The options offered in every item’s Workstream dropdown. Removing one here does not change items already using it.</div>' +
+            '<div class="tag-input-row" id="wsRow">' +
+              store.settings.workstreams.map(function (w) { return '<span class="tag-pill">' + esc(w) + '<button data-ws-remove="' + esc(w) + '">×</button></span>'; }).join("") +
+              '<input type="text" id="wsInput" placeholder="Add workstream + Enter" autocomplete="off"></div>' +
+          "</div>" +
           '<div class="settings-group"><h4>Export &amp; backup</h4><div class="settings-actions">' +
             '<button class="btn" id="sExport">⭳ Export to Excel (.xlsx)</button>' +
             '<button class="btn" id="sBackup">💾 Download backup (.json)</button>' +
@@ -1174,11 +1284,25 @@
     overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) close(); });
     document.getElementById("closeModal").addEventListener("click", close);
 
+    var wsInput = document.getElementById("wsInput");
+    wsInput.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" || !wsInput.value.trim()) return;
+      e.preventDefault();
+      var v = wsInput.value.trim();
+      if (store.settings.workstreams.indexOf(v) === -1) { store.settings.workstreams.push(v); persistSettings(); openSettings(); render(); }
+      else wsInput.value = "";
+    });
+    overlay.querySelectorAll("[data-ws-remove]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var v = b.getAttribute("data-ws-remove");
+        store.settings.workstreams = store.settings.workstreams.filter(function (w) { return w !== v; });
+        persistSettings(); openSettings(); render();
+      });
+    });
+
     document.getElementById("sExport").addEventListener("click", exportXLSX);
     document.getElementById("sBackup").addEventListener("click", exportJSON);
-    document.getElementById("sRestore").addEventListener("click", function () {
-      document.getElementById("restoreInput").click();
-    });
+    document.getElementById("sRestore").addEventListener("click", function () { document.getElementById("restoreInput").click(); });
     document.getElementById("sReset").addEventListener("click", function () {
       if (!confirm("Reset to the original sample data? Everything currently in the log will be lost.")) return;
       seed(); store.ui.selectedId = null; close(); render(); toast("Sample data restored");
@@ -1197,7 +1321,7 @@
       store.counter = 1;
       store.ui.selectedId = null;
       store.ui.typeView = null;
-      store.ui.filters = { search: "", type: "", status: "", priority: "", owner: "", tag: "" };
+      store.ui.filters = emptyFilters();
       persist(); close(); render();
       toast("Cleared " + count + " items — the log is now empty");
     });
@@ -1251,9 +1375,7 @@
   document.getElementById("createBtn").addEventListener("click", openCreate);
   document.getElementById("settingsBtn").addEventListener("click", openSettings);
   document.getElementById("hdrBackup").addEventListener("click", exportJSON);
-  document.getElementById("hdrRestore").addEventListener("click", function () {
-    document.getElementById("restoreInput").click();
-  });
+  document.getElementById("hdrRestore").addEventListener("click", function () { document.getElementById("restoreInput").click(); });
   document.getElementById("restoreInput").addEventListener("change", function (e) {
     if (e.target.files && e.target.files[0]) importJSON(e.target.files[0]);
     e.target.value = "";
@@ -1268,16 +1390,13 @@
     if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderBoardOrList(); }
   });
   document.getElementById("filters").addEventListener("change", function (e) {
-    var map = { fType: "type", fStatus: "status", fPriority: "priority", fOwner: "owner", fTag: "tag" };
+    var map = { fType: "type", fStatus: "status", fPriority: "priority", fOwner: "owner", fWorkstream: "workstream", fTag: "tag" };
     if (map[e.target.id]) { store.ui.filters[map[e.target.id]] = e.target.value; render(); }
   });
   document.getElementById("filters").addEventListener("click", function (e) {
     var clr = e.target.getAttribute && e.target.getAttribute("data-clear");
     if (clr) { store.ui.filters[clr] = ""; render(); }
-    if (e.target.id === "clearAll") {
-      store.ui.filters = { search: "", type: "", status: "", priority: "", owner: "", tag: "" };
-      render();
-    }
+    if (e.target.id === "clearAll") { store.ui.filters = emptyFilters(); render(); }
   });
 
   viewEl.addEventListener("click", function (e) {
@@ -1302,6 +1421,7 @@
   });
 
   // ---------- Boot ----------
+  loadSettings();
   if (!tryLoad()) seed();
   loadPrefs();
   render();
