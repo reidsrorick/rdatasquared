@@ -1019,19 +1019,76 @@
       }, 0);
       store.counter = (data && data.counter && data.counter > maxNum) ? data.counter : maxNum + 1;
       store.ui.selectedId = null;
+      modalRoot.innerHTML = "";
       persist(); render();
       toast("Loaded " + items.length + " items from backup");
     };
     reader.readAsText(file);
   }
 
-  function updateSaveHint() {
-    var hint = document.getElementById("saveHint");
-    var ok = false;
-    try { localStorage.setItem("raidlog.probe", "1"); localStorage.removeItem("raidlog.probe"); ok = true; } catch (e) {}
-    hint.textContent = ok
-      ? "Auto-saved to this browser. Use Download backup for a portable copy."
-      : "This browser blocks storage — changes last only until you close the tab. Download backup often.";
+  function storageWorks() {
+    try { localStorage.setItem("raidlog.probe", "1"); localStorage.removeItem("raidlog.probe"); return true; }
+    catch (e) { return false; }
+  }
+
+  // ---------- Settings & data modal ----------
+  function openSettings() {
+    var canStore = storageWorks();
+    var n = store.items.length;
+    var overlay = el(
+      '<div class="overlay" id="overlay"><div class="modal">' +
+        '<div class="modal-head"><b>Settings &amp; data</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div>' +
+        '<div class="modal-body">' +
+          '<div class="settings-group"><h4>Export &amp; backup</h4><div class="settings-actions">' +
+            '<button class="btn" id="sExport">⭳ Export to Excel (.xlsx)</button>' +
+            '<button class="btn" id="sBackup">💾 Download backup (.json)</button>' +
+            '<button class="btn" id="sRestore">📂 Load backup (.json)</button>' +
+            '<div class="hint">' + (canStore
+              ? "Your work auto-saves to this browser. Download a backup for a portable copy or to move between machines."
+              : "This browser blocks storage — changes last only until you close the tab. Download a backup often.") + "</div>" +
+          "</div></div>" +
+          '<div class="settings-group danger-zone"><h4>Danger zone</h4><div class="settings-actions">' +
+            '<div><button class="btn danger" id="sReset">↺ Reset to sample data</button>' +
+              '<div class="hint">Replaces everything with the original demo items.</div></div>' +
+            '<div style="width:100%"><div class="hint" style="margin-bottom:5px">Type <b>DELETE</b> to enable — permanently removes all ' + n + " item" + (n === 1 ? "" : "s") + ".</div>" +
+              '<input type="text" id="sClearConfirm" placeholder="DELETE" autocomplete="off" spellcheck="false" style="max-width:150px;display:inline-block">' +
+              '<button class="btn danger" id="sClear" disabled style="margin-left:8px;opacity:.45">🗑 Clear all items</button></div>' +
+          "</div></div>" +
+        "</div>" +
+      "</div></div>"
+    );
+    modalRoot.innerHTML = ""; modalRoot.appendChild(overlay);
+    function close() { modalRoot.innerHTML = ""; }
+    overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) close(); });
+    document.getElementById("closeModal").addEventListener("click", close);
+
+    document.getElementById("sExport").addEventListener("click", exportXLSX);
+    document.getElementById("sBackup").addEventListener("click", exportJSON);
+    document.getElementById("sRestore").addEventListener("click", function () {
+      document.getElementById("restoreInput").click();
+    });
+    document.getElementById("sReset").addEventListener("click", function () {
+      if (!confirm("Reset to the original sample data? Everything currently in the log will be lost.")) return;
+      seed(); store.ui.selectedId = null; close(); render(); toast("Sample data restored");
+    });
+    var cc = document.getElementById("sClearConfirm");
+    var cb = document.getElementById("sClear");
+    cc.addEventListener("input", function () {
+      var ok = cc.value.trim().toUpperCase() === "DELETE";
+      cb.disabled = !ok;
+      cb.style.opacity = ok ? "1" : ".45";
+    });
+    cb.addEventListener("click", function () {
+      if (cb.disabled) return;
+      var count = store.items.length;
+      store.items = [];
+      store.counter = 1;
+      store.ui.selectedId = null;
+      store.ui.typeView = null;
+      store.ui.filters = { search: "", type: "", status: "", priority: "", owner: "", tag: "" };
+      persist(); close(); render();
+      toast("Cleared " + count + " items — the log is now empty");
+    });
   }
 
   // ---------- Drag & drop ----------
@@ -1080,21 +1137,13 @@
   });
 
   document.getElementById("createBtn").addEventListener("click", openCreate);
-  document.getElementById("exportBtn").addEventListener("click", exportXLSX);
-  document.getElementById("backupBtn").addEventListener("click", exportJSON);
-  document.getElementById("restoreBtn").addEventListener("click", function () {
-    document.getElementById("restoreInput").click();
-  });
+  document.getElementById("settingsBtn").addEventListener("click", openSettings);
   document.getElementById("restoreInput").addEventListener("change", function (e) {
     if (e.target.files && e.target.files[0]) importJSON(e.target.files[0]);
     e.target.value = "";
   });
   document.getElementById("toggleDash").addEventListener("click", function () {
     store.ui.showDash = !store.ui.showDash; render();
-  });
-  document.getElementById("resetBtn").addEventListener("click", function () {
-    if (!confirm("Reset to the original sample data? Your changes will be lost.")) return;
-    seed(); store.ui.selectedId = null; render(); toast("Sample data restored");
   });
 
   document.getElementById("filters").addEventListener("input", function (e) {
@@ -1136,6 +1185,5 @@
 
   // ---------- Boot ----------
   if (!tryLoad()) seed();
-  updateSaveHint();
   render();
 })();

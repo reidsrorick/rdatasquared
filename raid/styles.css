@@ -328,6 +328,19 @@ td.title-cell { font-weight: 500; max-width: 380px; }
 
 .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
 
+/* ---------- Settings modal ---------- */
+.settings-group { margin-bottom: 22px; }
+.settings-group:last-child { margin-bottom: 0; }
+.settings-group h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-faint); margin-bottom: 10px; }
+.settings-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.settings-actions .hint { font-size: 12px; color: var(--text-faint); }
+.danger-zone { border: 1px solid var(--issue); border-radius: 6px; padding: 14px; background: #fff8f7; }
+.danger-zone h4 { color: var(--issue); }
+.danger-zone .btn.danger { color: var(--issue); border-color: var(--issue); background: var(--surface); }
+.danger-zone .btn.danger:hover:not([disabled]) { background: var(--issue-bg); }
+.danger-zone .btn.danger[disabled] { cursor: not-allowed; }
+.danger-zone input[type=text] { padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); }
+
 .toast {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   background: #172b4d; color: #fff; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 13px;
