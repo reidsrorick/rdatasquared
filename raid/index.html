@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAID Log</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-alt: #fafbfc;
+    --border: #dfe1e6;
+    --border-strong: #c1c7d0;
+    --text: #172b4d;
+    --text-sub: #5e6c84;
+    --text-faint: #7a869a;
+    --accent: #0052cc;
+    --accent-hover: #0747a6;
+    --accent-soft: #deebff;
+    --shadow: 0 1px 2px rgba(9,30,66,.12), 0 0 1px rgba(9,30,66,.2);
+    --shadow-lg: 0 8px 24px rgba(9,30,66,.2), 0 0 1px rgba(9,30,66,.3);
+    --radius: 4px;
+
+    --risk: #ff8b00;
+    --risk-bg: #fff0d9;
+    --action: #0065ff;
+    --action-bg: #deebff;
+    --issue: #de350b;
+    --issue-bg: #ffebe6;
+    --decision: #6554c0;
+    --decision-bg: #eae6ff;
+
+    --st-open: #42526e;
+    --st-open-bg: #dfe1e6;
+    --st-prog: #0052cc;
+    --st-prog-bg: #deebff;
+    --st-block: #de350b;
+    --st-block-bg: #ffebe6;
+    --st-res: #006644;
+    --st-res-bg: #e3fcef;
+    --st-close: #403294;
+    --st-close-bg: #eae6ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; font-size: 14px; color: var(--text); }
+
+  /* ---------- Layout ---------- */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 20px 18px;
+    font-weight: 700; font-size: 18px; letter-spacing: -.3px;
+  }
+  .brand .logo {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), #6554c0);
+    display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800;
+  }
+  .nav-section { padding: 12px 12px 4px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text-faint); }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 20px; color: var(--text-sub); font-weight: 500;
+    border: none; background: none; width: 100%; text-align: left; border-radius: 0;
+  }
+  .nav-item:hover { background: var(--surface-alt); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent-hover); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+  .nav-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .nav-item .count { margin-left: auto; font-size: 12px; color: var(--text-faint); font-weight: 600; }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 20px; font-weight: 600; letter-spacing: -.3px; }
+  .topbar .spacer { flex: 1; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border-strong);
+    background: var(--surface); color: var(--text); font-weight: 600; font-size: 13px;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn.subtle { border-color: transparent; background: transparent; color: var(--text-sub); }
+  .btn.subtle:hover { background: var(--surface-alt); }
+
+  .content { padding: 20px 24px 60px; flex: 1; }
+
+  /* ---------- Dashboard ---------- */
+  .dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .dash-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .dash-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-faint); font-weight: 700; }
+  .dash-card .value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+  .dash-card .sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+  .dash-card.warn .value { color: var(--issue); }
+  .mini-bars { display: flex; gap: 4px; margin-top: 8px; align-items: flex-end; height: 34px; }
+  .mini-bars .bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 3px; }
+
+  /* ---------- Filter bar ---------- */
+  .filters {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .search {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 20px;
+    padding: 6px 12px; min-width: 240px;
+  }
+  .search input { border: none; outline: none; background: none; flex: 1; }
+  .filters select {
+    padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius);
+    background: var(--surface); font-weight: 500;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px; background: var(--accent-soft); color: var(--accent-hover);
+    font-size: 12px; font-weight: 600; border: none;
+  }
+  .chip button { border: none; background: none; color: inherit; font-weight: 800; cursor: pointer; line-height: 1; }
+  .tag-filter-wrap { position: relative; }
+
+  /* ---------- Badges / pills ---------- */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+  .badge.Risk { background: var(--risk-bg); color: #974f0c; }
+  .badge.Action { background: var(--action-bg); color: #0747a6; }
+  .badge.Issue { background: var(--issue-bg); color: #ae2a19; }
+  .badge.Decision { background: var(--decision-bg); color: #403294; }
+  .type-dot.Risk { background: var(--risk); }
+  .type-dot.Action { background: var(--action); }
+  .type-dot.Issue { background: var(--issue); }
+  .type-dot.Decision { background: var(--decision); }
+
+  .pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .pill.Open { background: var(--st-open-bg); color: var(--st-open); }
+  .pill.\('In\ Progress'\) {}
+  .pill[data-st="In Progress"] { background: var(--st-prog-bg); color: var(--st-prog); }
+  .pill[data-st="Open"] { background: var(--st-open-bg); color: var(--st-open); }
+  .pill[data-st="Blocked"] { background: var(--st-block-bg); color: var(--st-block); }
+  .pill[data-st="Resolved"] { background: var(--st-res-bg); color: var(--st-res); }
+  .pill[data-st="Closed"] { background: var(--st-close-bg); color: var(--st-close); }
+
+  .flag { font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+  .flag::before { content: "⚑"; }
+  .flag[data-p="Low"] { color: #5e6c84; }
+  .flag[data-p="Medium"] { color: #ff991f; }
+  .flag[data-p="High"] { color: #ff7452; }
+  .flag[data-p="Critical"] { color: #de350b; }
+
+  .avatar {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff;
+  }
+  .avatar.lg { width: 32px; height: 32px; font-size: 12px; }
+
+  .sev-tag { padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 700; }
+  .sev-Low { background: var(--st-res-bg); color: var(--st-res); }
+  .sev-Medium { background: #fff0d9; color: #974f0c; }
+  .sev-High { background: #ffe2d9; color: #ae2a19; }
+  .sev-Critical { background: #ffebe6; color: #de350b; }
+
+  /* ---------- Board ---------- */
+  .board { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding-bottom: 12px; }
+  .col {
+    background: var(--surface-alt); border: 1px solid var(--border); border-radius: 6px;
+    width: 270px; flex-shrink: 0; display: flex; flex-direction: column; max-height: calc(100vh - 220px);
+  }
+  .col-head {
+    padding: 10px 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--text-sub); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border);
+  }
+  .col-head .n { background: var(--border); color: var(--text-sub); border-radius: 10px; padding: 0 7px; font-size: 11px; }
+  .col-body { padding: 8px; overflow-y: auto; flex: 1; min-height: 60px; display: flex; flex-direction: column; gap: 8px; }
+  .col.drag-over .col-body { background: var(--accent-soft); border-radius: 4px; outline: 2px dashed var(--accent); outline-offset: -4px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px; box-shadow: var(--shadow); cursor: pointer; border-left: 3px solid var(--border);
+  }
+  .card:hover { border-color: var(--border-strong); }
+  .card[data-type="Risk"] { border-left-color: var(--risk); }
+  .card[data-type="Action"] { border-left-color: var(--action); }
+  .card[data-type="Issue"] { border-left-color: var(--issue); }
+  .card[data-type="Decision"] { border-left-color: var(--decision); }
+  .card.dragging { opacity: .5; }
+  .card .title { font-weight: 500; margin: 6px 0 10px; }
+  .card .meta { display: flex; align-items: center; gap: 8px; }
+  .card .meta .id { font-size: 11px; color: var(--text-faint); font-weight: 700; letter-spacing: .3px; }
+  .card .meta .spacer { flex: 1; }
+  .card .labels { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .label-tag { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 3px; padding: 0 6px; font-size: 10px; color: var(--text-sub); font-weight: 600; }
+  .card .due { font-size: 11px; color: var(--text-sub); font-weight: 600; }
+  .card .due.overdue { color: var(--issue); }
+
+  /* ---------- Table ---------- */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-faint); font-weight: 700; background: var(--surface-alt); cursor: pointer; user-select: none; white-space: nowrap; }
+  th:hover { color: var(--text); }
+  th .arrow { font-size: 9px; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--accent-soft); }
+  td .id-cell { font-weight: 700; color: var(--accent); font-size: 12px; letter-spacing: .3px; }
+  td.title-cell { font-weight: 500; max-width: 380px; }
+  .empty { padding: 60px 20px; text-align: center; color: var(--text-faint); }
+  .empty .big { font-size: 15px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+
+  /* ---------- Risk matrix ---------- */
+  .matrix-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: var(--shadow); max-width: 640px; }
+  .matrix { display: grid; grid-template-columns: 44px repeat(3, 1fr); grid-template-rows: repeat(3, 90px) 32px; gap: 4px; margin-top: 12px; }
+  .matrix .cell { border-radius: 4px; padding: 6px; display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; position: relative; }
+  .matrix .cell .cell-label { position: absolute; bottom: 3px; right: 6px; font-size: 9px; font-weight: 700; color: rgba(0,0,0,.35); }
+  .m-low { background: #d6f0e0; }
+  .m-med { background: #fff2cc; }
+  .m-high { background: #ffd6cc; }
+  .m-crit { background: #ffbdad; }
+  .matrix .axis-y, .matrix .axis-x { display: grid; place-items: center; font-size: 10px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .5px; }
+  .matrix .axis-y { writing-mode: vertical-rl; transform: rotate(180deg); }
+  .matrix .corner {}
+  .matrix .marker {
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 3px;
+    font-size: 10px; font-weight: 700; padding: 1px 5px; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .matrix .marker:hover { border-color: var(--accent); color: var(--accent); }
+  .axis-caption { font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .5px; margin-top: 8px; text-align: center; }
+
+  /* ---------- Modal ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(9,30,66,.54);
+    display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 100;
+    overflow-y: auto;
+  }
+  .modal {
+    background: var(--surface); border-radius: 8px; box-shadow: var(--shadow-lg);
+    width: 100%; max-width: 720px; margin-bottom: 40px;
+  }
+  .modal.wide { max-width: 900px; }
+  .modal-head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .modal-head .id { font-weight: 700; color: var(--text-faint); letter-spacing: .3px; }
+  .modal-head .spacer { flex: 1; }
+  .modal-head .close { border: none; background: none; font-size: 20px; color: var(--text-sub); width: 30px; height: 30px; border-radius: 4px; }
+  .modal-head .close:hover { background: var(--surface-alt); }
+  .modal-body { padding: 20px; }
+  .modal-cols { display: grid; grid-template-columns: 1fr 260px; gap: 24px; }
+  @media (max-width: 720px) { .modal-cols { grid-template-columns: 1fr; } }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-faint); margin-bottom: 5px; }
+  .field input[type=text], .field input[type=date], .field select, .field textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field .hint { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .side-box { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+  .side-box h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-faint); margin-bottom: 8px; }
+  .side-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; font-size: 13px; }
+  .side-row .k { color: var(--text-sub); }
+  .side-row .v { font-weight: 600; text-align: right; }
+
+  .score-box { text-align: center; padding: 10px; border-radius: 6px; }
+  .score-box .n { font-size: 28px; font-weight: 800; }
+  .score-box .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+
+  .linked-list { display: flex; flex-direction: column; gap: 6px; }
+  .linked-item { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 5px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+  .linked-item:hover { border-color: var(--accent); }
+  .linked-item .rm { margin-left: auto; border: none; background: none; color: var(--text-faint); font-weight: 800; }
+
+  /* ---------- Activity ---------- */
+  .activity { margin-top: 8px; }
+  .activity h3 { font-size: 13px; margin-bottom: 12px; }
+  .comment-box { display: flex; gap: 10px; margin-bottom: 16px; }
+  .comment-box textarea { flex: 1; min-height: 38px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 4px; resize: vertical; }
+  .act-list { display: flex; flex-direction: column; gap: 14px; }
+  .act { display: flex; gap: 10px; }
+  .act .body { flex: 1; min-width: 0; }
+  .act .who { font-weight: 600; font-size: 13px; }
+  .act .when { font-size: 11px; color: var(--text-faint); margin-left: 6px; }
+  .act .text { font-size: 13px; margin-top: 2px; white-space: pre-wrap; word-wrap: break-word; }
+  .act.change .text { color: var(--text-sub); }
+  .act.change .text b { color: var(--text); }
+
+  .tag-input-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--border-strong); border-radius: 4px; padding: 5px; }
+  .tag-input-row input { border: none; outline: none; flex: 1; min-width: 80px; padding: 3px; }
+  .tag-pill { display: inline-flex; align-items: center; gap: 5px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 3px; padding: 1px 4px 1px 7px; font-size: 12px; font-weight: 600; color: var(--text-sub); }
+  .tag-pill button { border: none; background: none; color: var(--text-faint); font-weight: 800; cursor: pointer; }
+
+  .type-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 6px; }
+  .type-opt {
+    border: 2px solid var(--border); border-radius: 6px; padding: 14px 8px; text-align: center;
+    background: var(--surface); font-weight: 700;
+  }
+  .type-opt .ic { font-size: 20px; display: block; margin-bottom: 6px; }
+  .type-opt[data-type="Risk"].sel { border-color: var(--risk); background: var(--risk-bg); }
+  .type-opt[data-type="Action"].sel { border-color: var(--action); background: var(--action-bg); }
+  .type-opt[data-type="Issue"].sel { border-color: var(--issue); background: var(--issue-bg); }
+  .type-opt[data-type="Decision"].sel { border-color: var(--decision); background: var(--decision-bg); }
+
+  .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #172b4d; color: #fff; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 13px;
+    box-shadow: var(--shadow-lg); z-index: 200; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .inline-add { display: flex; gap: 6px; margin-top: 6px; }
+  .inline-add select { flex: 1; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: 4px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo">RD</span> RAID Log</div>
+    <div class="nav-section">Views</div>
+    <button class="nav-item" data-nav="board"><span>▦</span> Board</button>
+    <button class="nav-item" data-nav="list"><span>≡</span> List</button>
+    <button class="nav-item" data-nav="matrix"><span>▨</span> Risk Matrix</button>
+    <div class="nav-section">By type</div>
+    <button class="nav-item" data-nav="type:Risk"><span class="dot type-dot Risk"></span> Risks <span class="count" data-count="Risk"></span></button>
+    <button class="nav-item" data-nav="type:Action"><span class="dot type-dot Action"></span> Actions <span class="count" data-count="Action"></span></button>
+    <button class="nav-item" data-nav="type:Issue"><span class="dot type-dot Issue"></span> Issues <span class="count" data-count="Issue"></span></button>
+    <button class="nav-item" data-nav="type:Decision"><span class="dot type-dot Decision"></span> Decisions <span class="count" data-count="Decision"></span></button>
+    <div class="nav-section">Data</div>
+    <button class="nav-item" id="exportBtn"><span>⭳</span> Export CSV</button>
+    <button class="nav-item" id="backupBtn"><span>💾</span> Download backup</button>
+    <button class="nav-item" id="restoreBtn"><span>📂</span> Load backup</button>
+    <button class="nav-item" id="resetBtn"><span>↺</span> Reset sample data</button>
+    <input type="file" id="restoreInput" accept="application/json,.json" class="hidden">
+    <div id="saveHint" style="padding:12px 20px;font-size:11px;color:var(--text-faint);line-height:1.5"></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h1 id="viewTitle">Board</h1>
+      <div class="spacer"></div>
+      <button class="btn subtle" id="toggleDash">Hide summary</button>
+      <button class="btn primary" id="createBtn">+ Create</button>
+    </header>
+    <div class="content">
+      <div class="dash" id="dash"></div>
+      <div class="filters" id="filters"></div>
+      <div id="view"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Constants ----------
+  var TYPES = ["Risk", "Action", "Issue", "Decision"];
+  var STATUSES = ["Open", "In Progress", "Blocked", "Resolved", "Closed"];
+  var PRIORITIES = ["Low", "Medium", "High", "Critical"];
+  var LMH = ["Low", "Medium", "High"];
+  var SEVERITIES = ["Low", "Medium", "High", "Critical"];
+  var TEAM = ["Alex Chen", "Priya Patel", "Sam Rivera", "Jordan Lee", "Morgan Blake", "Taylor Kim", "Dana Okafor"];
+  var CURRENT_USER = "Reid";
+  var STORAGE_KEY = "raidlog.v1";
+  var TYPE_ICON = { Risk: "⚠", Action: "✔", Issue: "●", Decision: "◆" };
+
+  // ---------- Utilities ----------
+  function todayISO(offsetDays) {
+    var d = new Date();
+    if (offsetDays) d.setDate(d.getDate() + offsetDays);
+    return d.toISOString().slice(0, 10);
+  }
+  function nowISO() { return new Date().toISOString(); }
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso + (iso.length === 10 ? "T00:00:00" : ""));
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    return d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+  function isOverdue(item) {
+    if (!item.dueDate) return false;
+    if (item.status === "Resolved" || item.status === "Closed") return false;
+    return item.dueDate < todayISO();
+  }
+  function initials(name) {
+    if (!name) return "?";
+    var p = name.trim().split(/\s+/);
+    return (p[0][0] + (p[1] ? p[1][0] : "")).toUpperCase();
+  }
+  function avatarColor(name) {
+    var colors = ["#0052cc", "#00875a", "#de350b", "#6554c0", "#ff8b00", "#0065ff", "#5243aa", "#ff5630"];
+    var h = 0;
+    for (var i = 0; i < (name || "").length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+    return colors[Math.abs(h) % colors.length];
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function el(html) {
+    var t = document.createElement("template");
+    t.innerHTML = html.trim();
+    return t.content.firstElementChild;
+  }
+  function avatarEl(name, lg) {
+    return '<span class="avatar' + (lg ? " lg" : "") + '" style="background:' + avatarColor(name) + '" title="' + esc(name) + '">' + esc(initials(name)) + "</span>";
+  }
+  var LMH_VAL = { Low: 1, Medium: 2, High: 3 };
+  function riskScore(item) {
+    if (item.type !== "Risk") return null;
+    return (LMH_VAL[item.likelihood] || 0) * (LMH_VAL[item.impact] || 0);
+  }
+  function riskSeverity(score) {
+    if (score >= 6) return { label: "Critical", cls: "sev-Critical", color: "#de350b" };
+    if (score >= 4) return { label: "High", cls: "sev-High", color: "#ff7452" };
+    if (score >= 2) return { label: "Medium", cls: "sev-Medium", color: "#ff991f" };
+    return { label: "Low", cls: "sev-Low", color: "#00875a" };
+  }
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.classList.remove("show"); }, 2200);
+  }
+
+  // ---------- State / persistence ----------
+  var store = {
+    items: [],
+    counter: 1,
+    ui: {
+      view: "board",          // board | list | matrix
+      typeView: null,         // when a "by type" nav is selected
+      showDash: true,
+      filters: { search: "", type: "", status: "", priority: "", owner: "", tag: "" },
+      sort: { key: "id", dir: "asc" },
+      selectedId: null
+    }
+  };
+
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: store.items, counter: store.counter }));
+    } catch (e) { /* sandboxed / unavailable — in-memory only */ }
+  }
+  function tryLoad() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      var data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.items) || !data.items.length) return false;
+      store.items = data.items;
+      store.counter = data.counter || (data.items.length + 1);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function nextId() { return "RAID-" + (store.counter++); }
+
+  function log(item, kind, text) {
+    item.activity.push({ id: Math.random().toString(36).slice(2), kind: kind, text: text, who: CURRENT_USER, ts: nowISO() });
+  }
+
+  // ---------- Seed data ----------
+  function seed() {
+    store.items = [];
+    store.counter = 1;
+    function mk(o) {
+      var base = {
+        id: nextId(), type: o.type, title: o.title, description: o.description || "",
+        status: o.status || "Open", priority: o.priority || "Medium",
+        owner: o.owner || TEAM[0], reporter: o.reporter || CURRENT_USER,
+        createdDate: o.createdDate || todayISO(-14), dueDate: o.dueDate || "",
+        resolvedDate: o.resolvedDate || null, links: o.links || [], tags: o.tags || [],
+        activity: []
+      };
+      if (o.type === "Risk") { base.likelihood = o.likelihood || "Medium"; base.impact = o.impact || "Medium"; }
+      if (o.type === "Action") { base.nextStep = o.nextStep || ""; }
+      if (o.type === "Issue") { base.severity = o.severity || "Medium"; }
+      if (o.type === "Decision") { base.decisionMade = o.decisionMade || ""; base.rationale = o.rationale || ""; }
+      base.activity.push({ id: "c0", kind: "create", text: "created this " + o.type.toLowerCase(), who: base.reporter, ts: base.createdDate + "T09:00:00.000Z" });
+      (o.comments || []).forEach(function (c) {
+        base.activity.push({ id: Math.random().toString(36).slice(2), kind: "comment", text: c.text, who: c.who, ts: c.ts });
+      });
+      return base;
+    }
+
+    store.items = [
+      mk({
+        type: "Risk", title: "Key integration vendor may miss the API delivery deadline",
+        description: "Vendor Acme has flagged resourcing constraints for the payments API. If the delivery slips past 30 Sep, the UAT window compresses to under a week.",
+        status: "In Progress", priority: "High", owner: "Priya Patel", reporter: "Reid",
+        createdDate: todayISO(-20), dueDate: todayISO(12), likelihood: "High", impact: "High",
+        tags: ["vendor", "payments", "schedule"],
+        comments: [
+          { text: "Escalated to vendor account manager. Awaiting a revised plan by Friday.", who: "Priya Patel", ts: todayISO(-6) + "T14:12:00.000Z" },
+          { text: "Contingency: fall back to the v1 API surface for launch and defer webhooks.", who: "Reid", ts: todayISO(-2) + "T10:03:00.000Z" }
+        ]
+      }),
+      mk({
+        type: "Action", title: "Finalize and dry-run the data migration runbook",
+        description: "Consolidate the migration steps into a single runbook and complete one full dry run against a production-sized dataset.",
+        nextStep: "Book the staging dry-run slot with the DBA team for next Tuesday.",
+        status: "In Progress", priority: "High", owner: "Sam Rivera", reporter: "Reid",
+        createdDate: todayISO(-16), dueDate: todayISO(5), links: ["RAID-1"], tags: ["migration", "release"],
+        comments: [{ text: "Runbook draft is at 80%. Rollback section still needs review.", who: "Sam Rivera", ts: todayISO(-3) + "T16:40:00.000Z" }]
+      }),
+      mk({
+        type: "Issue", title: "Staging environment intermittently returns HTTP 500 on checkout",
+        description: "Roughly 1 in 20 checkout calls on staging fail with a 500. Logs point at a connection-pool exhaustion under concurrent load.",
+        status: "Blocked", priority: "Critical", severity: "High", owner: "Alex Chen", reporter: "Dana Okafor",
+        createdDate: todayISO(-9), dueDate: todayISO(-1), tags: ["staging", "checkout", "bug"],
+        comments: [
+          { text: "Blocked on infra raising the RDS max_connections limit — ticket INFRA-2231.", who: "Alex Chen", ts: todayISO(-4) + "T11:20:00.000Z" }
+        ]
+      }),
+      mk({
+        type: "Decision", title: "Adopt React (with TypeScript) for the new customer portal frontend",
+        description: "Framework selection for the greenfield portal. Options weighed: React, Vue, and server-rendered templates.",
+        decisionMade: "The portal will be built as a React + TypeScript single-page app, bundled with Vite.",
+        rationale: "Team already has deep React experience, the component ecosystem covers our needs, and hiring is easier. Vue was close but the existing skill set tipped it.",
+        status: "Resolved", priority: "Medium", owner: "Reid", reporter: "Reid",
+        createdDate: todayISO(-25), resolvedDate: todayISO(-18), tags: ["architecture", "frontend"]
+      }),
+      mk({
+        type: "Risk", title: "Insufficient QA capacity for the compressed release window",
+        description: "With one QA engineer on leave in the release week, regression coverage for the payments flow may be incomplete.",
+        status: "Open", priority: "Medium", owner: "Jordan Lee", reporter: "Priya Patel",
+        createdDate: todayISO(-11), dueDate: todayISO(9), likelihood: "Medium", impact: "High",
+        links: ["RAID-1"], tags: ["qa", "capacity"]
+      }),
+      mk({
+        type: "Action", title: "Schedule the pre-launch security review with InfoSec",
+        description: "InfoSec needs two weeks' notice for a full review. Get on their calendar and share the threat model doc.",
+        nextStep: "Send the review request form to InfoSec today with the architecture diagram attached.",
+        status: "Open", priority: "Medium", owner: "Morgan Blake", reporter: "Reid",
+        createdDate: todayISO(-5), dueDate: todayISO(3), tags: ["security", "compliance"]
+      }),
+      mk({
+        type: "Issue", title: "Customer CSV import fails for files that are not UTF-8 encoded",
+        description: "Imports of Latin-1 / Windows-1252 CSV exports throw a decode error instead of falling back or reporting a friendly message.",
+        status: "Open", priority: "Low", severity: "Medium", owner: "Taylor Kim", reporter: "Dana Okafor",
+        createdDate: todayISO(-7), dueDate: todayISO(20), tags: ["import", "bug", "encoding"]
+      }),
+      mk({
+        type: "Decision", title: "Defer SSO / SAML integration to Phase 2",
+        description: "Whether to include enterprise SSO in the initial launch scope.",
+        decisionMade: "SSO is out of scope for launch and moves to Phase 2 (Q1 next year).",
+        rationale: "Only two prospects require it at launch and both accepted a Phase 2 commitment. Including it now would push the date by ~3 weeks.",
+        status: "Closed", priority: "Low", owner: "Reid", reporter: "Morgan Blake",
+        createdDate: todayISO(-30), resolvedDate: todayISO(-22), tags: ["scope", "auth"]
+      })
+    ];
+    // make seeded links bidirectional
+    store.items.forEach(function (it) {
+      (it.links || []).forEach(function (lid) {
+        var other = store.items.find(function (x) { return x.id === lid; });
+        if (other) { other.links = other.links || []; if (other.links.indexOf(it.id) === -1) other.links.push(it.id); }
+      });
+    });
+    persist();
+  }
+
+  // ---------- Filtering / sorting ----------
+  function activeFilters() {
+    var f = Object.assign({}, store.ui.filters);
+    if (store.ui.typeView) f.type = store.ui.typeView;
+    return f;
+  }
+  function filteredItems() {
+    var f = activeFilters();
+    var q = f.search.trim().toLowerCase();
+    return store.items.filter(function (it) {
+      if (f.type && it.type !== f.type) return false;
+      if (f.status && it.status !== f.status) return false;
+      if (f.priority && it.priority !== f.priority) return false;
+      if (f.owner && it.owner !== f.owner) return false;
+      if (f.tag && (it.tags || []).indexOf(f.tag) === -1) return false;
+      if (q) {
+        var hay = (it.id + " " + it.title + " " + it.description + " " + (it.nextStep || "") + " " +
+          (it.decisionMade || "") + " " + (it.rationale || "") + " " + (it.tags || []).join(" ")).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+  }
+  function sortItems(list) {
+    var s = store.ui.sort;
+    var dir = s.dir === "asc" ? 1 : -1;
+    var pOrder = { Low: 0, Medium: 1, High: 2, Critical: 3 };
+    var stOrder = {}; STATUSES.forEach(function (x, i) { stOrder[x] = i; });
+    return list.slice().sort(function (a, b) {
+      var av, bv;
+      switch (s.key) {
+        case "id": av = parseInt(a.id.split("-")[1], 10); bv = parseInt(b.id.split("-")[1], 10); break;
+        case "priority": av = pOrder[a.priority]; bv = pOrder[b.priority]; break;
+        case "status": av = stOrder[a.status]; bv = stOrder[b.status]; break;
+        case "dueDate": av = a.dueDate || "9999"; bv = b.dueDate || "9999"; break;
+        default: av = (a[s.key] || "").toString().toLowerCase(); bv = (b[s.key] || "").toString().toLowerCase();
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }
+
+  // ---------- Renderers ----------
+  var viewEl = document.getElementById("view");
+
+  function render() {
+    renderNav();
+    renderDash();
+    renderFilters();
+    var ui = store.ui;
+    document.getElementById("toggleDash").textContent = ui.showDash ? "Hide summary" : "Show summary";
+    document.getElementById("dash").classList.toggle("hidden", !ui.showDash);
+
+    var title = "Board";
+    if (ui.typeView) title = ui.typeView + "s";
+    else if (ui.view === "list") title = "List";
+    else if (ui.view === "matrix") title = "Risk Matrix";
+    document.getElementById("viewTitle").textContent = title;
+
+    if (ui.view === "matrix") renderMatrix();
+    else if (ui.view === "list" || ui.typeView) renderList();
+    else renderBoard();
+
+    if (ui.selectedId) renderDetailModal(ui.selectedId);
+  }
+
+  function renderNav() {
+    var ui = store.ui;
+    document.querySelectorAll(".nav-item[data-nav]").forEach(function (b) {
+      var nav = b.getAttribute("data-nav");
+      var active = false;
+      if (nav === "board") active = ui.view === "board" && !ui.typeView;
+      else if (nav === "list") active = ui.view === "list" && !ui.typeView;
+      else if (nav === "matrix") active = ui.view === "matrix";
+      else if (nav.indexOf("type:") === 0) active = ui.typeView === nav.split(":")[1];
+      b.classList.toggle("active", active);
+    });
+    TYPES.forEach(function (t) {
+      var c = document.querySelector('[data-count="' + t + '"]');
+      if (c) c.textContent = store.items.filter(function (i) { return i.type === t; }).length;
+    });
+  }
+
+  function renderDash() {
+    var d = document.getElementById("dash");
+    var items = store.items;
+    var byType = {}; TYPES.forEach(function (t) { byType[t] = items.filter(function (i) { return i.type === t; }).length; });
+    var overdue = items.filter(isOverdue).length;
+    var open = items.filter(function (i) { return i.status !== "Resolved" && i.status !== "Closed"; }).length;
+    var byPrio = {}; PRIORITIES.forEach(function (p) { byPrio[p] = items.filter(function (i) { return i.priority === p; }).length; });
+    var maxP = Math.max(1, Math.max.apply(null, PRIORITIES.map(function (p) { return byPrio[p]; })));
+    var prioColors = { Low: "#5e6c84", Medium: "#ff991f", High: "#ff7452", Critical: "#de350b" };
+
+    d.innerHTML =
+      card("Total items", items.length, open + " open · " + (items.length - open) + " done") +
+      typeCard(byType) +
+      '<div class="dash-card ' + (overdue ? "warn" : "") + '"><div class="label">Overdue</div><div class="value">' + overdue +
+        '</div><div class="sub">past due date, not resolved</div></div>' +
+      '<div class="dash-card"><div class="label">By priority</div>' +
+        '<div class="mini-bars">' + PRIORITIES.map(function (p) {
+          return '<div class="bar" title="' + p + ": " + byPrio[p] + '" style="height:' + (100 * byPrio[p] / maxP) +
+            '%;background:' + prioColors[p] + '"></div>';
+        }).join("") + "</div>" +
+        '<div class="sub">' + byPrio.Critical + " critical · " + byPrio.High + " high</div></div>";
+
+    function card(label, value, sub) {
+      return '<div class="dash-card"><div class="label">' + label + '</div><div class="value">' + value +
+        '</div><div class="sub">' + sub + "</div></div>";
+    }
+    function typeCard(bt) {
+      return '<div class="dash-card"><div class="label">By type</div>' +
+        '<div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">' +
+        TYPES.map(function (t) {
+          return '<span style="font-weight:700"><span class="type-dot ' + t + '" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>' +
+            bt[t] + "</span>";
+        }).join("") + "</div><div class='sub'>R / A / I / D</div></div>";
+    }
+  }
+
+  function renderFilters() {
+    var f = store.ui.filters;
+    var owners = uniqueOwners();
+    var tags = uniqueTags();
+    var wrap = document.getElementById("filters");
+    wrap.innerHTML =
+      '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search title, description, tags…" value="' + esc(f.search) + '"></div>' +
+      (store.ui.typeView ? "" : selectHtml("fType", "Type", TYPES, f.type)) +
+      selectHtml("fStatus", "Status", STATUSES, f.status) +
+      selectHtml("fPriority", "Priority", PRIORITIES, f.priority) +
+      selectHtml("fOwner", "Owner", owners, f.owner) +
+      selectHtml("fTag", "Label", tags, f.tag) +
+      activeChips();
+
+    function selectHtml(id, label, opts, val) {
+      return '<select id="' + id + '"><option value="">' + label + ": Any</option>" +
+        opts.map(function (o) { return '<option ' + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
+        "</select>";
+    }
+    function activeChips() {
+      var chips = [];
+      var af = store.ui.filters;
+      Object.keys(af).forEach(function (k) {
+        if (af[k] && k !== "search") {
+          var lbl = { type: "Type", status: "Status", priority: "Priority", owner: "Owner", tag: "Label" }[k];
+          chips.push('<span class="chip">' + lbl + ": " + esc(af[k]) + '<button data-clear="' + k + '">×</button></span>');
+        }
+      });
+      if (af.search) chips.push('<span class="chip">"' + esc(af.search) + '"<button data-clear="search">×</button></span>');
+      if (chips.length > 1) chips.push('<button class="btn subtle" id="clearAll">Clear all</button>');
+      return chips.join("");
+    }
+  }
+
+  function uniqueOwners() {
+    var s = {}; store.items.forEach(function (i) { if (i.owner) s[i.owner] = 1; });
+    TEAM.forEach(function (t) { s[t] = 1; });
+    return Object.keys(s).sort();
+  }
+  function uniqueTags() {
+    var s = {}; store.items.forEach(function (i) { (i.tags || []).forEach(function (t) { s[t] = 1; }); });
+    return Object.keys(s).sort();
+  }
+
+  function cardHtml(it) {
+    var over = isOverdue(it);
+    var score = riskScore(it);
+    return '<div class="card" draggable="true" data-id="' + it.id + '" data-type="' + it.type + '">' +
+      '<div class="labels">' +
+        '<span class="badge ' + it.type + '">' + it.type + "</span>" +
+        (it.type === "Risk" && score ? '<span class="sev-tag ' + riskSeverity(score).cls + '">Sev ' + score + "</span>" : "") +
+        (it.type === "Issue" ? '<span class="sev-tag sev-' + it.severity + '">' + it.severity + " sev</span>" : "") +
+      "</div>" +
+      '<div class="title">' + esc(it.title) + "</div>" +
+      (it.tags && it.tags.length ? '<div class="labels">' + it.tags.slice(0, 4).map(function (t) {
+        return '<span class="label-tag">' + esc(t) + "</span>";
+      }).join("") + "</div>" : "") +
+      '<div class="meta">' +
+        '<span class="id">' + it.id + "</span>" +
+        '<span class="flag" data-p="' + it.priority + '" title="' + it.priority + ' priority"></span>' +
+        '<span class="spacer"></span>' +
+        (it.dueDate ? '<span class="due ' + (over ? "overdue" : "") + '" title="Due ' + fmtDate(it.dueDate) + '">' + fmtDate(it.dueDate) + "</span>" : "") +
+        avatarEl(it.owner) +
+      "</div></div>";
+  }
+
+  function renderBoard() {
+    var items = filteredItems();
+    var board = el('<div class="board"></div>');
+    STATUSES.forEach(function (st) {
+      var inCol = items.filter(function (i) { return i.status === st; });
+      var col = el(
+        '<div class="col" data-status="' + esc(st) + '">' +
+          '<div class="col-head"><span class="pill" data-st="' + esc(st) + '">' + st + '</span><span class="n">' + inCol.length + "</span></div>" +
+          '<div class="col-body"></div>' +
+        "</div>"
+      );
+      var body = col.querySelector(".col-body");
+      inCol.forEach(function (it) { body.appendChild(el(cardHtml(it))); });
+      if (!inCol.length) body.appendChild(el('<div style="color:var(--text-faint);font-size:12px;text-align:center;padding:12px">No items</div>'));
+      board.appendChild(col);
+    });
+    viewEl.innerHTML = "";
+    viewEl.appendChild(board);
+    wireBoardDnD();
+  }
+
+  function renderList() {
+    var items = sortItems(filteredItems());
+    var s = store.ui.sort;
+    function arrow(k) { return s.key === k ? '<span class="arrow">' + (s.dir === "asc" ? "▲" : "▼") + "</span>" : ""; }
+    var cols = [
+      ["id", "ID"], ["type", "Type"], ["title", "Title"], ["status", "Status"],
+      ["priority", "Priority"], ["owner", "Owner"], ["dueDate", "Due date"]
+    ];
+    if (!items.length) {
+      viewEl.innerHTML = '<div class="table-wrap"><div class="empty"><div class="big">No items match your filters</div><div>Try clearing a filter or creating a new item.</div></div></div>';
+      return;
+    }
+    viewEl.innerHTML =
+      '<div class="table-wrap"><table><thead><tr>' +
+        cols.map(function (c) { return '<th data-sort="' + c[0] + '">' + c[1] + " " + arrow(c[0]) + "</th>"; }).join("") +
+      "</tr></thead><tbody>" +
+      items.map(function (it) {
+        var over = isOverdue(it);
+        return '<tr data-id="' + it.id + '">' +
+          '<td><span class="id-cell">' + it.id + "</span></td>" +
+          '<td><span class="badge ' + it.type + '">' + it.type + "</span></td>" +
+          '<td class="title-cell">' + esc(it.title) +
+            (it.tags && it.tags.length ? " " + it.tags.map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join(" ") : "") +
+          "</td>" +
+          '<td><span class="pill" data-st="' + esc(it.status) + '">' + it.status + "</span></td>" +
+          '<td><span class="flag" data-p="' + it.priority + '">' + it.priority + "</span></td>" +
+          '<td><span style="display:flex;align-items:center;gap:6px">' + avatarEl(it.owner) + esc(it.owner) + "</span></td>" +
+          '<td class="' + (over ? "" : "") + '" style="' + (over ? "color:var(--issue);font-weight:600" : "") + '">' + fmtDate(it.dueDate) +
+            (over ? " ⚠" : "") + "</td>" +
+        "</tr>";
+      }).join("") +
+      "</tbody></table></div>";
+  }
+
+  function renderMatrix() {
+    var risks = store.items.filter(function (i) { return i.type === "Risk"; });
+    // grid cells: rows = impact High->Low (top->bottom), cols = likelihood Low->High
+    var band = [
+      ["m-med", "m-high", "m-crit"],   // impact High
+      ["m-low", "m-med", "m-high"],    // impact Medium
+      ["m-low", "m-low", "m-med"]      // impact Low
+    ];
+    var impacts = ["High", "Medium", "Low"];
+    var likelihoods = ["Low", "Medium", "High"];
+    var cells = "";
+    for (var r = 0; r < 3; r++) {
+      cells += '<div class="axis-y">' + (r === 1 ? "Impact →" : "&nbsp;") + "</div>";
+      for (var c = 0; c < 3; c++) {
+        var here = risks.filter(function (it) { return it.impact === impacts[r] && it.likelihood === likelihoods[c]; });
+        cells += '<div class="cell ' + band[r][c] + '">' +
+          here.map(function (it) { return '<span class="marker" data-id="' + it.id + '">' + it.id + "</span>"; }).join("") +
+          '<span class="cell-label">' + impacts[r] + " / " + likelihoods[c] + "</span></div>";
+      }
+    }
+    cells += '<div class="corner"></div>' + likelihoods.map(function (l) { return '<div class="axis-x">' + l + "</div>"; }).join("");
+
+    var counts = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+    risks.forEach(function (it) { counts[riskSeverity(riskScore(it)).label]++; });
+
+    viewEl.innerHTML =
+      '<div class="matrix-wrap">' +
+        "<h2 style='font-size:16px'>Risk matrix — likelihood × impact</h2>" +
+        "<p style='color:var(--text-sub);margin-top:4px'>" + risks.length + " risks plotted. Severity = likelihood × impact (Low 1 · Med 2 · High 3).</p>" +
+        '<div class="matrix">' + cells + "</div>" +
+        '<div class="axis-caption">Likelihood →</div>' +
+        "<div style='display:flex;gap:14px;margin-top:16px;flex-wrap:wrap'>" +
+          Object.keys(counts).map(function (k) {
+            return '<span class="sev-tag sev-' + k + '">' + k + ": " + counts[k] + "</span>";
+          }).join("") +
+        "</div>" +
+      "</div>";
+  }
+
+  // ---------- Detail modal ----------
+  var modalRoot = document.getElementById("modalRoot");
+
+  function closeModal() { modalRoot.innerHTML = ""; store.ui.selectedId = null; }
+
+  function openItem(id) { store.ui.selectedId = id; renderDetailModal(id); }
+
+  function updateField(id, field, value, label) {
+    var it = getItem(id);
+    if (!it) return;
+    var old = it[field];
+    if (old === value) return;
+    it[field] = value;
+
+    if (field === "status") {
+      if ((value === "Resolved" || value === "Closed") && !it.resolvedDate) it.resolvedDate = todayISO();
+      if (value !== "Resolved" && value !== "Closed") it.resolvedDate = null;
+    }
+    var disp = { from: old == null || old === "" ? "empty" : old, to: value == null || value === "" ? "empty" : value };
+    log(it, "change", "changed <b>" + (label || field) + "</b> from " + esc(String(disp.from)) + " to " + esc(String(disp.to)));
+    persist();
+    render();
+  }
+
+  function addComment(id, text) {
+    var it = getItem(id);
+    if (!it || !text.trim()) return;
+    it.activity.push({ id: Math.random().toString(36).slice(2), kind: "comment", text: text.trim(), who: CURRENT_USER, ts: nowISO() });
+    persist();
+    renderDetailModal(id);
+    renderBoardOrList();
+  }
+
+  function renderBoardOrList() {
+    if (store.ui.view === "matrix") renderMatrix();
+    else if (store.ui.view === "list" || store.ui.typeView) renderList();
+    else renderBoard();
+    renderDash(); renderNav();
+  }
+
+  function getItem(id) { return store.items.find(function (i) { return i.id === id; }); }
+
+  function selectField(id, field, label, opts, val, hint) {
+    return '<div class="field"><label>' + label + "</label>" +
+      '<select data-field="' + field + '" data-id="' + id + '">' +
+      opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
+      "</select>" + (hint ? '<div class="hint">' + hint + "</div>" : "") + "</div>";
+  }
+
+  function renderDetailModal(id) {
+    var it = getItem(id);
+    if (!it) { closeModal(); return; }
+    var score = riskScore(it);
+    var sev = score != null ? riskSeverity(score) : null;
+
+    var typeSpecific = "";
+    if (it.type === "Risk") {
+      typeSpecific =
+        '<div class="row2">' +
+          selectField(id, "likelihood", "Likelihood", LMH, it.likelihood) +
+          selectField(id, "impact", "Impact", LMH, it.impact) +
+        "</div>";
+    } else if (it.type === "Action") {
+      typeSpecific = '<div class="field"><label>Next step</label><textarea data-field="nextStep" data-id="' + id + '" placeholder="The immediate next action…">' + esc(it.nextStep || "") + "</textarea></div>";
+    } else if (it.type === "Issue") {
+      typeSpecific = selectField(id, "severity", "Severity (how bad)", SEVERITIES, it.severity, "Separate from priority, which is how urgent it is.");
+    } else if (it.type === "Decision") {
+      typeSpecific =
+        '<div class="field"><label>Decision made</label><textarea data-field="decisionMade" data-id="' + id + '" placeholder="The decision / outcome…">' + esc(it.decisionMade || "") + "</textarea></div>" +
+        '<div class="field"><label>Rationale</label><textarea data-field="rationale" data-id="' + id + '" placeholder="Why this decision…">' + esc(it.rationale || "") + "</textarea></div>";
+    }
+
+    var linkedHtml = (it.links || []).map(function (lid) {
+      var li = getItem(lid);
+      return '<div class="linked-item" data-open="' + lid + '">' +
+        (li ? '<span class="type-dot ' + li.type + '" style="width:8px;height:8px;border-radius:50%"></span><b>' + lid + "</b> " + esc(li.title.slice(0, 40)) : "<b>" + esc(lid) + "</b> (missing)") +
+        '<button class="rm" data-unlink="' + lid + '" title="Remove link">×</button></div>';
+    }).join("");
+    var linkable = store.items.filter(function (o) { return o.id !== id && (it.links || []).indexOf(o.id) === -1; });
+
+    var tagsHtml = (it.tags || []).map(function (t) {
+      return '<span class="tag-pill">' + esc(t) + '<button data-untag="' + esc(t) + '">×</button></span>';
+    }).join("");
+
+    var activity = it.activity.slice().sort(function (a, b) { return a.ts < b.ts ? -1 : 1; });
+    var actHtml = activity.map(function (a) {
+      return '<div class="act ' + a.kind + '">' + avatarEl(a.who) +
+        '<div class="body"><div><span class="who">' + esc(a.who) + '</span><span class="when">' + fmtDateTime(a.ts) + "</span></div>" +
+        '<div class="text">' + (a.kind === "change" ? a.text : esc(a.text)) + "</div></div></div>";
+    }).join("");
+
+    var overlay = el(
+      '<div class="overlay" id="overlay">' +
+      '<div class="modal wide">' +
+        '<div class="modal-head">' +
+          '<span class="badge ' + it.type + '">' + it.type + "</span>" +
+          '<span class="id">' + it.id + "</span>" +
+          '<span class="spacer"></span>' +
+          '<select data-field="status" data-id="' + id + '" style="padding:6px 10px;border:1px solid var(--border-strong);border-radius:4px;font-weight:600">' +
+            STATUSES.map(function (s) { return "<option " + (s === it.status ? "selected" : "") + ">" + s + "</option>"; }).join("") +
+          "</select>" +
+          '<button class="close" id="closeModal">×</button>' +
+        "</div>" +
+        '<div class="modal-body"><div class="modal-cols">' +
+          "<div>" +
+            '<div class="field"><label>Title</label><input type="text" data-field="title" data-id="' + id + '" value="' + esc(it.title) + '"></div>' +
+            '<div class="field"><label>Description</label><textarea data-field="description" data-id="' + id + '" style="min-height:90px">' + esc(it.description || "") + "</textarea></div>" +
+            typeSpecific +
+            '<div class="field"><label>Labels</label><div class="tag-input-row" id="tagRow">' + tagsHtml +
+              '<input type="text" id="tagInput" placeholder="Add label + Enter"></div></div>' +
+            '<div class="field"><label>Linked items</label><div class="linked-list">' + (linkedHtml || '<span class="hint">No links yet.</span>') + "</div>" +
+              (linkable.length ? '<div class="inline-add"><select id="linkSelect"><option value="">Link another item…</option>' +
+                linkable.map(function (o) { return '<option value="' + o.id + '">' + o.id + " · " + esc(o.title.slice(0, 50)) + "</option>"; }).join("") +
+                '</select><button class="btn" id="addLink">Link</button></div>' : "") +
+            "</div>" +
+            '<div class="activity"><h3>Activity &amp; comments</h3>' +
+              '<div class="comment-box">' + avatarEl(CURRENT_USER) +
+                '<textarea id="commentInput" placeholder="Add a comment…"></textarea>' +
+              "</div>" +
+              '<div style="text-align:right;margin-bottom:14px"><button class="btn primary" id="addComment">Comment</button></div>' +
+              '<div class="act-list">' + actHtml + "</div>" +
+            "</div>" +
+          "</div>" +
+          "<div>" +
+            (sev ? '<div class="side-box"><h4>Risk severity</h4><div class="score-box" style="background:' + sev.color + '22">' +
+              '<div class="n" style="color:' + sev.color + '">' + score + '</div><div class="lbl" style="color:' + sev.color + '">' + sev.label + "</div></div>" +
+              '<div class="hint" style="margin-top:8px">' + it.likelihood + " likelihood × " + it.impact + " impact</div></div>" : "") +
+            '<div class="side-box"><h4>Details</h4>' +
+              sideSelect(id, "priority", "Priority", PRIORITIES, it.priority) +
+              sideSelect(id, "owner", "Owner", uniqueOwners(), it.owner) +
+              '<div class="field" style="margin:8px 0 0"><label>Due date</label><input type="date" data-field="dueDate" data-id="' + id + '" value="' + esc(it.dueDate || "") + '"></div>' +
+            "</div>" +
+            '<div class="side-box"><h4>People &amp; dates</h4>' +
+              '<div class="side-row"><span class="k">Reporter</span><span class="v">' + esc(it.reporter) + "</span></div>" +
+              '<div class="side-row"><span class="k">Created</span><span class="v">' + fmtDate(it.createdDate) + "</span></div>" +
+              '<div class="side-row"><span class="k">Resolved</span><span class="v">' + (it.resolvedDate ? fmtDate(it.resolvedDate) : "—") + "</span></div>" +
+              (isOverdue(it) ? '<div class="side-row"><span class="k">Status</span><span class="v" style="color:var(--issue)">Overdue</span></div>' : "") +
+            "</div>" +
+            '<button class="btn" id="deleteItem" style="width:100%;color:var(--issue);border-color:var(--issue)">Delete item</button>' +
+          "</div>" +
+        "</div></div>" +
+      "</div></div>"
+    );
+
+    modalRoot.innerHTML = "";
+    modalRoot.appendChild(overlay);
+    wireDetailModal(id);
+
+    function sideSelect(id, field, label, opts, val) {
+      return '<div class="field" style="margin-bottom:8px"><label>' + label + "</label>" +
+        '<select data-field="' + field + '" data-id="' + id + '">' +
+        opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") + "</select></div>";
+    }
+  }
+
+  function wireDetailModal(id) {
+    var overlay = document.getElementById("overlay");
+    overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) closeModal(); });
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+
+    overlay.querySelectorAll("[data-field]").forEach(function (inp) {
+      inp.addEventListener("change", function () {
+        var field = inp.getAttribute("data-field");
+        var label = field.replace(/([A-Z])/g, " $1").toLowerCase();
+        updateField(id, field, inp.value, label);
+      });
+    });
+
+    var ci = document.getElementById("commentInput");
+    document.getElementById("addComment").addEventListener("click", function () {
+      addComment(id, ci.value); ci.value = "";
+    });
+    ci.addEventListener("keydown", function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { addComment(id, ci.value); ci.value = ""; }
+    });
+
+    var tagInput = document.getElementById("tagInput");
+    tagInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && tagInput.value.trim()) {
+        e.preventDefault();
+        var it = getItem(id);
+        var v = tagInput.value.trim();
+        if ((it.tags || []).indexOf(v) === -1) {
+          it.tags = it.tags || []; it.tags.push(v);
+          log(it, "change", "added label <b>" + esc(v) + "</b>");
+          persist(); renderDetailModal(id); renderBoardOrList();
+        }
+      }
+    });
+    overlay.querySelectorAll("[data-untag]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var it = getItem(id);
+        var v = b.getAttribute("data-untag");
+        it.tags = it.tags.filter(function (t) { return t !== v; });
+        log(it, "change", "removed label <b>" + esc(v) + "</b>");
+        persist(); renderDetailModal(id); renderBoardOrList();
+      });
+    });
+
+    var addLink = document.getElementById("addLink");
+    if (addLink) {
+      addLink.addEventListener("click", function () {
+        var sel = document.getElementById("linkSelect");
+        if (!sel.value) return;
+        var it = getItem(id);
+        it.links = it.links || []; it.links.push(sel.value);
+        log(it, "change", "linked <b>" + sel.value + "</b>");
+        // reciprocal link
+        var other = getItem(sel.value);
+        if (other) { other.links = other.links || []; if (other.links.indexOf(id) === -1) other.links.push(id); }
+        persist(); renderDetailModal(id); renderBoardOrList();
+      });
+    }
+    overlay.querySelectorAll("[data-unlink]").forEach(function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var it = getItem(id);
+        var lid = b.getAttribute("data-unlink");
+        it.links = it.links.filter(function (x) { return x !== lid; });
+        var other = getItem(lid);
+        if (other && other.links) other.links = other.links.filter(function (x) { return x !== id; });
+        log(it, "change", "removed link to <b>" + lid + "</b>");
+        persist(); renderDetailModal(id); renderBoardOrList();
+      });
+    });
+    overlay.querySelectorAll("[data-open]").forEach(function (b) {
+      b.addEventListener("click", function () { openItem(b.getAttribute("data-open")); });
+    });
+
+    document.getElementById("deleteItem").addEventListener("click", function () {
+      var it = getItem(id);
+      if (!confirm("Delete " + id + " — “" + it.title + "”? This cannot be undone.")) return;
+      store.items = store.items.filter(function (x) { return x.id !== id; });
+      store.items.forEach(function (x) { if (x.links) x.links = x.links.filter(function (l) { return l !== id; }); });
+      persist(); closeModal(); render();
+      toast(id + " deleted");
+    });
+  }
+
+  // ---------- Create modal ----------
+  function openCreate() {
+    var chosen = "Risk";
+    var overlay = el('<div class="overlay" id="overlay"><div class="modal"><div class="modal-head"><b>Create RAID item</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div><div class="modal-body" id="createBody"></div><div class="modal-foot"><button class="btn" id="cCancel">Cancel</button><button class="btn primary" id="cSave">Create</button></div></div></div>');
+    modalRoot.innerHTML = ""; modalRoot.appendChild(overlay);
+
+    function body() {
+      var b = document.getElementById("createBody");
+      b.innerHTML =
+        '<div class="field"><label>Type</label><div class="type-picker">' +
+          TYPES.map(function (t) {
+            return '<button type="button" class="type-opt ' + (t === chosen ? "sel" : "") + '" data-type="' + t + '"><span class="ic">' + TYPE_ICON[t] + "</span>" + t + "</button>";
+          }).join("") +
+        "</div></div>" +
+        '<div class="field"><label>Title *</label><input type="text" id="nTitle" placeholder="Short summary"></div>' +
+        '<div class="field"><label>Description</label><textarea id="nDesc" placeholder="Longer detail…"></textarea></div>' +
+        typeFields() +
+        '<div class="row2">' +
+          fieldSelect("nPriority", "Priority", PRIORITIES, "Medium") +
+          fieldSelect("nStatus", "Status", STATUSES, "Open") +
+        "</div>" +
+        '<div class="row2">' +
+          fieldSelect("nOwner", "Owner", uniqueOwners(), TEAM[0]) +
+          '<div class="field"><label>Due date</label><input type="date" id="nDue"></div>' +
+        "</div>" +
+        '<div class="field"><label>Labels (comma-separated)</label><input type="text" id="nTags" placeholder="e.g. release, payments"></div>';
+
+      b.querySelectorAll(".type-opt").forEach(function (opt) {
+        opt.addEventListener("click", function () { chosen = opt.getAttribute("data-type"); body(); });
+      });
+
+      function typeFields() {
+        if (chosen === "Risk") return '<div class="row2">' + fieldSelect("nLikelihood", "Likelihood", LMH, "Medium") + fieldSelect("nImpact", "Impact", LMH, "Medium") + "</div>";
+        if (chosen === "Action") return '<div class="field"><label>Next step</label><input type="text" id="nNext" placeholder="Immediate next action"></div>';
+        if (chosen === "Issue") return fieldSelect("nSeverity", "Severity", SEVERITIES, "Medium");
+        if (chosen === "Decision") return '<div class="field"><label>Decision made</label><textarea id="nDecision" placeholder="The outcome…"></textarea></div><div class="field"><label>Rationale</label><textarea id="nRationale" placeholder="Why…"></textarea></div>';
+        return "";
+      }
+      function fieldSelect(id, label, opts, val) {
+        return '<div class="field"><label>' + label + '</label><select id="' + id + '">' +
+          opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") + "</select></div>";
+      }
+    }
+    body();
+
+    function close() { modalRoot.innerHTML = ""; }
+    overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) close(); });
+    document.getElementById("closeModal").addEventListener("click", close);
+    document.getElementById("cCancel").addEventListener("click", close);
+    document.getElementById("cSave").addEventListener("click", function () {
+      var title = document.getElementById("nTitle").value.trim();
+      if (!title) { document.getElementById("nTitle").focus(); toast("Title is required"); return; }
+      var it = {
+        id: nextId(), type: chosen, title: title,
+        description: document.getElementById("nDesc").value.trim(),
+        status: document.getElementById("nStatus").value,
+        priority: document.getElementById("nPriority").value,
+        owner: document.getElementById("nOwner").value,
+        reporter: CURRENT_USER,
+        createdDate: todayISO(),
+        dueDate: document.getElementById("nDue").value || "",
+        resolvedDate: null, links: [],
+        tags: document.getElementById("nTags").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean),
+        activity: []
+      };
+      if (chosen === "Risk") { it.likelihood = document.getElementById("nLikelihood").value; it.impact = document.getElementById("nImpact").value; }
+      if (chosen === "Action") { it.nextStep = document.getElementById("nNext").value.trim(); }
+      if (chosen === "Issue") { it.severity = document.getElementById("nSeverity").value; }
+      if (chosen === "Decision") { it.decisionMade = document.getElementById("nDecision").value.trim(); it.rationale = document.getElementById("nRationale").value.trim(); }
+      if ((it.status === "Resolved" || it.status === "Closed")) it.resolvedDate = todayISO();
+      it.activity.push({ id: "c0", kind: "create", text: "created this " + chosen.toLowerCase(), who: CURRENT_USER, ts: nowISO() });
+      store.items.push(it);
+      persist(); close(); render();
+      toast(it.id + " created");
+      openItem(it.id);
+    });
+    document.getElementById("nTitle").focus();
+  }
+
+  // ---------- CSV export ----------
+  function exportCSV() {
+    var headers = ["id", "type", "title", "description", "status", "priority", "owner", "reporter",
+      "createdDate", "dueDate", "resolvedDate", "likelihood", "impact", "riskScore", "nextStep",
+      "severity", "decisionMade", "rationale", "links", "tags", "comments"];
+    function cell(v) {
+      if (v == null) v = "";
+      v = String(v).replace(/"/g, '""');
+      return '"' + v + '"';
+    }
+    var rows = [headers.join(",")];
+    store.items.forEach(function (it) {
+      var comments = it.activity.filter(function (a) { return a.kind === "comment"; })
+        .map(function (a) { return a.who + " (" + a.ts.slice(0, 10) + "): " + a.text; }).join(" | ");
+      rows.push([
+        it.id, it.type, it.title, it.description, it.status, it.priority, it.owner, it.reporter,
+        it.createdDate, it.dueDate, it.resolvedDate || "", it.likelihood || "", it.impact || "",
+        riskScore(it) == null ? "" : riskScore(it), it.nextStep || "", it.severity || "",
+        it.decisionMade || "", it.rationale || "", (it.links || []).join(" "), (it.tags || []).join(" "), comments
+      ].map(cell).join(","));
+    });
+    var blob = new Blob([rows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "raid-log-" + todayISO() + ".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast("Exported " + store.items.length + " items to CSV");
+  }
+
+  // ---------- JSON backup / restore ----------
+  function downloadFile(name, text, mime) {
+    var blob = new Blob([text], { type: mime });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function exportJSON() {
+    var payload = {
+      app: "raid-log", version: 1, exportedAt: nowISO(),
+      counter: store.counter, items: store.items
+    };
+    downloadFile("raid-log-backup-" + todayISO() + ".json", JSON.stringify(payload, null, 2), "application/json");
+    toast("Backup downloaded (" + store.items.length + " items)");
+  }
+
+  function importJSON(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var data;
+      try { data = JSON.parse(reader.result); } catch (e) { toast("Not a valid JSON file"); return; }
+      var items = Array.isArray(data) ? data : (data && data.items);
+      if (!Array.isArray(items) || !items.length) { toast("No RAID items found in that file"); return; }
+      var bad = items.filter(function (it) { return !it || !it.id || !it.type || !it.title; });
+      if (bad.length) { toast("File has " + bad.length + " malformed item(s) — not loaded"); return; }
+      if (!confirm("Load " + items.length + " items from this backup? This replaces everything currently in the log.")) return;
+      items.forEach(function (it) {
+        it.activity = Array.isArray(it.activity) ? it.activity : [];
+        it.tags = Array.isArray(it.tags) ? it.tags : [];
+        it.links = Array.isArray(it.links) ? it.links : [];
+      });
+      store.items = items;
+      var maxNum = items.reduce(function (m, it) {
+        var n = parseInt(String(it.id).split("-")[1], 10);
+        return isNaN(n) ? m : Math.max(m, n);
+      }, 0);
+      store.counter = (data && data.counter && data.counter > maxNum) ? data.counter : maxNum + 1;
+      store.ui.selectedId = null;
+      persist(); render();
+      toast("Loaded " + items.length + " items from backup");
+    };
+    reader.readAsText(file);
+  }
+
+  function updateSaveHint() {
+    var hint = document.getElementById("saveHint");
+    var ok = false;
+    try { localStorage.setItem("raidlog.probe", "1"); localStorage.removeItem("raidlog.probe"); ok = true; } catch (e) {}
+    hint.textContent = ok
+      ? "Auto-saved to this browser. Use Download backup for a portable copy."
+      : "This browser blocks storage — changes last only until you close the tab. Download backup often.";
+  }
+
+  // ---------- Drag & drop ----------
+  function wireBoardDnD() {
+    var dragId = null;
+    viewEl.querySelectorAll(".card").forEach(function (card) {
+      card.addEventListener("dragstart", function (e) {
+        dragId = card.getAttribute("data-id");
+        card.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        try { e.dataTransfer.setData("text/plain", dragId); } catch (x) {}
+      });
+      card.addEventListener("dragend", function () { card.classList.remove("dragging"); dragId = null; });
+      card.addEventListener("click", function () { openItem(card.getAttribute("data-id")); });
+    });
+    viewEl.querySelectorAll(".col").forEach(function (col) {
+      col.addEventListener("dragover", function (e) { e.preventDefault(); col.classList.add("drag-over"); e.dataTransfer.dropEffect = "move"; });
+      col.addEventListener("dragleave", function () { col.classList.remove("drag-over"); });
+      col.addEventListener("drop", function (e) {
+        e.preventDefault();
+        col.classList.remove("drag-over");
+        var id = dragId || e.dataTransfer.getData("text/plain");
+        var newStatus = col.getAttribute("data-status");
+        var it = getItem(id);
+        if (it && it.status !== newStatus) {
+          updateField(id, "status", newStatus, "status");
+          toast(id + " → " + newStatus);
+        }
+      });
+    });
+  }
+
+  // ---------- Global events ----------
+  document.querySelectorAll(".nav-item[data-nav]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var nav = b.getAttribute("data-nav");
+      if (nav === "board") { store.ui.view = "board"; store.ui.typeView = null; }
+      else if (nav === "list") { store.ui.view = "list"; store.ui.typeView = null; }
+      else if (nav === "matrix") { store.ui.view = "matrix"; store.ui.typeView = null; }
+      else if (nav.indexOf("type:") === 0) {
+        store.ui.typeView = nav.split(":")[1];
+        store.ui.view = "list";
+      }
+      render();
+    });
+  });
+
+  document.getElementById("createBtn").addEventListener("click", openCreate);
+  document.getElementById("exportBtn").addEventListener("click", exportCSV);
+  document.getElementById("backupBtn").addEventListener("click", exportJSON);
+  document.getElementById("restoreBtn").addEventListener("click", function () {
+    document.getElementById("restoreInput").click();
+  });
+  document.getElementById("restoreInput").addEventListener("change", function (e) {
+    if (e.target.files && e.target.files[0]) importJSON(e.target.files[0]);
+    e.target.value = "";
+  });
+  document.getElementById("toggleDash").addEventListener("click", function () {
+    store.ui.showDash = !store.ui.showDash; render();
+  });
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    if (!confirm("Reset to the original sample data? Your changes will be lost.")) return;
+    seed(); store.ui.selectedId = null; render(); toast("Sample data restored");
+  });
+
+  // Filter bar (event delegation — rebuilt each render)
+  document.getElementById("filters").addEventListener("input", function (e) {
+    if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderBoardOrList(); }
+  });
+  document.getElementById("filters").addEventListener("change", function (e) {
+    var map = { fType: "type", fStatus: "status", fPriority: "priority", fOwner: "owner", fTag: "tag" };
+    if (map[e.target.id]) { store.ui.filters[map[e.target.id]] = e.target.value; render(); }
+  });
+  document.getElementById("filters").addEventListener("click", function (e) {
+    var clr = e.target.getAttribute && e.target.getAttribute("data-clear");
+    if (clr) { store.ui.filters[clr] = ""; render(); }
+    if (e.target.id === "clearAll") {
+      store.ui.filters = { search: "", type: "", status: "", priority: "", owner: "", tag: "" };
+      render();
+    }
+  });
+
+  // View clicks (delegation)
+  viewEl.addEventListener("click", function (e) {
+    var tr = e.target.closest && e.target.closest("tr[data-id]");
+    if (tr) { openItem(tr.getAttribute("data-id")); return; }
+    var th = e.target.closest && e.target.closest("th[data-sort]");
+    if (th) {
+      var k = th.getAttribute("data-sort");
+      var s = store.ui.sort;
+      if (s.key === k) s.dir = s.dir === "asc" ? "desc" : "asc";
+      else { s.key = k; s.dir = "asc"; }
+      renderList();
+      return;
+    }
+    var marker = e.target.closest && e.target.closest(".marker[data-id]");
+    if (marker) openItem(marker.getAttribute("data-id"));
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { if (modalRoot.innerHTML) { modalRoot.innerHTML = ""; store.ui.selectedId = null; } }
+    if (e.key === "c" && !/input|textarea|select/i.test((e.target.tagName || "")) && !modalRoot.innerHTML) openCreate();
+  });
+
+  // ---------- Boot ----------
+  if (!tryLoad()) seed();
+  updateSaveHint();
+  render();
+})();
+</script>
+</body>
+</html>
