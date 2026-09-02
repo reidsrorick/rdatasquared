@@ -8,6 +8,7 @@
   var PRIORITIES = ["Low", "Medium", "High", "Critical"];
   var LMH = ["Low", "Medium", "High"];
   var SEVERITIES = ["Low", "Medium", "High", "Critical"];
+  var RECUR = ["None", "Daily", "Weekly", "Every 2 weeks", "Monthly"];
   var TEAM = ["Alex Chen", "Priya Patel", "Sam Rivera", "Jordan Lee", "Morgan Blake", "Taylor Kim", "Dana Okafor"];
   var CURRENT_USER = "Reid";
   var STORAGE_KEY = "raidlog.v1";
@@ -29,6 +30,15 @@
     if (!iso) return "";
     var d = new Date(iso);
     return d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+  function addInterval(iso, recurrence) {
+    var d = iso ? new Date(iso + "T00:00:00") : new Date();
+    if (recurrence === "Daily") d.setDate(d.getDate() + 1);
+    else if (recurrence === "Weekly") d.setDate(d.getDate() + 7);
+    else if (recurrence === "Every 2 weeks") d.setDate(d.getDate() + 14);
+    else if (recurrence === "Monthly") d.setMonth(d.getMonth() + 1);
+    else return iso || "";
+    return d.toISOString().slice(0, 10);
   }
   function isOverdue(item) {
     if (!item.dueDate) return false;
@@ -131,10 +141,11 @@
         resolvedDate: o.resolvedDate || null, links: o.links || [], tags: o.tags || [],
         activity: []
       };
-      if (o.type === "Risk") { base.likelihood = o.likelihood || "Medium"; base.impact = o.impact || "Medium"; }
+      if (o.type === "Risk") { base.likelihood = o.likelihood || "Medium"; base.impact = o.impact || "Medium"; base.mitigationPlan = o.mitigationPlan || ""; }
       if (o.type === "Action") { base.nextStep = o.nextStep || ""; }
       if (o.type === "Issue") { base.severity = o.severity || "Medium"; }
       if (o.type === "Decision") { base.decisionMade = o.decisionMade || ""; base.rationale = o.rationale || ""; }
+      if (o.type === "Task") { base.recurrence = o.recurrence || "None"; }
       base.activity.push({ id: "c0", kind: "create", text: "created this " + o.type.toLowerCase(), who: base.reporter, ts: base.createdDate + "T09:00:00.000Z" });
       (o.comments || []).forEach(function (c) {
         base.activity.push({ id: Math.random().toString(36).slice(2), kind: "comment", text: c.text, who: c.who, ts: c.ts });
@@ -148,6 +159,7 @@
         description: "Vendor Acme has flagged resourcing constraints for the payments API. If the delivery slips past 30 Sep, the UAT window compresses to under a week.",
         status: "In Progress", priority: "High", owner: "Priya Patel", reporter: "Reid",
         createdDate: todayISO(-20), dueDate: todayISO(12), likelihood: "High", impact: "High",
+        mitigationPlan: "Weekly check-ins with the vendor's account manager. In parallel, spike a lightweight in-house adapter against the v1 API so launch is not fully dependent on Acme. Pre-book two extra UAT days for the week of 6 Oct.",
         tags: ["vendor", "payments", "schedule"],
         comments: [
           { text: "Escalated to vendor account manager. Awaiting a revised plan by Friday.", who: "Priya Patel", ts: todayISO(-6) + "T14:12:00.000Z" },
@@ -184,6 +196,7 @@
         description: "With one QA engineer on leave in the release week, regression coverage for the payments flow may be incomplete.",
         status: "Open", priority: "Medium", owner: "Jordan Lee", reporter: "Priya Patel",
         createdDate: todayISO(-11), dueDate: todayISO(9), likelihood: "Medium", impact: "High",
+        mitigationPlan: "Cross-train two engineers on the payments regression suite this sprint. Automate the top 10 checkout paths so manual effort in the release week drops. Line up a contract QA resource on standby.",
         links: ["RAID-1"], tags: ["qa", "capacity"]
       }),
       mk({
@@ -208,9 +221,10 @@
         createdDate: todayISO(-30), resolvedDate: todayISO(-22), tags: ["scope", "auth"]
       }),
       mk({
-        type: "Task", title: "Send my updated availability to the PMO for next sprint planning",
-        description: "They need it before Thursday's capacity call.",
-        status: "Open", priority: "Medium", createdDate: todayISO(-2), dueDate: todayISO(1), tags: ["admin"]
+        type: "Task", title: "Send my updated availability to the PMO for capacity planning",
+        description: "They need it before the weekly Thursday capacity call.",
+        status: "Open", priority: "Medium", recurrence: "Weekly",
+        createdDate: todayISO(-2), dueDate: todayISO(1), tags: ["admin"]
       }),
       mk({
         type: "Task", title: "Review the vendor contract redlines before the 1:1 with Legal",
@@ -254,7 +268,8 @@
       if (f.tag && (it.tags || []).indexOf(f.tag) === -1) return false;
       if (q) {
         var hay = (it.id + " " + it.title + " " + it.description + " " + (it.nextStep || "") + " " +
-          (it.decisionMade || "") + " " + (it.rationale || "") + " " + (it.tags || []).join(" ")).toLowerCase();
+          (it.mitigationPlan || "") + " " + (it.decisionMade || "") + " " + (it.rationale || "") + " " +
+          (it.tags || []).join(" ")).toLowerCase();
         if (hay.indexOf(q) === -1) return false;
       }
       return true;
@@ -429,6 +444,8 @@
         '<span class="badge ' + it.type + '">' + it.type + "</span>" +
         (it.type === "Risk" && score ? '<span class="sev-tag ' + riskSeverity(score).cls + '">Sev ' + score + "</span>" : "") +
         (it.type === "Issue" ? '<span class="sev-tag sev-' + it.severity + '">' + it.severity + " sev</span>" : "") +
+        (it.type === "Task" && it.recurrence && it.recurrence !== "None"
+          ? '<span class="sev-tag" style="background:var(--task-bg);color:#0c4a4a">↻ ' + esc(it.recurrence) + "</span>" : "") +
       "</div>" +
       '<div class="title">' + esc(it.title) + "</div>" +
       (it.tags && it.tags.length ? '<div class="labels">' + it.tags.slice(0, 4).map(function (t) {
@@ -551,14 +568,61 @@
     if (old === value) return;
     it[field] = value;
     if (field === "status") {
-      if ((value === "Resolved" || value === "Closed") && !it.resolvedDate) it.resolvedDate = todayISO();
-      if (value !== "Resolved" && value !== "Closed") it.resolvedDate = null;
+      var doneNow = value === "Resolved" || value === "Closed";
+      var wasDone = old === "Resolved" || old === "Closed";
+      if (doneNow && !it.resolvedDate) it.resolvedDate = todayISO();
+      if (!doneNow) it.resolvedDate = null;
+      if (doneNow && !wasDone && it.type === "Task" && it.recurrence && it.recurrence !== "None") {
+        spawnRecurrence(it);
+      }
     }
     var from = old == null || old === "" ? "empty" : old;
     var to = value == null || value === "" ? "empty" : value;
     log(it, "change", "changed <b>" + (label || field) + "</b> from " + esc(String(from)) + " to " + esc(String(to)));
     persist();
     render();
+  }
+
+  function spawnRecurrence(done) {
+    var nextDue = addInterval(done.dueDate || todayISO(), done.recurrence);
+    while (nextDue && nextDue <= todayISO()) {
+      var advanced = addInterval(nextDue, done.recurrence);
+      if (advanced === nextDue) break;
+      nextDue = advanced;
+    }
+    var copy = {
+      id: nextId(), type: "Task", title: done.title,
+      description: done.description || "", status: "Open",
+      priority: done.priority, owner: done.owner, reporter: done.reporter,
+      createdDate: todayISO(), dueDate: nextDue, resolvedDate: null,
+      links: [], tags: (done.tags || []).slice(), recurrence: done.recurrence,
+      activity: [{ id: "c0", kind: "create", text: "created automatically from recurring task " + done.id, who: CURRENT_USER, ts: nowISO() }]
+    };
+    store.items.push(copy);
+    log(done, "change", "recurrence — next occurrence created as <b>" + copy.id + "</b>");
+    toast("Next occurrence created: " + copy.id + (nextDue ? " (due " + fmtDate(nextDue) + ")" : ""));
+  }
+
+  function duplicateItem(id) {
+    var it = getItem(id);
+    if (!it) return;
+    var copy = JSON.parse(JSON.stringify(it));
+    copy.id = nextId();
+    copy.title = it.title + " (copy)";
+    copy.status = "Open";
+    copy.resolvedDate = null;
+    copy.createdDate = todayISO();
+    copy.reporter = CURRENT_USER;
+    copy.links = [];
+    copy.activity = [{ id: "c0", kind: "create", text: "duplicated from " + it.id, who: CURRENT_USER, ts: nowISO() }];
+    store.items.push(copy);
+    store.ui.scope = copy.type === "Task" ? "tasks" : "raid";
+    store.ui.typeView = null;
+    if (store.ui.view === "matrix") store.ui.view = "board";
+    persist();
+    render();
+    toast("Created " + copy.id + " as a copy of " + it.id);
+    openItem(copy.id);
   }
 
   function addComment(id, text) {
@@ -599,7 +663,8 @@
         '<div class="row2">' +
           selectField(id, "likelihood", "Likelihood", LMH, it.likelihood) +
           selectField(id, "impact", "Impact", LMH, it.impact) +
-        "</div>";
+        "</div>" +
+        '<div class="field"><label>Mitigation plan</label><textarea data-field="mitigationPlan" data-id="' + id + '" placeholder="How the risk will be reduced, avoided, or handled if it occurs…">' + esc(it.mitigationPlan || "") + "</textarea></div>";
     } else if (it.type === "Action") {
       typeSpecific = '<div class="field"><label>Next step</label><textarea data-field="nextStep" data-id="' + id + '" placeholder="The immediate next action…">' + esc(it.nextStep || "") + "</textarea></div>";
     } else if (it.type === "Issue") {
@@ -639,6 +704,8 @@
     }).join("");
 
     var descLabel = isTask ? "Notes" : "Description";
+    var ownerOptions = '<datalist id="ownerOptions">' +
+      uniqueOwners().map(function (o) { return '<option value="' + esc(o) + '"></option>'; }).join("") + "</datalist>";
 
     var overlay = el(
       '<div class="overlay" id="overlay">' +
@@ -652,7 +719,7 @@
           "</select>" +
           '<button class="close" id="closeModal">×</button>' +
         "</div>" +
-        '<div class="modal-body"><div class="modal-cols">' +
+        '<div class="modal-body">' + ownerOptions + '<div class="modal-cols">' +
           "<div>" +
             '<div class="field"><label>Title</label><input type="text" data-field="title" data-id="' + id + '" value="' + esc(it.title) + '"></div>' +
             '<div class="field"><label>' + descLabel + '</label><textarea data-field="description" data-id="' + id + '" style="min-height:90px">' + esc(it.description || "") + "</textarea></div>" +
@@ -674,8 +741,12 @@
               '<div class="hint" style="margin-top:8px">' + it.likelihood + " likelihood × " + it.impact + " impact</div></div>" : "") +
             '<div class="side-box"><h4>Details</h4>' +
               sideSelect(id, "priority", "Priority", PRIORITIES, it.priority) +
-              (isTask ? "" : sideSelect(id, "owner", "Owner", uniqueOwners(), it.owner)) +
+              (isTask ? "" : '<div class="field" style="margin-bottom:8px"><label>Owner</label>' +
+                '<input type="text" list="ownerOptions" data-field="owner" data-id="' + id + '" value="' + esc(it.owner || "") + '" placeholder="Assignee — type a name" autocomplete="off"></div>') +
               '<div class="field" style="margin:8px 0 0"><label>Due date</label><input type="date" data-field="dueDate" data-id="' + id + '" value="' + esc(it.dueDate || "") + '"></div>' +
+              (isTask ? '<div class="field" style="margin:8px 0 0"><label>Repeat</label><select data-field="recurrence" data-id="' + id + '">' +
+                RECUR.map(function (o) { return "<option " + (o === (it.recurrence || "None") ? "selected" : "") + ">" + o + "</option>"; }).join("") +
+                '</select><div class="hint">A new occurrence is created when you mark this done.</div></div>' : "") +
             "</div>" +
             '<div class="side-box"><h4>' + (isTask ? "Dates" : "People &amp; dates") + '</h4>' +
               (isTask ? "" : '<div class="side-row"><span class="k">Reporter</span><span class="v">' + esc(it.reporter) + "</span></div>") +
@@ -684,6 +755,7 @@
               (isOverdue(it) ? '<div class="side-row"><span class="k">Status</span><span class="v" style="color:var(--issue)">Overdue</span></div>' : "") +
             "</div>" +
             (isTask ? '<div class="hint" style="margin-bottom:12px">Personal task — not shown on the RAID board or included in the Excel export.</div>' : "") +
+            '<button class="btn" id="dupItem" style="width:100%;margin-bottom:8px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Duplicate</button>' +
             '<button class="btn" id="deleteItem" style="width:100%;color:var(--issue);border-color:var(--issue)">Delete item</button>' +
           "</div>" +
         "</div></div>" +
@@ -710,7 +782,9 @@
       inp.addEventListener("change", function () {
         var field = inp.getAttribute("data-field");
         var label = field.replace(/([A-Z])/g, " $1").toLowerCase();
-        updateField(id, field, inp.value, label);
+        var val = typeof inp.value === "string" ? inp.value.trim() : inp.value;
+        if (inp.tagName === "INPUT" && inp.type === "text") inp.value = val;
+        updateField(id, field, val, label);
       });
     });
 
@@ -774,6 +848,8 @@
       b.addEventListener("click", function () { openItem(b.getAttribute("data-open")); });
     });
 
+    document.getElementById("dupItem").addEventListener("click", function () { duplicateItem(id); });
+
     document.getElementById("deleteItem").addEventListener("click", function () {
       var it = getItem(id);
       if (!confirm("Delete " + id + " — “" + it.title + "”? This cannot be undone.")) return;
@@ -794,6 +870,7 @@
       var isTask = chosen === "Task";
       var b = document.getElementById("createBody");
       b.innerHTML =
+        '<datalist id="ownerOptions">' + uniqueOwners().map(function (o) { return '<option value="' + esc(o) + '"></option>'; }).join("") + "</datalist>" +
         '<div class="field"><label>Type</label><div class="type-picker">' +
           ALL_TYPES.map(function (t) {
             return '<button type="button" class="type-opt ' + (t === chosen ? "sel" : "") + '" data-type="' + t + '"><span class="ic">' + TYPE_ICON[t] + "</span>" + t + "</button>";
@@ -807,7 +884,7 @@
           fieldSelect("nStatus", "Status", STATUSES, "Open") +
         "</div>" +
         '<div class="row2">' +
-          (isTask ? "" : fieldSelect("nOwner", "Owner", uniqueOwners(), TEAM[0])) +
+          (isTask ? "" : '<div class="field"><label>Owner</label><input type="text" id="nOwner" list="ownerOptions" value="' + esc(TEAM[0]) + '" placeholder="Assignee — type a name" autocomplete="off"></div>') +
           '<div class="field"><label>Due date</label><input type="date" id="nDue"></div>' +
         "</div>" +
         '<div class="field"><label>Labels (comma-separated)</label><input type="text" id="nTags" placeholder="e.g. release, payments"></div>' +
@@ -818,8 +895,9 @@
       });
 
       function typeFields(isTask) {
-        if (isTask) return "";
-        if (chosen === "Risk") return '<div class="row2">' + fieldSelect("nLikelihood", "Likelihood", LMH, "Medium") + fieldSelect("nImpact", "Impact", LMH, "Medium") + "</div>";
+        if (isTask) return fieldSelect("nRecur", "Repeat", RECUR, "None");
+        if (chosen === "Risk") return '<div class="row2">' + fieldSelect("nLikelihood", "Likelihood", LMH, "Medium") + fieldSelect("nImpact", "Impact", LMH, "Medium") + "</div>" +
+          '<div class="field"><label>Mitigation plan</label><textarea id="nMitigation" placeholder="How the risk will be reduced, avoided, or handled if it occurs…"></textarea></div>';
         if (chosen === "Action") return '<div class="field"><label>Next step</label><input type="text" id="nNext" placeholder="Immediate next action"></div>';
         if (chosen === "Issue") return fieldSelect("nSeverity", "Severity", SEVERITIES, "Medium");
         if (chosen === "Decision") return '<div class="field"><label>Decision made</label><textarea id="nDecision" placeholder="The outcome…"></textarea></div><div class="field"><label>Rationale</label><textarea id="nRationale" placeholder="Why…"></textarea></div>';
@@ -846,7 +924,7 @@
         description: document.getElementById("nDesc").value.trim(),
         status: document.getElementById("nStatus").value,
         priority: document.getElementById("nPriority").value,
-        owner: isTask ? CURRENT_USER : (ownerInput ? ownerInput.value : TEAM[0]),
+        owner: isTask ? CURRENT_USER : (ownerInput && ownerInput.value.trim() ? ownerInput.value.trim() : TEAM[0]),
         reporter: CURRENT_USER,
         createdDate: todayISO(),
         dueDate: document.getElementById("nDue").value || "",
@@ -854,10 +932,11 @@
         tags: document.getElementById("nTags").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean),
         activity: []
       };
-      if (chosen === "Risk") { it.likelihood = document.getElementById("nLikelihood").value; it.impact = document.getElementById("nImpact").value; }
+      if (chosen === "Risk") { it.likelihood = document.getElementById("nLikelihood").value; it.impact = document.getElementById("nImpact").value; it.mitigationPlan = document.getElementById("nMitigation").value.trim(); }
       if (chosen === "Action") { it.nextStep = document.getElementById("nNext").value.trim(); }
       if (chosen === "Issue") { it.severity = document.getElementById("nSeverity").value; }
       if (chosen === "Decision") { it.decisionMade = document.getElementById("nDecision").value.trim(); it.rationale = document.getElementById("nRationale").value.trim(); }
+      if (isTask) { var rc = document.getElementById("nRecur"); it.recurrence = rc ? rc.value : "None"; }
       if (it.status === "Resolved" || it.status === "Closed") it.resolvedDate = todayISO();
       it.activity.push({ id: "c0", kind: "create", text: "created this " + chosen.toLowerCase(), who: CURRENT_USER, ts: nowISO() });
       store.items.push(it);
@@ -960,8 +1039,8 @@
 
   function exportXLSX() {
     var headers = ["ID", "Type", "Title", "Description", "Status", "Priority", "Owner", "Reporter",
-      "Created", "Due date", "Resolved", "Likelihood", "Impact", "Risk score", "Next step",
-      "Severity", "Decision made", "Rationale", "Linked items", "Labels", "Comments"];
+      "Created", "Due date", "Resolved", "Likelihood", "Impact", "Risk score", "Mitigation plan",
+      "Next step", "Severity", "Decision made", "Rationale", "Linked items", "Labels", "Comments"];
     var rows = [headers];
     var exported = store.items.filter(function (it) { return it.type !== "Task"; });
     exported.forEach(function (it) {
@@ -971,7 +1050,7 @@
       rows.push([
         it.id, it.type, it.title, it.description || "", it.status, it.priority, it.owner, it.reporter,
         it.createdDate || "", it.dueDate || "", it.resolvedDate || "", it.likelihood || "", it.impact || "",
-        rs == null ? "" : rs, it.nextStep || "", it.severity || "",
+        rs == null ? "" : rs, it.mitigationPlan || "", it.nextStep || "", it.severity || "",
         it.decisionMade || "", it.rationale || "", (it.links || []).join(" "), (it.tags || []).join(" "), comments
       ]);
     });
@@ -1138,6 +1217,10 @@
 
   document.getElementById("createBtn").addEventListener("click", openCreate);
   document.getElementById("settingsBtn").addEventListener("click", openSettings);
+  document.getElementById("hdrBackup").addEventListener("click", exportJSON);
+  document.getElementById("hdrRestore").addEventListener("click", function () {
+    document.getElementById("restoreInput").click();
+  });
   document.getElementById("restoreInput").addEventListener("change", function (e) {
     if (e.target.files && e.target.files[0]) importJSON(e.target.files[0]);
     e.target.value = "";

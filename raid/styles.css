@@ -102,6 +102,9 @@ input, select, textarea { font-family: inherit; font-size: 14px; color: var(--te
 .btn.primary:hover { background: var(--accent-hover); }
 .btn.subtle { border-color: transparent; background: transparent; color: var(--text-sub); }
 .btn.subtle:hover { background: var(--surface-alt); }
+.btn.icon { padding: 7px 9px; color: var(--text-sub); }
+.btn.icon:hover { color: var(--text); }
+.btn.icon svg { display: block; }
 
 .content { padding: 20px 24px 60px; flex: 1; }
 
