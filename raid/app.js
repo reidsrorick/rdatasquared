@@ -2,17 +2,21 @@
   "use strict";
 
   // ---------- Constants ----------
-  var TYPES = ["Risk", "Action", "Issue", "Decision"];   // RAID types
+  var TYPES = ["Risk", "Action", "Issue", "Decision"];
   var ALL_TYPES = ["Risk", "Action", "Issue", "Decision", "Task"];
   var STATUSES = ["Open", "In Progress", "Blocked", "Resolved", "Closed"];
   var PRIORITIES = ["Low", "Medium", "High", "Critical"];
   var LMH = ["Low", "Medium", "High"];
   var SEVERITIES = ["Low", "Medium", "High", "Critical"];
   var RECUR = ["None", "Daily", "Weekdays", "Weekly", "Bi-weekly", "Monthly"];
-  var UNASSIGNED = "• Unassigned";       // sentinel — Owner filter
-  var NO_WORKSTREAM = "• No workstream";  // sentinel — Workstream filter
+  var UNASSIGNED = "• Unassigned";
+  var NO_WORKSTREAM = "• No workstream";
   var DEFAULT_WORKSTREAMS = ["Payments", "Data migration", "Customer portal", "Platform", "Compliance"];
-  var TEAM = ["Alex Chen", "Priya Patel", "Sam Rivera", "Jordan Lee", "Morgan Blake", "Taylor Kim", "Dana Okafor"];
+  var DUE_OPTS = [
+    ["overdue", "Past due"], ["today", "Due today"], ["tomorrow", "Due tomorrow"],
+    ["week", "Due this week"], ["next7", "Due in next 7 days"], ["none", "No due date"]
+  ];
+  var DUE_LABELS = {}; DUE_OPTS.forEach(function (o) { DUE_LABELS[o[0]] = o[1]; });
   var CURRENT_USER = "Reid";
   var STORAGE_KEY = "raidlog.v1";
   var PREFS_KEY = "raidlog.prefs";
@@ -82,6 +86,14 @@
     var extra = os.length > 3 ? '<span class="avatar unassigned" title="' + esc(os.slice(3).join(", ")) + '">+' + (os.length - 3) + "</span>" : "";
     return '<span class="avatar-stack" title="' + esc(os.join(", ")) + '">' + shown + extra + "</span>";
   }
+  function bestMatch(typed, opts) {
+    var t = (typed || "").trim().toLowerCase();
+    if (!t) return null;
+    var pref = opts.filter(function (o) { return o.toLowerCase().indexOf(t) === 0; });
+    if (pref.length) return pref[0];
+    var inc = opts.filter(function (o) { return o.toLowerCase().indexOf(t) !== -1; });
+    return inc.length ? inc[0] : null;
+  }
   var LMH_VAL = { Low: 1, Medium: 2, High: 3 };
   function riskScore(item) {
     if (item.type !== "Risk") return null;
@@ -103,30 +115,33 @@
   }
 
   // ---------- State / persistence ----------
+  function emptyFilters() {
+    return { search: "", type: [], status: [], priority: [], owner: [], workstream: [], tag: [], due: "", dueOn: "" };
+  }
   var store = {
     items: [],
     counter: 1,
     settings: { workstreams: DEFAULT_WORKSTREAMS.slice() },
     ui: {
-      scope: "raid",          // raid | tasks
-      view: "board",          // board | list | matrix
+      scope: "raid",
+      view: "board",
       typeView: null,
       showDash: true,
-      filters: { search: "", type: "", status: "", priority: "", owner: "", tag: "", workstream: "" },
+      filters: emptyFilters(),
       sort: { key: "id", dir: "asc" },
       selectedId: null
     }
   };
-  function emptyFilters() { return { search: "", type: "", status: "", priority: "", owner: "", tag: "", workstream: "" }; }
 
   function persist() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: store.items, counter: store.counter })); }
-    catch (e) { /* sandboxed — in-memory only */ }
+    catch (e) {}
   }
   function migrateItem(it) {
     it.owners = Array.isArray(it.owners) ? it.owners : (it.owner ? [it.owner] : []);
     if ("owner" in it) delete it.owner;
-    if (typeof it.workstream !== "string") it.workstream = "";
+    it.workstreams = Array.isArray(it.workstreams) ? it.workstreams : (it.workstream ? [it.workstream] : []);
+    if ("workstream" in it) delete it.workstream;
     if (it.recurrence === "Every 2 weeks") it.recurrence = "Bi-weekly";
     it.activity = Array.isArray(it.activity) ? it.activity : [];
     it.tags = Array.isArray(it.tags) ? it.tags : [];
@@ -144,12 +159,30 @@
   }
 
   function persistPrefs() {
-    try { localStorage.setItem(PREFS_KEY, JSON.stringify({ showDash: store.ui.showDash })); } catch (e) {}
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({
+        showDash: store.ui.showDash,
+        scope: store.ui.scope, view: store.ui.view, typeView: store.ui.typeView,
+        filters: store.ui.filters, sort: store.ui.sort
+      }));
+    } catch (e) {}
   }
   function loadPrefs() {
     try {
       var p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
       if (typeof p.showDash === "boolean") store.ui.showDash = p.showDash;
+      if (p.scope === "raid" || p.scope === "tasks") store.ui.scope = p.scope;
+      if (["board", "list", "matrix"].indexOf(p.view) !== -1) store.ui.view = p.view;
+      if (typeof p.typeView === "string" || p.typeView === null) store.ui.typeView = p.typeView;
+      if (p.sort && p.sort.key) store.ui.sort = p.sort;
+      var f = emptyFilters(), pf = p.filters || {};
+      ["type", "status", "priority", "owner", "workstream", "tag"].forEach(function (k) {
+        f[k] = Array.isArray(pf[k]) ? pf[k] : (pf[k] ? [pf[k]] : []);
+      });
+      f.search = pf.search || ""; f.due = pf.due || ""; f.dueOn = pf.dueOn || "";
+      store.ui.filters = f;
+      // matrix only exists in raid scope
+      if (store.ui.scope === "tasks" && store.ui.view === "matrix") store.ui.view = "board";
     } catch (e) {}
   }
   function persistSettings() {
@@ -164,7 +197,7 @@
 
   function nextId() { return "RAID-" + (store.counter++); }
 
-  var ACTIVITY_MAX = 200;   // per item; comments + creation always kept, oldest auto-changes dropped past this
+  var ACTIVITY_MAX = 200;
   function trimActivity(item) {
     if (!item.activity || item.activity.length <= ACTIVITY_MAX) return;
     var over = item.activity.length - ACTIVITY_MAX;
@@ -187,7 +220,7 @@
       var base = {
         id: nextId(), type: o.type, title: o.title, description: o.description || "",
         status: o.status || "Open", priority: o.priority || "Medium",
-        workstream: o.workstream || "",
+        workstreams: o.workstreams || (o.workstream ? [o.workstream] : []),
         owners: o.owners || (o.owner ? [o.owner] : []),
         reporter: o.reporter || CURRENT_USER,
         createdDate: o.createdDate || todayISO(-14), dueDate: o.dueDate || "",
@@ -247,7 +280,7 @@
       mk({
         type: "Risk", title: "Insufficient QA capacity for the compressed release window",
         description: "With one QA engineer on leave in the release week, regression coverage for the payments flow may be incomplete.",
-        status: "Open", priority: "Medium", workstream: "Payments", owner: "Jordan Lee", reporter: "Priya Patel",
+        status: "Open", priority: "Medium", workstreams: ["Payments", "Compliance"], owner: "Jordan Lee", reporter: "Priya Patel",
         createdDate: todayISO(-11), dueDate: todayISO(9), likelihood: "Medium", impact: "High",
         mitigationPlan: "Cross-train two engineers on the payments regression suite this sprint. Automate the top 10 checkout paths so manual effort in the release week drops. Line up a contract QA resource on standby.",
         links: ["RAID-1"], tags: ["qa", "capacity"]
@@ -299,37 +332,53 @@
 
   // ---------- Scope / filtering / sorting ----------
   function isTasksScope() { return store.ui.scope === "tasks"; }
-
   function baseItems() {
     return store.items.filter(function (it) {
       return isTasksScope() ? it.type === "Task" : it.type !== "Task";
     });
   }
-
   function activeFilters() {
     var f = Object.assign({}, store.ui.filters);
-    if (store.ui.typeView && !isTasksScope()) f.type = store.ui.typeView;
+    if (store.ui.typeView && !isTasksScope()) f.type = [store.ui.typeView];
     return f;
+  }
+  function dueMatches(it, due, dueOn) {
+    if (dueOn && it.dueDate !== dueOn) return false;
+    if (!due) return true;
+    var d = it.dueDate;
+    if (due === "none") return !d;
+    if (!d) return false;
+    var t = todayISO();
+    if (due === "overdue") return d < t && it.status !== "Resolved" && it.status !== "Closed";
+    if (due === "today") return d === t;
+    if (due === "tomorrow") return d === todayISO(1);
+    if (due === "next7") return d >= t && d <= todayISO(7);
+    if (due === "week") {
+      var now = new Date(t + "T00:00:00");
+      var end = todayISO((7 - now.getDay()) % 7);
+      return d >= t && d <= end;
+    }
+    return true;
   }
   function filteredItems() {
     var f = activeFilters();
     var q = f.search.trim().toLowerCase();
     return baseItems().filter(function (it) {
-      if (f.type && it.type !== f.type) return false;
-      if (f.status && it.status !== f.status) return false;
-      if (f.priority && it.priority !== f.priority) return false;
-      if (f.owner) {
+      if (f.type.length && f.type.indexOf(it.type) === -1) return false;
+      if (f.status.length && f.status.indexOf(it.status) === -1) return false;
+      if (f.priority.length && f.priority.indexOf(it.priority) === -1) return false;
+      if (f.owner.length) {
         var os = it.owners || [];
-        if (f.owner === UNASSIGNED) { if (os.length) return false; }
-        else if (os.indexOf(f.owner) === -1) return false;
+        if (!f.owner.some(function (o) { return o === UNASSIGNED ? !os.length : os.indexOf(o) !== -1; })) return false;
       }
-      if (f.workstream) {
-        if (f.workstream === NO_WORKSTREAM) { if (it.workstream) return false; }
-        else if (it.workstream !== f.workstream) return false;
+      if (f.workstream.length) {
+        var ws = it.workstreams || [];
+        if (!f.workstream.some(function (w) { return w === NO_WORKSTREAM ? !ws.length : ws.indexOf(w) !== -1; })) return false;
       }
-      if (f.tag && (it.tags || []).indexOf(f.tag) === -1) return false;
+      if (f.tag.length && !f.tag.some(function (t) { return (it.tags || []).indexOf(t) !== -1; })) return false;
+      if (!dueMatches(it, f.due, f.dueOn)) return false;
       if (q) {
-        var hay = (it.id + " " + it.title + " " + it.description + " " + (it.workstream || "") + " " +
+        var hay = (it.id + " " + it.title + " " + it.description + " " + (it.workstreams || []).join(" ") + " " +
           (it.owners || []).join(" ") + " " + (it.nextStep || "") + " " + (it.mitigationPlan || "") + " " +
           (it.decisionMade || "") + " " + (it.rationale || "") + " " + (it.tags || []).join(" ")).toLowerCase();
         if (hay.indexOf(q) === -1) return false;
@@ -350,6 +399,7 @@
         case "status": av = stOrder[a.status]; bv = stOrder[b.status]; break;
         case "dueDate": av = a.dueDate || "9999"; bv = b.dueDate || "9999"; break;
         case "owner": av = (a.owners || []).join(", ").toLowerCase(); bv = (b.owners || []).join(", ").toLowerCase(); break;
+        case "workstream": av = (a.workstreams || []).join(", ").toLowerCase(); bv = (b.workstreams || []).join(", ").toLowerCase(); break;
         default: av = (a[s.key] || "").toString().toLowerCase(); bv = (b[s.key] || "").toString().toLowerCase();
       }
       if (av < bv) return -1 * dir;
@@ -372,7 +422,7 @@
   function workstreamList() {
     var out = (store.settings.workstreams || []).slice();
     var seen = {}; out.forEach(function (w) { seen[w] = 1; });
-    store.items.forEach(function (i) { if (i.workstream && !seen[i.workstream]) { seen[i.workstream] = 1; out.push(i.workstream); } });
+    store.items.forEach(function (i) { (i.workstreams || []).forEach(function (w) { if (w && !seen[w]) { seen[w] = 1; out.push(w); } }); });
     return out;
   }
 
@@ -400,6 +450,7 @@
     else renderBoard();
 
     if (ui.selectedId) renderDetailModal(ui.selectedId);
+    persistPrefs();
   }
 
   function renderNav() {
@@ -425,7 +476,6 @@
     return '<div class="dash-card"><div class="label">' + label + '</div><div class="value">' + value +
       '</div><div class="sub">' + (sub || "") + "</div></div>";
   }
-
   function renderDash() {
     if (isTasksScope()) { renderTaskDash(); return; }
     var d = document.getElementById("dash");
@@ -436,7 +486,6 @@
     var byPrio = {}; PRIORITIES.forEach(function (p) { byPrio[p] = items.filter(function (i) { return i.priority === p; }).length; });
     var maxP = Math.max(1, Math.max.apply(null, PRIORITIES.map(function (p) { return byPrio[p]; })));
     var prioColors = { Low: "#5e6c84", Medium: "#ff991f", High: "#ff7452", Critical: "#de350b" };
-
     d.innerHTML =
       dcard("Total items", items.length, open + " open · " + (items.length - open) + " done") +
       '<div class="dash-card"><div class="label">By type</div>' +
@@ -449,12 +498,10 @@
         '</div><div class="sub">past due date, not resolved</div></div>' +
       '<div class="dash-card"><div class="label">By priority</div>' +
         '<div class="mini-bars">' + PRIORITIES.map(function (p) {
-          return '<div class="bar" title="' + p + ": " + byPrio[p] + '" style="height:' + (100 * byPrio[p] / maxP) +
-            '%;background:' + prioColors[p] + '"></div>';
+          return '<div class="bar" title="' + p + ": " + byPrio[p] + '" style="height:' + (100 * byPrio[p] / maxP) + '%;background:' + prioColors[p] + '"></div>';
         }).join("") + "</div>" +
         '<div class="sub">' + byPrio.Critical + " critical · " + byPrio.High + " high</div></div>";
   }
-
   function renderTaskDash() {
     var d = document.getElementById("dash");
     var items = baseItems();
@@ -472,47 +519,62 @@
       dcard("High / Critical", byPrio.High + byPrio.Critical, "need attention");
   }
 
-  function selectHtml(id, label, opts, val) {
-    return '<select id="' + id + '"><option value="">' + label + ": Any</option>" +
-      opts.map(function (o) { return '<option ' + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
-      "</select>";
+  // ----- Filter bar (multi-select) -----
+  function fmulti(key, label, opts, selected) {
+    var n = selected.length;
+    return '<div class="fmulti" data-fmulti-label="' + esc(label) + '">' +
+      '<button type="button" class="fmulti-btn' + (n ? " on" : "") + '" data-fmulti-toggle="' + key + '">' + esc(label) + (n ? " (" + n + ")" : "") + " ▾</button>" +
+      '<div class="fmulti-menu hidden">' +
+        (opts.length ? opts.map(function (o) {
+          return '<label><input type="checkbox" data-fkey="' + key + '" data-fval="' + esc(o) + '"' + (selected.indexOf(o) !== -1 ? " checked" : "") + "> " + esc(o) + "</label>";
+        }).join("") : '<div class="hint" style="padding:6px 8px">Nothing to filter</div>') +
+      "</div></div>";
   }
-
   function renderFilters() {
     var f = store.ui.filters;
     var tasks = isTasksScope();
     var wrap = document.getElementById("filters");
+    var ownerOpts = (baseItems().some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners());
+    var wsOpts = (baseItems().some(function (i) { return !(i.workstreams || []).length; }) ? [NO_WORKSTREAM] : []).concat(workstreamList());
     wrap.innerHTML =
-      '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search title, description, owners, workstream, tags…" value="' + esc(f.search) + '"></div>' +
-      (store.ui.typeView || tasks ? "" : selectHtml("fType", "Type", TYPES, f.type)) +
-      selectHtml("fStatus", "Status", STATUSES, f.status) +
-      selectHtml("fPriority", "Priority", PRIORITIES, f.priority) +
-      selectHtml("fOwner", "Owner",
-        (baseItems().some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners()), f.owner) +
-      selectHtml("fWorkstream", "Workstream",
-        (baseItems().some(function (i) { return !i.workstream; }) ? [NO_WORKSTREAM] : []).concat(workstreamList()), f.workstream) +
-      selectHtml("fTag", "Label", uniqueTags(), f.tag) +
-      activeChips();
-
-    function activeChips() {
-      var chips = [];
-      var af = store.ui.filters;
-      var lbls = { type: "Type", status: "Status", priority: "Priority", owner: "Owner", workstream: "Workstream", tag: "Label" };
-      Object.keys(af).forEach(function (k) {
-        if (!af[k] || k === "search") return;
-        if (tasks && k === "type") return;
-        chips.push('<span class="chip">' + lbls[k] + ": " + esc(af[k]) + '<button data-clear="' + k + '">×</button></span>');
+      '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search…" value="' + esc(f.search) + '"></div>' +
+      (store.ui.typeView || tasks ? "" : fmulti("type", "Type", TYPES, f.type)) +
+      fmulti("status", "Status", STATUSES, f.status) +
+      fmulti("priority", "Priority", PRIORITIES, f.priority) +
+      fmulti("owner", "Owner", ownerOpts, f.owner) +
+      fmulti("workstream", "Workstream", wsOpts, f.workstream) +
+      fmulti("tag", "Label", uniqueTags(), f.tag) +
+      '<select id="fDue" title="Due date"><option value="">Due: Any</option>' +
+        DUE_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + (f.due === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") +
+      "</select>" +
+      '<input type="date" id="fDueOn" title="Due on this exact date" value="' + esc(f.dueOn) + '">' +
+      '<span id="filterChips"></span>';
+    renderChips();
+  }
+  function renderChips() {
+    var c = document.getElementById("filterChips");
+    if (!c) return;
+    var f = store.ui.filters;
+    var lbls = { type: "Type", status: "Status", priority: "Priority", owner: "Owner", workstream: "Workstream", tag: "Label" };
+    var chips = [];
+    Object.keys(lbls).forEach(function (k) {
+      if (isTasksScope() && k === "type") return;
+      (f[k] || []).forEach(function (v) {
+        chips.push('<span class="chip">' + lbls[k] + ": " + esc(v) + '<button data-chip-remove data-ck="' + k + '" data-cv="' + esc(v) + '">×</button></span>');
       });
-      if (af.search) chips.push('<span class="chip">"' + esc(af.search) + '"<button data-clear="search">×</button></span>');
-      if (chips.length > 1) chips.push('<button class="btn subtle" id="clearAll">Clear all</button>');
-      return chips.join("");
-    }
+    });
+    if (f.search) chips.push('<span class="chip">"' + esc(f.search) + '"<button data-chip-remove data-ck="search">×</button></span>');
+    if (f.due) chips.push('<span class="chip">' + DUE_LABELS[f.due] + '<button data-chip-remove data-ck="due">×</button></span>');
+    if (f.dueOn) chips.push('<span class="chip">Due ' + fmtDate(f.dueOn) + '<button data-chip-remove data-ck="dueOn">×</button></span>');
+    if (chips.length > 1) chips.push('<button class="btn subtle" id="clearAll">Clear all</button>');
+    c.innerHTML = chips.join("");
   }
 
   function cardHtml(it) {
     var over = isOverdue(it);
     var score = riskScore(it);
-    var hasChips = it.workstream || (it.tags && it.tags.length);
+    var wss = it.workstreams || [];
+    var hasChips = wss.length || (it.tags && it.tags.length);
     return '<div class="card" draggable="true" data-id="' + it.id + '" data-type="' + it.type + '">' +
       '<div class="labels">' +
         '<span class="badge ' + it.type + '">' + it.type + "</span>" +
@@ -523,7 +585,7 @@
       "</div>" +
       '<div class="title">' + esc(it.title) + "</div>" +
       (hasChips ? '<div class="labels">' +
-        (it.workstream ? '<span class="ws-tag">' + esc(it.workstream) + "</span>" : "") +
+        wss.map(function (w) { return '<span class="ws-tag">' + esc(w) + "</span>"; }).join("") +
         (it.tags || []).slice(0, 4).map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join("") +
         "</div>" : "") +
       '<div class="meta">' +
@@ -548,7 +610,7 @@
       );
       var body = col.querySelector(".col-body");
       inCol.forEach(function (it) { body.appendChild(el(cardHtml(it))); });
-      if (!inCol.length) body.appendChild(el('<div style="color:var(--text-faint);font-size:12px;text-align:center;padding:12px">No items</div>'));
+      if (!inCol.length) body.appendChild(el('<div class="col-empty" style="color:var(--text-faint);font-size:12px;text-align:center;padding:12px">Drop here</div>'));
       board.appendChild(col);
     });
     viewEl.innerHTML = "";
@@ -563,7 +625,7 @@
       case "type": return '<td><span class="badge ' + it.type + '">' + it.type + "</span></td>";
       case "title": return '<td class="title-cell">' + esc(it.title) +
         (it.tags && it.tags.length ? " " + it.tags.map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join(" ") : "") + "</td>";
-      case "workstream": return "<td>" + (it.workstream ? esc(it.workstream) : '<span style="color:var(--text-faint)">—</span>') + "</td>";
+      case "workstream": return "<td>" + ((it.workstreams || []).length ? esc((it.workstreams || []).join(", ")) : '<span style="color:var(--text-faint)">—</span>') + "</td>";
       case "status": return '<td><span class="pill" data-st="' + esc(it.status) + '">' + it.status + "</span></td>";
       case "priority": return '<td><span class="flag" data-p="' + it.priority + '">' + it.priority + "</span></td>";
       case "owner": return (it.owners || []).length
@@ -573,7 +635,6 @@
     }
     return "<td></td>";
   }
-
   function renderList() {
     var items = sortItems(filteredItems());
     var s = store.ui.sort;
@@ -597,11 +658,7 @@
 
   function renderMatrix() {
     var risks = store.items.filter(function (i) { return i.type === "Risk"; });
-    var band = [
-      ["m-med", "m-high", "m-crit"],
-      ["m-low", "m-med", "m-high"],
-      ["m-low", "m-low", "m-med"]
-    ];
+    var band = [["m-med", "m-high", "m-crit"], ["m-low", "m-med", "m-high"], ["m-low", "m-low", "m-med"]];
     var impacts = ["High", "Medium", "Low"];
     var likelihoods = ["Low", "Medium", "High"];
     var cells = "";
@@ -615,10 +672,8 @@
       }
     }
     cells += '<div class="corner"></div>' + likelihoods.map(function (l) { return '<div class="axis-x">' + l + "</div>"; }).join("");
-
     var counts = { Low: 0, Medium: 0, High: 0, Critical: 0 };
     risks.forEach(function (it) { counts[riskSeverity(riskScore(it)).label]++; });
-
     viewEl.innerHTML =
       '<div class="matrix-wrap">' +
         "<h2 style='font-size:16px'>Risk matrix — likelihood × impact</h2>" +
@@ -626,19 +681,17 @@
         '<div class="matrix">' + cells + "</div>" +
         '<div class="axis-caption">Likelihood →</div>' +
         "<div style='display:flex;gap:14px;margin-top:16px;flex-wrap:wrap'>" +
-          Object.keys(counts).map(function (k) {
-            return '<span class="sev-tag sev-' + k + '">' + k + ": " + counts[k] + "</span>";
-          }).join("") +
+          Object.keys(counts).map(function (k) { return '<span class="sev-tag sev-' + k + '">' + k + ": " + counts[k] + "</span>"; }).join("") +
         "</div>" +
       "</div>";
   }
 
   // ---------- Detail modal ----------
   var modalRoot = document.getElementById("modalRoot");
-
   function closeModal() { modalRoot.innerHTML = ""; store.ui.selectedId = null; }
   function openItem(id) { store.ui.selectedId = id; renderDetailModal(id); }
   function multiSingular(k) { return { owners: "owner", tags: "label" }[k] || k; }
+  function getItem(id) { return store.items.find(function (i) { return i.id === id; }); }
 
   function updateField(id, field, value, label) {
     var it = getItem(id);
@@ -670,7 +723,7 @@
     var copy = {
       id: nextId(), type: "Task", title: done.title,
       description: done.description || "", status: "Open",
-      priority: done.priority, workstream: done.workstream || "",
+      priority: done.priority, workstreams: (done.workstreams || []).slice(),
       owners: (done.owners || []).slice(), reporter: done.reporter,
       createdDate: todayISO(), dueDate: nextDue, resolvedDate: null,
       links: [], tags: (done.tags || []).slice(), recurrence: done.recurrence,
@@ -711,7 +764,6 @@
     renderDetailModal(id);
     renderBoardOrList();
   }
-
   function renderBoardOrList() {
     if (!isTasksScope() && store.ui.view === "matrix") renderMatrix();
     else if (store.ui.view === "list" || store.ui.typeView) renderList();
@@ -719,17 +771,11 @@
     renderDash(); renderNav();
   }
 
-  function getItem(id) { return store.items.find(function (i) { return i.id === id; }); }
-
   function selectField(id, field, label, opts, val, hint) {
     return '<div class="field"><label>' + label + "</label>" +
       '<select data-field="' + field + '" data-id="' + id + '">' +
       opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
       "</select>" + (hint ? '<div class="hint">' + hint + "</div>" : "") + "</div>";
-  }
-  function workstreamOptionsHtml(current) {
-    return '<option value=""' + (!current ? " selected" : "") + ">— None —</option>" +
-      workstreamList().map(function (w) { return "<option " + (w === current ? "selected" : "") + ">" + esc(w) + "</option>"; }).join("");
   }
   function multiFieldHtml(labelText, key, values, listId, placeholder) {
     return '<div class="field"><label>' + labelText + "</label>" +
@@ -739,6 +785,15 @@
       }).join("") +
       '<input type="text" data-multi-add="' + key + '"' + (listId ? ' list="' + listId + '"' : "") +
       ' placeholder="' + esc(placeholder) + '" autocomplete="off"></div></div>';
+  }
+  function wsFieldHtml(current) {
+    var avail = workstreamList().filter(function (w) { return current.indexOf(w) === -1; });
+    return '<div class="field"><label>Workstreams</label><div class="tag-input-row">' +
+      current.map(function (w) { return '<span class="tag-pill">' + esc(w) + '<button data-ws-remove data-val="' + esc(w) + '">×</button></span>'; }).join("") +
+      (avail.length
+        ? '<select data-ws-add><option value="">+ add…</option>' + avail.map(function (w) { return "<option>" + esc(w) + "</option>"; }).join("") + "</select>"
+        : (current.length ? "" : '<span class="hint">Define workstreams in Settings &amp; data.</span>')) +
+      "</div></div>";
   }
 
   function renderDetailModal(id) {
@@ -751,10 +806,7 @@
     var typeSpecific = "";
     if (it.type === "Risk") {
       typeSpecific =
-        '<div class="row2">' +
-          selectField(id, "likelihood", "Likelihood", LMH, it.likelihood) +
-          selectField(id, "impact", "Impact", LMH, it.impact) +
-        "</div>" +
+        '<div class="row2">' + selectField(id, "likelihood", "Likelihood", LMH, it.likelihood) + selectField(id, "impact", "Impact", LMH, it.impact) + "</div>" +
         '<div class="field"><label>Mitigation plan</label><textarea data-field="mitigationPlan" data-id="' + id + '" placeholder="How the risk will be reduced, avoided, or handled if it occurs…">' + esc(it.mitigationPlan || "") + "</textarea></div>";
     } else if (it.type === "Action") {
       typeSpecific = '<div class="field"><label>Next step</label><textarea data-field="nextStep" data-id="' + id + '" placeholder="The immediate next action…">' + esc(it.nextStep || "") + "</textarea></div>";
@@ -812,7 +864,7 @@
             '<div class="field"><label>Title</label><input type="text" data-field="title" data-id="' + id + '" value="' + esc(it.title) + '"></div>' +
             '<div class="field"><label>' + descLabel + '</label><textarea data-field="description" data-id="' + id + '" style="min-height:90px">' + esc(it.description || "") + "</textarea></div>" +
             typeSpecific +
-            multiFieldHtml("Labels", "tags", it.tags, "tagOptions", "Add label + Enter") +
+            multiFieldHtml("Labels", "tags", it.tags, "tagOptions", "Add label + Enter (Tab to accept suggestion)") +
             linksBlock +
             '<div class="activity"><h3>Activity &amp; ' + (isTask ? "notes" : "comments") + '</h3>' +
               '<div class="comment-box">' + avatarEl(CURRENT_USER) +
@@ -828,8 +880,8 @@
               '<div class="hint" style="margin-top:8px">' + it.likelihood + " likelihood × " + it.impact + " impact</div></div>" : "") +
             '<div class="side-box"><h4>Details</h4>' +
               selectField(id, "priority", "Priority", PRIORITIES, it.priority) +
-              multiFieldHtml("Owners", "owners", it.owners, "ownerOptions", "Add owner + Enter") +
-              '<div class="field"><label>Workstream</label><select data-field="workstream" data-id="' + id + '">' + workstreamOptionsHtml(it.workstream) + "</select></div>" +
+              multiFieldHtml("Owners", "owners", it.owners, "ownerOptions", "Add owner + Enter (Tab to accept suggestion)") +
+              wsFieldHtml(it.workstreams || []) +
               '<div class="field"><label>Due date</label><input type="date" data-field="dueDate" data-id="' + id + '" value="' + esc(it.dueDate || "") + '"></div>' +
               (isTask ? '<div class="field" style="margin-bottom:0"><label>Repeat</label><select data-field="recurrence" data-id="' + id + '">' +
                 RECUR.map(function (o) { return "<option " + (o === (it.recurrence || "None") ? "selected" : "") + ">" + o + "</option>"; }).join("") +
@@ -848,7 +900,6 @@
         "</div></div>" +
       "</div></div>"
     );
-
     modalRoot.innerHTML = "";
     modalRoot.appendChild(overlay);
     wireDetailModal(id);
@@ -869,19 +920,26 @@
       });
     });
 
-    // generic multi-value chip fields (owners, labels)
+    function multiSource(key) { return key === "owners" ? uniqueOwners() : key === "tags" ? uniqueTags() : []; }
+    function addMulti(key, v) {
+      var it = getItem(id); it[key] = it[key] || [];
+      if (it[key].indexOf(v) === -1) {
+        it[key].push(v);
+        log(it, "change", "added " + multiSingular(key) + " <b>" + esc(v) + "</b>");
+        persist(); renderDetailModal(id); renderBoardOrList();
+      }
+    }
     overlay.querySelectorAll("[data-multi-add]").forEach(function (inp) {
       inp.addEventListener("keydown", function (e) {
+        var key = inp.getAttribute("data-multi-add");
+        if (e.key === "Tab") {
+          var m = bestMatch(inp.value, multiSource(key));
+          if (m && m.toLowerCase() !== inp.value.trim().toLowerCase()) { e.preventDefault(); addMulti(key, m); }
+          return;
+        }
         if (e.key !== "Enter" || !inp.value.trim()) return;
         e.preventDefault();
-        var key = inp.getAttribute("data-multi-add");
-        var it = getItem(id); it[key] = it[key] || [];
-        var v = inp.value.trim();
-        if (it[key].indexOf(v) === -1) {
-          it[key].push(v);
-          log(it, "change", "added " + multiSingular(key) + " <b>" + esc(v) + "</b>");
-          persist(); renderDetailModal(id); renderBoardOrList();
-        } else { inp.value = ""; }
+        addMulti(key, inp.value.trim());
       });
     });
     overlay.querySelectorAll("[data-multi-remove]").forEach(function (b) {
@@ -894,25 +952,42 @@
       });
     });
 
+    var wsAdd = overlay.querySelector("[data-ws-add]");
+    if (wsAdd) wsAdd.addEventListener("change", function () {
+      if (!wsAdd.value) return;
+      var it = getItem(id); it.workstreams = it.workstreams || [];
+      if (it.workstreams.indexOf(wsAdd.value) === -1) {
+        it.workstreams.push(wsAdd.value);
+        log(it, "change", "added workstream <b>" + esc(wsAdd.value) + "</b>");
+        persist(); renderDetailModal(id); renderBoardOrList();
+      }
+    });
+    overlay.querySelectorAll("[data-ws-remove]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var it = getItem(id), v = b.getAttribute("data-val");
+        it.workstreams = (it.workstreams || []).filter(function (x) { return x !== v; });
+        log(it, "change", "removed workstream <b>" + esc(v) + "</b>");
+        persist(); renderDetailModal(id); renderBoardOrList();
+      });
+    });
+
     var ci = document.getElementById("commentInput");
     document.getElementById("addComment").addEventListener("click", function () { addComment(id, ci.value); ci.value = ""; });
     ci.addEventListener("keydown", function (e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { addComment(id, ci.value); ci.value = ""; }
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.stopPropagation(); addComment(id, ci.value); ci.value = ""; }
     });
 
     var addLink = document.getElementById("addLink");
-    if (addLink) {
-      addLink.addEventListener("click", function () {
-        var sel = document.getElementById("linkSelect");
-        if (!sel.value) return;
-        var it = getItem(id);
-        it.links = it.links || []; it.links.push(sel.value);
-        log(it, "change", "linked <b>" + sel.value + "</b>");
-        var other = getItem(sel.value);
-        if (other) { other.links = other.links || []; if (other.links.indexOf(id) === -1) other.links.push(id); }
-        persist(); renderDetailModal(id); renderBoardOrList();
-      });
-    }
+    if (addLink) addLink.addEventListener("click", function () {
+      var sel = document.getElementById("linkSelect");
+      if (!sel.value) return;
+      var it = getItem(id);
+      it.links = it.links || []; it.links.push(sel.value);
+      log(it, "change", "linked <b>" + sel.value + "</b>");
+      var other = getItem(sel.value);
+      if (other) { other.links = other.links || []; if (other.links.indexOf(id) === -1) other.links.push(id); }
+      persist(); renderDetailModal(id); renderBoardOrList();
+    });
     overlay.querySelectorAll("[data-unlink]").forEach(function (b) {
       b.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -943,27 +1018,21 @@
   // ---------- Create modal ----------
   function openCreate() {
     var chosen = store.ui.typeView || (isTasksScope() ? "Task" : "Risk");
-    var createState = { owners: [], tags: [] };
+    var createState = { owners: [], tags: [], workstreams: [] };
     var overlay = el('<div class="overlay" id="overlay"><div class="modal"><div class="modal-head"><b>Create item</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div><div class="modal-body" id="createBody"></div><div class="modal-foot"><button class="btn" id="cCancel">Cancel</button><button class="btn primary" id="cSave">Create</button></div></div></div>');
     modalRoot.innerHTML = ""; modalRoot.appendChild(overlay);
 
+    var COMMON_FIELDS = ["nTitle", "nDesc", "nPriority", "nStatus", "nDue"];
+    var chipCfg = {
+      nOwnerRow: { key: "owners", list: "ownerOptions", ph: "Add owner + Enter (Tab to accept suggestion)", src: uniqueOwners },
+      nTagRow: { key: "tags", list: "tagOptions", ph: "Add label + Enter (Tab to accept suggestion)", src: uniqueTags }
+    };
     function fieldSelect(fid, label, opts, val) {
       return '<div class="field"><label>' + label + '</label><select id="' + fid + '">' +
         opts.map(function (o) { return "<option " + (o === val ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("") + "</select></div>";
     }
-    var COMMON_FIELDS = ["nTitle", "nDesc", "nPriority", "nStatus", "nWorkstream", "nDue"];
-    var chipCfg = {
-      nOwnerRow: { key: "owners", list: "ownerOptions", ph: "Add owner + Enter" },
-      nTagRow: { key: "tags", list: "tagOptions", ph: "Add label + Enter" }
-    };
-    function snapshotCommon() {
-      var f = {};
-      COMMON_FIELDS.forEach(function (k) { var e = document.getElementById(k); if (e) f[k] = e.value; });
-      return f;
-    }
-    function restoreCommon(f) {
-      Object.keys(f || {}).forEach(function (k) { var e = document.getElementById(k); if (e) e.value = f[k]; });
-    }
+    function snapshotCommon() { var f = {}; COMMON_FIELDS.forEach(function (k) { var e = document.getElementById(k); if (e) f[k] = e.value; }); return f; }
+    function restoreCommon(f) { Object.keys(f || {}).forEach(function (k) { var e = document.getElementById(k); if (e) e.value = f[k]; }); }
     function chipRowInner(rowId) {
       var cfg = chipCfg[rowId];
       return createState[cfg.key].map(function (v) {
@@ -971,11 +1040,25 @@
       }).join("") +
         '<input type="text" id="' + rowId + 'Input" list="' + cfg.list + '" placeholder="' + cfg.ph + '" autocomplete="off">';
     }
+    function refreshChipRow(rowId) {
+      document.getElementById(rowId).innerHTML = chipRowInner(rowId);
+      wireChipRow(rowId);
+      var i = document.getElementById(rowId + "Input"); if (i) i.focus();
+    }
     function wireChipRow(rowId) {
       var cfg = chipCfg[rowId];
       var row = document.getElementById(rowId);
       var inp = document.getElementById(rowId + "Input");
       if (inp) inp.addEventListener("keydown", function (e) {
+        if (e.key === "Tab") {
+          var m = bestMatch(inp.value, cfg.src());
+          if (m && m.toLowerCase() !== inp.value.trim().toLowerCase()) {
+            e.preventDefault();
+            if (createState[cfg.key].indexOf(m) === -1) createState[cfg.key].push(m);
+            refreshChipRow(rowId);
+          }
+          return;
+        }
         if (e.key !== "Enter" || !inp.value.trim()) return;
         e.preventDefault();
         var v = inp.value.trim();
@@ -989,10 +1072,26 @@
         });
       });
     }
-    function refreshChipRow(rowId) {
-      document.getElementById(rowId).innerHTML = chipRowInner(rowId);
-      wireChipRow(rowId);
-      var i = document.getElementById(rowId + "Input"); if (i) i.focus();
+    function wsRowInner() {
+      var avail = workstreamList().filter(function (w) { return createState.workstreams.indexOf(w) === -1; });
+      return createState.workstreams.map(function (w) { return '<span class="tag-pill">' + esc(w) + '<button type="button" data-ws-remove data-val="' + esc(w) + '">×</button></span>'; }).join("") +
+        (avail.length
+          ? '<select id="nWsAdd"><option value="">+ add…</option>' + avail.map(function (w) { return "<option>" + esc(w) + "</option>"; }).join("") + "</select>"
+          : (createState.workstreams.length ? "" : '<span class="hint">Define workstreams in Settings &amp; data.</span>'));
+    }
+    function refreshWs() { document.getElementById("nWsRow").innerHTML = wsRowInner(); wireWs(); }
+    function wireWs() {
+      var add = document.getElementById("nWsAdd");
+      if (add) add.addEventListener("change", function () {
+        if (add.value && createState.workstreams.indexOf(add.value) === -1) createState.workstreams.push(add.value);
+        refreshWs();
+      });
+      document.getElementById("nWsRow").querySelectorAll("[data-ws-remove]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          createState.workstreams = createState.workstreams.filter(function (x) { return x !== b.getAttribute("data-val"); });
+          refreshWs();
+        });
+      });
     }
 
     function body() {
@@ -1009,14 +1108,9 @@
         '<div class="field"><label>Title *</label><input type="text" id="nTitle" placeholder="Short summary"></div>' +
         '<div class="field"><label>' + (isTask ? "Notes" : "Description") + '</label><textarea id="nDesc" placeholder="Longer detail…"></textarea></div>' +
         typeFields(isTask) +
-        '<div class="row2">' +
-          fieldSelect("nPriority", "Priority", PRIORITIES, "Medium") +
-          fieldSelect("nStatus", "Status", STATUSES, "Open") +
-        "</div>" +
-        '<div class="row2">' +
-          '<div class="field"><label>Workstream</label><select id="nWorkstream">' + workstreamOptionsHtml("") + "</select></div>" +
-          '<div class="field"><label>Due date</label><input type="date" id="nDue"></div>' +
-        "</div>" +
+        '<div class="row2">' + fieldSelect("nPriority", "Priority", PRIORITIES, "Medium") + fieldSelect("nStatus", "Status", STATUSES, "Open") + "</div>" +
+        '<div class="field"><label>Due date</label><input type="date" id="nDue"></div>' +
+        '<div class="field"><label>Workstreams</label><div class="tag-input-row" id="nWsRow">' + wsRowInner() + "</div></div>" +
         '<div class="field"><label>Owners</label><div class="tag-input-row" id="nOwnerRow">' + chipRowInner("nOwnerRow") + "</div></div>" +
         '<div class="field"><label>Labels</label><div class="tag-input-row" id="nTagRow">' + chipRowInner("nTagRow") + "</div></div>" +
         (isTask ? '<div class="hint">Tasks stay off the RAID board and out of the Excel export.</div>' : "");
@@ -1031,6 +1125,7 @@
       });
       wireChipRow("nOwnerRow");
       wireChipRow("nTagRow");
+      wireWs();
 
       function typeFields(isTask) {
         if (isTask) return fieldSelect("nRecur", "Repeat", RECUR, "None");
@@ -1061,7 +1156,7 @@
         description: document.getElementById("nDesc").value.trim(),
         status: document.getElementById("nStatus").value,
         priority: document.getElementById("nPriority").value,
-        workstream: document.getElementById("nWorkstream").value,
+        workstreams: createState.workstreams.slice(),
         owners: createState.owners.slice(),
         reporter: CURRENT_USER,
         createdDate: todayISO(),
@@ -1085,7 +1180,6 @@
         if (store.ui.view === "matrix") store.ui.view = "board";
         if (store.ui.typeView && store.ui.typeView !== chosen) store.ui.typeView = null;
       }
-
       persist(); close(); render();
       toast(it.id + " created");
       openItem(it.id);
@@ -1096,11 +1190,7 @@
   // ---------- Excel (.xlsx) export ----------
   var CRC_TABLE = (function () {
     var t = [];
-    for (var n = 0; n < 256; n++) {
-      var c = n;
-      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-      t[n] = c >>> 0;
-    }
+    for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
     return t;
   })();
   function crc32(bytes) {
@@ -1118,20 +1208,17 @@
       var data = f.data;
       var crc = crc32(data);
       var size = data.length;
-      var local = [].concat(u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
-        u32(crc), u32(size), u32(size), u16(name.length), u16(0));
+      var local = [].concat(u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(size), u32(size), u16(name.length), u16(0));
       chunks.push(new Uint8Array(local), name, data);
-      var cd = [].concat(u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
-        u32(crc), u32(size), u32(size), u16(name.length), u16(0), u16(0), u16(0), u16(0),
-        u32(0), u32(offset));
+      var cd = [].concat(u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(size), u32(size),
+        u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset));
       central.push(new Uint8Array(cd), name);
       offset += local.length + name.length + size;
     });
     var cdStart = offset;
     var cdSize = central.reduce(function (a, b) { return a + b.length; }, 0);
     central.forEach(function (c) { chunks.push(c); });
-    chunks.push(new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
-      u16(files.length), u16(files.length), u32(cdSize), u32(cdStart), u16(0))));
+    chunks.push(new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cdSize), u32(cdStart), u16(0))));
     var total = chunks.reduce(function (a, b) { return a + b.length; }, 0);
     var out = new Uint8Array(total), p = 0;
     chunks.forEach(function (c) { out.set(c, p); p += c.length; });
@@ -1153,23 +1240,11 @@
       }).join("");
       return '<row r="' + (ri + 1) + '">' + cells + "</row>";
     }).join("");
-    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
-      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + body + "</sheetData></worksheet>";
-    var contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
-      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-      '<Default Extension="xml" ContentType="application/xml"/>' +
-      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
-      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>';
-    var rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
-    var workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
-      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-      '<sheets><sheet name="' + x(sheetName).slice(0, 31) + '" sheetId="1" r:id="rId1"/></sheets></workbook>';
-    var wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>';
+    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + body + "</sheetData></worksheet>";
+    var contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>';
+    var rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+    var workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + x(sheetName).slice(0, 31) + '" sheetId="1" r:id="rId1"/></sheets></workbook>';
+    var wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>';
     return zipStore([
       { name: "[Content_Types].xml", data: enc.encode(contentTypes) },
       { name: "_rels/.rels", data: enc.encode(rels) },
@@ -1178,9 +1253,8 @@
       { name: "xl/worksheets/sheet1.xml", data: enc.encode(sheet) }
     ]);
   }
-
   function exportXLSX() {
-    var headers = ["ID", "Type", "Title", "Description", "Workstream", "Status", "Priority", "Owners", "Reporter",
+    var headers = ["ID", "Type", "Title", "Description", "Workstreams", "Status", "Priority", "Owners", "Reporter",
       "Created", "Due date", "Resolved", "Likelihood", "Impact", "Risk score", "Mitigation plan",
       "Next step", "Severity", "Decision made", "Rationale", "Linked items", "Labels", "Comments"];
     var rows = [headers];
@@ -1190,7 +1264,7 @@
         .map(function (a) { return a.who + " (" + a.ts.slice(0, 10) + "): " + a.text; }).join(" | ");
       var rs = riskScore(it);
       rows.push([
-        it.id, it.type, it.title, it.description || "", it.workstream || "", it.status, it.priority,
+        it.id, it.type, it.title, it.description || "", (it.workstreams || []).join(", "), it.status, it.priority,
         (it.owners || []).join(", "), it.reporter,
         it.createdDate || "", it.dueDate || "", it.resolvedDate || "", it.likelihood || "", it.impact || "",
         rs == null ? "" : rs, it.mitigationPlan || "", it.nextStep || "", it.severity || "",
@@ -1198,7 +1272,7 @@
       ]);
     });
     var data = makeXlsx("RAID Log", rows);
-    downloadFile("raid-log-" + todayISO() + ".xlsx", data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    downloadFile(todayISO() + " Web_RAID.xlsx", data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     toast("Exported " + exported.length + " items to Excel");
   }
 
@@ -1212,8 +1286,8 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
   function exportJSON() {
-    var payload = { app: "raid-log", version: 2, exportedAt: nowISO(), counter: store.counter, settings: store.settings, items: store.items };
-    downloadFile("raid-log-backup-" + todayISO() + ".json", JSON.stringify(payload, null, 2), "application/json");
+    var payload = { app: "raid-log", version: 3, exportedAt: nowISO(), counter: store.counter, settings: store.settings, items: store.items };
+    downloadFile(todayISO() + " Web_RAID.json", JSON.stringify(payload, null, 2), "application/json");
     toast("Backup downloaded (" + store.items.length + " items)");
   }
   function importJSON(file) {
@@ -1229,10 +1303,7 @@
       items.forEach(migrateItem);
       store.items = items;
       if (data && data.settings && Array.isArray(data.settings.workstreams)) { store.settings = data.settings; persistSettings(); }
-      var maxNum = items.reduce(function (m, it) {
-        var n = parseInt(String(it.id).split("-")[1], 10);
-        return isNaN(n) ? m : Math.max(m, n);
-      }, 0);
+      var maxNum = items.reduce(function (m, it) { var n = parseInt(String(it.id).split("-")[1], 10); return isNaN(n) ? m : Math.max(m, n); }, 0);
       store.counter = (data && data.counter && data.counter > maxNum) ? data.counter : maxNum + 1;
       store.ui.selectedId = null;
       modalRoot.innerHTML = "";
@@ -1241,7 +1312,6 @@
     };
     reader.readAsText(file);
   }
-
   function storageWorks() {
     try { localStorage.setItem("raidlog.probe", "1"); localStorage.removeItem("raidlog.probe"); return true; }
     catch (e) { return false; }
@@ -1256,7 +1326,7 @@
         '<div class="modal-head"><b>Settings &amp; data</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div>' +
         '<div class="modal-body">' +
           '<div class="settings-group"><h4>Workstreams</h4>' +
-            '<div class="hint" style="margin-bottom:8px">The options offered in every item’s Workstream dropdown. Removing one here does not change items already using it.</div>' +
+            '<div class="hint" style="margin-bottom:8px">The options offered in every item’s Workstreams field. Removing one here does not change items already using it.</div>' +
             '<div class="tag-input-row" id="wsRow">' +
               store.settings.workstreams.map(function (w) { return '<span class="tag-pill">' + esc(w) + '<button data-ws-remove="' + esc(w) + '">×</button></span>'; }).join("") +
               '<input type="text" id="wsInput" placeholder="Add workstream + Enter" autocomplete="off"></div>' +
@@ -1327,7 +1397,7 @@
     });
   }
 
-  // ---------- Drag & drop ----------
+  // ---------- Drag & drop (move + reorder) ----------
   function wireBoardDnD() {
     var dragId = null;
     viewEl.querySelectorAll(".card").forEach(function (card) {
@@ -1342,19 +1412,46 @@
     });
     viewEl.querySelectorAll(".col").forEach(function (col) {
       col.addEventListener("dragover", function (e) { e.preventDefault(); col.classList.add("drag-over"); e.dataTransfer.dropEffect = "move"; });
-      col.addEventListener("dragleave", function () { col.classList.remove("drag-over"); });
+      col.addEventListener("dragleave", function (e) { if (e.target === col) col.classList.remove("drag-over"); });
       col.addEventListener("drop", function (e) {
         e.preventDefault();
         col.classList.remove("drag-over");
         var id = dragId || e.dataTransfer.getData("text/plain");
-        var newStatus = col.getAttribute("data-status");
-        var it = getItem(id);
-        if (it && it.status !== newStatus) {
-          updateField(id, "status", newStatus, "status");
-          toast(id + " → " + newStatus);
-        }
+        dropOnBoard(id, col, e.clientY);
       });
     });
+  }
+  function dropOnBoard(id, colEl, clientY) {
+    var it = getItem(id);
+    if (!it) return;
+    var newStatus = colEl.getAttribute("data-status");
+    var cards = [].slice.call(colEl.querySelectorAll(".card"));
+    var refId = null;
+    for (var i = 0; i < cards.length; i++) {
+      var cid = cards[i].getAttribute("data-id");
+      if (cid === id) continue;
+      var box = cards[i].getBoundingClientRect();
+      if (clientY < box.top + box.height / 2) { refId = cid; break; }
+    }
+    var arr = store.items;
+    arr.splice(arr.indexOf(it), 1);
+    var insertAt;
+    if (refId) {
+      insertAt = arr.indexOf(getItem(refId));
+    } else {
+      var lastId = null;
+      for (var j = cards.length - 1; j >= 0; j--) { if (cards[j].getAttribute("data-id") !== id) { lastId = cards[j].getAttribute("data-id"); break; } }
+      insertAt = lastId ? arr.indexOf(getItem(lastId)) + 1 : arr.length;
+    }
+    arr.splice(insertAt, 0, it);
+    var statusChanged = it.status !== newStatus;
+    if (statusChanged) {
+      updateField(id, "status", newStatus, "status");   // logs + persists + renders
+      toast(id + " → " + newStatus);
+    } else {
+      persist();
+      render();
+    }
   }
 
   // ---------- Global events ----------
@@ -1382,21 +1479,59 @@
   });
   document.getElementById("toggleDash").addEventListener("click", function () {
     store.ui.showDash = !store.ui.showDash;
-    persistPrefs();
     render();
   });
 
-  document.getElementById("filters").addEventListener("input", function (e) {
-    if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderBoardOrList(); }
+  var filtersEl = document.getElementById("filters");
+  filtersEl.addEventListener("input", function (e) {
+    if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderChips(); renderBoardOrList(); persistPrefs(); }
   });
-  document.getElementById("filters").addEventListener("change", function (e) {
-    var map = { fType: "type", fStatus: "status", fPriority: "priority", fOwner: "owner", fWorkstream: "workstream", fTag: "tag" };
-    if (map[e.target.id]) { store.ui.filters[map[e.target.id]] = e.target.value; render(); }
+  filtersEl.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.id === "fDue") { store.ui.filters.due = t.value; renderChips(); renderBoardOrList(); persistPrefs(); return; }
+    if (t.id === "fDueOn") { store.ui.filters.dueOn = t.value; renderChips(); renderBoardOrList(); persistPrefs(); return; }
+    var fkey = t.getAttribute && t.getAttribute("data-fkey");
+    if (fkey) {
+      var arr = store.ui.filters[fkey];
+      var val = t.getAttribute("data-fval");
+      var i = arr.indexOf(val);
+      if (t.checked && i === -1) arr.push(val);
+      else if (!t.checked && i !== -1) arr.splice(i, 1);
+      var wrap = t.closest(".fmulti");
+      var btn = wrap.querySelector(".fmulti-btn");
+      btn.classList.toggle("on", arr.length > 0);
+      btn.textContent = wrap.getAttribute("data-fmulti-label") + (arr.length ? " (" + arr.length + ")" : "") + " ▾";
+      renderChips();
+      renderBoardOrList();
+      persistPrefs();
+    }
   });
-  document.getElementById("filters").addEventListener("click", function (e) {
-    var clr = e.target.getAttribute && e.target.getAttribute("data-clear");
-    if (clr) { store.ui.filters[clr] = ""; render(); }
+  filtersEl.addEventListener("click", function (e) {
+    var tog = e.target.closest && e.target.closest("[data-fmulti-toggle]");
+    if (tog) {
+      var menu = tog.parentElement.querySelector(".fmulti-menu");
+      var wasOpen = !menu.classList.contains("hidden");
+      document.querySelectorAll(".fmulti-menu").forEach(function (m) { m.classList.add("hidden"); });
+      if (!wasOpen) menu.classList.remove("hidden");
+      return;
+    }
+    var rm = e.target.closest && e.target.closest("[data-chip-remove]");
+    if (rm) {
+      var ck = rm.getAttribute("data-ck"), cv = rm.getAttribute("data-cv");
+      if (cv != null && Array.isArray(store.ui.filters[ck])) {
+        store.ui.filters[ck] = store.ui.filters[ck].filter(function (x) { return x !== cv; });
+      } else {
+        store.ui.filters[ck] = "";
+      }
+      render();
+      return;
+    }
     if (e.target.id === "clearAll") { store.ui.filters = emptyFilters(); render(); }
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest || !e.target.closest(".fmulti")) {
+      document.querySelectorAll(".fmulti-menu").forEach(function (m) { m.classList.add("hidden"); });
+    }
   });
 
   viewEl.addEventListener("click", function (e) {
@@ -1409,6 +1544,7 @@
       if (s.key === k) s.dir = s.dir === "asc" ? "desc" : "asc";
       else { s.key = k; s.dir = "asc"; }
       renderList();
+      persistPrefs();
       return;
     }
     var marker = e.target.closest && e.target.closest(".marker[data-id]");
@@ -1416,7 +1552,15 @@
   });
 
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && modalRoot.innerHTML) { modalRoot.innerHTML = ""; store.ui.selectedId = null; }
+    if (e.key === "Escape" && modalRoot.innerHTML) { modalRoot.innerHTML = ""; store.ui.selectedId = null; return; }
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      if (e.target && e.target.id === "commentInput") return;
+      var save = document.getElementById("cSave");
+      e.preventDefault();
+      if (save) save.click();
+      else openCreate();
+      return;
+    }
     if (e.key === "c" && !/input|textarea|select/i.test(e.target.tagName || "") && !modalRoot.innerHTML) openCreate();
   });
 

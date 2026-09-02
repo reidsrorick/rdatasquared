@@ -142,6 +142,26 @@ input, select, textarea { font-family: inherit; font-size: 14px; color: var(--te
 }
 .chip button { border: none; background: none; color: inherit; font-weight: 800; cursor: pointer; line-height: 1; }
 .tag-filter-wrap { position: relative; }
+#filterChips { display: contents; }
+
+.fmulti { position: relative; }
+.fmulti-btn {
+  padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); font-weight: 500; font-size: 14px; white-space: nowrap;
+}
+.fmulti-btn.on { border-color: var(--accent); color: var(--accent-hover); background: var(--accent-soft); font-weight: 600; }
+.fmulti-menu {
+  position: absolute; z-index: 60; top: calc(100% + 4px); left: 0;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 6px;
+  box-shadow: var(--shadow-lg); padding: 6px; min-width: 180px; max-height: 280px; overflow-y: auto;
+}
+.fmulti-menu label {
+  display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px;
+  font-weight: 500; cursor: pointer; white-space: nowrap;
+}
+.fmulti-menu label:hover { background: var(--surface-alt); }
+.fmulti-menu input[type=checkbox] { margin: 0; flex-shrink: 0; }
+.filters #fDue, .filters #fDueOn { font-size: 14px; }
 
 /* ---------- Badges / pills ---------- */
 .badge {
