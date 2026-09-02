@@ -337,6 +337,13 @@
       return isTasksScope() ? it.type === "Task" : it.type !== "Task";
     });
   }
+  // The main RAID List view also shows tasks (they still stay off the board, dashboard, and export).
+  function mainListWithTasks() {
+    return store.ui.scope === "raid" && store.ui.view === "list" && !store.ui.typeView;
+  }
+  function poolItems() {
+    return mainListWithTasks() ? store.items.slice() : baseItems();
+  }
   function activeFilters() {
     var f = Object.assign({}, store.ui.filters);
     if (store.ui.typeView && !isTasksScope()) f.type = [store.ui.typeView];
@@ -363,7 +370,7 @@
   function filteredItems() {
     var f = activeFilters();
     var q = f.search.trim().toLowerCase();
-    return baseItems().filter(function (it) {
+    return poolItems().filter(function (it) {
       if (f.type.length && f.type.indexOf(it.type) === -1) return false;
       if (f.status.length && f.status.indexOf(it.status) === -1) return false;
       if (f.priority.length && f.priority.indexOf(it.priority) === -1) return false;
@@ -534,11 +541,13 @@
     var f = store.ui.filters;
     var tasks = isTasksScope();
     var wrap = document.getElementById("filters");
-    var ownerOpts = (baseItems().some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners());
-    var wsOpts = (baseItems().some(function (i) { return !(i.workstreams || []).length; }) ? [NO_WORKSTREAM] : []).concat(workstreamList());
+    var pool = poolItems();
+    var ownerOpts = (pool.some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners());
+    var wsOpts = (pool.some(function (i) { return !(i.workstreams || []).length; }) ? [NO_WORKSTREAM] : []).concat(workstreamList());
+    var typeOpts = mainListWithTasks() ? ALL_TYPES : TYPES;
     wrap.innerHTML =
       '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search…" value="' + esc(f.search) + '"></div>' +
-      (store.ui.typeView || tasks ? "" : fmulti("type", "Type", TYPES, f.type)) +
+      (store.ui.typeView || tasks ? "" : fmulti("type", "Type", typeOpts, f.type)) +
       fmulti("status", "Status", STATUSES, f.status) +
       fmulti("priority", "Priority", PRIORITIES, f.priority) +
       fmulti("owner", "Owner", ownerOpts, f.owner) +
@@ -646,7 +655,9 @@
       viewEl.innerHTML = '<div class="table-wrap"><div class="empty"><div class="big">Nothing here yet</div><div>Try clearing a filter, or use + Create.</div></div></div>';
       return;
     }
+    var taskCount = mainListWithTasks() ? items.filter(function (it) { return it.type === "Task"; }).length : 0;
     viewEl.innerHTML =
+      (taskCount ? '<div class="hint" style="margin-bottom:8px">Showing ' + taskCount + " task" + (taskCount === 1 ? "" : "s") + " alongside RAID items — tasks are not included in the Excel export.</div>" : "") +
       '<div class="table-wrap"><table><thead><tr>' +
         cols.map(function (c) { return '<th data-sort="' + c[0] + '">' + c[1] + " " + arrow(c[0]) + "</th>"; }).join("") +
       "</tr></thead><tbody>" +
