@@ -8,7 +8,8 @@
   var PRIORITIES = ["Low", "Medium", "High", "Critical"];
   var LMH = ["Low", "Medium", "High"];
   var SEVERITIES = ["Low", "Medium", "High", "Critical"];
-  var RECUR = ["None", "Daily", "Weekly", "Every 2 weeks", "Monthly"];
+  var RECUR = ["None", "Daily", "Weekdays", "Weekly", "Bi-weekly", "Monthly"];
+  var UNASSIGNED = "• Unassigned";   // sentinel used only in the Owner filter
   var TEAM = ["Alex Chen", "Priya Patel", "Sam Rivera", "Jordan Lee", "Morgan Blake", "Taylor Kim", "Dana Okafor"];
   var CURRENT_USER = "Reid";
   var STORAGE_KEY = "raidlog.v1";
@@ -34,8 +35,9 @@
   function addInterval(iso, recurrence) {
     var d = iso ? new Date(iso + "T00:00:00") : new Date();
     if (recurrence === "Daily") d.setDate(d.getDate() + 1);
+    else if (recurrence === "Weekdays") { do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6); }
     else if (recurrence === "Weekly") d.setDate(d.getDate() + 7);
-    else if (recurrence === "Every 2 weeks") d.setDate(d.getDate() + 14);
+    else if (recurrence === "Bi-weekly") d.setDate(d.getDate() + 14);
     else if (recurrence === "Monthly") d.setMonth(d.getMonth() + 1);
     else return iso || "";
     return d.toISOString().slice(0, 10);
@@ -116,6 +118,7 @@
       var data = JSON.parse(raw);
       if (!data || !Array.isArray(data.items) || !data.items.length) return false;
       store.items = data.items;
+      store.items.forEach(function (it) { if (it.recurrence === "Every 2 weeks") it.recurrence = "Bi-weekly"; });
       store.counter = data.counter || (data.items.length + 1);
       return true;
     } catch (e) { return false; }
@@ -123,8 +126,29 @@
 
   function nextId() { return "RAID-" + (store.counter++); }
 
+  var PREFS_KEY = "raidlog.prefs";
+  function persistPrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify({ showDash: store.ui.showDash })); } catch (e) {}
+  }
+  function loadPrefs() {
+    try {
+      var p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+      if (typeof p.showDash === "boolean") store.ui.showDash = p.showDash;
+    } catch (e) {}
+  }
+
+  var ACTIVITY_MAX = 200;   // per item; comments + creation are always kept, oldest auto-changes are dropped past this
+  function trimActivity(item) {
+    if (!item.activity || item.activity.length <= ACTIVITY_MAX) return;
+    var over = item.activity.length - ACTIVITY_MAX;
+    for (var i = 0; i < item.activity.length && over > 0;) {
+      if (item.activity[i].kind === "change") { item.activity.splice(i, 1); over--; }
+      else i++;
+    }
+  }
   function log(item, kind, text) {
     item.activity.push({ id: Math.random().toString(36).slice(2), kind: kind, text: text, who: CURRENT_USER, ts: nowISO() });
+    trimActivity(item);
   }
 
   // ---------- Seed data ----------
@@ -264,7 +288,10 @@
       if (f.type && it.type !== f.type) return false;
       if (f.status && it.status !== f.status) return false;
       if (f.priority && it.priority !== f.priority) return false;
-      if (f.owner && it.owner !== f.owner) return false;
+      if (f.owner) {
+        if (f.owner === UNASSIGNED) { if (it.owner) return false; }
+        else if (it.owner !== f.owner) return false;
+      }
       if (f.tag && (it.tags || []).indexOf(f.tag) === -1) return false;
       if (q) {
         var hay = (it.id + " " + it.title + " " + it.description + " " + (it.nextStep || "") + " " +
@@ -401,7 +428,8 @@
       (store.ui.typeView || tasks ? "" : selectHtml("fType", "Type", TYPES, f.type)) +
       selectHtml("fStatus", "Status", STATUSES, f.status) +
       selectHtml("fPriority", "Priority", PRIORITIES, f.priority) +
-      (tasks ? "" : selectHtml("fOwner", "Owner", uniqueOwners(), f.owner)) +
+      (tasks ? "" : selectHtml("fOwner", "Owner",
+        (baseItems().some(function (i) { return !i.owner; }) ? [UNASSIGNED] : []).concat(uniqueOwners()), f.owner)) +
       selectHtml("fTag", "Label", tags, f.tag) +
       activeChips();
 
@@ -456,7 +484,9 @@
         '<span class="flag" data-p="' + it.priority + '" title="' + it.priority + ' priority"></span>' +
         '<span class="spacer"></span>' +
         (it.dueDate ? '<span class="due ' + (over ? "overdue" : "") + '" title="Due ' + fmtDate(it.dueDate) + '">' + fmtDate(it.dueDate) + "</span>" : "") +
-        (it.type === "Task" ? "" : avatarEl(it.owner)) +
+        (it.type === "Task" ? "" : (it.owner
+          ? avatarEl(it.owner)
+          : '<span class="avatar unassigned" title="Unassigned">?</span>')) +
       "</div></div>";
   }
 
@@ -490,7 +520,9 @@
         (it.tags && it.tags.length ? " " + it.tags.map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join(" ") : "") + "</td>";
       case "status": return '<td><span class="pill" data-st="' + esc(it.status) + '">' + it.status + "</span></td>";
       case "priority": return '<td><span class="flag" data-p="' + it.priority + '">' + it.priority + "</span></td>";
-      case "owner": return '<td><span style="display:flex;align-items:center;gap:6px">' + avatarEl(it.owner) + esc(it.owner) + "</span></td>";
+      case "owner": return it.owner
+        ? '<td><span style="display:flex;align-items:center;gap:6px">' + avatarEl(it.owner) + esc(it.owner) + "</span></td>"
+        : '<td><span style="color:var(--text-faint)">Unassigned</span></td>';
       case "dueDate": return '<td style="' + (over ? "color:var(--issue);font-weight:600" : "") + '">' + fmtDate(it.dueDate) + (over ? " ⚠" : "") + "</td>";
     }
     return "<td></td>";
@@ -696,7 +728,7 @@
       return '<span class="tag-pill">' + esc(t) + '<button data-untag="' + esc(t) + '">×</button></span>';
     }).join("");
 
-    var activity = it.activity.slice().sort(function (a, b) { return a.ts < b.ts ? -1 : 1; });
+    var activity = it.activity.slice().sort(function (a, b) { return a.ts > b.ts ? -1 : 1; });
     var actHtml = activity.map(function (a) {
       return '<div class="act ' + a.kind + '">' + avatarEl(a.who) +
         '<div class="body"><div><span class="who">' + esc(a.who) + '</span><span class="when">' + fmtDateTime(a.ts) + "</span></div>" +
@@ -742,7 +774,7 @@
             '<div class="side-box"><h4>Details</h4>' +
               sideSelect(id, "priority", "Priority", PRIORITIES, it.priority) +
               (isTask ? "" : '<div class="field" style="margin-bottom:8px"><label>Owner</label>' +
-                '<input type="text" list="ownerOptions" data-field="owner" data-id="' + id + '" value="' + esc(it.owner || "") + '" placeholder="Assignee — type a name" autocomplete="off"></div>') +
+                '<input type="text" list="ownerOptions" data-field="owner" data-id="' + id + '" value="' + esc(it.owner || "") + '" placeholder="Unassigned — type a name" autocomplete="off"></div>') +
               '<div class="field" style="margin:8px 0 0"><label>Due date</label><input type="date" data-field="dueDate" data-id="' + id + '" value="' + esc(it.dueDate || "") + '"></div>' +
               (isTask ? '<div class="field" style="margin:8px 0 0"><label>Repeat</label><select data-field="recurrence" data-id="' + id + '">' +
                 RECUR.map(function (o) { return "<option " + (o === (it.recurrence || "None") ? "selected" : "") + ">" + o + "</option>"; }).join("") +
@@ -884,7 +916,7 @@
           fieldSelect("nStatus", "Status", STATUSES, "Open") +
         "</div>" +
         '<div class="row2">' +
-          (isTask ? "" : '<div class="field"><label>Owner</label><input type="text" id="nOwner" list="ownerOptions" value="' + esc(TEAM[0]) + '" placeholder="Assignee — type a name" autocomplete="off"></div>') +
+          (isTask ? "" : '<div class="field"><label>Owner</label><input type="text" id="nOwner" list="ownerOptions" value="" placeholder="Unassigned — type a name" autocomplete="off"></div>') +
           '<div class="field"><label>Due date</label><input type="date" id="nDue"></div>' +
         "</div>" +
         '<div class="field"><label>Labels (comma-separated)</label><input type="text" id="nTags" placeholder="e.g. release, payments"></div>' +
@@ -924,7 +956,7 @@
         description: document.getElementById("nDesc").value.trim(),
         status: document.getElementById("nStatus").value,
         priority: document.getElementById("nPriority").value,
-        owner: isTask ? CURRENT_USER : (ownerInput && ownerInput.value.trim() ? ownerInput.value.trim() : TEAM[0]),
+        owner: isTask ? CURRENT_USER : (ownerInput ? ownerInput.value.trim() : ""),
         reporter: CURRENT_USER,
         createdDate: todayISO(),
         dueDate: document.getElementById("nDue").value || "",
@@ -1090,6 +1122,7 @@
         it.activity = Array.isArray(it.activity) ? it.activity : [];
         it.tags = Array.isArray(it.tags) ? it.tags : [];
         it.links = Array.isArray(it.links) ? it.links : [];
+        if (it.recurrence === "Every 2 weeks") it.recurrence = "Bi-weekly";
       });
       store.items = items;
       var maxNum = items.reduce(function (m, it) {
@@ -1226,7 +1259,9 @@
     e.target.value = "";
   });
   document.getElementById("toggleDash").addEventListener("click", function () {
-    store.ui.showDash = !store.ui.showDash; render();
+    store.ui.showDash = !store.ui.showDash;
+    persistPrefs();
+    render();
   });
 
   document.getElementById("filters").addEventListener("input", function (e) {
@@ -1268,5 +1303,6 @@
 
   // ---------- Boot ----------
   if (!tryLoad()) seed();
+  loadPrefs();
   render();
 })();
