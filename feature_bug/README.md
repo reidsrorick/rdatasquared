@@ -44,14 +44,14 @@ own, and clearing browser data will erase it.
 How Export behaves depends on the browser:
 
 - **Chrome / Edge / other Chromium on desktop** — the first Export opens a save
-  dialog. Pick a file (e.g. `app-tracker-backup.json` in your cloud-synced
-  folder). The app remembers that file, and **every later Export overwrites it in
-  place** — no `app-tracker-backup (1).json` pile-up. The button tooltip shows
+  dialog. Pick a file (e.g. `YYYY-MM-DD App-Bug_Tracker_Backup.json` in your
+  cloud-synced folder). The app remembers that file, and **every later Export
+  overwrites it in place** — no `… (1).json` pile-up. The button tooltip shows
   which file it will overwrite. Use **Export as…** to point it at a different
   file, or after moving/renaming the old one.
 - **Firefox / Safari / mobile** — Export downloads a dated file
-  (`app-tracker-backup-YYYY-MM-DD.json`). Browsers on these platforms give web
-  pages **no way to overwrite** an existing download — they always append
+  (`YYYY-MM-DD App-Bug_Tracker_Backup.json`). Browsers on these platforms give
+  web pages **no way to overwrite** an existing download — they always append
   `(1)`, `(2)`, … There is no flag to change that; it's the browser's download
   manager, not the app. Either let the dated copies accumulate, or delete/replace
   the old one yourself.
@@ -103,13 +103,22 @@ an **app's detail page** — has the same control bar:
 - Filter by **type**, **status**, **priority**, **app** (the app filter is hidden
   on an app's own page, since it's already scoped), and free-text **search** over
   title + details.
+- The type / status / priority / app filters are **multi-select** dropdowns. Each
+  opens with a **Select all** box checked and every option ticked (nothing is
+  filtered out). Untick an option to exclude it; the Select-all box goes to a
+  dash to show a partial selection. Unticking Select-all clears the whole group,
+  which — like everything ticked — means "don't filter on this".
 - **Sort:** open first (default), priority high→low, recently updated, newest,
   oldest, or title A→Z.
 - **Clear** resets everything.
 
+The **Apps** page has the same style of bar: a multi-select **status** filter,
+**search** over name / description / notes, and sorts for status, name, most open
+items, recently updated, or newest.
+
 The current filters and sort are written to the URL, so a filtered view is
 bookmarkable and survives a reload or the browser back button (e.g.
-`#/app/<id>?type=bug&sort=priority`).
+`#/app/<id>?type=bug` or `#/items?type=feature,bug&priority=high`).
 
 ## Selecting &amp; copying items
 

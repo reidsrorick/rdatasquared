@@ -125,7 +125,7 @@
     closeModal();
     setActiveNav(page, r.query);
 
-    if (page === "apps") renderApps();
+    if (page === "apps") renderApps(r.query);
     else if (page === "app" && r.parts[1]) renderAppDetail(r.parts[1], r.query);
     else if (page === "items") renderItems(r.query);
     else renderDashboard();
@@ -225,19 +225,83 @@
     '</div>';
   }
 
-  function renderApps() {
+  function renderApps(query) {
+    query = query || {};
+    var f = { status: csv(query.status), q: query.q || "", sort: query.sort || "status" };
+
     view.innerHTML =
       '<div class="page-head"><h1>Apps</h1>' +
         '<button class="btn btn-primary" data-action="new-app">+ New app</button>' +
       '</div>' +
       (state.apps.length
-        ? '<div class="grid">' + state.apps.slice().sort(byStatusThenName).map(appCard).join("") + '</div>'
+        ? '<div class="filters">' +
+            multiFilter("status", "statuses", APP_STATUSES.map(function (s) { return { value: s, label: labelize(s) }; }), f.status) +
+            '<input type="search" id="filter-q" placeholder="Search apps…" value="' + esc(f.q) + '" />' +
+            sortSelect(APP_SORTS, f.sort) +
+            '<button class="btn btn-small" id="filter-clear">Clear</button>' +
+          '</div>' +
+          '<div id="appResults"></div>'
         : emptyBox("No apps yet. Track the apps you are building or want to build.", "new-app", "Add your first app"));
+
+    if (!state.apps.length) return;
+
+    var rerender = function () {
+      var d = readFilterDom();
+      var cur = { status: d.status, q: d.q, sort: d.sort };
+      var target = filtersToHash("#/apps", { type: [], status: cur.status, priority: [], app: [], q: cur.q, sort: cur.sort }, "status");
+      if (location.hash !== target) history.replaceState(null, "", target);
+      $("#appResults").innerHTML = appListSection(filterSortApps(cur));
+    };
+    wireFilterControls(rerender, "#/apps");
+    rerender();
   }
 
   function byStatusThenName(a, b) {
     var d = APP_STATUSES.indexOf(a.status) - APP_STATUSES.indexOf(b.status);
     return d !== 0 ? d : a.name.localeCompare(b.name);
+  }
+
+  function filterSortApps(f) {
+    var q = f.q.toLowerCase();
+    var list = state.apps.filter(function (a) {
+      if (f.status.length && f.status.indexOf(a.status) === -1) return false;
+      if (q && ((a.name || "") + " " + (a.blurb || "") + " " + (a.notes || "")).toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    var cmp;
+    if (f.sort === "name") cmp = function (a, b) { return a.name.localeCompare(b.name); };
+    else if (f.sort === "open") cmp = function (a, b) { return openCountFor(b.id) - openCountFor(a.id) || a.name.localeCompare(b.name); };
+    else if (f.sort === "updated") cmp = function (a, b) { return (b.updatedAt || "").localeCompare(a.updatedAt || ""); };
+    else if (f.sort === "created") cmp = function (a, b) { return (b.createdAt || "").localeCompare(a.createdAt || ""); };
+    else cmp = byStatusThenName;
+    return list.slice().sort(cmp);
+  }
+
+  function appListSection(list) {
+    if (!list.length) return emptyBox("No apps match these filters.", null);
+    return '<div class="app-list">' + list.map(appListRow).join("") + '</div>';
+  }
+
+  function appListRow(a) {
+    var open = openCountFor(a.id);
+    var total = state.items.filter(function (i) { return i.appId === a.id; }).length;
+    return '<div class="app-row">' +
+      '<div class="app-row-main">' +
+        '<a class="app-row-name" href="#/app/' + a.id + '">' + esc(a.name) + '</a>' +
+        '<div class="app-row-badges">' +
+          '<span class="badge st-' + a.status + '">' + labelize(a.status) + '</span>' +
+          (open ? '<span class="badge">' + open + ' open</span>' : '') +
+          '<span class="muted" style="font-size:12px">' + (total ? total + ' item' + (total === 1 ? '' : 's') : 'no items') + '</span>' +
+        '</div>' +
+        (a.blurb ? '<p class="app-row-blurb muted">' + esc(a.blurb) + '</p>' : '') +
+      '</div>' +
+      '<div class="app-row-actions">' +
+        '<a class="btn btn-small" href="#/app/' + a.id + '">Open</a>' +
+        (a.url ? '<a class="btn btn-small" href="' + esc(a.url) + '" target="_blank" rel="noopener">Visit</a>' : '') +
+        (a.repo ? '<a class="btn btn-small" href="' + esc(a.repo) + '" target="_blank" rel="noopener">Repo</a>' : '') +
+        '<button class="btn btn-small" data-action="edit-app" data-id="' + a.id + '">Edit</button>' +
+      '</div>' +
+    '</div>';
   }
 
   /* ---------- Shared item filtering + sorting ---------- */
@@ -250,56 +314,118 @@
     { value: "title", label: "Sort: title (A→Z)" },
     { value: "status", label: "Sort: status" }
   ];
-  var FILTER_KEYS = ["type", "status", "priority", "app", "q", "sort"];
+  var APP_SORTS = [
+    { value: "status", label: "Sort: status" },
+    { value: "name", label: "Sort: name (A→Z)" },
+    { value: "open", label: "Sort: most open items" },
+    { value: "updated", label: "Sort: recently updated" },
+    { value: "created", label: "Sort: newest" }
+  ];
+
+  /* The multi-value filters (type / status / priority / app). `sort` and the
+     free-text `q` are handled separately. Each of these is stored as a list of
+     the checked values; an empty list means "not filtering on this" — which is
+     also what you get with every box checked, per the "select all" behaviour. */
+  var MULTI_KEYS = ["type", "status", "priority", "app"];
+  var NO_APP = "__none__";
+
+  function csv(v) { return v ? String(v).split(",").filter(Boolean) : []; }
 
   function filterState(query) {
     return {
-      type: query.type || "",
-      status: query.status || "",
-      priority: query.priority || "",
-      app: query.app || "",
+      type: csv(query.type),
+      status: csv(query.status),
+      priority: csv(query.priority),
+      app: csv(query.app),
       q: query.q || "",
       sort: query.sort || "smart"
     };
   }
 
+  // options: [{ value, label }]. `selected` = [] means every box checked.
+  function multiFilter(key, noun, options, selected) {
+    var all = !selected.length;
+    var checked = all ? options.map(function (o) { return o.value; }) : selected;
+    var summary = multiSummary(noun, options, checked);
+    return '<div class="ms" data-filter="' + key + '" data-noun="' + esc(noun) + '">' +
+      '<button type="button" class="ms-toggle" aria-haspopup="true" aria-expanded="false">' + esc(summary) + '</button>' +
+      '<div class="ms-panel" hidden>' +
+        '<label class="ms-all"><input type="checkbox" class="ms-selall"' + (all ? " checked" : "") + ' /> Select all</label>' +
+        '<div class="ms-opts">' +
+          options.map(function (o) {
+            var on = all || selected.indexOf(o.value) !== -1;
+            return '<label><input type="checkbox" class="ms-opt" value="' + esc(o.value) + '"' +
+              (on ? " checked" : "") + ' /> ' + esc(o.label) + '</label>';
+          }).join("") +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function multiSummary(noun, options, checked) {
+    if (!checked.length || checked.length === options.length) return "All " + noun;
+    if (checked.length === 1) {
+      for (var i = 0; i < options.length; i++) if (options[i].value === checked[0]) return options[i].label;
+    }
+    return checked.length + " " + noun;
+  }
+
+  function appOptionList() {
+    return [{ value: NO_APP, label: "— No app —" }].concat(
+      state.apps.slice().sort(function (a, b) { return a.name.localeCompare(b.name); })
+        .map(function (a) { return { value: a.id, label: a.name }; })
+    );
+  }
+
   function filterControls(f, opts) {
     opts = opts || {};
     return '<div class="filters">' +
-      selectFilter("type", "Any type", ITEM_TYPES, f.type, TYPE_LABEL) +
-      selectFilter("status", "Any status", ITEM_STATUSES, f.status) +
-      selectFilter("priority", "Any priority", PRIORITIES, f.priority) +
-      (opts.lockApp ? "" : appFilter(f.app)) +
+      multiFilter("type", "types", ITEM_TYPES.map(function (t) { return { value: t, label: TYPE_LABEL[t] }; }), f.type) +
+      multiFilter("status", "statuses", ITEM_STATUSES.map(function (s) { return { value: s, label: labelize(s) }; }), f.status) +
+      multiFilter("priority", "priorities", PRIORITIES.map(function (p) { return { value: p, label: labelize(p) }; }), f.priority) +
+      (opts.lockApp ? "" : multiFilter("app", "apps", appOptionList(), f.app)) +
       '<input type="search" id="filter-q" placeholder="Search text…" value="' + esc(f.q) + '" />' +
-      '<select id="filter-sort">' +
-        SORTS.map(function (s) {
-          return '<option value="' + s.value + '"' + (f.sort === s.value ? " selected" : "") + '>' + esc(s.label) + '</option>';
-        }).join("") +
-      '</select>' +
+      sortSelect(SORTS, f.sort) +
       '<button class="btn btn-small" id="filter-clear">Clear</button>' +
     '</div>';
   }
 
+  function sortSelect(sorts, current) {
+    return '<select id="filter-sort">' +
+      sorts.map(function (s) {
+        return '<option value="' + s.value + '"' + (current === s.value ? " selected" : "") + '>' + esc(s.label) + '</option>';
+      }).join("") +
+    '</select>';
+  }
+
+  // Read the checkbox groups back out of the DOM. All-checked or none-checked
+  // both collapse to [] (no filtering).
+  function readMulti(key) {
+    var box = $('.ms[data-filter="' + key + '"]');
+    if (!box) return [];
+    var opts = $$(".ms-opt", box);
+    var on = opts.filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+    return (on.length === 0 || on.length === opts.length) ? [] : on;
+  }
+
   function readFilterDom() {
-    var val = function (sel) { var el = $(sel); return el ? el.value : ""; };
     return {
-      type: val("#filter-type"),
-      status: val("#filter-status"),
-      priority: val("#filter-priority"),
-      app: val("#filter-app"),
+      type: readMulti("type"),
+      status: readMulti("status"),
+      priority: readMulti("priority"),
+      app: readMulti("app"),
       q: ($("#filter-q") ? $("#filter-q").value.trim() : ""),
-      sort: val("#filter-sort") || "smart"
+      sort: ($("#filter-sort") ? $("#filter-sort").value : "") || "smart"
     };
   }
 
-  function filtersToHash(base, f) {
+  function filtersToHash(base, f, defaultSort) {
     var parts = [];
-    FILTER_KEYS.forEach(function (k) {
-      var v = f[k];
-      if (!v) return;
-      if (k === "sort" && v === "smart") return;
-      parts.push(k + "=" + encodeURIComponent(v));
+    MULTI_KEYS.forEach(function (k) {
+      if (f[k] && f[k].length) parts.push(k + "=" + encodeURIComponent(f[k].join(",")));
     });
+    if (f.q) parts.push("q=" + encodeURIComponent(f.q));
+    if (f.sort && f.sort !== (defaultSort || "smart")) parts.push("sort=" + encodeURIComponent(f.sort));
     return base + (parts.length ? "?" + parts.join("&") : "");
   }
 
@@ -328,14 +454,15 @@
     return list.slice().sort(cmp);
   }
 
+  function matchesMulti(list, value) { return !list.length || list.indexOf(value) !== -1; }
+
   function filterAndSort(items, f) {
     var q = f.q.toLowerCase();
     var list = items.filter(function (i) {
-      if (f.type && i.type !== f.type) return false;
-      if (f.status && i.status !== f.status) return false;
-      if (f.priority && i.priority !== f.priority) return false;
-      if (f.app === "none") { if (i.appId) return false; }
-      else if (f.app && i.appId !== f.app) return false;
+      if (!matchesMulti(f.type, i.type)) return false;
+      if (!matchesMulti(f.status, i.status)) return false;
+      if (!matchesMulti(f.priority, i.priority)) return false;
+      if (!matchesMulti(f.app, i.appId || NO_APP)) return false;
       if (q && (i.title + " " + (i.details || "")).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
@@ -346,7 +473,7 @@
   // `ctx` = { base, source(), showApp, lockApp }
   function renderFilteredList(containerSel, ctx) {
     var f = readFilterDom();
-    if (ctx.lockApp) f.app = "";
+    if (ctx.lockApp) f.app = [];
     var target = filtersToHash(ctx.base, f);
     if (location.hash !== target) history.replaceState(null, "", target);
     var list = filterAndSort(ctx.source(), f);
@@ -354,10 +481,59 @@
     syncSelection();
   }
 
+  // Close any open multi-select panels. Bound once (see event wiring).
+  function closeMultiPanels(except) {
+    $$(".ms").forEach(function (ms) {
+      if (ms === except) return;
+      var panel = $(".ms-panel", ms);
+      if (panel) panel.hidden = true;
+      var t = $(".ms-toggle", ms);
+      if (t) t.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  // Reflect the checkbox group state onto its toggle label + "select all" box.
+  function refreshMulti(ms) {
+    var opts = $$(".ms-opt", ms);
+    var checked = opts.filter(function (c) { return c.checked; });
+    var selall = $(".ms-selall", ms);
+    if (selall) {
+      selall.checked = checked.length === opts.length;
+      selall.indeterminate = checked.length > 0 && checked.length < opts.length;
+    }
+    var noun = ms.getAttribute("data-noun") || "";
+    $(".ms-toggle", ms).textContent = multiSummary(
+      noun,
+      opts.map(function (c) { return { value: c.value, label: c.parentNode.textContent.trim() }; }),
+      checked.map(function (c) { return c.value; })
+    );
+  }
+
   function wireFilterControls(onChange, clearHref) {
-    $$(".filters select, #filter-q").forEach(function (el) { el.addEventListener("change", onChange); });
+    $$(".filters select, .filters input[type=search]").forEach(function (el) { el.addEventListener("change", onChange); });
     if ($("#filter-q")) $("#filter-q").addEventListener("input", debounce(onChange, 200));
     if ($("#filter-clear")) $("#filter-clear").addEventListener("click", function () { go(clearHref); });
+
+    $$(".filters .ms").forEach(function (ms) {
+      var toggle = $(".ms-toggle", ms);
+      var panel = $(".ms-panel", ms);
+      toggle.addEventListener("click", function () {
+        var willOpen = panel.hidden;
+        closeMultiPanels(ms);
+        panel.hidden = !willOpen;
+        toggle.setAttribute("aria-expanded", String(willOpen));
+      });
+      var selall = $(".ms-selall", ms);
+      if (selall) selall.addEventListener("change", function () {
+        $$(".ms-opt", ms).forEach(function (c) { c.checked = selall.checked; });
+        refreshMulti(ms);
+        onChange();
+      });
+      $$(".ms-opt", ms).forEach(function (c) {
+        c.addEventListener("change", function () { refreshMulti(ms); onChange(); });
+      });
+      refreshMulti(ms);
+    });
   }
 
   function renderAppDetail(id, query) {
@@ -413,13 +589,14 @@
   /* ---------- Items view ---------- */
   function renderItems(query) {
     var f = filterState(query);
-    var heading = f.type ? TYPE_PLURAL[f.type] || "Items" : "All items";
+    var soleType = f.type.length === 1 ? f.type[0] : "";
+    var heading = soleType ? TYPE_PLURAL[soleType] || "Items" : "All items";
 
     view.innerHTML =
       '<div class="page-head"><h1>' + heading + '</h1>' +
         '<div class="row">' +
-          '<button class="btn btn-primary" data-action="new-item"' + (f.type ? ' data-type="' + f.type + '"' : '') + '>+ New item</button>' +
-          '<button class="btn" data-action="bulk-item"' + (f.type ? ' data-type="' + f.type + '"' : '') + '>Bulk add</button>' +
+          '<button class="btn btn-primary" data-action="new-item"' + (soleType ? ' data-type="' + soleType + '"' : '') + '>+ New item</button>' +
+          '<button class="btn" data-action="bulk-item"' + (soleType ? ' data-type="' + soleType + '"' : '') + '>Bulk add</button>' +
         '</div>' +
       '</div>' +
       filterControls(f, {}) +
@@ -433,26 +610,6 @@
     };
     wireFilterControls(function () { renderFilteredList("#itemResults", ctx); }, "#/items");
     renderFilteredList("#itemResults", ctx);
-  }
-
-  function selectFilter(name, anyLabel, opts, current, labelMap) {
-    return '<select id="filter-' + name + '">' +
-      '<option value="">' + anyLabel + '</option>' +
-      opts.map(function (o) {
-        var lbl = labelMap && labelMap[o] ? labelMap[o] : labelize(o);
-        return '<option value="' + o + '"' + (o === current ? " selected" : "") + '>' + lbl + '</option>';
-      }).join("") +
-      '</select>';
-  }
-
-  function appFilter(current) {
-    return '<select id="filter-app">' +
-      '<option value="">Any app</option>' +
-      '<option value="none"' + (current === "none" ? " selected" : "") + '>— No app —</option>' +
-      state.apps.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).map(function (a) {
-        return '<option value="' + a.id + '"' + (a.id === current ? " selected" : "") + '>' + esc(a.name) + '</option>';
-      }).join("") +
-      '</select>';
   }
 
   // Renders rows in the order given (callers sort via filterAndSort / sortItems).
@@ -602,6 +759,14 @@
   modalForm.addEventListener("submit", function (e) {
     e.preventDefault();
     if (submitHandler) submitHandler(new FormData(modalForm));
+  });
+  // Ctrl/Cmd+Enter saves from anywhere in the form (incl. textareas).
+  modalForm.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === "Enter" || e.keyCode === 13)) {
+      e.preventDefault();
+      if (typeof modalForm.requestSubmit === "function") modalForm.requestSubmit();
+      else if (submitHandler) submitHandler(new FormData(modalForm));
+    }
   });
   $$("[data-close]", modalRoot).forEach(function (el) {
     el.addEventListener("click", closeModal);
@@ -899,12 +1064,17 @@
     save(false);
   }
 
+  // yyyy-MM-dd App-Bug_Tracker_Backup.json
+  function backupFileName() {
+    return new Date().toISOString().slice(0, 10) + " App-Bug_Tracker_Backup.json";
+  }
+
   function downloadBlob(text) {
     var blob = new Blob([text], { type: "application/json" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "app-tracker-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.download = backupFileName();
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -929,7 +1099,7 @@
 
   function pickBackupFile() {
     return window.showSaveFilePicker({
-      suggestedName: "app-tracker-backup.json",
+      suggestedName: backupFileName(),
       types: [{ description: "JSON backup", accept: { "application/json": [".json"] } }]
     }).then(function (h) {
       backupHandle = h;
@@ -1127,6 +1297,12 @@
   }
 
   /* ---------- Event wiring ---------- */
+  // Click outside an open multi-select dropdown closes it.
+  document.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest(".ms")) return;
+    closeMultiPanels(null);
+  });
+
   document.addEventListener("click", function (e) {
     var el = e.target.closest("[data-action]");
     if (!el) return;

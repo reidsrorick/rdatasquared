@@ -127,6 +127,45 @@ a:hover { text-decoration: underline; }
   padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--text); font-size: 14px;
 }
+
+/* ---------- Multi-select filter dropdown ---------- */
+.ms { position: relative; }
+.ms-toggle {
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600;
+  cursor: pointer; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ms-toggle::after { content: " \25BE"; color: var(--text-dim); }
+.ms-toggle:hover { background: var(--surface-2); }
+.ms-panel {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: var(--shadow); padding: 6px; min-width: 190px;
+  max-width: calc(100vw - 32px); max-height: 280px; overflow: auto;
+}
+.ms-panel label {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.ms-panel label:hover { background: var(--surface-2); }
+.ms-panel input[type="checkbox"] { width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+.ms-all { border-bottom: 1px solid var(--border); margin-bottom: 4px; font-weight: 700 !important; }
+
+/* ---------- App list ---------- */
+.app-list { display: flex; flex-direction: column; gap: 8px; }
+.app-row {
+  display: flex; gap: 12px; align-items: flex-start; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.app-row-main { min-width: 0; flex: 1; }
+.app-row-name { font-weight: 700; font-size: 15px; }
+.app-row-badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
+.app-row-blurb {
+  margin: 6px 0 0; font-size: 13px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.app-row-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .select-all-row {
   display: flex; align-items: center; gap: 8px;
   padding: 4px 4px 10px; font-size: 13px; color: var(--text-dim); font-weight: 600;
@@ -162,7 +201,12 @@ a:hover { text-decoration: underline; }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--border); }
 .modal-head h2 { margin: 0; font-size: 18px; }
 .modal-body { padding: 16px; display: grid; gap: 12px; }
-.modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px; border-top: 1px solid var(--border); }
+.modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px; border-top: 1px solid var(--border); }
+.modal-hint { margin-right: auto; font-size: 12px; color: var(--text-dim); }
+.modal-hint kbd {
+  font: inherit; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 5px;
+}
 .field { display: grid; gap: 5px; }
 .field label { font-size: 13px; font-weight: 600; color: var(--text-dim); }
 .field input, .field select, .field textarea {
@@ -203,4 +247,6 @@ a:hover { text-decoration: underline; }
   .mainnav.open { display: flex; }
   .topbar-actions { order: 2; margin-left: auto; }
   .field-row { grid-template-columns: 1fr; }
+  .app-row { flex-direction: column; }
+  .app-row-actions { justify-content: flex-start; }
 }
