@@ -31,12 +31,15 @@ function BackupNudge() {
 }
 
 function App() {
-  const [path, setPath] = useState(currentPath());
+  // Track the full hash (path + query) so the view re-renders when only the
+  // query string changes — e.g. #/transactions → #/transactions?view=review.
+  const [, setRoute] = useState(location.hash);
   const [, bump] = useState(0);
 
   useEffect(() => store.subscribe(() => bump((n) => n + 1)), []);
-  useEffect(() => onChange(() => setPath(currentPath())), []);
+  useEffect(() => onChange(() => setRoute(location.hash)), []);
 
+  const path = currentPath();
   const View = views[path] || views.dashboard;
 
   return html`
