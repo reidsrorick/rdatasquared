@@ -1,1 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>App &amp; Bug Tracker</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <button id="menuToggle" class="icon-btn" aria-label="Toggle navigation">&#9776;</button>
+    <span class="brand-name">App&nbsp;Tracker</span>
+  </div>
+  <nav class="mainnav" id="mainnav">
+    <a href="#/dashboard" data-route="dashboard">Dashboard</a>
+    <a href="#/apps" data-route="apps">Apps</a>
+    <a href="#/items?type=feature" data-route="items">Features</a>
+    <a href="#/items?type=enhancement" data-route="items">Enhancements</a>
+    <a href="#/items?type=bug" data-route="items">Bugs</a>
+  </nav>
+  <div class="topbar-actions">
+    <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">&#9681;</button>
+    <button id="exportBtn" class="btn btn-ghost" title="Save a JSON backup">Export</button>
+    <button id="exportAsBtn" class="btn btn-ghost" title="Choose a new backup file / location" hidden>Export as…</button>
+    <button id="importBtn" class="btn btn-ghost" title="Restore from a JSON backup">Import</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden />
+  </div>
+</header>
 
+<div id="backupNudge" class="backup-nudge" hidden>
+  <span></span>
+  <button class="btn btn-small" id="nudgeExport">Export now</button>
+  <button class="icon-btn" id="nudgeDismiss" aria-label="Dismiss">&times;</button>
+</div>
+
+<main id="view" class="view"></main>
+
+<!-- Modal host -->
+<div id="modalRoot" class="modal-root" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="modalTitle">Edit</h2>
+      <button class="icon-btn" data-close aria-label="Close">&times;</button>
+    </div>
+    <form id="modalForm" class="modal-body"></form>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" form="modalForm" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="selectionBar" class="selection-bar" hidden>
+  <span id="selCount">0 selected</span>
+  <div class="spacer"></div>
+  <button class="btn btn-small" id="selCopy">Copy</button>
+  <button class="btn btn-small" id="selCopyJson">Copy as JSON</button>
+  <button class="btn btn-small btn-ghost" id="selClear">Clear</button>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
