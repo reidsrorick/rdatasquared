@@ -119,13 +119,44 @@
     return { path: path, parts: path.split("/").filter(Boolean), query: query };
   }
 
+  // localStorage key holding the last filter/sort query string for a view.
+  function viewStoreKey(page) {
+    if (page === "items") return "flt:items";
+    if (page === "apps") return "flt:apps";
+    if (page === "app") return "flt:appitems";
+    return null;
+  }
+  function saveViewState(page, hash) {
+    var key = viewStoreKey(page);
+    if (!key) return;
+    var qi = hash.indexOf("?");
+    try { localStorage.setItem(key, qi === -1 ? "" : hash.slice(qi + 1)); } catch (e) {}
+  }
+  function clearViewState(page) {
+    var key = viewStoreKey(page);
+    if (key) { try { localStorage.removeItem(key); } catch (e) {} }
+  }
+
   function router() {
     var r = parseHash();
     var page = r.parts[0] || "dashboard";
     closeModal();
+
+    // Reopen a view where you left it: if there's no query but we saved one
+    // last time, restore it into the URL before rendering.
+    var storeKey = viewStoreKey(page);
+    if (storeKey && !Object.keys(r.query).length) {
+      var saved;
+      try { saved = localStorage.getItem(storeKey); } catch (e) { saved = null; }
+      if (saved) {
+        history.replaceState(null, "", "#" + r.path + "?" + saved);
+        r = parseHash();
+      }
+    }
+
     setActiveNav(page, r.query);
 
-    if (page === "apps") renderApps();
+    if (page === "apps") renderApps(r.query);
     else if (page === "app" && r.parts[1]) renderAppDetail(r.parts[1], r.query);
     else if (page === "items") renderItems(r.query);
     else renderDashboard();
@@ -136,14 +167,14 @@
   function setActiveNav(page, query) {
     $$(".mainnav a").forEach(function (a) {
       a.classList.remove("active");
-      var route = a.getAttribute("data-route");
-      if (route === page) {
-        if (page === "items") {
-          var want = (a.getAttribute("href").match(/type=(\w+)/) || [])[1];
-          if (want === query.type) a.classList.add("active");
-        } else {
-          a.classList.add("active");
-        }
+      if (a.getAttribute("data-route") !== page) return;
+      if (page === "items") {
+        var m = a.getAttribute("href").match(/type=([^&]*)/);
+        var want = m ? m[1] : null; // null => the bare "Items" link
+        var cur = query.type == null ? null : query.type;
+        if (want === cur) a.classList.add("active");
+      } else {
+        a.classList.add("active");
       }
     });
   }
@@ -184,7 +215,7 @@
         ITEM_TYPES.map(function (t) { return stat(count(t), "Open " + TYPE_PLURAL[t].toLowerCase()); }).join("") +
       '</div>' +
       '<h2>Apps</h2>' +
-      (apps.length ? '<div class="grid">' + apps.map(appCard).join("") + '</div>'
+      (apps.length ? appTable(sortApps(apps.slice(), "status", "asc"), { sort: "", dir: "asc" }, false)
                    : emptyBox("No apps yet.", "new-app", "Add your first app")) +
       '<h2 style="margin-top:32px">Recent activity</h2>' +
       (recent.length ? '<div>' + recent.map(function (i) { return itemRow(i, true, false); }).join("") + '</div>'
@@ -207,13 +238,77 @@
     }).length;
   }
 
+  function appMetrics(a) {
+    var open = 0, total = 0;
+    state.items.forEach(function (i) {
+      if (i.appId !== a.id) return;
+      total++;
+      if (i.status === "open" || i.status === "in-progress") open++;
+    });
+    return { open: open, total: total };
+  }
+
+  function sortApps(list, key, dir) {
+    var mul = dir === "desc" ? -1 : 1;
+    var keyOf = function (a) {
+      var m = appMetrics(a);
+      if (key === "name") return a.name.toLowerCase();
+      if (key === "open") return m.open;
+      if (key === "total") return m.total;
+      if (key === "updated") return a.updatedAt || "";
+      return APP_STATUSES.indexOf(a.status);
+    };
+    return list.slice().sort(function (a, b) {
+      var ka = keyOf(a), kb = keyOf(b);
+      var c = ka < kb ? -1 : ka > kb ? 1 : 0;
+      return (mul * c) || a.name.localeCompare(b.name);
+    });
+  }
+
+  function appTh(key, label, f, interactive) {
+    if (!interactive) return "<th>" + esc(label) + "</th>";
+    var active = f.sort === key;
+    var arrow = active ? (f.dir === "desc" ? " ▾" : " ▴") : "";
+    return '<th class="app-th' + (active ? " sorted" : "") + '" data-sort="' + key + '">' + esc(label) + arrow + "</th>";
+  }
+
+  function appTable(list, f, interactive) {
+    if (!list.length) return emptyBox("No apps match these filters.", null);
+    return '<div class="table-wrap"><table class="app-table"><thead><tr>' +
+      appTh("name", "App", f, interactive) +
+      appTh("status", "Status", f, interactive) +
+      appTh("open", "Open", f, interactive) +
+      appTh("total", "Items", f, interactive) +
+      appTh("updated", "Updated", f, interactive) +
+      "<th></th>" +
+      "</tr></thead><tbody>" +
+      list.map(appTableRow).join("") +
+      "</tbody></table></div>";
+  }
+
+  function appTableRow(a) {
+    var m = appMetrics(a);
+    return "<tr>" +
+      '<td class="app-name-cell"><a href="#/app/' + a.id + '">' + esc(a.name) + "</a>" +
+        (a.blurb ? '<div class="muted app-blurb">' + esc(a.blurb) + "</div>" : "") + "</td>" +
+      '<td><span class="badge st-' + a.status + '">' + labelize(a.status) + "</span></td>" +
+      '<td class="num">' + (m.open || "—") + "</td>" +
+      '<td class="num">' + (m.total || "—") + "</td>" +
+      '<td class="muted nowrap">' + fmtDate(a.updatedAt) + "</td>" +
+      '<td class="app-actions-cell">' +
+        '<a class="btn btn-small" href="#/app/' + a.id + '">Open</a>' +
+        '<button class="btn btn-small" data-action="edit-app" data-id="' + a.id + '">Edit</button>' +
+      "</td></tr>";
+  }
+
   function appCard(a) {
-    var open = openCountFor(a.id);
+    var m = appMetrics(a);
     return '<div class="card">' +
       '<h3><a href="#/app/' + a.id + '">' + esc(a.name) + '</a></h3>' +
       '<div class="row" style="gap:6px">' +
         '<span class="badge st-' + a.status + '">' + labelize(a.status) + '</span>' +
-        (open ? '<span class="badge">' + open + ' open</span>' : '') +
+        (m.open ? '<span class="badge">' + m.open + ' open</span>' : '') +
+        (m.total ? '<span class="badge">' + m.total + ' total</span>' : '') +
       '</div>' +
       (a.blurb ? '<p class="muted" style="margin:10px 0 0">' + esc(a.blurb) + '</p>' : '') +
       '<div class="card-actions">' +
@@ -225,19 +320,108 @@
     '</div>';
   }
 
-  function renderApps() {
+  function appViewMode() {
+    return localStorage.getItem("apps-view") === "cards" ? "cards" : "table";
+  }
+
+  function appFiltersToHash(f) {
+    var parts = [];
+    if (f.status != null) parts.push("status=" + encodeURIComponent(f.status.join(",")));
+    if (f.q) parts.push("q=" + encodeURIComponent(f.q));
+    if (f.sort && f.sort !== "status") parts.push("sort=" + f.sort);
+    if (f.dir && f.dir !== "asc") parts.push("dir=" + f.dir);
+    return "#/apps" + (parts.length ? "?" + parts.join("&") : "");
+  }
+
+  function readAppFilterDom() {
+    var q = parseHash().query;
+    return {
+      status: readFacet("appstatus"),
+      q: $("#app-q") ? $("#app-q").value.trim() : "",
+      sort: q.sort || "status",
+      dir: q.dir || "asc"
+    };
+  }
+
+  function drawApps(f) {
+    var q = f.q.toLowerCase();
+    var list = state.apps.filter(function (a) {
+      if (f.status != null && f.status.indexOf(a.status) === -1) return false;
+      if (q && (a.name + " " + (a.blurb || "")).toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    list = sortApps(list, f.sort, f.dir);
+
+    var target = appFiltersToHash(f);
+    if (location.hash !== target) history.replaceState(null, "", target);
+    saveViewState("apps", target);
+
+    $("#appResults").innerHTML = appViewMode() === "cards"
+      ? (list.length ? '<div class="grid">' + list.map(appCard).join("") + "</div>"
+                     : emptyBox("No apps match these filters.", null))
+      : appTable(list, f, true);
+  }
+
+  function renderApps(query) {
+    query = query || {};
+
+    if (!state.apps.length) {
+      view.innerHTML =
+        '<div class="page-head"><h1>Apps</h1>' +
+          '<button class="btn btn-primary" data-action="new-app">+ New app</button></div>' +
+        emptyBox("No apps yet. Track the apps you are building or want to build.", "new-app", "Add your first app");
+      return;
+    }
+
+    var f = {
+      status: facetFromQuery(query.status),
+      q: query.q || "",
+      sort: query.sort || "status",
+      dir: query.dir || "asc"
+    };
+    var mode = appViewMode();
+
     view.innerHTML =
       '<div class="page-head"><h1>Apps</h1>' +
         '<button class="btn btn-primary" data-action="new-app">+ New app</button>' +
       '</div>' +
-      (state.apps.length
-        ? '<div class="grid">' + state.apps.slice().sort(byStatusThenName).map(appCard).join("") + '</div>'
-        : emptyBox("No apps yet. Track the apps you are building or want to build.", "new-app", "Add your first app"));
-  }
+      '<div class="filters">' +
+        msComponent("appstatus", f.status) +
+        '<input type="search" id="app-q" placeholder="Search apps…" value="' + esc(f.q) + '" />' +
+        '<button class="btn btn-small" id="app-clear">Clear</button>' +
+        '<span class="filler"></span>' +
+        '<div class="viewtoggle">' +
+          '<button type="button" class="btn btn-small' + (mode === "table" ? " active" : "") + '" data-appview="table">List</button>' +
+          '<button type="button" class="btn btn-small' + (mode === "cards" ? " active" : "") + '" data-appview="cards">Cards</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="appResults"></div>';
 
-  function byStatusThenName(a, b) {
-    var d = APP_STATUSES.indexOf(a.status) - APP_STATUSES.indexOf(b.status);
-    return d !== 0 ? d : a.name.localeCompare(b.name);
+    var redraw = function () { drawApps(readAppFilterDom()); };
+    wireMultiSelects(redraw);
+    $("#app-q").addEventListener("input", debounce(redraw, 200));
+    $("#app-clear").addEventListener("click", function () { clearViewState("apps"); go("#/apps"); });
+    $$("[data-appview]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        localStorage.setItem("apps-view", b.getAttribute("data-appview"));
+        renderApps(parseHash().query);
+      });
+    });
+    $("#appResults").addEventListener("click", function (e) {
+      var th = e.target.closest("th[data-sort]");
+      if (!th) return;
+      var key = th.getAttribute("data-sort");
+      var cur = readAppFilterDom();
+      if (cur.sort === key) {
+        cur.dir = cur.dir === "asc" ? "desc" : "asc";
+      } else {
+        cur.sort = key;
+        cur.dir = (key === "name" || key === "status") ? "asc" : "desc";
+      }
+      drawApps(cur);
+    });
+
+    drawApps(f);
   }
 
   /* ---------- Shared item filtering + sorting ---------- */
@@ -250,26 +434,92 @@
     { value: "title", label: "Sort: title (A→Z)" },
     { value: "status", label: "Sort: status" }
   ];
-  var FILTER_KEYS = ["type", "status", "priority", "app", "q", "sort"];
+  var FACET_KEYS = ["type", "status", "priority", "app"];
+
+  // Each item filter is a multi-select dropdown.
+  //   null            -> no constraint (every option checked; the default)
+  //   [] or ["a", …]  -> constrain to exactly these values ([] matches nothing)
+  // Unchecking "Select all" clears every box, so the list shows nothing.
+  var FACETS = {
+    type: {
+      label: "Type",
+      options: function () { return ITEM_TYPES.map(function (v) { return { value: v, label: TYPE_LABEL[v] }; }); }
+    },
+    status: {
+      label: "Status",
+      options: function () { return ITEM_STATUSES.map(function (v) { return { value: v, label: labelize(v) }; }); }
+    },
+    priority: {
+      label: "Priority",
+      options: function () { return PRIORITIES.map(function (v) { return { value: v, label: labelize(v) }; }); }
+    },
+    app: {
+      label: "App",
+      options: function () {
+        return [{ value: "none", label: "— No app —" }].concat(
+          state.apps.slice().sort(function (a, b) { return a.name.localeCompare(b.name); })
+            .map(function (a) { return { value: a.id, label: a.name }; })
+        );
+      }
+    },
+    // used by the Apps list view, not the item filters (not in FACET_KEYS)
+    appstatus: {
+      label: "Status",
+      options: function () { return APP_STATUSES.map(function (v) { return { value: v, label: labelize(v) }; }); }
+    }
+  };
+
+  function parseList(v) { return v ? String(v).split(",").filter(Boolean) : []; }
+
+  // A query param that is absent => null (no constraint). Present (even "") => an
+  // array of the chosen values, so "?type=" means "nothing checked, show none".
+  function facetFromQuery(v) { return v == null ? null : parseList(v); }
 
   function filterState(query) {
     return {
-      type: query.type || "",
-      status: query.status || "",
-      priority: query.priority || "",
-      app: query.app || "",
+      type: facetFromQuery(query.type),
+      status: facetFromQuery(query.status),
+      priority: facetFromQuery(query.priority),
+      app: facetFromQuery(query.app),
       q: query.q || "",
       sort: query.sort || "smart"
     };
   }
 
+  function msSummary(checkedCount, total) {
+    if (checkedCount >= total) return "All";
+    if (checkedCount === 0) return "None";
+    return checkedCount + " of " + total;
+  }
+
+  // One multi-select dropdown. `sel` null = every option checked (no constraint).
+  function msComponent(key, sel) {
+    var facet = FACETS[key];
+    var opts = facet.options();
+    var on = function (v) { return sel == null || sel.indexOf(v) !== -1; };
+    var checkedCount = opts.filter(function (o) { return on(o.value); }).length;
+    var allOn = checkedCount === opts.length;
+    var constrained = checkedCount < opts.length;
+    return '<div class="ms" data-facet="' + key + '" data-label="' + esc(facet.label) + '">' +
+      '<button type="button" class="btn btn-small ms-toggle' + (constrained ? ' ms-active' : '') + '">' +
+        esc(facet.label) + ': ' + esc(msSummary(checkedCount, opts.length)) + ' <span class="ms-caret">▾</span>' +
+      '</button>' +
+      '<div class="ms-menu" hidden>' +
+        '<label class="ms-row ms-all-row"><input type="checkbox" class="ms-all"' +
+          (allOn ? ' checked' : '') + '> <strong>Select all</strong></label>' +
+        opts.map(function (o) {
+          return '<label class="ms-row"><input type="checkbox" class="ms-opt" value="' + esc(o.value) + '"' +
+            (on(o.value) ? ' checked' : '') + '> ' + esc(o.label) + '</label>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
   function filterControls(f, opts) {
     opts = opts || {};
+    var facets = opts.lockApp ? ["type", "status", "priority"] : FACET_KEYS;
     return '<div class="filters">' +
-      selectFilter("type", "Any type", ITEM_TYPES, f.type, TYPE_LABEL) +
-      selectFilter("status", "Any status", ITEM_STATUSES, f.status) +
-      selectFilter("priority", "Any priority", PRIORITIES, f.priority) +
-      (opts.lockApp ? "" : appFilter(f.app)) +
+      facets.map(function (k) { return msComponent(k, f[k]); }).join("") +
       '<input type="search" id="filter-q" placeholder="Search text…" value="' + esc(f.q) + '" />' +
       '<select id="filter-sort">' +
         SORTS.map(function (s) {
@@ -280,26 +530,34 @@
     '</div>';
   }
 
+  // Read a facet's effective value: null when every option is checked (no
+  // constraint), otherwise the checked values (possibly [], meaning "show none").
+  function readFacet(key) {
+    var boxes = $$('.ms[data-facet="' + key + '"] .ms-opt');
+    if (!boxes.length) return null;
+    var checked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+    if (checked.length >= boxes.length) return null;
+    return checked;
+  }
+
   function readFilterDom() {
-    var val = function (sel) { var el = $(sel); return el ? el.value : ""; };
     return {
-      type: val("#filter-type"),
-      status: val("#filter-status"),
-      priority: val("#filter-priority"),
-      app: val("#filter-app"),
+      type: readFacet("type"),
+      status: readFacet("status"),
+      priority: readFacet("priority"),
+      app: readFacet("app"),
       q: ($("#filter-q") ? $("#filter-q").value.trim() : ""),
-      sort: val("#filter-sort") || "smart"
+      sort: ($("#filter-sort") ? $("#filter-sort").value : "") || "smart"
     };
   }
 
   function filtersToHash(base, f) {
     var parts = [];
-    FILTER_KEYS.forEach(function (k) {
-      var v = f[k];
-      if (!v) return;
-      if (k === "sort" && v === "smart") return;
-      parts.push(k + "=" + encodeURIComponent(v));
+    FACET_KEYS.forEach(function (k) {
+      if (f[k] != null) parts.push(k + "=" + encodeURIComponent(f[k].join(",")));
     });
+    if (f.q) parts.push("q=" + encodeURIComponent(f.q));
+    if (f.sort && f.sort !== "smart") parts.push("sort=" + encodeURIComponent(f.sort));
     return base + (parts.length ? "?" + parts.join("&") : "");
   }
 
@@ -328,14 +586,15 @@
     return list.slice().sort(cmp);
   }
 
+  function inFacet(arr, val) { return arr == null || arr.indexOf(val) !== -1; }
+
   function filterAndSort(items, f) {
     var q = f.q.toLowerCase();
     var list = items.filter(function (i) {
-      if (f.type && i.type !== f.type) return false;
-      if (f.status && i.status !== f.status) return false;
-      if (f.priority && i.priority !== f.priority) return false;
-      if (f.app === "none") { if (i.appId) return false; }
-      else if (f.app && i.appId !== f.app) return false;
+      if (!inFacet(f.type, i.type)) return false;
+      if (!inFacet(f.status, i.status)) return false;
+      if (!inFacet(f.priority, i.priority)) return false;
+      if (!inFacet(f.app, i.appId || "none")) return false;
       if (q && (i.title + " " + (i.details || "")).toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
@@ -343,21 +602,77 @@
   }
 
   // Render a filtered+sorted list into `containerSel` and rewire selection.
-  // `ctx` = { base, source(), showApp, lockApp }
+  // `ctx` = { base, page, source(), showApp, lockApp }
   function renderFilteredList(containerSel, ctx) {
     var f = readFilterDom();
-    if (ctx.lockApp) f.app = "";
+    if (ctx.lockApp) f.app = null;
     var target = filtersToHash(ctx.base, f);
     if (location.hash !== target) history.replaceState(null, "", target);
-    var list = filterAndSort(ctx.source(), f);
-    $(containerSel).innerHTML = itemListSection(list, "No items match these filters.", ctx.showApp);
+    saveViewState(ctx.page, target);
+    var all = ctx.source();
+    var list = filterAndSort(all, f);
+    var emptyMsg = all.length ? "No items match these filters." : "No items yet — use “+ New item” or “Bulk add” above.";
+    $(containerSel).innerHTML = itemListSection(list, emptyMsg, ctx.showApp);
     syncSelection();
   }
 
-  function wireFilterControls(onChange, clearHref) {
-    $$(".filters select, #filter-q").forEach(function (el) { el.addEventListener("change", onChange); });
+  /* ----- multi-select dropdown behaviour (shared by item + app filters) ----- */
+
+  function closeAllMenus(except) {
+    $$(".ms-menu").forEach(function (m) { if (m !== except) m.hidden = true; });
+  }
+
+  // Reflect option checkboxes onto the "Select all" tri-state box + toggle label.
+  function refreshMs(ms) {
+    var all = ms.querySelector(".ms-all");
+    var opts = $$(".ms-opt", ms);
+    var n = opts.filter(function (b) { return b.checked; }).length;
+    all.checked = n === opts.length;
+    all.indeterminate = n > 0 && n < opts.length;
+    var toggle = ms.querySelector(".ms-toggle");
+    toggle.innerHTML = esc(ms.dataset.label) + ": " + esc(msSummary(n, opts.length)) + ' <span class="ms-caret">▾</span>';
+    toggle.classList.toggle("ms-active", n < opts.length);
+  }
+
+  function wireMultiSelects(onChange) {
+    $$(".filters .ms").forEach(function (ms) {
+      var toggle = ms.querySelector(".ms-toggle");
+      var menu = ms.querySelector(".ms-menu");
+      var all = ms.querySelector(".ms-all");
+      var opts = $$(".ms-opt", ms);
+
+      refreshMs(ms); // set initial indeterminate state
+
+      toggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var willOpen = menu.hidden;
+        closeAllMenus();
+        menu.hidden = !willOpen;
+      });
+      menu.addEventListener("click", function (e) { e.stopPropagation(); });
+
+      all.addEventListener("change", function () {
+        opts.forEach(function (b) { b.checked = all.checked; });
+        refreshMs(ms);
+        onChange();
+      });
+      opts.forEach(function (b) {
+        b.addEventListener("change", function () {
+          refreshMs(ms);
+          onChange();
+        });
+      });
+    });
+  }
+
+  function wireFilterControls(onChange, clearHref, page) {
+    wireMultiSelects(onChange);
+    if ($("#filter-sort")) $("#filter-sort").addEventListener("change", onChange);
     if ($("#filter-q")) $("#filter-q").addEventListener("input", debounce(onChange, 200));
-    if ($("#filter-clear")) $("#filter-clear").addEventListener("click", function () { go(clearHref); });
+    if ($("#filter-clear")) $("#filter-clear").addEventListener("click", function () {
+      clearViewState(page);
+      go(clearHref);
+    });
   }
 
   function renderAppDetail(id, query) {
@@ -402,24 +717,27 @@
 
     var ctx = {
       base: "#/app/" + id,
+      page: "app",
       source: function () { return state.items.filter(function (i) { return i.appId === id; }); },
       showApp: false,
       lockApp: true
     };
-    wireFilterControls(function () { renderFilteredList("#itemResults", ctx); }, "#/app/" + id);
+    wireFilterControls(function () { renderFilteredList("#itemResults", ctx); }, "#/app/" + id, "app");
     renderFilteredList("#itemResults", ctx);
   }
 
   /* ---------- Items view ---------- */
   function renderItems(query) {
     var f = filterState(query);
-    var heading = f.type ? TYPE_PLURAL[f.type] || "Items" : "All items";
+    var onlyType = (f.type && f.type.length === 1) ? f.type[0] : null;
+    var heading = onlyType ? (TYPE_PLURAL[onlyType] || "Items") : "All items";
+    var dataType = onlyType ? ' data-type="' + onlyType + '"' : "";
 
     view.innerHTML =
       '<div class="page-head"><h1>' + heading + '</h1>' +
         '<div class="row">' +
-          '<button class="btn btn-primary" data-action="new-item"' + (f.type ? ' data-type="' + f.type + '"' : '') + '>+ New item</button>' +
-          '<button class="btn" data-action="bulk-item"' + (f.type ? ' data-type="' + f.type + '"' : '') + '>Bulk add</button>' +
+          '<button class="btn btn-primary" data-action="new-item"' + dataType + '>+ New item</button>' +
+          '<button class="btn" data-action="bulk-item"' + dataType + '>Bulk add</button>' +
         '</div>' +
       '</div>' +
       filterControls(f, {}) +
@@ -427,32 +745,13 @@
 
     var ctx = {
       base: "#/items",
+      page: "items",
       source: function () { return state.items; },
       showApp: true,
       lockApp: false
     };
-    wireFilterControls(function () { renderFilteredList("#itemResults", ctx); }, "#/items");
+    wireFilterControls(function () { renderFilteredList("#itemResults", ctx); }, "#/items", "items");
     renderFilteredList("#itemResults", ctx);
-  }
-
-  function selectFilter(name, anyLabel, opts, current, labelMap) {
-    return '<select id="filter-' + name + '">' +
-      '<option value="">' + anyLabel + '</option>' +
-      opts.map(function (o) {
-        var lbl = labelMap && labelMap[o] ? labelMap[o] : labelize(o);
-        return '<option value="' + o + '"' + (o === current ? " selected" : "") + '>' + lbl + '</option>';
-      }).join("") +
-      '</select>';
-  }
-
-  function appFilter(current) {
-    return '<select id="filter-app">' +
-      '<option value="">Any app</option>' +
-      '<option value="none"' + (current === "none" ? " selected" : "") + '>— No app —</option>' +
-      state.apps.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).map(function (a) {
-        return '<option value="' + a.id + '"' + (a.id === current ? " selected" : "") + '>' + esc(a.name) + '</option>';
-      }).join("") +
-      '</select>';
   }
 
   // Renders rows in the order given (callers sort via filterAndSort / sortItems).
@@ -580,6 +879,17 @@
     }
   }
 
+  // Bulk-set a field ("status" or "priority") on every selected item.
+  function bulkSetField(field, value) {
+    var items = selectedItemsInOrder();
+    if (!items.length || !value) return;
+    var t = now();
+    items.forEach(function (i) { i[field] = value; i.updatedAt = t; });
+    save();
+    toast("Set " + items.length + " item(s) to " + labelize(value));
+    router();
+  }
+
   /* ---------- Modal / forms ---------- */
   var modalRoot = $("#modalRoot");
   var modalForm = $("#modalForm");
@@ -607,7 +917,14 @@
     el.addEventListener("click", closeModal);
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !modalRoot.hidden) closeModal();
+    if (modalRoot.hidden) return;
+    if (e.key === "Escape") { closeModal(); return; }
+    // Ctrl/Cmd + Enter saves from anywhere in the form (incl. textareas).
+    if ((e.ctrlKey || e.metaKey) && (e.key === "Enter" || e.key === "\n")) {
+      e.preventDefault();
+      if (modalForm.requestSubmit) modalForm.requestSubmit();
+      else modalForm.dispatchEvent(new Event("submit", { cancelable: true }));
+    }
   });
 
   function field(label, name, value, opts) {
@@ -899,12 +1216,17 @@
     save(false);
   }
 
+  // e.g. "2026-09-03 App-Bug_Tracker_Backup"
+  function backupBaseName() {
+    return new Date().toISOString().slice(0, 10) + " App-Bug_Tracker_Backup";
+  }
+
   function downloadBlob(text) {
     var blob = new Blob([text], { type: "application/json" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "app-tracker-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.download = backupBaseName() + ".json";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -929,7 +1251,7 @@
 
   function pickBackupFile() {
     return window.showSaveFilePicker({
-      suggestedName: "app-tracker-backup.json",
+      suggestedName: backupBaseName() + ".json",
       types: [{ description: "JSON backup", accept: { "application/json": [".json"] } }]
     }).then(function (h) {
       backupHandle = h;
@@ -1127,6 +1449,11 @@
   }
 
   /* ---------- Event wiring ---------- */
+  // Close any open multi-select dropdown when clicking elsewhere.
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".ms")) closeAllMenus();
+  });
+
   document.addEventListener("click", function (e) {
     var el = e.target.closest("[data-action]");
     if (!el) return;
@@ -1159,6 +1486,19 @@
       syncSelection();
     }
   });
+
+  (function initBulkFieldSelects() {
+    var st = $("#selStatus");
+    ITEM_STATUSES.forEach(function (s) {
+      st.insertAdjacentHTML("beforeend", '<option value="' + s + '">' + labelize(s) + "</option>");
+    });
+    var pr = $("#selPriority");
+    PRIORITIES.forEach(function (p) {
+      pr.insertAdjacentHTML("beforeend", '<option value="' + p + '">' + labelize(p) + "</option>");
+    });
+    st.addEventListener("change", function () { bulkSetField("status", st.value); st.value = ""; });
+    pr.addEventListener("change", function () { bulkSetField("priority", pr.value); pr.value = ""; });
+  })();
 
   $("#selCopy").addEventListener("click", function () { copySelected("text"); });
   $("#selCopyJson").addEventListener("click", function () { copySelected("json"); });

@@ -31,6 +31,12 @@ Then visit <http://localhost:8000>.
 
 No framework or Jekyll config is required.
 
+## Keyboard
+
+- **Ctrl/⌘ + Enter** — save the open dialog (New/Edit app, New/Edit item, Bulk
+  add), from any field including multi-line boxes.
+- **Esc** — close the open dialog.
+
 ## How data is stored
 
 All data lives in your browser's `localStorage` under the key `app-tracker:v1`.
@@ -44,13 +50,13 @@ own, and clearing browser data will erase it.
 How Export behaves depends on the browser:
 
 - **Chrome / Edge / other Chromium on desktop** — the first Export opens a save
-  dialog. Pick a file (e.g. `app-tracker-backup.json` in your cloud-synced
-  folder). The app remembers that file, and **every later Export overwrites it in
-  place** — no `app-tracker-backup (1).json` pile-up. The button tooltip shows
-  which file it will overwrite. Use **Export as…** to point it at a different
-  file, or after moving/renaming the old one.
+  dialog. Pick a file (suggested name `YYYY-MM-DD App-Bug_Tracker_Backup.json`) in
+  your cloud-synced folder. The app remembers that file, and **every later Export
+  overwrites it in place** — no `… (1).json` pile-up. The Export button's tooltip
+  shows which file it will overwrite. Use **Export as…** to point it at a
+  different file, or after moving/renaming the old one.
 - **Firefox / Safari / mobile** — Export downloads a dated file
-  (`app-tracker-backup-YYYY-MM-DD.json`). Browsers on these platforms give web
+  (`YYYY-MM-DD App-Bug_Tracker_Backup.json`). Browsers on these platforms give web
   pages **no way to overwrite** an existing download — they always append
   `(1)`, `(2)`, … There is no flag to change that; it's the browser's download
   manager, not the app. Either let the dated copies accumulate, or delete/replace
@@ -95,21 +101,42 @@ b: login button does nothing on Safari
 
 Blank lines are ignored.
 
+## The Apps view
+
+`Apps` in the nav is a sortable **list** (there's also a **Cards** toggle, and
+your choice is remembered):
+
+- Columns: **App**, **Status**, **Open** items, total **Items**, **Updated**.
+  Click a column heading to sort; click again to reverse.
+- **Status** filter (multi-select, same style as below) and a **search** box over
+  name + description.
+- The chosen sort / filters / search persist across reloads and are in the URL.
+
 ## Filtering &amp; sorting
 
 Every item list — **All items**, the **Features / Enhancements / Bugs** views, and
-an **app's detail page** — has the same control bar:
+an **app's detail page** — has the same control bar.
 
-- Filter by **type**, **status**, **priority**, **app** (the app filter is hidden
-  on an app's own page, since it's already scoped), and free-text **search** over
-  title + details.
-- **Sort:** open first (default), priority high→low, recently updated, newest,
-  oldest, or title A→Z.
-- **Clear** resets everything.
+**Multi-select filters.** Type, Status, Priority, and App are dropdowns with a
+checkbox per value plus a **Select all** row:
 
-The current filters and sort are written to the URL, so a filtered view is
-bookmarkable and survives a reload or the browser back button (e.g.
-`#/app/<id>?type=bug&sort=priority`).
+- All boxes checked (the default) = no filter on that facet (`Type: All`).
+- Uncheck one value → narrows to the rest; **Select all** shows a dash (–) for a
+  partial selection (`Type: 2 of 3`).
+- Uncheck **Select all** → every box clears → that facet now matches **nothing**
+  (`Type: None`), so the list is empty until you check something.
+- The App filter is hidden on an app's own page (already scoped to that app).
+
+**Search** matches item title + details. **Sort:** open first (default), priority
+high→low, recently updated, newest, oldest, or title A→Z. **Clear** resets
+everything (and forgets the saved state below).
+
+**It stays where you left it.** Each view (Items, Apps, an app's items) remembers
+its filters/sort. Opening the view again — a reload, the **Items**/**Apps** nav
+link, or coming back from another tab — restores them. The state also lives in the
+URL, so a filtered view is still bookmarkable and back-button friendly, e.g.
+`#/items?type=feature,bug&status=open&sort=priority`. The **Features /
+Enhancements / Bugs** nav links are explicit jumps that override the saved type.
 
 ## Selecting &amp; copying items
 
@@ -117,6 +144,8 @@ On any item list (the Features / Enhancements / Bugs views, All items, or an app
 detail page) each row has a checkbox, plus a **Select all** toggle above the
 list. Once one or more items are checked, a bar appears at the bottom:
 
+- **Set status… / Set priority…** — bulk-apply a status or priority to every
+  selected item at once.
 - **Copy** — puts the selected items on the clipboard as readable text
   (`Type: Title`, then an `App | Status | Priority` line, then details).
 - **Copy as JSON** — the raw item records, for pasting into another tool or file.

@@ -127,6 +127,52 @@ a:hover { text-decoration: underline; }
   padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--text); font-size: 14px;
 }
+.filters .filler { flex: 1; }
+
+/* multi-select dropdown */
+.ms { position: relative; display: inline-block; }
+.ms-toggle { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ms-toggle.ms-active { border-color: var(--primary); color: var(--primary); }
+.ms-caret { font-size: 10px; opacity: .7; }
+.ms-menu {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0;
+  min-width: 190px; max-height: 320px; overflow: auto; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: var(--shadow);
+}
+.ms-row {
+  display: flex; align-items: center; gap: 9px; padding: 6px 8px;
+  border-radius: 6px; font-size: 14px; white-space: nowrap; cursor: pointer;
+}
+.ms-row:hover { background: var(--surface-2); }
+.ms-row input { width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+.ms-all-row { border-bottom: 1px solid var(--border); border-radius: 0; margin-bottom: 4px; padding-bottom: 8px; }
+
+/* app list-view toggle */
+.viewtoggle { display: inline-flex; gap: 4px; }
+.viewtoggle .btn.active { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
+
+/* app table */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.app-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.app-table th, .app-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.app-table thead th { background: var(--surface-2); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-dim); }
+.app-table tbody tr:last-child td { border-bottom: none; }
+.app-table th.app-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.app-table th.app-th:hover { color: var(--text); }
+.app-table th.sorted { color: var(--primary); }
+.app-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.app-table td.nowrap { white-space: nowrap; }
+.app-name-cell a { font-weight: 600; }
+.app-blurb { font-size: 12px; margin-top: 2px; max-width: 42ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-actions-cell { white-space: nowrap; text-align: right; }
+.app-actions-cell .btn { margin-left: 6px; }
+
+/* selection bar bulk-edit selects */
+.selection-bar select {
+  padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
+}
 .select-all-row {
   display: flex; align-items: center; gap: 8px;
   padding: 4px 4px 10px; font-size: 13px; color: var(--text-dim); font-weight: 600;

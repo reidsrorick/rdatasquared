@@ -15,6 +15,7 @@
   <nav class="mainnav" id="mainnav">
     <a href="#/dashboard" data-route="dashboard">Dashboard</a>
     <a href="#/apps" data-route="apps">Apps</a>
+    <a href="#/items" data-route="items">Items</a>
     <a href="#/items?type=feature" data-route="items">Features</a>
     <a href="#/items?type=enhancement" data-route="items">Enhancements</a>
     <a href="#/items?type=bug" data-route="items">Bugs</a>
@@ -55,6 +56,12 @@
 <div id="selectionBar" class="selection-bar" hidden>
   <span id="selCount">0 selected</span>
   <div class="spacer"></div>
+  <select id="selStatus" title="Set status of selected items" aria-label="Set status of selected items">
+    <option value="">Set status…</option>
+  </select>
+  <select id="selPriority" title="Set priority of selected items" aria-label="Set priority of selected items">
+    <option value="">Set priority…</option>
+  </select>
   <button class="btn btn-small" id="selCopy">Copy</button>
   <button class="btn btn-small" id="selCopyJson">Copy as JSON</button>
   <button class="btn btn-small btn-ghost" id="selClear">Clear</button>
