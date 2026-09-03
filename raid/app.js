@@ -12,11 +12,9 @@
   var UNASSIGNED = "• Unassigned";
   var NO_WORKSTREAM = "• No workstream";
   var DEFAULT_WORKSTREAMS = ["Payments", "Data migration", "Customer portal", "Platform", "Compliance"];
-  var DUE_OPTS = [
-    ["overdue", "Past due"], ["today", "Due today"], ["tomorrow", "Due tomorrow"],
-    ["week", "Due this week"], ["next7", "Due in next 7 days"], ["none", "No due date"]
-  ];
-  var DUE_LABELS = {}; DUE_OPTS.forEach(function (o) { DUE_LABELS[o[0]] = o[1]; });
+  var DUE_OPTS = ["Past due", "Due today", "Due tomorrow", "Due this week", "Due in next 7 days", "No due date"];
+  var FILTER_NONE = "__NONE__";   // a filter array of exactly [FILTER_NONE] means "nothing selected" → 0 results
+  function isNoneFilter(arr) { return arr && arr.length === 1 && arr[0] === FILTER_NONE; }
   var CURRENT_USER = "Reid";
   var STORAGE_KEY = "raidlog.v1";
   var PREFS_KEY = "raidlog.prefs";
@@ -116,7 +114,7 @@
 
   // ---------- State / persistence ----------
   function emptyFilters() {
-    return { search: "", type: [], status: [], priority: [], owner: [], workstream: [], tag: [], due: "", dueOn: "" };
+    return { search: "", type: [], status: [], priority: [], owner: [], workstream: [], tag: [], due: [], dueOn: "" };
   }
   var store = {
     items: [],
@@ -176,10 +174,10 @@
       if (typeof p.typeView === "string" || p.typeView === null) store.ui.typeView = p.typeView;
       if (p.sort && p.sort.key) store.ui.sort = p.sort;
       var f = emptyFilters(), pf = p.filters || {};
-      ["type", "status", "priority", "owner", "workstream", "tag"].forEach(function (k) {
+      ["type", "status", "priority", "owner", "workstream", "tag", "due"].forEach(function (k) {
         f[k] = Array.isArray(pf[k]) ? pf[k] : (pf[k] ? [pf[k]] : []);
       });
-      f.search = pf.search || ""; f.due = pf.due || ""; f.dueOn = pf.dueOn || "";
+      f.search = pf.search || ""; f.dueOn = pf.dueOn || "";
       store.ui.filters = f;
       // matrix only exists in raid scope
       if (store.ui.scope === "tasks" && store.ui.view === "matrix") store.ui.view = "board";
@@ -337,35 +335,40 @@
       return isTasksScope() ? it.type === "Task" : it.type !== "Task";
     });
   }
-  // The main RAID List view also shows tasks (they still stay off the board, dashboard, and export).
-  function mainListWithTasks() {
-    return store.ui.scope === "raid" && store.ui.view === "list" && !store.ui.typeView;
+  // The main RAID Board and List views also show tasks (still off the dashboard, by-type views, and export).
+  function mainViewWithTasks() {
+    return store.ui.scope === "raid" && !store.ui.typeView &&
+      (store.ui.view === "board" || store.ui.view === "list");
   }
   function poolItems() {
-    return mainListWithTasks() ? store.items.slice() : baseItems();
+    return mainViewWithTasks() ? store.items.slice() : baseItems();
   }
   function activeFilters() {
     var f = Object.assign({}, store.ui.filters);
     if (store.ui.typeView && !isTasksScope()) f.type = [store.ui.typeView];
     return f;
   }
-  function dueMatches(it, due, dueOn) {
-    if (dueOn && it.dueDate !== dueOn) return false;
-    if (!due) return true;
-    var d = it.dueDate;
-    if (due === "none") return !d;
-    if (!d) return false;
-    var t = todayISO();
-    if (due === "overdue") return d < t && it.status !== "Resolved" && it.status !== "Closed";
-    if (due === "today") return d === t;
-    if (due === "tomorrow") return d === todayISO(1);
-    if (due === "next7") return d >= t && d <= todayISO(7);
-    if (due === "week") {
-      var now = new Date(t + "T00:00:00");
-      var end = todayISO((7 - now.getDay()) % 7);
-      return d >= t && d <= end;
+  function weekBounds() {
+    var n = new Date(todayISO() + "T00:00:00");
+    return { start: todayISO(-n.getDay()), end: todayISO(6 - n.getDay()) };  // Sun … Sat of this week
+  }
+  function dueMatchesOne(it, opt) {
+    var d = it.dueDate, t = todayISO();
+    switch (opt) {
+      case "No due date": return !d;
+      case "Past due": return !!d && d < t && it.status !== "Resolved" && it.status !== "Closed";
+      case "Due today": return d === t;
+      case "Due tomorrow": return d === todayISO(1);
+      case "Due in next 7 days": return !!d && d >= t && d <= todayISO(7);
+      case "Due this week": { if (!d) return false; var w = weekBounds(); return d >= w.start && d <= w.end; }
     }
     return true;
+  }
+  function dueMatches(it, dueArr, dueOn) {
+    if (dueOn && it.dueDate !== dueOn) return false;
+    if (!dueArr || !dueArr.length) return true;
+    if (isNoneFilter(dueArr)) return false;
+    return dueArr.some(function (c) { return dueMatchesOne(it, c); });
   }
   function filteredItems() {
     var f = activeFilters();
@@ -415,10 +418,11 @@
     });
   }
 
+  function isOpenStatus(it) { return it.status !== "Resolved" && it.status !== "Closed"; }
   function uniqueOwners() {
+    // only owners of still-open items — a name drops out once its items are all done/deleted
     var s = {};
-    store.items.forEach(function (i) { (i.owners || []).forEach(function (o) { if (o) s[o] = 1; }); });
-    s[CURRENT_USER] = 1;
+    store.items.forEach(function (i) { if (isOpenStatus(i)) (i.owners || []).forEach(function (o) { if (o) s[o] = 1; }); });
     return Object.keys(s).sort();
   }
   function uniqueTags() {
@@ -432,14 +436,49 @@
     store.items.forEach(function (i) { (i.workstreams || []).forEach(function (w) { if (w && !seen[w]) { seen[w] = 1; out.push(w); } }); });
     return out;
   }
+  function linkTargets() {
+    // open RAID items that can be linked to (not tasks, not done)
+    return store.items.filter(function (o) { return o.type !== "Task" && isOpenStatus(o); });
+  }
+  function resolveLink(v) {
+    v = (v || "").trim();
+    if (!v) return null;
+    var m = v.match(/^(RAID-\d+)/i);
+    if (m) { var it = getItem(m[1].toUpperCase()); return it && it.type !== "Task" ? it.id : null; }
+    var exact = store.items.find(function (o) { return o.type !== "Task" && (o.id + " — " + o.title) === v; });
+    if (exact) return exact.id;
+    var byTitle = store.items.find(function (o) { return o.type !== "Task" && o.title.toLowerCase() === v.toLowerCase(); });
+    return byTitle ? byTitle.id : null;
+  }
+  function optsFor(key) {
+    var pool = poolItems();
+    if (key === "type") return mainViewWithTasks() ? ALL_TYPES : TYPES;
+    if (key === "status") return STATUSES;
+    if (key === "priority") return PRIORITIES;
+    if (key === "owner") return (pool.some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners());
+    if (key === "workstream") return (pool.some(function (i) { return !(i.workstreams || []).length; }) ? [NO_WORKSTREAM] : []).concat(workstreamList());
+    if (key === "tag") return uniqueTags();
+    if (key === "due") return DUE_OPTS;
+    return [];
+  }
+  function sanitizeFilters() {
+    var f = store.ui.filters;
+    ["type", "owner", "workstream", "tag", "due"].forEach(function (k) {
+      if (isNoneFilter(f[k])) return;
+      var valid = optsFor(k);
+      f[k] = f[k].filter(function (v) { return valid.indexOf(v) !== -1; });
+    });
+  }
 
   // ---------- Renderers ----------
   var viewEl = document.getElementById("view");
 
   function render() {
+    sanitizeFilters();
     renderNav();
     renderDash();
     renderFilters();
+    renderKpi();
     var ui = store.ui;
     document.getElementById("toggleDash").textContent = ui.showDash ? "Hide summary" : "Show summary";
     document.getElementById("dash").classList.toggle("hidden", !ui.showDash);
@@ -527,35 +566,54 @@
   }
 
   // ----- Filter bar (multi-select) -----
-  function fmulti(key, label, opts, selected) {
-    var n = selected.length;
-    return '<div class="fmulti" data-fmulti-label="' + esc(label) + '">' +
-      '<button type="button" class="fmulti-btn' + (n ? " on" : "") + '" data-fmulti-toggle="' + key + '">' + esc(label) + (n ? " (" + n + ")" : "") + " ▾</button>" +
-      '<div class="fmulti-menu hidden">' +
-        (opts.length ? opts.map(function (o) {
-          return '<label><input type="checkbox" data-fkey="' + key + '" data-fval="' + esc(o) + '"' + (selected.indexOf(o) !== -1 ? " checked" : "") + "> " + esc(o) + "</label>";
-        }).join("") : '<div class="hint" style="padding:6px 8px">Nothing to filter</div>') +
+  // Model per dimension:
+  //   []              → no filter (every box checked, "Select all" checked)
+  //   [FILTER_NONE]   → nothing selected (no boxes checked, "Select all" unchecked) → 0 results
+  //   [a, b, …]       → active filter, match ANY selected value
+  var FILTER_KEYS = ["type", "status", "priority", "owner", "workstream", "tag", "due"];
+  var FILTER_LABELS = { type: "Type", status: "Status", priority: "Priority", owner: "Owner", workstream: "Workstream", tag: "Label", due: "Due" };
+  function fmulti(key) {
+    var label = FILTER_LABELS[key];
+    var opts = optsFor(key);
+    var sel = store.ui.filters[key];
+    var none = isNoneFilter(sel);
+    var allChecked = sel.length === 0;
+    var active = !allChecked;
+    var selCount = none ? 0 : sel.length;
+    var openMenu = store.ui._openMenu === key;
+    return '<div class="fmulti" data-fmulti-key="' + key + '">' +
+      '<button type="button" class="fmulti-btn' + (active ? " on" : "") + '" data-fmulti-toggle="' + key + '">' + esc(label) +
+        (active ? " (" + selCount + "/" + opts.length + ")" : "") + " ▾</button>" +
+      '<div class="fmulti-menu' + (openMenu ? "" : " hidden") + '">' +
+        (opts.length ? (
+          '<label class="fmulti-all"><input type="checkbox" data-fall="' + key + '"' + (allChecked ? " checked" : "") + "> <b>Select all</b></label>" +
+          opts.map(function (o) {
+            var checked = allChecked || (!none && sel.indexOf(o) !== -1);
+            return '<label><input type="checkbox" data-fkey="' + key + '" data-fval="' + esc(o) + '"' + (checked ? " checked" : "") + "> " + esc(o) + "</label>";
+          }).join("")
+        ) : '<div class="hint" style="padding:6px 8px">Nothing to filter</div>') +
       "</div></div>";
+  }
+  function toggleFilterValue(key, val) {
+    var all = optsFor(key);
+    var cur = store.ui.filters[key];
+    var eff = isNoneFilter(cur) ? [] : (cur.length ? cur.slice() : all.slice());
+    var i = eff.indexOf(val);
+    if (i === -1) eff.push(val); else eff.splice(i, 1);
+    store.ui.filters[key] = eff.length === all.length ? [] : (eff.length === 0 ? [FILTER_NONE] : eff);
+  }
+  function toggleSelectAll(key) {
+    // "Select all" is checked only when the dimension is unfiltered ([]). Clicking toggles all ⟷ none.
+    store.ui.filters[key] = store.ui.filters[key].length === 0 ? [FILTER_NONE] : [];
   }
   function renderFilters() {
     var f = store.ui.filters;
     var tasks = isTasksScope();
     var wrap = document.getElementById("filters");
-    var pool = poolItems();
-    var ownerOpts = (pool.some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners());
-    var wsOpts = (pool.some(function (i) { return !(i.workstreams || []).length; }) ? [NO_WORKSTREAM] : []).concat(workstreamList());
-    var typeOpts = mainListWithTasks() ? ALL_TYPES : TYPES;
     wrap.innerHTML =
       '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search…" value="' + esc(f.search) + '"></div>' +
-      (store.ui.typeView || tasks ? "" : fmulti("type", "Type", typeOpts, f.type)) +
-      fmulti("status", "Status", STATUSES, f.status) +
-      fmulti("priority", "Priority", PRIORITIES, f.priority) +
-      fmulti("owner", "Owner", ownerOpts, f.owner) +
-      fmulti("workstream", "Workstream", wsOpts, f.workstream) +
-      fmulti("tag", "Label", uniqueTags(), f.tag) +
-      '<select id="fDue" title="Due date"><option value="">Due: Any</option>' +
-        DUE_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + (f.due === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") +
-      "</select>" +
+      (store.ui.typeView || tasks ? "" : fmulti("type")) +
+      fmulti("status") + fmulti("priority") + fmulti("owner") + fmulti("workstream") + fmulti("tag") + fmulti("due") +
       '<input type="date" id="fDueOn" title="Due on this exact date" value="' + esc(f.dueOn) + '">' +
       '<span id="filterChips"></span>';
     renderChips();
@@ -564,19 +622,46 @@
     var c = document.getElementById("filterChips");
     if (!c) return;
     var f = store.ui.filters;
-    var lbls = { type: "Type", status: "Status", priority: "Priority", owner: "Owner", workstream: "Workstream", tag: "Label" };
     var chips = [];
-    Object.keys(lbls).forEach(function (k) {
+    FILTER_KEYS.forEach(function (k) {
       if (isTasksScope() && k === "type") return;
-      (f[k] || []).forEach(function (v) {
-        chips.push('<span class="chip">' + lbls[k] + ": " + esc(v) + '<button data-chip-remove data-ck="' + k + '" data-cv="' + esc(v) + '">×</button></span>');
-      });
+      var vals = f[k] || [];
+      if (!vals.length) return;
+      if (isNoneFilter(vals)) {
+        chips.push('<span class="chip">' + FILTER_LABELS[k] + ": none" + '<button data-chip-remove data-ck="' + k + '">×</button></span>');
+      } else if (vals.length === 1) {
+        chips.push('<span class="chip">' + FILTER_LABELS[k] + ": " + esc(vals[0]) + '<button data-chip-remove data-ck="' + k + '" data-cv="' + esc(vals[0]) + '">×</button></span>');
+      } else {
+        chips.push('<span class="chip">' + FILTER_LABELS[k] + ": " + vals.length + " of " + optsFor(k).length + '<button data-chip-remove data-ck="' + k + '">×</button></span>');
+      }
     });
     if (f.search) chips.push('<span class="chip">"' + esc(f.search) + '"<button data-chip-remove data-ck="search">×</button></span>');
-    if (f.due) chips.push('<span class="chip">' + DUE_LABELS[f.due] + '<button data-chip-remove data-ck="due">×</button></span>');
     if (f.dueOn) chips.push('<span class="chip">Due ' + fmtDate(f.dueOn) + '<button data-chip-remove data-ck="dueOn">×</button></span>');
     if (chips.length > 1) chips.push('<button class="btn subtle" id="clearAll">Clear all</button>');
     c.innerHTML = chips.join("");
+  }
+
+  // ----- Filter-aware KPI strip -----
+  function anyFilterActive() {
+    var f = store.ui.filters;
+    return !!f.search || !!f.dueOn || FILTER_KEYS.some(function (k) { return (f[k] || []).length; });
+  }
+  function renderKpi() {
+    var el = document.getElementById("viewkpi");
+    if (!el) return;
+    if (store.ui.view === "matrix" && !isTasksScope()) { el.innerHTML = ""; return; }
+    var shown = filteredItems();
+    var total = poolItems().length;
+    var pastDue = shown.filter(function (i) { return dueMatchesOne(i, "Past due"); }).length;
+    var thisWeek = shown.filter(function (i) { return dueMatchesOne(i, "Due this week"); }).length;
+    var unresolved = shown.filter(isOpenStatus).length;
+    var filtered = anyFilterActive();
+    el.innerHTML =
+      '<span class="kpi"><b>' + shown.length + "</b> " + (filtered ? "match" + (shown.length === 1 ? "" : "es") : "item" + (shown.length === 1 ? "" : "s")) +
+        (filtered && shown.length !== total ? ' <span class="kpi-sub">of ' + total + "</span>" : "") + "</span>" +
+      '<span class="kpi' + (pastDue ? " warn" : "") + '"><b>' + pastDue + "</b> past due</span>" +
+      '<span class="kpi"><b>' + thisWeek + "</b> due this week</span>" +
+      '<span class="kpi"><b>' + unresolved + "</b> unresolved</span>";
   }
 
   function cardHtml(it) {
@@ -608,6 +693,7 @@
 
   function renderBoard() {
     var items = filteredItems();
+    var taskCount = mainViewWithTasks() ? items.filter(function (it) { return it.type === "Task"; }).length : 0;
     var board = el('<div class="board"></div>');
     STATUSES.forEach(function (st) {
       var inCol = items.filter(function (i) { return i.status === st; });
@@ -622,7 +708,9 @@
       if (!inCol.length) body.appendChild(el('<div class="col-empty" style="color:var(--text-faint);font-size:12px;text-align:center;padding:12px">Drop here</div>'));
       board.appendChild(col);
     });
-    viewEl.innerHTML = "";
+    viewEl.innerHTML = taskCount
+      ? '<div class="hint" style="margin-bottom:10px">Showing ' + taskCount + " task" + (taskCount === 1 ? "" : "s") + " alongside RAID items — tasks are not included in the Excel export.</div>"
+      : "";
     viewEl.appendChild(board);
     wireBoardDnD();
   }
@@ -655,7 +743,7 @@
       viewEl.innerHTML = '<div class="table-wrap"><div class="empty"><div class="big">Nothing here yet</div><div>Try clearing a filter, or use + Create.</div></div></div>';
       return;
     }
-    var taskCount = mainListWithTasks() ? items.filter(function (it) { return it.type === "Task"; }).length : 0;
+    var taskCount = mainViewWithTasks() ? items.filter(function (it) { return it.type === "Task"; }).length : 0;
     viewEl.innerHTML =
       (taskCount ? '<div class="hint" style="margin-bottom:8px">Showing ' + taskCount + " task" + (taskCount === 1 ? "" : "s") + " alongside RAID items — tasks are not included in the Excel export.</div>" : "") +
       '<div class="table-wrap"><table><thead><tr>' +
@@ -779,7 +867,14 @@
     if (!isTasksScope() && store.ui.view === "matrix") renderMatrix();
     else if (store.ui.view === "list" || store.ui.typeView) renderList();
     else renderBoard();
-    renderDash(); renderNav();
+    renderDash(); renderNav(); renderKpi();
+  }
+  function applyFilterChange() {
+    sanitizeFilters();
+    renderFilters();   // rebuilds; reopens the tracked menu
+    renderKpi();
+    renderBoardOrList();
+    persistPrefs();
   }
 
   function selectField(id, field, label, opts, val, hint) {
@@ -837,12 +932,9 @@
           (li ? '<span class="type-dot ' + li.type + '" style="width:8px;height:8px;border-radius:50%"></span><b>' + lid + "</b> " + esc(li.title.slice(0, 40)) : "<b>" + esc(lid) + "</b> (missing)") +
           '<button class="rm" data-unlink="' + lid + '" title="Remove link">×</button></div>';
       }).join("");
-      var linkable = store.items.filter(function (o) { return o.id !== id && o.type !== "Task" && (it.links || []).indexOf(o.id) === -1; });
       linksBlock =
         '<div class="field"><label>Linked items</label><div class="linked-list">' + (linkedHtml || '<span class="hint">No links yet.</span>') + "</div>" +
-        (linkable.length ? '<div class="inline-add"><select id="linkSelect"><option value="">Link another item…</option>' +
-          linkable.map(function (o) { return '<option value="' + o.id + '">' + o.id + " · " + esc(o.title.slice(0, 50)) + "</option>"; }).join("") +
-          '</select><button class="btn" id="addLink">Link</button></div>' : "") +
+        '<div class="inline-add"><input type="text" id="linkInput" list="linkOptions" placeholder="Type an ID or title + Enter (Tab to accept)" autocomplete="off"></div>' +
         "</div>";
     }
 
@@ -856,7 +948,9 @@
     var descLabel = isTask ? "Notes" : "Description";
     var lists =
       '<datalist id="ownerOptions">' + uniqueOwners().map(function (o) { return '<option value="' + esc(o) + '"></option>'; }).join("") + "</datalist>" +
-      '<datalist id="tagOptions">' + uniqueTags().map(function (t) { return '<option value="' + esc(t) + '"></option>'; }).join("") + "</datalist>";
+      '<datalist id="tagOptions">' + uniqueTags().map(function (t) { return '<option value="' + esc(t) + '"></option>'; }).join("") + "</datalist>" +
+      '<datalist id="linkOptions">' + linkTargets().filter(function (o) { return o.id !== id && (it.links || []).indexOf(o.id) === -1; })
+        .map(function (o) { return '<option value="' + esc(o.id + " — " + o.title) + '"></option>'; }).join("") + "</datalist>";
 
     var overlay = el(
       '<div class="overlay" id="overlay">' +
@@ -985,19 +1079,34 @@
     var ci = document.getElementById("commentInput");
     document.getElementById("addComment").addEventListener("click", function () { addComment(id, ci.value); ci.value = ""; });
     ci.addEventListener("keydown", function (e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.stopPropagation(); addComment(id, ci.value); ci.value = ""; }
+      // Enter saves the note; Shift+Enter for a newline
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); addComment(id, ci.value); ci.value = ""; }
     });
 
-    var addLink = document.getElementById("addLink");
-    if (addLink) addLink.addEventListener("click", function () {
-      var sel = document.getElementById("linkSelect");
-      if (!sel.value) return;
+    function addLinkTo(rawVal) {
+      var lid = resolveLink(rawVal);
       var it = getItem(id);
-      it.links = it.links || []; it.links.push(sel.value);
-      log(it, "change", "linked <b>" + sel.value + "</b>");
-      var other = getItem(sel.value);
+      if (!lid) { toast("No matching open item"); return; }
+      if (lid === id) { toast("Can't link an item to itself"); return; }
+      it.links = it.links || [];
+      if (it.links.indexOf(lid) !== -1) { toast(lid + " is already linked"); return; }
+      it.links.push(lid);
+      log(it, "change", "linked <b>" + lid + "</b>");
+      var other = getItem(lid);
       if (other) { other.links = other.links || []; if (other.links.indexOf(id) === -1) other.links.push(id); }
       persist(); renderDetailModal(id); renderBoardOrList();
+    }
+    var linkInput = document.getElementById("linkInput");
+    if (linkInput) linkInput.addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        var opts = linkTargets().map(function (o) { return o.id + " — " + o.title; });
+        var m = bestMatch(linkInput.value, opts);
+        if (m && m.toLowerCase() !== linkInput.value.trim().toLowerCase()) { e.preventDefault(); addLinkTo(m); }
+        return;
+      }
+      if (e.key !== "Enter" || !linkInput.value.trim()) return;
+      e.preventDefault();
+      addLinkTo(linkInput.value);
     });
     overlay.querySelectorAll("[data-unlink]").forEach(function (b) {
       b.addEventListener("click", function (e) {
@@ -1029,7 +1138,7 @@
   // ---------- Create modal ----------
   function openCreate() {
     var chosen = store.ui.typeView || (isTasksScope() ? "Task" : "Risk");
-    var createState = { owners: [], tags: [], workstreams: [] };
+    var createState = { owners: [], tags: [], workstreams: [], links: [] };
     var overlay = el('<div class="overlay" id="overlay"><div class="modal"><div class="modal-head"><b>Create item</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div><div class="modal-body" id="createBody"></div><div class="modal-foot"><button class="btn" id="cCancel">Cancel</button><button class="btn primary" id="cSave">Create</button></div></div></div>');
     modalRoot.innerHTML = ""; modalRoot.appendChild(overlay);
 
@@ -1104,6 +1213,40 @@
         });
       });
     }
+    function linkRowInner() {
+      return createState.links.map(function (lid) {
+        var li = getItem(lid);
+        return '<span class="tag-pill">' + esc(lid) + (li ? " " + esc(li.title.slice(0, 22)) : "") + '<button type="button" data-link-remove data-val="' + esc(lid) + '">×</button></span>';
+      }).join("") +
+        '<input type="text" id="nLinkInput" list="linkOptions" placeholder="Type an ID or title + Enter (Tab to accept)" autocomplete="off">';
+    }
+    function refreshLinks() { document.getElementById("nLinkRow").innerHTML = linkRowInner(); wireLinks(); }
+    function wireLinks() {
+      var inp = document.getElementById("nLinkInput");
+      function addLink(raw) {
+        var lid = resolveLink(raw);
+        if (!lid) { toast("No matching open item"); return; }
+        if (createState.links.indexOf(lid) === -1) createState.links.push(lid);
+        refreshLinks();
+      }
+      if (inp) inp.addEventListener("keydown", function (e) {
+        if (e.key === "Tab") {
+          var opts = linkTargets().map(function (o) { return o.id + " — " + o.title; });
+          var m = bestMatch(inp.value, opts);
+          if (m && m.toLowerCase() !== inp.value.trim().toLowerCase()) { e.preventDefault(); addLink(m); }
+          return;
+        }
+        if (e.key !== "Enter" || !inp.value.trim()) return;
+        e.preventDefault();
+        addLink(inp.value);
+      });
+      document.getElementById("nLinkRow").querySelectorAll("[data-link-remove]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          createState.links = createState.links.filter(function (x) { return x !== b.getAttribute("data-val"); });
+          refreshLinks();
+        });
+      });
+    }
 
     function body() {
       var isTask = chosen === "Task";
@@ -1111,6 +1254,8 @@
       b.innerHTML =
         '<datalist id="ownerOptions">' + uniqueOwners().map(function (o) { return '<option value="' + esc(o) + '"></option>'; }).join("") + "</datalist>" +
         '<datalist id="tagOptions">' + uniqueTags().map(function (t) { return '<option value="' + esc(t) + '"></option>'; }).join("") + "</datalist>" +
+        '<datalist id="linkOptions">' + linkTargets().filter(function (o) { return createState.links.indexOf(o.id) === -1; })
+          .map(function (o) { return '<option value="' + esc(o.id + " — " + o.title) + '"></option>'; }).join("") + "</datalist>" +
         '<div class="field"><label>Type</label><div class="type-picker">' +
           ALL_TYPES.map(function (t) {
             return '<button type="button" class="type-opt ' + (t === chosen ? "sel" : "") + '" data-type="' + t + '"><span class="ic">' + TYPE_ICON[t] + "</span>" + t + "</button>";
@@ -1124,6 +1269,7 @@
         '<div class="field"><label>Workstreams</label><div class="tag-input-row" id="nWsRow">' + wsRowInner() + "</div></div>" +
         '<div class="field"><label>Owners</label><div class="tag-input-row" id="nOwnerRow">' + chipRowInner("nOwnerRow") + "</div></div>" +
         '<div class="field"><label>Labels</label><div class="tag-input-row" id="nTagRow">' + chipRowInner("nTagRow") + "</div></div>" +
+        (isTask ? "" : '<div class="field"><label>Linked items</label><div class="tag-input-row" id="nLinkRow">' + linkRowInner() + "</div></div>") +
         (isTask ? '<div class="hint">Tasks stay off the RAID board and out of the Excel export.</div>' : "");
 
       b.querySelectorAll(".type-opt").forEach(function (opt) {
@@ -1137,6 +1283,7 @@
       wireChipRow("nOwnerRow");
       wireChipRow("nTagRow");
       wireWs();
+      if (!isTask) wireLinks();
 
       function typeFields(isTask) {
         if (isTask) return fieldSelect("nRecur", "Repeat", RECUR, "None");
@@ -1172,7 +1319,7 @@
         reporter: CURRENT_USER,
         createdDate: todayISO(),
         dueDate: document.getElementById("nDue").value || "",
-        resolvedDate: null, links: [],
+        resolvedDate: null, links: isTask ? [] : createState.links.slice(),
         tags: createState.tags.slice(),
         activity: []
       };
@@ -1184,6 +1331,10 @@
       if (it.status === "Resolved" || it.status === "Closed") it.resolvedDate = todayISO();
       it.activity.push({ id: "c0", kind: "create", text: "created this " + chosen.toLowerCase(), who: CURRENT_USER, ts: nowISO() });
       store.items.push(it);
+      (it.links || []).forEach(function (lid) {
+        var o = getItem(lid);
+        if (o) { o.links = o.links || []; if (o.links.indexOf(it.id) === -1) o.links.push(it.id); }
+      });
 
       if (isTask) { store.ui.scope = "tasks"; store.ui.view = "board"; store.ui.typeView = null; }
       else {
@@ -1470,6 +1621,7 @@
     b.addEventListener("click", function () {
       var nav = b.getAttribute("data-nav");
       var ui = store.ui;
+      ui._openMenu = null;
       if (nav === "board") { ui.scope = "raid"; ui.view = "board"; ui.typeView = null; }
       else if (nav === "list") { ui.scope = "raid"; ui.view = "list"; ui.typeView = null; }
       else if (nav === "matrix") { ui.scope = "raid"; ui.view = "matrix"; ui.typeView = null; }
@@ -1495,35 +1647,26 @@
 
   var filtersEl = document.getElementById("filters");
   filtersEl.addEventListener("input", function (e) {
-    if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderChips(); renderBoardOrList(); persistPrefs(); }
+    if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderChips(); renderKpi(); renderBoardOrList(); persistPrefs(); }
   });
   filtersEl.addEventListener("change", function (e) {
     var t = e.target;
-    if (t.id === "fDue") { store.ui.filters.due = t.value; renderChips(); renderBoardOrList(); persistPrefs(); return; }
-    if (t.id === "fDueOn") { store.ui.filters.dueOn = t.value; renderChips(); renderBoardOrList(); persistPrefs(); return; }
+    if (t.id === "fDueOn") { store.ui.filters.dueOn = t.value; applyFilterChange(); return; }
+    var fall = t.getAttribute && t.getAttribute("data-fall");
+    if (fall) { toggleSelectAll(fall); applyFilterChange(); return; }
     var fkey = t.getAttribute && t.getAttribute("data-fkey");
-    if (fkey) {
-      var arr = store.ui.filters[fkey];
-      var val = t.getAttribute("data-fval");
-      var i = arr.indexOf(val);
-      if (t.checked && i === -1) arr.push(val);
-      else if (!t.checked && i !== -1) arr.splice(i, 1);
-      var wrap = t.closest(".fmulti");
-      var btn = wrap.querySelector(".fmulti-btn");
-      btn.classList.toggle("on", arr.length > 0);
-      btn.textContent = wrap.getAttribute("data-fmulti-label") + (arr.length ? " (" + arr.length + ")" : "") + " ▾";
-      renderChips();
-      renderBoardOrList();
-      persistPrefs();
-    }
+    if (fkey) { toggleFilterValue(fkey, t.getAttribute("data-fval")); applyFilterChange(); }
   });
   filtersEl.addEventListener("click", function (e) {
     var tog = e.target.closest && e.target.closest("[data-fmulti-toggle]");
     if (tog) {
-      var menu = tog.parentElement.querySelector(".fmulti-menu");
-      var wasOpen = !menu.classList.contains("hidden");
+      var key = tog.getAttribute("data-fmulti-toggle");
+      store.ui._openMenu = (store.ui._openMenu === key) ? null : key;
       document.querySelectorAll(".fmulti-menu").forEach(function (m) { m.classList.add("hidden"); });
-      if (!wasOpen) menu.classList.remove("hidden");
+      if (store.ui._openMenu) {
+        var mm = tog.parentElement.querySelector(".fmulti-menu");
+        if (mm) mm.classList.remove("hidden");
+      }
       return;
     }
     var rm = e.target.closest && e.target.closest("[data-chip-remove]");
@@ -1532,15 +1675,16 @@
       if (cv != null && Array.isArray(store.ui.filters[ck])) {
         store.ui.filters[ck] = store.ui.filters[ck].filter(function (x) { return x !== cv; });
       } else {
-        store.ui.filters[ck] = "";
+        store.ui.filters[ck] = Array.isArray(store.ui.filters[ck]) ? [] : "";
       }
-      render();
+      applyFilterChange();
       return;
     }
-    if (e.target.id === "clearAll") { store.ui.filters = emptyFilters(); render(); }
+    if (e.target.id === "clearAll") { store.ui.filters = emptyFilters(); store.ui._openMenu = null; applyFilterChange(); }
   });
   document.addEventListener("click", function (e) {
-    if (!e.target.closest || !e.target.closest(".fmulti")) {
+    if (store.ui._openMenu && (!e.target.closest || !e.target.closest(".fmulti"))) {
+      store.ui._openMenu = null;
       document.querySelectorAll(".fmulti-menu").forEach(function (m) { m.classList.add("hidden"); });
     }
   });

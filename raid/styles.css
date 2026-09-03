@@ -161,7 +161,21 @@ input, select, textarea { font-family: inherit; font-size: 14px; color: var(--te
 }
 .fmulti-menu label:hover { background: var(--surface-alt); }
 .fmulti-menu input[type=checkbox] { margin: 0; flex-shrink: 0; }
-.filters #fDue, .filters #fDueOn { font-size: 14px; }
+.fmulti-menu label.fmulti-all { border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 7px; }
+.filters #fDueOn { font-size: 14px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+
+/* filter-aware KPI strip */
+.viewkpi { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.viewkpi:empty { display: none; }
+.kpi {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 4px 12px; font-size: 12px; color: var(--text-sub); box-shadow: var(--shadow);
+}
+.kpi b { font-size: 14px; color: var(--text); font-weight: 700; }
+.kpi .kpi-sub { color: var(--text-faint); }
+.kpi.warn { border-color: var(--issue); }
+.kpi.warn b { color: var(--issue); }
 
 /* ---------- Badges / pills ---------- */
 .badge {
