@@ -18,8 +18,21 @@ export function fmtDate(iso) {
   return `${m}/${d}/${y}`;
 }
 
+// The app treats "now" as Central Time (America/Chicago) regardless of the
+// viewer's device timezone — so an export saved at 9pm Chicago on the 2nd is
+// dated the 2nd even for a viewer whose browser clock has already rolled over.
+export const APP_TZ = 'America/Chicago';
+
 export function todayISO() {
-  return toISO(new Date());
+  return isoInTZ(new Date());
+}
+
+// A Date -> "YYYY-MM-DD" as it reads on the wall clock in APP_TZ.
+export function isoInTZ(date, tz = APP_TZ) {
+  // en-CA formats as YYYY-MM-DD; timeZone shifts to the target wall clock.
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(date);
 }
 
 export function toISO(date) {
@@ -27,6 +40,16 @@ export function toISO(date) {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+// Absolute timestamp -> "09/02/2026, 9:04 PM CDT" on the Central Time clock.
+export function fmtDateTime(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleString('en-US', {
+    timeZone: APP_TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  });
 }
 
 export function monthLabel(year, month) {

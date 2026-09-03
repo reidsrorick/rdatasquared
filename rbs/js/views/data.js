@@ -80,7 +80,7 @@ export function Data() {
         <div class="export-row">
           <div>
             <div class="export-title">Import a backup</div>
-            <div class="text-muted" style="font-size:13px">Pick a previously exported <code>rbs-budget-*.json</code> file.</div>
+            <div class="text-muted" style="font-size:13px">Pick a previously exported <code>YYYY-MM-DD RBS_Export.json</code> file.</div>
           </div>
           <button class="btn" onClick=${() => fileRef.current && fileRef.current.click()}>Choose file…</button>
           <input ref=${fileRef} type="file" accept="application/json,.json" style="display:none" onChange=${onFile} />

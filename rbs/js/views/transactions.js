@@ -3,7 +3,7 @@ import * as store from '../store.js';
 import { PageHeader } from './common.js';
 import { Modal, CategorySelect, FormActions } from '../ui.js';
 import { notify } from '../toast.js';
-import { money, signedMoney, fmtDate, parseMoney, todayISO } from '../format.js';
+import { money, signedMoney, fmtDate, fmtDateTime, parseMoney, todayISO } from '../format.js';
 import { groupedCategories, categoryMap, catColor } from '../logic/categories.js';
 import { sortedTags, tagMap } from '../logic/tags.js';
 import {
@@ -358,7 +358,7 @@ function DetailModal({ txn, tags, cats, s, onClose }) {
             <button class="btn btn-sm btn-primary" style="margin-top:8px" onClick=${saveNotes}>Save note</button>
           </span>
         </div>
-        ${txn.createdAt ? row('Created', new Date(txn.createdAt).toLocaleString('en-US')) : null}
+        ${txn.createdAt ? row('Created', fmtDateTime(txn.createdAt)) : null}
         ${txn.importId ? row('Import #', '#' + txn.importId) : null}
       </div>
     </${Modal}>`;

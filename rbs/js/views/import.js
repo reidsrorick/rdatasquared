@@ -2,7 +2,7 @@ import { html, useState, useMemo } from '../vendor/preact-htm.js';
 import * as store from '../store.js';
 import { PageHeader } from './common.js';
 import { notify } from '../toast.js';
-import { money, signedMoney, fmtDate, titleCase } from '../format.js';
+import { money, signedMoney, fmtDate, fmtDateTime, titleCase } from '../format.js';
 import {
   parseCSV, guessMapping, buildReview, commitImport, linkManual,
 } from '../csv.js';
@@ -107,7 +107,7 @@ export function ImportCsv() {
               <tr key=${imp.id}>
                 <td>${imp.filename || '—'}</td>
                 <td>${acctName.get(imp.accountId) || '—'}</td>
-                <td class="text-muted">${new Date(imp.importedAt).toLocaleString('en-US')}</td>
+                <td class="text-muted">${fmtDateTime(imp.importedAt)}</td>
                 <td class="text-right">${imp.rowCount}</td>
               </tr>`)}
           </tbody>
