@@ -1434,7 +1434,7 @@
       ]);
     });
     var data = makeXlsx("RAID Log", rows);
-    downloadFile(todayISO() + " Web_RAID.xlsx", data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    downloadFile("Web_RAID.xlsx", data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     toast("Exported " + exported.length + " items to Excel");
   }
 
