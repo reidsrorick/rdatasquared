@@ -6,7 +6,7 @@
 <title>RAID Log</title>
 <link rel="icon" type="image/png" href="raid_log_icon.png" />
 <link rel="apple-touch-icon" href="raid_log_icon.png" />
-<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="styles.css?v=20260922" />
 </head>
 <body>
 <div class="app">
@@ -24,6 +24,8 @@
     <div class="nav-section">Personal</div>
     <button class="nav-item" data-nav="taskboard"><span class="dot type-dot Task"></span> Tasks <span class="count" data-count="Task"></span></button>
     <button class="nav-item" data-nav="tasklist"><span>≡</span> Task list</button>
+    <div class="nav-section">Groups</div>
+    <div id="groupNavList"></div>
     <div class="nav-section">Data</div>
     <button class="nav-item" id="settingsBtn"><span>⚙</span> Settings &amp; data</button>
     <input type="file" id="restoreInput" accept="application/json,.json" class="hidden">
@@ -50,6 +52,6 @@
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
 
-<script src="app.js"></script>
+<script src="app.js?v=20260922b"></script>
 </body>
 </html>

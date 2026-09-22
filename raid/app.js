@@ -12,6 +12,7 @@
   var UNASSIGNED = "• Unassigned";
   var NO_WORKSTREAM = "• No workstream";
   var DEFAULT_WORKSTREAMS = ["Payments", "Data migration", "Customer portal", "Platform", "Compliance"];
+  var DEFAULT_GROUPS = ["Steering Committee", "Weekly Sync"];
   var DUE_OPTS = ["Past due", "Due today", "Due tomorrow", "Due this week", "Due in next 7 days", "No due date"];
   var FILTER_NONE = "__NONE__";   // a filter array of exactly [FILTER_NONE] means "nothing selected" → 0 results
   function isNoneFilter(arr) { return arr && arr.length === 1 && arr[0] === FILTER_NONE; }
@@ -37,6 +38,14 @@
     if (!iso) return "";
     var d = new Date(iso);
     return d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+  var WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  function fmtNoteDate(iso) {
+    // "dddd MM-dd-yyyy" e.g. "Monday 09-08-2026"
+    if (!iso) return "";
+    var d = new Date(iso);
+    var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+    return WEEKDAYS[d.getDay()] + " " + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "-" + d.getFullYear();
   }
   function addInterval(iso, recurrence) {
     var d = iso ? new Date(iso + "T00:00:00") : new Date();
@@ -114,17 +123,20 @@
 
   // ---------- State / persistence ----------
   function emptyFilters() {
-    return { search: "", type: [], status: [], priority: [], owner: [], workstream: [], tag: [], due: [], dueOn: "" };
+    return { search: "", type: [], status: [], priority: [], owner: [], workstream: [], tag: [], due: [], dueOn: "", visibility: "active" };
   }
   var store = {
     items: [],
     counter: 1,
-    settings: { workstreams: DEFAULT_WORKSTREAMS.slice() },
+    settings: { workstreams: DEFAULT_WORKSTREAMS.slice(), groups: DEFAULT_GROUPS.slice() },
     ui: {
-      scope: "raid",
+      scope: "raid",          // raid | tasks | group
+      activeGroup: null,
       view: "board",
       typeView: null,
       showDash: true,
+      editMode: false,
+      selectedRows: [],
       filters: emptyFilters(),
       sort: { key: "id", dir: "asc" },
       selectedId: null
@@ -134,16 +146,32 @@
   function persist() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: store.items, counter: store.counter })); }
     catch (e) {}
+    scheduleFileSave();
   }
   function migrateItem(it) {
     it.owners = Array.isArray(it.owners) ? it.owners : (it.owner ? [it.owner] : []);
     if ("owner" in it) delete it.owner;
     it.workstreams = Array.isArray(it.workstreams) ? it.workstreams : (it.workstream ? [it.workstream] : []);
     if ("workstream" in it) delete it.workstream;
+    it.groups = Array.isArray(it.groups) ? it.groups : [];
     if (it.recurrence === "Every 2 weeks") it.recurrence = "Bi-weekly";
     it.activity = Array.isArray(it.activity) ? it.activity : [];
     it.tags = Array.isArray(it.tags) ? it.tags : [];
     it.links = Array.isArray(it.links) ? it.links : [];
+    it.hidden = !!it.hidden;
+    it.hiddenOn = it.hiddenOn || null;
+  }
+  function setHidden(it, val) {
+    it.hidden = !!val;
+    it.hiddenOn = val ? todayISO() : null;
+  }
+  // Hidden items are a same-day convenience — they come back on the next calendar day.
+  function unhideStale() {
+    var changed = false;
+    store.items.forEach(function (it) {
+      if (it.hidden && it.hiddenOn !== todayISO()) { it.hidden = false; it.hiddenOn = null; changed = true; }
+    });
+    return changed;
   }
   function tryLoad() {
     try {
@@ -159,8 +187,8 @@
   function persistPrefs() {
     try {
       localStorage.setItem(PREFS_KEY, JSON.stringify({
-        showDash: store.ui.showDash,
-        scope: store.ui.scope, view: store.ui.view, typeView: store.ui.typeView,
+        showDash: store.ui.showDash, editMode: store.ui.editMode,
+        scope: store.ui.scope, activeGroup: store.ui.activeGroup, view: store.ui.view, typeView: store.ui.typeView,
         filters: store.ui.filters, sort: store.ui.sort
       }));
     } catch (e) {}
@@ -169,7 +197,9 @@
     try {
       var p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
       if (typeof p.showDash === "boolean") store.ui.showDash = p.showDash;
-      if (p.scope === "raid" || p.scope === "tasks") store.ui.scope = p.scope;
+      if (typeof p.editMode === "boolean") store.ui.editMode = p.editMode;
+      if (["raid", "tasks", "group"].indexOf(p.scope) !== -1) store.ui.scope = p.scope;
+      if (typeof p.activeGroup === "string") store.ui.activeGroup = p.activeGroup;
       if (["board", "list", "matrix"].indexOf(p.view) !== -1) store.ui.view = p.view;
       if (typeof p.typeView === "string" || p.typeView === null) store.ui.typeView = p.typeView;
       if (p.sort && p.sort.key) store.ui.sort = p.sort;
@@ -178,9 +208,14 @@
         f[k] = Array.isArray(pf[k]) ? pf[k] : (pf[k] ? [pf[k]] : []);
       });
       f.search = pf.search || ""; f.dueOn = pf.dueOn || "";
+      if (["active", "all", "hidden"].indexOf(pf.visibility) !== -1) f.visibility = pf.visibility;
       store.ui.filters = f;
       // matrix only exists in raid scope
-      if (store.ui.scope === "tasks" && store.ui.view === "matrix") store.ui.view = "board";
+      if (store.ui.scope !== "raid" && store.ui.view === "matrix") store.ui.view = "board";
+      // a group nav can be deleted out from under a saved session
+      if (store.ui.scope === "group" && (!store.ui.activeGroup || groupList().indexOf(store.ui.activeGroup) === -1)) {
+        store.ui.scope = "raid"; store.ui.activeGroup = null; store.ui.view = "board";
+      }
     } catch (e) {}
   }
   function persistSettings() {
@@ -190,6 +225,7 @@
     try {
       var s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
       if (s && Array.isArray(s.workstreams)) store.settings.workstreams = s.workstreams;
+      if (s && Array.isArray(s.groups)) store.settings.groups = s.groups;
     } catch (e) {}
   }
 
@@ -214,11 +250,13 @@
     store.items = [];
     store.counter = 1;
     store.settings.workstreams = DEFAULT_WORKSTREAMS.slice();
+    store.settings.groups = DEFAULT_GROUPS.slice();
     function mk(o) {
       var base = {
         id: nextId(), type: o.type, title: o.title, description: o.description || "",
         status: o.status || "Open", priority: o.priority || "Medium",
         workstreams: o.workstreams || (o.workstream ? [o.workstream] : []),
+        groups: o.groups || [],
         owners: o.owners || (o.owner ? [o.owner] : []),
         reporter: o.reporter || CURRENT_USER,
         createdDate: o.createdDate || todayISO(-14), dueDate: o.dueDate || "",
@@ -244,7 +282,7 @@
         status: "In Progress", priority: "High", workstream: "Payments", owner: "Priya Patel", reporter: "Reid",
         createdDate: todayISO(-20), dueDate: todayISO(12), likelihood: "High", impact: "High",
         mitigationPlan: "Weekly check-ins with the vendor's account manager. In parallel, spike a lightweight in-house adapter against the v1 API so launch is not fully dependent on Acme. Pre-book two extra UAT days for the week of 6 Oct.",
-        tags: ["vendor", "payments", "schedule"],
+        tags: ["vendor", "payments", "schedule"], groups: ["Steering Committee"],
         comments: [
           { text: "Escalated to vendor account manager. Awaiting a revised plan by Friday.", who: "Priya Patel", ts: todayISO(-6) + "T14:12:00.000Z" },
           { text: "Contingency: fall back to the v1 API surface for launch and defer webhooks.", who: "Reid", ts: todayISO(-2) + "T10:03:00.000Z" }
@@ -255,14 +293,14 @@
         description: "Consolidate the migration steps into a single runbook and complete one full dry run against a production-sized dataset.",
         nextStep: "Book the staging dry-run slot with the DBA team for next Tuesday.",
         status: "In Progress", priority: "High", workstream: "Data migration", owner: "Sam Rivera", reporter: "Reid",
-        createdDate: todayISO(-16), dueDate: todayISO(5), links: ["RAID-1"], tags: ["migration", "release"],
+        createdDate: todayISO(-16), dueDate: todayISO(5), links: ["RAID-1"], tags: ["migration", "release"], groups: ["Weekly Sync"],
         comments: [{ text: "Runbook draft is at 80%. Rollback section still needs review.", who: "Sam Rivera", ts: todayISO(-3) + "T16:40:00.000Z" }]
       }),
       mk({
         type: "Issue", title: "Staging environment intermittently returns HTTP 500 on checkout",
         description: "Roughly 1 in 20 checkout calls on staging fail with a 500. Logs point at a connection-pool exhaustion under concurrent load.",
         status: "Blocked", priority: "Critical", severity: "High", workstream: "Platform", owner: "Alex Chen", reporter: "Dana Okafor",
-        createdDate: todayISO(-9), dueDate: todayISO(-1), tags: ["staging", "checkout", "bug"],
+        createdDate: todayISO(-9), dueDate: todayISO(-1), tags: ["staging", "checkout", "bug"], groups: ["Steering Committee"],
         comments: [
           { text: "Blocked on infra raising the RDS max_connections limit — ticket INFRA-2231.", who: "Alex Chen", ts: todayISO(-4) + "T11:20:00.000Z" }
         ]
@@ -288,7 +326,7 @@
         description: "InfoSec needs two weeks' notice for a full review. Get on their calendar and share the threat model doc.",
         nextStep: "Send the review request form to InfoSec today with the architecture diagram attached.",
         status: "Open", priority: "Medium", workstream: "Compliance", owner: "Morgan Blake", reporter: "Reid",
-        createdDate: todayISO(-5), dueDate: todayISO(3), tags: ["security", "compliance"]
+        createdDate: todayISO(-5), dueDate: todayISO(3), tags: ["security", "compliance"], groups: ["Weekly Sync"]
       }),
       mk({
         type: "Issue", title: "Customer CSV import fails for files that are not UTF-8 encoded",
@@ -330,7 +368,12 @@
 
   // ---------- Scope / filtering / sorting ----------
   function isTasksScope() { return store.ui.scope === "tasks"; }
+  function isGroupScope() { return store.ui.scope === "group"; }
   function baseItems() {
+    if (isGroupScope()) {
+      var g = store.ui.activeGroup;
+      return store.items.filter(function (it) { return (it.groups || []).indexOf(g) !== -1; });
+    }
     return store.items.filter(function (it) {
       return isTasksScope() ? it.type === "Task" : it.type !== "Task";
     });
@@ -341,6 +384,7 @@
       (store.ui.view === "board" || store.ui.view === "list");
   }
   function poolItems() {
+    if (isGroupScope()) return baseItems();
     return mainViewWithTasks() ? store.items.slice() : baseItems();
   }
   function activeFilters() {
@@ -373,7 +417,10 @@
   function filteredItems() {
     var f = activeFilters();
     var q = f.search.trim().toLowerCase();
+    var vis = f.visibility || "active";
     return poolItems().filter(function (it) {
+      if (vis === "active" && it.hidden) return false;
+      if (vis === "hidden" && !it.hidden) return false;
       if (f.type.length && f.type.indexOf(it.type) === -1) return false;
       if (f.status.length && f.status.indexOf(it.status) === -1) return false;
       if (f.priority.length && f.priority.indexOf(it.priority) === -1) return false;
@@ -388,7 +435,7 @@
       if (f.tag.length && !f.tag.some(function (t) { return (it.tags || []).indexOf(t) !== -1; })) return false;
       if (!dueMatches(it, f.due, f.dueOn)) return false;
       if (q) {
-        var hay = (it.id + " " + it.title + " " + it.description + " " + (it.workstreams || []).join(" ") + " " +
+        var hay = (it.id + " " + it.title + " " + it.description + " " + (it.workstreams || []).join(" ") + " " + (it.groups || []).join(" ") + " " +
           (it.owners || []).join(" ") + " " + (it.nextStep || "") + " " + (it.mitigationPlan || "") + " " +
           (it.decisionMade || "") + " " + (it.rationale || "") + " " + (it.tags || []).join(" ")).toLowerCase();
         if (hay.indexOf(q) === -1) return false;
@@ -436,6 +483,24 @@
     store.items.forEach(function (i) { (i.workstreams || []).forEach(function (w) { if (w && !seen[w]) { seen[w] = 1; out.push(w); } }); });
     return out;
   }
+  function groupList() {
+    var out = (store.settings.groups || []).slice();
+    var seen = {}; out.forEach(function (g) { seen[g] = 1; });
+    store.items.forEach(function (i) { (i.groups || []).forEach(function (g) { if (g && !seen[g]) { seen[g] = 1; out.push(g); } }); });
+    return out;
+  }
+  function groupCount(g) {
+    return store.items.filter(function (i) { return (i.groups || []).indexOf(g) !== -1 && !i.hidden; }).length;
+  }
+  // Quick-create a group from anywhere an item is being assigned to one. Returns the name, or "" if cancelled.
+  function promptNewGroup() {
+    var name = prompt("New group name (e.g. a meeting or theme):");
+    if (!name) return "";
+    name = name.trim();
+    if (!name) return "";
+    if (store.settings.groups.indexOf(name) === -1) { store.settings.groups.push(name); persistSettings(); }
+    return name;
+  }
   function linkTargets() {
     // open RAID items that can be linked to (not tasks, not done)
     return store.items.filter(function (o) { return o.type !== "Task" && isOpenStatus(o); });
@@ -452,7 +517,7 @@
   }
   function optsFor(key) {
     var pool = poolItems();
-    if (key === "type") return mainViewWithTasks() ? ALL_TYPES : TYPES;
+    if (key === "type") return (mainViewWithTasks() || isGroupScope()) ? ALL_TYPES : TYPES;
     if (key === "status") return STATUSES;
     if (key === "priority") return PRIORITIES;
     if (key === "owner") return (pool.some(function (i) { return !(i.owners || []).length; }) ? [UNASSIGNED] : []).concat(uniqueOwners());
@@ -474,6 +539,7 @@
   var viewEl = document.getElementById("view");
 
   function render() {
+    if (unhideStale()) persist();
     sanitizeFilters();
     renderNav();
     renderDash();
@@ -484,14 +550,15 @@
     document.getElementById("dash").classList.toggle("hidden", !ui.showDash);
 
     var title;
-    if (isTasksScope()) title = ui.view === "list" ? "Task list" : "Tasks";
+    if (isGroupScope()) title = "Group: " + ui.activeGroup;
+    else if (isTasksScope()) title = ui.view === "list" ? "Task list" : "Tasks";
     else if (ui.typeView) title = ui.typeView + "s";
     else if (ui.view === "matrix") title = "Risk Matrix";
     else if (ui.view === "list") title = "List";
     else title = "Board";
     document.getElementById("viewTitle").textContent = title;
 
-    if (!isTasksScope() && ui.view === "matrix") renderMatrix();
+    if (ui.scope === "raid" && ui.view === "matrix") renderMatrix();
     else if (ui.view === "list" || ui.typeView) renderList();
     else renderBoard();
 
@@ -514,18 +581,36 @@
     });
     ALL_TYPES.forEach(function (t) {
       var c = document.querySelector('[data-count="' + t + '"]');
-      if (c) c.textContent = store.items.filter(function (i) { return i.type === t; }).length;
+      if (c) c.textContent = store.items.filter(function (i) { return i.type === t && !i.hidden; }).length;
     });
+    renderGroupNav();
+  }
+  function renderGroupNav() {
+    var el = document.getElementById("groupNavList");
+    if (!el) return;
+    var groups = groupList();
+    if (!groups.length) {
+      el.innerHTML = '<div class="hint" style="padding:2px 20px 8px">No groups yet — add one in Settings &amp; data.</div>';
+      return;
+    }
+    el.innerHTML = groups.map(function (g) {
+      var active = isGroupScope() && store.ui.activeGroup === g;
+      return '<button class="nav-item' + (active ? " active" : "") + '" data-nav="group:' + esc(g) + '">' +
+        '<span class="dot" style="background:var(--group)"></span> ' + esc(g) +
+        ' <span class="count">' + groupCount(g) + "</span></button>";
+    }).join("");
   }
 
   function dcard(label, value, sub) {
     return '<div class="dash-card"><div class="label">' + label + '</div><div class="value">' + value +
       '</div><div class="sub">' + (sub || "") + "</div></div>";
   }
+  function visibleItems() { return baseItems().filter(function (i) { return !i.hidden; }); }
   function renderDash() {
+    if (isGroupScope()) { renderGroupDash(); return; }
     if (isTasksScope()) { renderTaskDash(); return; }
     var d = document.getElementById("dash");
-    var items = baseItems();
+    var items = visibleItems();
     var byType = {}; TYPES.forEach(function (t) { byType[t] = items.filter(function (i) { return i.type === t; }).length; });
     var overdue = items.filter(isOverdue).length;
     var open = items.filter(function (i) { return i.status !== "Resolved" && i.status !== "Closed"; }).length;
@@ -550,7 +635,7 @@
   }
   function renderTaskDash() {
     var d = document.getElementById("dash");
-    var items = baseItems();
+    var items = visibleItems();
     var open = items.filter(function (i) { return i.status !== "Resolved" && i.status !== "Closed"; }).length;
     var overdue = items.filter(isOverdue).length;
     var byPrio = {}; PRIORITIES.forEach(function (p) { byPrio[p] = items.filter(function (i) { return i.priority === p; }).length; });
@@ -563,6 +648,23 @@
         '</div><div class="sub">past due, not done</div></div>' +
       dcard("Due today or sooner", dueSoon, "open tasks") +
       dcard("High / Critical", byPrio.High + byPrio.Critical, "need attention");
+  }
+  function renderGroupDash() {
+    var d = document.getElementById("dash");
+    var items = visibleItems();
+    var byType = {}; ALL_TYPES.forEach(function (t) { byType[t] = items.filter(function (i) { return i.type === t; }).length; });
+    var overdue = items.filter(isOverdue).length;
+    var open = items.filter(isOpenStatus).length;
+    d.innerHTML =
+      dcard("In this group", items.length, open + " open · " + (items.length - open) + " done") +
+      '<div class="dash-card"><div class="label">By type</div>' +
+        '<div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">' +
+        ALL_TYPES.map(function (t) {
+          return '<span style="font-weight:700"><span class="type-dot ' + t + '" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>' +
+            byType[t] + "</span>";
+        }).join("") + "</div><div class='sub'>R / A / I / D / Task</div></div>" +
+      '<div class="dash-card ' + (overdue ? "warn" : "") + '"><div class="label">Overdue</div><div class="value">' + overdue +
+        "</div><div class=\"sub\">past due date, not resolved</div></div>";
   }
 
   // ----- Filter bar (multi-select) -----
@@ -581,15 +683,20 @@
     var active = !allChecked;
     var selCount = none ? 0 : sel.length;
     var openMenu = store.ui._openMenu === key;
+    var mq = (openMenu ? (store.ui._menuSearch || "") : "");
+    var mqLower = mq.trim().toLowerCase();
+    var showSearch = opts.length > 3;   // every real filter has 4+ options — so effectively all of them
     return '<div class="fmulti" data-fmulti-key="' + key + '">' +
       '<button type="button" class="fmulti-btn' + (active ? " on" : "") + '" data-fmulti-toggle="' + key + '">' + esc(label) +
         (active ? " (" + selCount + "/" + opts.length + ")" : "") + " ▾</button>" +
       '<div class="fmulti-menu' + (openMenu ? "" : " hidden") + '">' +
         (opts.length ? (
+          (showSearch ? '<input type="text" class="fmulti-search" placeholder="Search ' + esc(label.toLowerCase()) + '…" value="' + esc(mq) + '" autocomplete="off">' : "") +
           '<label class="fmulti-all"><input type="checkbox" data-fall="' + key + '"' + (allChecked ? " checked" : "") + "> <b>Select all</b></label>" +
           opts.map(function (o) {
             var checked = allChecked || (!none && sel.indexOf(o) !== -1);
-            return '<label><input type="checkbox" data-fkey="' + key + '" data-fval="' + esc(o) + '"' + (checked ? " checked" : "") + "> " + esc(o) + "</label>";
+            var hide = mqLower && o.toLowerCase().indexOf(mqLower) === -1;
+            return '<label data-fopt="' + esc(o.toLowerCase()) + '"' + (hide ? " hidden" : "") + '><input type="checkbox" data-fkey="' + key + '" data-fval="' + esc(o) + '"' + (checked ? " checked" : "") + "> " + esc(o) + "</label>";
           }).join("")
         ) : '<div class="hint" style="padding:6px 8px">Nothing to filter</div>') +
       "</div></div>";
@@ -610,13 +717,23 @@
     var f = store.ui.filters;
     var tasks = isTasksScope();
     var wrap = document.getElementById("filters");
+    var vis = f.visibility || "active";
     wrap.innerHTML =
       '<div class="search">🔍<input type="text" id="fSearch" placeholder="Search…" value="' + esc(f.search) + '"></div>' +
       (store.ui.typeView || tasks ? "" : fmulti("type")) +
       fmulti("status") + fmulti("priority") + fmulti("owner") + fmulti("workstream") + fmulti("tag") + fmulti("due") +
       '<input type="date" id="fDueOn" title="Due on this exact date" value="' + esc(f.dueOn) + '">' +
+      '<select id="fVisibility" title="Show hidden items"' + (vis !== "active" ? ' class="on"' : "") + ">" +
+        '<option value="active"' + (vis === "active" ? " selected" : "") + ">Active items</option>" +
+        '<option value="all"' + (vis === "all" ? " selected" : "") + ">Include hidden</option>" +
+        '<option value="hidden"' + (vis === "hidden" ? " selected" : "") + ">Hidden only</option>" +
+      "</select>" +
       '<span id="filterChips"></span>';
     renderChips();
+    if (store.ui._openMenu && store.ui._menuSearch) {
+      var si = wrap.querySelector('.fmulti[data-fmulti-key="' + store.ui._openMenu + '"] .fmulti-search');
+      if (si) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
+    }
   }
   function renderChips() {
     var c = document.getElementById("filterChips");
@@ -637,21 +754,26 @@
     });
     if (f.search) chips.push('<span class="chip">"' + esc(f.search) + '"<button data-chip-remove data-ck="search">×</button></span>');
     if (f.dueOn) chips.push('<span class="chip">Due ' + fmtDate(f.dueOn) + '<button data-chip-remove data-ck="dueOn">×</button></span>');
-    if (chips.length > 1) chips.push('<button class="btn subtle" id="clearAll">Clear all</button>');
+    if ((f.visibility || "active") !== "active") chips.push('<span class="chip">' + (f.visibility === "hidden" ? "Hidden only" : "Incl. hidden") + '<button data-chip-remove data-ck="visibility">×</button></span>');
+    if (chips.length) chips.push('<button class="btn subtle" id="clearAll">Clear all</button>');
     c.innerHTML = chips.join("");
   }
 
   // ----- Filter-aware KPI strip -----
   function anyFilterActive() {
     var f = store.ui.filters;
-    return !!f.search || !!f.dueOn || FILTER_KEYS.some(function (k) { return (f[k] || []).length; });
+    return !!f.search || !!f.dueOn || (f.visibility || "active") !== "active" ||
+      FILTER_KEYS.some(function (k) { return (f[k] || []).length; });
   }
   function renderKpi() {
     var el = document.getElementById("viewkpi");
     if (!el) return;
     if (store.ui.view === "matrix" && !isTasksScope()) { el.innerHTML = ""; return; }
     var shown = filteredItems();
-    var total = poolItems().length;
+    var vis = store.ui.filters.visibility || "active";
+    var total = poolItems().filter(function (i) {
+      return vis === "hidden" ? i.hidden : (vis === "all" ? true : !i.hidden);
+    }).length;
     var pastDue = shown.filter(function (i) { return dueMatchesOne(i, "Past due"); }).length;
     var thisWeek = shown.filter(function (i) { return dueMatchesOne(i, "Due this week"); }).length;
     var unresolved = shown.filter(isOpenStatus).length;
@@ -715,48 +837,84 @@
     wireBoardDnD();
   }
 
-  function tdFor(it, key) {
+  function optSel(opts, cur) {
+    return opts.map(function (o) { return "<option " + (o === cur ? "selected" : "") + ">" + esc(o) + "</option>"; }).join("");
+  }
+  function tdFor(it, key, edit) {
     var over = isOverdue(it);
     switch (key) {
-      case "id": return '<td><span class="id-cell">' + it.id + "</span></td>";
+      case "id": return '<td><span class="id-cell" data-open-row>' + it.id + "</span></td>";
       case "type": return '<td><span class="badge ' + it.type + '">' + it.type + "</span></td>";
-      case "title": return '<td class="title-cell">' + esc(it.title) +
-        (it.tags && it.tags.length ? " " + it.tags.map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join(" ") : "") + "</td>";
+      case "title": return edit
+        ? '<td class="title-cell"><input type="text" class="ie" data-edit-field="title" value="' + esc(it.title) + '"></td>'
+        : '<td class="title-cell">' + esc(it.title) +
+          (it.tags && it.tags.length ? " " + it.tags.map(function (t) { return '<span class="label-tag">' + esc(t) + "</span>"; }).join(" ") : "") + "</td>";
       case "workstream": return "<td>" + ((it.workstreams || []).length ? esc((it.workstreams || []).join(", ")) : '<span style="color:var(--text-faint)">—</span>') + "</td>";
-      case "status": return '<td><span class="pill" data-st="' + esc(it.status) + '">' + it.status + "</span></td>";
-      case "priority": return '<td><span class="flag" data-p="' + it.priority + '">' + it.priority + "</span></td>";
+      case "status": return edit
+        ? '<td><select class="ie" data-edit-field="status">' + optSel(STATUSES, it.status) + "</select></td>"
+        : '<td><span class="pill" data-st="' + esc(it.status) + '">' + it.status + "</span></td>";
+      case "priority": return edit
+        ? '<td><select class="ie" data-edit-field="priority">' + optSel(PRIORITIES, it.priority) + "</select></td>"
+        : '<td><span class="flag" data-p="' + it.priority + '">' + it.priority + "</span></td>";
       case "owner": return (it.owners || []).length
         ? '<td><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + ownerAvatars(it) + "<span>" + esc((it.owners || []).join(", ")) + "</span></span></td>"
         : '<td><span style="color:var(--text-faint)">Unassigned</span></td>';
-      case "dueDate": return '<td style="' + (over ? "color:var(--issue);font-weight:600" : "") + '">' + fmtDate(it.dueDate) + (over ? " ⚠" : "") + "</td>";
+      case "dueDate": return edit
+        ? '<td><input type="date" class="ie" data-edit-field="dueDate" value="' + esc(it.dueDate || "") + '"></td>'
+        : '<td style="' + (over ? "color:var(--issue);font-weight:600" : "") + '">' + fmtDate(it.dueDate) + (over ? " ⚠" : "") + "</td>";
+      case "_actions": return '<td class="ie-actions"><button type="button" class="btn subtle" data-hide-toggle>' + (it.hidden ? "Unhide" : "Hide") + "</button></td>";
+      case "_select": return '<td class="ie-select"><input type="checkbox" class="row-check" data-row-check="' + it.id + '"' +
+        (store.ui.selectedRows.indexOf(it.id) !== -1 ? " checked" : "") + "></td>";
     }
     return "<td></td>";
   }
+  function bulkGroupOptionsHtml() {
+    return '<option value="">Add selected to group…</option>' +
+      groupList().map(function (g) { return "<option>" + esc(g) + "</option>"; }).join("") +
+      '<option value="__new__">+ New group…</option>';
+  }
   function renderList() {
+    var edit = store.ui.editMode;
     var items = sortItems(filteredItems());
     var s = store.ui.sort;
     function arrow(k) { return s.key === k ? '<span class="arrow">' + (s.dir === "asc" ? "▲" : "▼") + "</span>" : ""; }
     var cols = isTasksScope()
       ? [["id", "ID"], ["title", "Title"], ["workstream", "Workstream"], ["status", "Status"], ["priority", "Priority"], ["owner", "Owner"], ["dueDate", "Due date"]]
       : [["id", "ID"], ["type", "Type"], ["title", "Title"], ["workstream", "Workstream"], ["status", "Status"], ["priority", "Priority"], ["owner", "Owner"], ["dueDate", "Due date"]];
+    if (edit) cols = [["_select", ""]].concat(cols, [["_actions", ""]]);
+    var visibleIds = items.map(function (it) { return it.id; });
+    store.ui.selectedRows = store.ui.selectedRows.filter(function (id) { return visibleIds.indexOf(id) !== -1; });
+    var selN = store.ui.selectedRows.length;
+    var toolbar = '<div class="list-toolbar">' +
+      '<button type="button" class="btn subtle' + (edit ? " on" : "") + '" id="editToggle">' + (edit ? "✓ Done editing" : "✎ Edit rows") + "</button>" +
+      (edit && !selN ? '<span class="hint">Title, Status, Priority and Due date are editable inline. Check rows to bulk-add to a group. Click an ID to open the full item.</span>' : "") +
+      (edit && selN ? '<span class="bulk-bar"><b>' + selN + " selected</b>" +
+        '<select id="bulkGroupAdd">' + bulkGroupOptionsHtml() + "</select>" +
+        '<button type="button" class="btn subtle" id="bulkClear">Clear selection</button></span>' : "") +
+      "</div>";
+    var taskCount = mainViewWithTasks() ? items.filter(function (it) { return it.type === "Task"; }).length : 0;
     if (!items.length) {
-      viewEl.innerHTML = '<div class="table-wrap"><div class="empty"><div class="big">Nothing here yet</div><div>Try clearing a filter, or use + Create.</div></div></div>';
+      viewEl.innerHTML = toolbar + '<div class="table-wrap"><div class="empty"><div class="big">Nothing here yet</div><div>Try clearing a filter, or use + Create.</div></div></div>';
       return;
     }
-    var taskCount = mainViewWithTasks() ? items.filter(function (it) { return it.type === "Task"; }).length : 0;
     viewEl.innerHTML =
+      toolbar +
       (taskCount ? '<div class="hint" style="margin-bottom:8px">Showing ' + taskCount + " task" + (taskCount === 1 ? "" : "s") + " alongside RAID items — tasks are not included in the Excel export.</div>" : "") +
       '<div class="table-wrap"><table><thead><tr>' +
-        cols.map(function (c) { return '<th data-sort="' + c[0] + '">' + c[1] + " " + arrow(c[0]) + "</th>"; }).join("") +
+        cols.map(function (c) {
+          if (c[0] === "_select") return '<th><input type="checkbox" id="selectAllRows"' + (selN && selN === visibleIds.length ? " checked" : "") + "></th>";
+          return c[1] === "" ? "<th></th>" : '<th data-sort="' + c[0] + '">' + c[1] + " " + arrow(c[0]) + "</th>";
+        }).join("") +
       "</tr></thead><tbody>" +
       items.map(function (it) {
-        return '<tr data-id="' + it.id + '">' + cols.map(function (c) { return tdFor(it, c[0]); }).join("") + "</tr>";
+        return '<tr data-id="' + it.id + '"' + (it.hidden ? ' class="row-hidden"' : "") + ">" +
+          cols.map(function (c) { return tdFor(it, c[0], edit); }).join("") + "</tr>";
       }).join("") +
       "</tbody></table></div>";
   }
 
   function renderMatrix() {
-    var risks = store.items.filter(function (i) { return i.type === "Risk"; });
+    var risks = store.items.filter(function (i) { return i.type === "Risk" && !i.hidden; });
     var band = [["m-med", "m-high", "m-crit"], ["m-low", "m-med", "m-high"], ["m-low", "m-low", "m-med"]];
     var impacts = ["High", "Medium", "Low"];
     var likelihoods = ["Low", "Medium", "High"];
@@ -843,6 +1001,7 @@
     copy.resolvedDate = null;
     copy.createdDate = todayISO();
     copy.reporter = CURRENT_USER;
+    copy.hidden = false; copy.hiddenOn = null;
     copy.links = [];
     copy.activity = [{ id: "c0", kind: "create", text: "duplicated from " + it.id, who: CURRENT_USER, ts: nowISO() }];
     store.items.push(copy);
@@ -864,7 +1023,7 @@
     renderBoardOrList();
   }
   function renderBoardOrList() {
-    if (!isTasksScope() && store.ui.view === "matrix") renderMatrix();
+    if (store.ui.scope === "raid" && store.ui.view === "matrix") renderMatrix();
     else if (store.ui.view === "list" || store.ui.typeView) renderList();
     else renderBoard();
     renderDash(); renderNav(); renderKpi();
@@ -899,6 +1058,17 @@
       (avail.length
         ? '<select data-ws-add><option value="">+ add…</option>' + avail.map(function (w) { return "<option>" + esc(w) + "</option>"; }).join("") + "</select>"
         : (current.length ? "" : '<span class="hint">Define workstreams in Settings &amp; data.</span>')) +
+      "</div></div>";
+  }
+  function groupFieldHtml(current) {
+    var avail = groupList().filter(function (g) { return current.indexOf(g) === -1; });
+    return '<div class="field"><label>Groups</label><div class="tag-input-row">' +
+      current.map(function (g) { return '<span class="tag-pill group-pill">' + esc(g) + '<button data-group-remove data-val="' + esc(g) + '">×</button></span>'; }).join("") +
+      '<select data-group-add><option value="">+ add…</option>' +
+        avail.map(function (g) { return "<option>" + esc(g) + "</option>"; }).join("") +
+        '<option value="__new__">+ New group…</option>' +
+      "</select>" +
+      '<div class="hint" style="width:100%;margin-top:2px">A collection you can pull up as its own board/list — e.g. items to discuss in a meeting.</div>' +
       "</div></div>";
   }
 
@@ -941,7 +1111,7 @@
     var activity = it.activity.slice().sort(function (a, b) { return a.ts > b.ts ? -1 : 1; });
     var actHtml = activity.map(function (a) {
       return '<div class="act ' + a.kind + '">' + avatarEl(a.who) +
-        '<div class="body"><div><span class="who">' + esc(a.who) + '</span><span class="when">' + fmtDateTime(a.ts) + "</span></div>" +
+        '<div class="body"><div><span class="who">' + esc(a.who) + '</span><span class="when" title="' + fmtDateTime(a.ts) + '">' + fmtNoteDate(a.ts) + "</span></div>" +
         '<div class="text">' + (a.kind === "change" ? a.text : esc(a.text)) + "</div></div></div>";
     }).join("");
 
@@ -987,6 +1157,7 @@
               selectField(id, "priority", "Priority", PRIORITIES, it.priority) +
               multiFieldHtml("Owners", "owners", it.owners, "ownerOptions", "Add owner + Enter (Tab to accept suggestion)") +
               wsFieldHtml(it.workstreams || []) +
+              groupFieldHtml(it.groups || []) +
               '<div class="field"><label>Due date</label><input type="date" data-field="dueDate" data-id="' + id + '" value="' + esc(it.dueDate || "") + '"></div>' +
               (isTask ? '<div class="field" style="margin-bottom:0"><label>Repeat</label><select data-field="recurrence" data-id="' + id + '">' +
                 RECUR.map(function (o) { return "<option " + (o === (it.recurrence || "None") ? "selected" : "") + ">" + o + "</option>"; }).join("") +
@@ -999,7 +1170,9 @@
               (isOverdue(it) ? '<div class="side-row"><span class="k">Status</span><span class="v" style="color:var(--issue)">Overdue</span></div>' : "") +
             "</div>" +
             (isTask ? '<div class="hint" style="margin-bottom:12px">Personal task — not shown on the RAID board or included in the Excel export.</div>' : "") +
+            (it.hidden ? '<div class="hint" style="margin-bottom:8px;color:var(--text-sub)">Hidden until tomorrow — excluded from views and the export unless you show hidden items. Comes back automatically on ' + fmtDate(todayISO(1)) + ".</div>" : "") +
             '<button class="btn" id="dupItem" style="width:100%;margin-bottom:8px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Duplicate</button>' +
+            '<button class="btn" id="hideItem" style="width:100%;margin-bottom:8px">' + (it.hidden ? "Unhide item" : "Hide item") + "</button>" +
             '<button class="btn" id="deleteItem" style="width:100%;color:var(--issue);border-color:var(--issue)">Delete item</button>' +
           "</div>" +
         "</div></div>" +
@@ -1076,6 +1249,28 @@
       });
     });
 
+    var gAdd = overlay.querySelector("[data-group-add]");
+    if (gAdd) gAdd.addEventListener("change", function () {
+      var v = gAdd.value;
+      if (!v) return;
+      if (v === "__new__") v = promptNewGroup();
+      if (!v) { renderDetailModal(id); return; }
+      var it = getItem(id); it.groups = it.groups || [];
+      if (it.groups.indexOf(v) === -1) {
+        it.groups.push(v);
+        log(it, "change", "added to group <b>" + esc(v) + "</b>");
+        persist(); renderDetailModal(id); renderBoardOrList(); renderNav();
+      }
+    });
+    overlay.querySelectorAll("[data-group-remove]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var it = getItem(id), v = b.getAttribute("data-val");
+        it.groups = (it.groups || []).filter(function (x) { return x !== v; });
+        log(it, "change", "removed from group <b>" + esc(v) + "</b>");
+        persist(); renderDetailModal(id); renderBoardOrList(); renderNav();
+      });
+    });
+
     var ci = document.getElementById("commentInput");
     document.getElementById("addComment").addEventListener("click", function () { addComment(id, ci.value); ci.value = ""; });
     ci.addEventListener("keydown", function (e) {
@@ -1125,6 +1320,13 @@
     });
 
     document.getElementById("dupItem").addEventListener("click", function () { duplicateItem(id); });
+    document.getElementById("hideItem").addEventListener("click", function () {
+      var it = getItem(id);
+      setHidden(it, !it.hidden);
+      log(it, "change", it.hidden ? "hidden from views (until tomorrow)" : "unhidden");
+      persist(); render();
+      toast(id + (it.hidden ? " hidden until tomorrow" : " unhidden"));
+    });
     document.getElementById("deleteItem").addEventListener("click", function () {
       var it = getItem(id);
       if (!confirm("Delete " + id + " — “" + it.title + "”? This cannot be undone.")) return;
@@ -1138,7 +1340,7 @@
   // ---------- Create modal ----------
   function openCreate() {
     var chosen = store.ui.typeView || (isTasksScope() ? "Task" : "Risk");
-    var createState = { owners: [], tags: [], workstreams: [], links: [] };
+    var createState = { owners: [], tags: [], workstreams: [], groups: isGroupScope() ? [store.ui.activeGroup] : [], links: [] };
     var overlay = el('<div class="overlay" id="overlay"><div class="modal"><div class="modal-head"><b>Create item</b><span class="spacer"></span><button class="close" id="closeModal">×</button></div><div class="modal-body" id="createBody"></div><div class="modal-foot"><button class="btn" id="cCancel">Cancel</button><button class="btn primary" id="cSave">Create</button></div></div></div>');
     modalRoot.innerHTML = ""; modalRoot.appendChild(overlay);
 
@@ -1213,6 +1415,31 @@
         });
       });
     }
+    function groupRowInner() {
+      var avail = groupList().filter(function (g) { return createState.groups.indexOf(g) === -1; });
+      return createState.groups.map(function (g) { return '<span class="tag-pill group-pill">' + esc(g) + '<button type="button" data-group-remove data-val="' + esc(g) + '">×</button></span>'; }).join("") +
+        '<select id="nGroupAdd"><option value="">+ add…</option>' +
+          avail.map(function (g) { return "<option>" + esc(g) + "</option>"; }).join("") +
+          '<option value="__new__">+ New group…</option>' +
+        "</select>";
+    }
+    function refreshGroups() { document.getElementById("nGroupRow").innerHTML = groupRowInner(); wireGroups(); }
+    function wireGroups() {
+      var add = document.getElementById("nGroupAdd");
+      if (add) add.addEventListener("change", function () {
+        var v = add.value;
+        if (!v) return;
+        if (v === "__new__") v = promptNewGroup();
+        if (v && createState.groups.indexOf(v) === -1) createState.groups.push(v);
+        refreshGroups();
+      });
+      document.getElementById("nGroupRow").querySelectorAll("[data-group-remove]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          createState.groups = createState.groups.filter(function (x) { return x !== b.getAttribute("data-val"); });
+          refreshGroups();
+        });
+      });
+    }
     function linkRowInner() {
       return createState.links.map(function (lid) {
         var li = getItem(lid);
@@ -1267,6 +1494,7 @@
         '<div class="row2">' + fieldSelect("nPriority", "Priority", PRIORITIES, "Medium") + fieldSelect("nStatus", "Status", STATUSES, "Open") + "</div>" +
         '<div class="field"><label>Due date</label><input type="date" id="nDue"></div>' +
         '<div class="field"><label>Workstreams</label><div class="tag-input-row" id="nWsRow">' + wsRowInner() + "</div></div>" +
+        '<div class="field"><label>Groups</label><div class="tag-input-row" id="nGroupRow">' + groupRowInner() + "</div></div>" +
         '<div class="field"><label>Owners</label><div class="tag-input-row" id="nOwnerRow">' + chipRowInner("nOwnerRow") + "</div></div>" +
         '<div class="field"><label>Labels</label><div class="tag-input-row" id="nTagRow">' + chipRowInner("nTagRow") + "</div></div>" +
         (isTask ? "" : '<div class="field"><label>Linked items</label><div class="tag-input-row" id="nLinkRow">' + linkRowInner() + "</div></div>") +
@@ -1283,6 +1511,7 @@
       wireChipRow("nOwnerRow");
       wireChipRow("nTagRow");
       wireWs();
+      wireGroups();
       if (!isTask) wireLinks();
 
       function typeFields(isTask) {
@@ -1315,6 +1544,7 @@
         status: document.getElementById("nStatus").value,
         priority: document.getElementById("nPriority").value,
         workstreams: createState.workstreams.slice(),
+        groups: createState.groups.slice(),
         owners: createState.owners.slice(),
         reporter: CURRENT_USER,
         createdDate: todayISO(),
@@ -1336,7 +1566,11 @@
         if (o) { o.links = o.links || []; if (o.links.indexOf(it.id) === -1) o.links.push(it.id); }
       });
 
-      if (isTask) { store.ui.scope = "tasks"; store.ui.view = "board"; store.ui.typeView = null; }
+      var stayInGroup = isGroupScope() && (it.groups || []).indexOf(store.ui.activeGroup) !== -1;
+      if (stayInGroup) {
+        // already the right scope/group — just make sure we land on a real view
+        if (store.ui.view === "matrix") store.ui.view = "board";
+      } else if (isTask) { store.ui.scope = "tasks"; store.ui.view = "board"; store.ui.typeView = null; }
       else {
         store.ui.scope = "raid";
         if (store.ui.view === "matrix") store.ui.view = "board";
@@ -1416,17 +1650,17 @@
     ]);
   }
   function exportXLSX() {
-    var headers = ["ID", "Type", "Title", "Description", "Workstreams", "Status", "Priority", "Owners", "Reporter",
+    var headers = ["ID", "Type", "Title", "Description", "Workstreams", "Groups", "Status", "Priority", "Owners", "Reporter",
       "Created", "Due date", "Resolved", "Likelihood", "Impact", "Risk score", "Mitigation plan",
       "Next step", "Severity", "Decision made", "Rationale", "Linked items", "Labels", "Comments"];
     var rows = [headers];
-    var exported = store.items.filter(function (it) { return it.type !== "Task"; });
+    var exported = store.items.filter(function (it) { return it.type !== "Task" && !it.hidden; });
     exported.forEach(function (it) {
       var comments = it.activity.filter(function (a) { return a.kind === "comment"; })
         .map(function (a) { return a.who + " (" + a.ts.slice(0, 10) + "): " + a.text; }).join(" | ");
       var rs = riskScore(it);
       rows.push([
-        it.id, it.type, it.title, it.description || "", (it.workstreams || []).join(", "), it.status, it.priority,
+        it.id, it.type, it.title, it.description || "", (it.workstreams || []).join(", "), (it.groups || []).join(", "), it.status, it.priority,
         (it.owners || []).join(", "), it.reporter,
         it.createdDate || "", it.dueDate || "", it.resolvedDate || "", it.likelihood || "", it.impact || "",
         rs == null ? "" : rs, it.mitigationPlan || "", it.nextStep || "", it.severity || "",
@@ -1434,7 +1668,7 @@
       ]);
     });
     var data = makeXlsx("RAID Log", rows);
-    downloadFile("Web_RAID.xlsx", data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    downloadFile("RAID Tracker.xlsx", data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     toast("Exported " + exported.length + " items to Excel");
   }
 
@@ -1447,9 +1681,11 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
+  function backupPayload() {
+    return { app: "raid-log", version: 3, exportedAt: nowISO(), counter: store.counter, settings: store.settings, items: store.items };
+  }
   function exportJSON() {
-    var payload = { app: "raid-log", version: 3, exportedAt: nowISO(), counter: store.counter, settings: store.settings, items: store.items };
-    downloadFile(todayISO() + " Web_RAID.json", JSON.stringify(payload, null, 2), "application/json");
+    downloadFile("RAID Tracker.json", JSON.stringify(backupPayload(), null, 2), "application/json");
     toast("Backup downloaded (" + store.items.length + " items)");
   }
   function importJSON(file) {
@@ -1461,22 +1697,254 @@
       if (!Array.isArray(items) || !items.length) { toast("No items found in that file"); return; }
       var bad = items.filter(function (it) { return !it || !it.id || !it.type || !it.title; });
       if (bad.length) { toast("File has " + bad.length + " malformed item(s) — not loaded"); return; }
-      if (!confirm("Load " + items.length + " items from this backup? This replaces everything currently in the log.")) return;
-      items.forEach(migrateItem);
-      store.items = items;
-      if (data && data.settings && Array.isArray(data.settings.workstreams)) { store.settings = data.settings; persistSettings(); }
-      var maxNum = items.reduce(function (m, it) { var n = parseInt(String(it.id).split("-")[1], 10); return isNaN(n) ? m : Math.max(m, n); }, 0);
-      store.counter = (data && data.counter && data.counter > maxNum) ? data.counter : maxNum + 1;
-      store.ui.selectedId = null;
-      modalRoot.innerHTML = "";
-      persist(); render();
-      toast("Loaded " + items.length + " items from backup");
+      if (!store.items.length) { applyReplace(items, data); return; }
+      promptImportMode(items, data);
     };
     reader.readAsText(file);
+  }
+  function applyReplace(items, data) {
+    items.forEach(migrateItem);
+    store.items = items;
+    if (data && data.settings && Array.isArray(data.settings.workstreams)) { store.settings = data.settings; persistSettings(); }
+    var maxNum = items.reduce(function (m, it) { var n = parseInt(String(it.id).split("-")[1], 10); return isNaN(n) ? m : Math.max(m, n); }, 0);
+    store.counter = (data && data.counter && data.counter > maxNum) ? data.counter : maxNum + 1;
+    store.ui.selectedId = null;
+    modalRoot.innerHTML = "";
+    persist(); render();
+    toast("Loaded " + items.length + " items from backup");
+  }
+  function stableStringify(v) {
+    if (Array.isArray(v)) return "[" + v.map(stableStringify).join(",") + "]";
+    if (v && typeof v === "object") {
+      return "{" + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ":" + stableStringify(v[k]); }).join(",") + "}";
+    }
+    return JSON.stringify(v);
+  }
+  // Fields that don't define "the same item" — differences here shouldn't stop a duplicate from being recognized.
+  var DEDUPE_IGNORE_FIELDS = { id: 1, activity: 1, hidden: 1, hiddenOn: 1 };
+  function normalizeForDedupe(it) {
+    var out = {};
+    Object.keys(it).forEach(function (k) {
+      if (DEDUPE_IGNORE_FIELDS[k]) return;
+      var v = it[k];
+      // Order shouldn't matter for simple list fields (owners, workstreams, tags, links, ...).
+      if (Array.isArray(v) && v.every(function (x) { return x === null || typeof x !== "object"; })) v = v.slice().sort();
+      out[k] = v;
+    });
+    return out;
+  }
+  // Same ID and the same defining content counts as a true duplicate, not a conflict — minor differences in
+  // activity/comments, hidden state, or list ordering are ignored so real re-imports of the same item match.
+  function itemsEqual(a, b) {
+    return stableStringify(normalizeForDedupe(a)) === stableStringify(normalizeForDedupe(b));
+  }
+  function applyMerge(items, data) {
+    var existingById = {};
+    store.items.forEach(function (it) { existingById[it.id] = it; });
+    var renumbered = 0, skipped = 0;
+    items.forEach(function (it) {
+      migrateItem(it);
+      var n = parseInt(String(it.id).split("-")[1], 10);
+      if (!isNaN(n) && n >= store.counter) store.counter = n + 1;
+      var existing = existingById[it.id];
+      if (existing) {
+        if (itemsEqual(existing, it)) { skipped++; return; }
+        it.id = "RAID-" + (store.counter++);
+        renumbered++;
+      }
+      existingById[it.id] = it;
+      store.items.push(it);
+    });
+    if (data && data.settings && Array.isArray(data.settings.workstreams)) {
+      data.settings.workstreams.forEach(function (w) {
+        if (store.settings.workstreams.indexOf(w) === -1) store.settings.workstreams.push(w);
+      });
+      persistSettings();
+    }
+    store.ui.selectedId = null;
+    modalRoot.innerHTML = "";
+    persist(); render();
+    var added = items.length - skipped;
+    var extras = [];
+    if (renumbered) extras.push(renumbered + " renumbered to avoid ID clashes");
+    if (skipped) extras.push(skipped + " duplicate" + (skipped === 1 ? "" : "s") + " skipped");
+    toast("Merged " + added + " item" + (added === 1 ? "" : "s") + " into the log" +
+      (extras.length ? " (" + extras.join(", ") + ")" : ""));
+  }
+  function promptImportMode(items, data) {
+    var n = items.length, cur = store.items.length;
+    var overlay = el(
+      '<div class="overlay" id="importOverlay"><div class="modal" style="max-width:440px">' +
+        '<div class="modal-head"><b>Load backup</b><span class="spacer"></span><button class="close" id="importClose">×</button></div>' +
+        '<div class="modal-body">' +
+          '<p style="margin:0 0 14px">This file has ' + n + " item" + (n === 1 ? "" : "s") + ". Your log currently has " + cur + " item" + (cur === 1 ? "" : "s") + ". How should it be loaded?</p>" +
+          '<div style="display:flex;flex-direction:column;gap:10px">' +
+            '<button class="btn primary" id="importMerge" style="text-align:left;padding:10px 14px">Merge with current data' +
+              '<div class="hint" style="margin-top:3px">Adds these items alongside what you have. Any ID clashes are renumbered so nothing is overwritten.</div></button>' +
+            '<button class="btn danger" id="importReplace" style="text-align:left;padding:10px 14px">Replace all data' +
+              '<div class="hint" style="margin-top:3px">Discards everything currently in the log and loads only this file.</div></button>' +
+          "</div>" +
+        "</div>" +
+      "</div></div>"
+    );
+    modalRoot.innerHTML = ""; modalRoot.appendChild(overlay);
+    function close() { modalRoot.innerHTML = ""; }
+    overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) close(); });
+    document.getElementById("importClose").addEventListener("click", close);
+    document.getElementById("importMerge").addEventListener("click", function () { applyMerge(items, data); });
+    document.getElementById("importReplace").addEventListener("click", function () {
+      if (!confirm("Replace all " + cur + " current item" + (cur === 1 ? "" : "s") + " with the " + n + " item" + (n === 1 ? "" : "s") + " from this file?")) return;
+      applyReplace(items, data);
+    });
   }
   function storageWorks() {
     try { localStorage.setItem("raidlog.probe", "1"); localStorage.removeItem("raidlog.probe"); return true; }
     catch (e) { return false; }
+  }
+
+  // ---------- Auto-save to a real file (File System Access API — Chromium browsers only) ----------
+  var FS_DB = "raidlog-fs", FS_STORE = "handles", FS_KEY = "autosave";
+  var fsHandle = null;
+  var fsStatus = fsSupported() ? "checking" : "unsupported";  // checking | none | connected | needs-permission | error | unsupported
+  var fsSaveTimer = null;
+  function fsSupported() { return typeof window !== "undefined" && typeof window.showSaveFilePicker === "function"; }
+  function fsDiagnostic() {
+    var hasProp = typeof window !== "undefined" && ("showSaveFilePicker" in window);
+    var secure = typeof window !== "undefined" && !!window.isSecureContext;
+    var proto = typeof location !== "undefined" ? location.protocol : "?";
+    var bits = [];
+    bits.push("API present: " + (hasProp ? "yes" : "no"));
+    bits.push("secure context: " + (secure ? "yes" : "no"));
+    bits.push("page loaded via: " + proto);
+    return bits.join(" · ");
+  }
+  function idbOpen() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open(FS_DB, 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore(FS_STORE); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+  function idbSet(key, val) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(FS_STORE, "readwrite");
+        tx.objectStore(FS_STORE).put(val, key);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+  function idbGet(key) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(FS_STORE, "readonly");
+        var req = tx.objectStore(FS_STORE).get(key);
+        req.onsuccess = function () { resolve(req.result || null); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+  function idbDel(key) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(FS_STORE, "readwrite");
+        tx.objectStore(FS_STORE).delete(key);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+  function scheduleFileSave() {
+    if (fsStatus !== "connected") return;
+    clearTimeout(fsSaveTimer);
+    fsSaveTimer = setTimeout(writeToFile, 800);
+  }
+  function writeToFile() {
+    if (!fsHandle || fsStatus !== "connected") return Promise.resolve();
+    return fsHandle.createWritable()
+      .then(function (writable) {
+        return writable.write(JSON.stringify(backupPayload(), null, 2)).then(function () { return writable.close(); });
+      })
+      .catch(function () {
+        fsStatus = "error";
+        refreshAutosaveBlock();
+      });
+  }
+  function connectAutosaveFile() {
+    if (!fsSupported()) { toast("This browser doesn't support auto-save to a file — try Chrome or Edge."); return; }
+    window.showSaveFilePicker({
+      suggestedName: "RAID Tracker.json",
+      types: [{ description: "RAID Tracker backup", accept: { "application/json": [".json"] } }]
+    }).then(function (handle) {
+      fsHandle = handle;
+      fsStatus = "connected";
+      idbSet(FS_KEY, handle).catch(function () {
+        // Couldn't remember the file for next time (e.g. private browsing) — this session still auto-saves fine.
+        toast("Connected, but this browser can't remember it for next time");
+      });
+      refreshAutosaveBlock();
+      return writeToFile();
+    }).then(function () {
+      if (fsStatus === "connected") toast("Now auto-saving to " + fsHandle.name);
+    }).catch(function (e) {
+      if (e && e.name !== "AbortError") toast("Couldn't connect that file");
+    });
+  }
+  function requestAutosavePermission() {
+    if (!fsHandle) return;
+    fsHandle.requestPermission({ mode: "readwrite" }).then(function (perm) {
+      if (perm === "granted") { fsStatus = "connected"; toast("Auto-save reconnected"); return writeToFile(); }
+      toast("Permission was not granted");
+    }).catch(function () { toast("Couldn't reconnect"); })
+      .then(refreshAutosaveBlock);
+  }
+  function disconnectAutosaveFile() {
+    fsHandle = null;
+    fsStatus = "none";
+    idbDel(FS_KEY).catch(function () {});
+    refreshAutosaveBlock();
+    toast("Auto-save file disconnected");
+  }
+  function tryReconnectOnBoot() {
+    if (!fsSupported()) { fsStatus = "unsupported"; return; }
+    idbGet(FS_KEY).then(function (handle) {
+      if (!handle) { fsStatus = "none"; refreshAutosaveBlock(); return; }
+      fsHandle = handle;
+      return handle.queryPermission({ mode: "readwrite" }).then(function (perm) {
+        fsStatus = perm === "granted" ? "connected" : "needs-permission";
+        refreshAutosaveBlock();
+      });
+    }).catch(function () { fsStatus = "none"; refreshAutosaveBlock(); });
+  }
+  function autosaveBlockHtml() {
+    if (fsStatus === "unsupported") return '<div class="hint">Not available on this page. This needs Chrome, Edge, or Brave, and — in some of those browsers — the page loaded over <code>http(s)://</code> rather than opened directly as a file.' +
+      '<span style="display:block;margin-top:6px;font-size:11px;color:var(--text-faint,#888)">Diagnostic: ' + esc(fsDiagnostic()) + '</span></div>';
+    if (fsStatus === "checking") return '<div class="hint">Checking for a previously connected file…</div>';
+    if (fsStatus === "connected") return '<div class="hint">Auto-saving to <b>' + esc(fsHandle ? fsHandle.name : "your file") + "</b> — every change is written there automatically, in addition to this browser.</div>" +
+      '<div class="settings-actions" style="margin-top:8px"><button class="btn" id="fsSaveNow">Save now</button><button class="btn" id="fsDisconnect">Disconnect</button></div>';
+    if (fsStatus === "needs-permission") return '<div class="hint">Previously connected to <b>' + esc(fsHandle ? fsHandle.name : "a file") + "</b> — this browser needs you to confirm access again after reloading.</div>" +
+      '<div class="settings-actions" style="margin-top:8px"><button class="btn" id="fsReconnect">Reconnect</button><button class="btn" id="fsDisconnect">Disconnect</button></div>';
+    if (fsStatus === "error") return '<div class="hint" style="color:var(--issue)">The last save to your file failed — it may have been moved, renamed, or deleted.</div>' +
+      '<div class="settings-actions" style="margin-top:8px"><button class="btn" id="fsSaveNow">Try again</button><button class="btn" id="fsDisconnect">Disconnect</button></div>';
+    return '<div class="hint">Keep a real file on disk in sync automatically, so you never have to remember to download a backup.</div>' +
+      '<div class="settings-actions" style="margin-top:8px"><button class="btn" id="fsConnect">Choose a file…</button></div>';
+  }
+  function wireAutosaveBlock() {
+    var c = document.getElementById("fsConnect"); if (c) c.addEventListener("click", connectAutosaveFile);
+    var r = document.getElementById("fsReconnect"); if (r) r.addEventListener("click", requestAutosavePermission);
+    var s = document.getElementById("fsSaveNow"); if (s) s.addEventListener("click", function () { writeToFile().then(function () { if (fsStatus === "connected") toast("Saved to " + fsHandle.name); }); });
+    var d = document.getElementById("fsDisconnect"); if (d) d.addEventListener("click", function () {
+      if (!confirm("Stop auto-saving to this file? Your data stays in the app either way.")) return;
+      disconnectAutosaveFile();
+    });
+  }
+  function refreshAutosaveBlock() {
+    var el2 = document.getElementById("autosaveBlock");
+    if (!el2) return;
+    el2.innerHTML = autosaveBlockHtml();
+    wireAutosaveBlock();
   }
 
   // ---------- Settings & data modal ----------
@@ -1493,6 +1961,13 @@
               store.settings.workstreams.map(function (w) { return '<span class="tag-pill">' + esc(w) + '<button data-ws-remove="' + esc(w) + '">×</button></span>'; }).join("") +
               '<input type="text" id="wsInput" placeholder="Add workstream + Enter" autocomplete="off"></div>' +
           "</div>" +
+          '<div class="settings-group"><h4>Groups</h4>' +
+            '<div class="hint" style="margin-bottom:8px">Ad hoc collections of items — e.g. everything to discuss at a meeting — that show up under Groups in the sidebar. Removing one here does not change items already using it.</div>' +
+            '<div class="tag-input-row" id="groupsRow">' +
+              store.settings.groups.map(function (g) { return '<span class="tag-pill group-pill">' + esc(g) + '<button data-group-remove-setting="' + esc(g) + '">×</button></span>'; }).join("") +
+              '<input type="text" id="groupsInput" placeholder="Add group + Enter" autocomplete="off"></div>' +
+          "</div>" +
+          '<div class="settings-group"><h4>Auto-save to a file</h4><div id="autosaveBlock">' + autosaveBlockHtml() + "</div></div>" +
           '<div class="settings-group"><h4>Export &amp; backup</h4><div class="settings-actions">' +
             '<button class="btn" id="sExport">⭳ Export to Excel (.xlsx)</button>' +
             '<button class="btn" id="sBackup">💾 Download backup (.json)</button>' +
@@ -1515,6 +1990,7 @@
     function close() { modalRoot.innerHTML = ""; }
     overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) close(); });
     document.getElementById("closeModal").addEventListener("click", close);
+    wireAutosaveBlock();
 
     var wsInput = document.getElementById("wsInput");
     wsInput.addEventListener("keydown", function (e) {
@@ -1528,6 +2004,22 @@
       b.addEventListener("click", function () {
         var v = b.getAttribute("data-ws-remove");
         store.settings.workstreams = store.settings.workstreams.filter(function (w) { return w !== v; });
+        persistSettings(); openSettings(); render();
+      });
+    });
+
+    var groupsInput = document.getElementById("groupsInput");
+    groupsInput.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" || !groupsInput.value.trim()) return;
+      e.preventDefault();
+      var v = groupsInput.value.trim();
+      if (store.settings.groups.indexOf(v) === -1) { store.settings.groups.push(v); persistSettings(); openSettings(); render(); }
+      else groupsInput.value = "";
+    });
+    overlay.querySelectorAll("[data-group-remove-setting]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var v = b.getAttribute("data-group-remove-setting");
+        store.settings.groups = store.settings.groups.filter(function (g) { return g !== v; });
         persistSettings(); openSettings(); render();
       });
     });
@@ -1617,19 +2109,23 @@
   }
 
   // ---------- Global events ----------
-  document.querySelectorAll(".nav-item[data-nav]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var nav = b.getAttribute("data-nav");
-      var ui = store.ui;
-      ui._openMenu = null;
-      if (nav === "board") { ui.scope = "raid"; ui.view = "board"; ui.typeView = null; }
-      else if (nav === "list") { ui.scope = "raid"; ui.view = "list"; ui.typeView = null; }
-      else if (nav === "matrix") { ui.scope = "raid"; ui.view = "matrix"; ui.typeView = null; }
-      else if (nav === "taskboard") { ui.scope = "tasks"; ui.view = "board"; ui.typeView = null; }
-      else if (nav === "tasklist") { ui.scope = "tasks"; ui.view = "list"; ui.typeView = null; }
-      else if (nav.indexOf("type:") === 0) { ui.scope = "raid"; ui.typeView = nav.split(":")[1]; ui.view = "list"; }
-      render();
-    });
+  // Delegated (not per-element) because Groups nav buttons are generated dynamically.
+  document.querySelector(".sidebar").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-nav]");
+    if (!b) return;
+    var nav = b.getAttribute("data-nav");
+    var ui = store.ui;
+    ui._openMenu = null;
+    ui._menuSearch = "";
+    ui.selectedRows = [];
+    if (nav === "board") { ui.scope = "raid"; ui.view = "board"; ui.typeView = null; ui.activeGroup = null; }
+    else if (nav === "list") { ui.scope = "raid"; ui.view = "list"; ui.typeView = null; ui.activeGroup = null; }
+    else if (nav === "matrix") { ui.scope = "raid"; ui.view = "matrix"; ui.typeView = null; ui.activeGroup = null; }
+    else if (nav === "taskboard") { ui.scope = "tasks"; ui.view = "board"; ui.typeView = null; ui.activeGroup = null; }
+    else if (nav === "tasklist") { ui.scope = "tasks"; ui.view = "list"; ui.typeView = null; ui.activeGroup = null; }
+    else if (nav.indexOf("type:") === 0) { ui.scope = "raid"; ui.typeView = nav.split(":")[1]; ui.view = "list"; ui.activeGroup = null; }
+    else if (nav.indexOf("group:") === 0) { ui.scope = "group"; ui.activeGroup = nav.slice(6); ui.view = "board"; ui.typeView = null; }
+    render();
   });
 
   document.getElementById("createBtn").addEventListener("click", openCreate);
@@ -1647,11 +2143,20 @@
 
   var filtersEl = document.getElementById("filters");
   filtersEl.addEventListener("input", function (e) {
-    if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderChips(); renderKpi(); renderBoardOrList(); persistPrefs(); }
+    if (e.target.id === "fSearch") { store.ui.filters.search = e.target.value; renderChips(); renderKpi(); renderBoardOrList(); persistPrefs(); return; }
+    if (e.target.classList && e.target.classList.contains("fmulti-search")) {
+      store.ui._menuSearch = e.target.value;
+      var q = e.target.value.trim().toLowerCase();
+      var menu = e.target.closest(".fmulti-menu");
+      menu.querySelectorAll("label[data-fopt]").forEach(function (lab) {
+        lab.hidden = !!q && lab.getAttribute("data-fopt").indexOf(q) === -1;
+      });
+    }
   });
   filtersEl.addEventListener("change", function (e) {
     var t = e.target;
     if (t.id === "fDueOn") { store.ui.filters.dueOn = t.value; applyFilterChange(); return; }
+    if (t.id === "fVisibility") { store.ui.filters.visibility = t.value; applyFilterChange(); return; }
     var fall = t.getAttribute && t.getAttribute("data-fall");
     if (fall) { toggleSelectAll(fall); applyFilterChange(); return; }
     var fkey = t.getAttribute && t.getAttribute("data-fkey");
@@ -1662,17 +2167,19 @@
     if (tog) {
       var key = tog.getAttribute("data-fmulti-toggle");
       store.ui._openMenu = (store.ui._openMenu === key) ? null : key;
-      document.querySelectorAll(".fmulti-menu").forEach(function (m) { m.classList.add("hidden"); });
+      store.ui._menuSearch = "";
+      renderFilters();
       if (store.ui._openMenu) {
-        var mm = tog.parentElement.querySelector(".fmulti-menu");
-        if (mm) mm.classList.remove("hidden");
+        var si = document.querySelector('.fmulti[data-fmulti-key="' + store.ui._openMenu + '"] .fmulti-search');
+        if (si) si.focus();
       }
       return;
     }
     var rm = e.target.closest && e.target.closest("[data-chip-remove]");
     if (rm) {
       var ck = rm.getAttribute("data-ck"), cv = rm.getAttribute("data-cv");
-      if (cv != null && Array.isArray(store.ui.filters[ck])) {
+      if (ck === "visibility") store.ui.filters.visibility = "active";
+      else if (cv != null && Array.isArray(store.ui.filters[ck])) {
         store.ui.filters[ck] = store.ui.filters[ck].filter(function (x) { return x !== cv; });
       } else {
         store.ui.filters[ck] = Array.isArray(store.ui.filters[ck]) ? [] : "";
@@ -1680,18 +2187,45 @@
       applyFilterChange();
       return;
     }
-    if (e.target.id === "clearAll") { store.ui.filters = emptyFilters(); store.ui._openMenu = null; applyFilterChange(); }
+    if (e.target.id === "clearAll") { store.ui.filters = emptyFilters(); store.ui._openMenu = null; store.ui._menuSearch = ""; applyFilterChange(); }
   });
   document.addEventListener("click", function (e) {
     if (store.ui._openMenu && (!e.target.closest || !e.target.closest(".fmulti"))) {
       store.ui._openMenu = null;
+      store.ui._menuSearch = "";
       document.querySelectorAll(".fmulti-menu").forEach(function (m) { m.classList.add("hidden"); });
     }
   });
 
   viewEl.addEventListener("click", function (e) {
+    if (e.target.id === "editToggle") {
+      store.ui.editMode = !store.ui.editMode;
+      store.ui.selectedRows = [];
+      persistPrefs();
+      renderList();
+      return;
+    }
+    if (e.target.id === "bulkClear") { store.ui.selectedRows = []; renderList(); return; }
+    var hb = e.target.closest && e.target.closest("[data-hide-toggle]");
+    if (hb) {
+      var trh = e.target.closest("tr[data-id]");
+      var ith = getItem(trh.getAttribute("data-id"));
+      setHidden(ith, !ith.hidden);
+      log(ith, "change", ith.hidden ? "hidden from views (until tomorrow)" : "unhidden");
+      persist();
+      render();
+      return;
+    }
     var tr = e.target.closest && e.target.closest("tr[data-id]");
-    if (tr) { openItem(tr.getAttribute("data-id")); return; }
+    if (tr) {
+      if (store.ui.editMode) {
+        if (e.target.closest("[data-open-row]")) openItem(tr.getAttribute("data-id"));
+        return;   // otherwise let inline inputs handle it
+      }
+      if (e.target.closest("input,select,textarea,button")) return;
+      openItem(tr.getAttribute("data-id"));
+      return;
+    }
     var th = e.target.closest && e.target.closest("th[data-sort]");
     if (th) {
       var k = th.getAttribute("data-sort");
@@ -1704,6 +2238,49 @@
     }
     var marker = e.target.closest && e.target.closest(".marker[data-id]");
     if (marker) openItem(marker.getAttribute("data-id"));
+  });
+  viewEl.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.id === "selectAllRows") {
+      var ids = [].slice.call(document.querySelectorAll("tbody tr[data-id]")).map(function (r) { return r.getAttribute("data-id"); });
+      store.ui.selectedRows = t.checked ? ids : [];
+      renderList();
+      return;
+    }
+    if (t.classList && t.classList.contains("row-check")) {
+      var id = t.getAttribute("data-row-check");
+      var i = store.ui.selectedRows.indexOf(id);
+      if (t.checked && i === -1) store.ui.selectedRows.push(id);
+      else if (!t.checked && i !== -1) store.ui.selectedRows.splice(i, 1);
+      renderList();
+      return;
+    }
+    if (t.id === "bulkGroupAdd") {
+      var v = t.value;
+      if (!v) return;
+      if (v === "__new__") v = promptNewGroup();
+      if (v) {
+        var n = 0;
+        store.ui.selectedRows.forEach(function (rid) {
+          var it = getItem(rid);
+          if (!it) return;
+          it.groups = it.groups || [];
+          if (it.groups.indexOf(v) === -1) { it.groups.push(v); log(it, "change", "added to group <b>" + esc(v) + "</b>"); n++; }
+        });
+        persist();
+        toast("Added " + n + " item" + (n === 1 ? "" : "s") + " to " + v);
+      }
+      store.ui.selectedRows = [];
+      render();
+      return;
+    }
+    var inp = t.closest && t.closest("[data-edit-field]");
+    if (!inp) return;
+    var tr = t.closest("tr[data-id]");
+    if (!tr) return;
+    var field = inp.getAttribute("data-edit-field");
+    var val = typeof inp.value === "string" ? inp.value.trim() : inp.value;
+    updateField(tr.getAttribute("data-id"), field, val, field);
   });
 
   document.addEventListener("keydown", function (e) {
@@ -1724,4 +2301,5 @@
   if (!tryLoad()) seed();
   loadPrefs();
   render();
+  tryReconnectOnBoot();
 })();

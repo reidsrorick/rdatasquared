@@ -24,6 +24,8 @@
   --decision-bg: #eae6ff;
   --task: #00a3a3;
   --task-bg: #d5f5f5;
+  --group: #00b8d9;
+  --group-bg: #d3f5ff;
 
   --st-open: #42526e;
   --st-open-bg: #dfe1e6;
@@ -38,6 +40,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -162,6 +165,14 @@ input, select, textarea { font-family: inherit; font-size: 14px; color: var(--te
 .fmulti-menu label:hover { background: var(--surface-alt); }
 .fmulti-menu input[type=checkbox] { margin: 0; flex-shrink: 0; }
 .fmulti-menu label.fmulti-all { border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 7px; }
+.fmulti-search {
+  position: sticky; top: -6px; z-index: 1;
+  display: block; width: 100%; box-sizing: border-box;
+  margin: -6px -6px 4px; padding: 7px 9px; width: calc(100% + 12px);
+  border: none; border-bottom: 1px solid var(--border); border-radius: 6px 6px 0 0;
+  font-size: 13px; background: var(--surface-alt);
+}
+.fmulti-search:focus { outline: none; background: var(--surface); border-bottom-color: var(--accent); }
 .filters #fDueOn { font-size: 14px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
 
 /* filter-aware KPI strip */
@@ -269,9 +280,35 @@ th .arrow { font-size: 9px; }
 tbody tr { cursor: pointer; }
 tbody tr:hover { background: var(--accent-soft); }
 td .id-cell { font-weight: 700; color: var(--accent); font-size: 12px; letter-spacing: .3px; }
+td .id-cell[data-open-row] { cursor: pointer; }
+td .id-cell[data-open-row]:hover { text-decoration: underline; }
 td.title-cell { font-weight: 500; max-width: 380px; }
 .empty { padding: 60px 20px; text-align: center; color: var(--text-faint); }
 .empty .big { font-size: 15px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+
+/* ---------- List: inline edit + hidden rows ---------- */
+.list-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.list-toolbar .hint { font-size: 12px; color: var(--text-faint); }
+.btn.subtle.on { background: var(--accent-soft); color: var(--accent-hover); font-weight: 600; }
+tbody tr.row-hidden { opacity: .55; }
+tbody tr.row-hidden td.title-cell::after { content: " (hidden)"; color: var(--text-faint); font-weight: 600; font-size: 11px; }
+td .ie {
+  width: 100%; box-sizing: border-box; padding: 5px 7px; font-size: 13px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface);
+}
+td .ie:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+td.ie-actions { text-align: right; white-space: nowrap; }
+td.ie-actions .btn { padding: 4px 10px; font-size: 12px; }
+td.ie-select { width: 32px; text-align: center; }
+td.ie-select input, th input[type=checkbox] { margin: 0; }
+.bulk-bar { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); border-radius: 20px; padding: 4px 6px 4px 14px; font-size: 13px; }
+.bulk-bar select { padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); font-size: 13px; }
+.tag-pill.group-pill { background: var(--group-bg); border-color: transparent; color: #006c9c; }
+#fVisibility {
+  padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); font-weight: 500; font-size: 14px;
+}
+#fVisibility.on { border-color: var(--accent); color: var(--accent-hover); background: var(--accent-soft); font-weight: 600; }
 
 /* ---------- Risk matrix ---------- */
 .matrix-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: var(--shadow); max-width: 640px; }
