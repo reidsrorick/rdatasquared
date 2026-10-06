@@ -1,0 +1,2411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Trivia Host</title>
+<style>
+:root{
+  --bg:#14161c; --panel:#1d2029; --panel2:#272b38; --text:#eef0f6; --muted:#9aa1b5; --line:#363b4b;
+  --accent:#6c8cff; --accent-ink:#0b1030; --good:#3ddc97; --bad:#ff6b6b; --warn:#ffcc66;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f4f5f9; --panel:#fff; --panel2:#eef0f6; --text:#161925; --muted:#5d6479; --line:#d9dce7;
+    --accent:#3a5bdc; --accent-ink:#fff; --good:#12a36a; --bad:#d63f3f; --warn:#a86a00; }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h3{margin:0}
+.muted{color:var(--muted)} .small{font-size:.9rem}
+.row{display:flex;gap:8px;align-items:center} .flex-wrap{flex-wrap:wrap}
+.spacer{flex:1}
+
+/* buttons & fields */
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-block;color:var(--text)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.ghost{background:transparent}
+.btn.small{padding:4px 10px;font-size:.9rem}
+.btn.big{padding:14px 26px;font-size:1.2rem;border-radius:14px}
+.btn.danger:hover{border-color:var(--bad);color:var(--bad)}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.icon{background:none;border:1px solid var(--line);border-radius:8px;padding:4px 9px;cursor:pointer;color:var(--muted)}
+.icon:hover{color:var(--text);border-color:var(--muted)} .icon:disabled{opacity:.3;cursor:default}
+.in{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.in.num{width:4.5em;padding:6px 8px}
+.in:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
+textarea.in{field-sizing:content;min-height:3.2em;resize:vertical}
+select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+
+/* layout */
+.page{max-width:980px;margin:0 auto;padding:20px 16px 80px}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:20px}
+.sticky{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0;margin-top:-12px;border-bottom:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.lcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.lcard p{margin:0}
+.empty{text-align:center;padding:50px 20px;border:2px dashed var(--line);border-radius:16px;color:var(--muted)}
+.foot{margin-top:28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.9rem}
+.warnc{color:var(--warn)}
+
+/* editor */
+.title-in{font-size:1.6rem;font-weight:700}
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0;display:grid;gap:12px}
+.qcard.round{border-left:6px solid var(--accent)}
+.qhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qnum{font-weight:700;background:var(--panel2);padding:4px 10px;border-radius:999px}
+.optrow{display:flex;gap:8px;align-items:center}
+.optrow .in{flex:1}
+.letter,.ordn{width:1.6em;text-align:center;color:var(--muted);font-weight:600}
+.imgfield{display:inline-flex;gap:6px;align-items:center}
+.thumb{height:64px;max-width:140px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+.thumb.sm{height:36px;max-width:60px}
+.warn{color:var(--warn);font-size:.9rem}
+.warn:empty{display:none}
+.chk{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.addbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+label.lbl{font-size:.85rem;color:var(--muted)}
+.paste-help{white-space:pre-wrap;font:.85rem/1.5 ui-monospace,Consolas,monospace;background:var(--panel2);border-radius:8px;padding:10px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:var(--panel2);border:0;padding:6px 12px;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+
+/* tags, chips, badges */
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:3px 11px;cursor:pointer;font-size:.9rem}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip small{opacity:.7;margin-left:4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag-in{width:11em;padding:4px 8px}
+.tagpill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-size:.82rem;display:inline-flex;gap:4px;align-items:center}
+.tagpill .x{background:none;border:0;cursor:pointer;color:var(--muted);padding:0 2px;line-height:1}
+.dbadge,.tbadge{border-radius:6px;padding:1px 7px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.tbadge{background:var(--panel2);color:var(--muted)}
+.dbadge.easy{background:color-mix(in srgb,var(--good) 25%,var(--panel2));color:var(--good)}
+.dbadge.medium{background:color-mix(in srgb,var(--warn) 25%,var(--panel2));color:var(--warn)}
+.dbadge.hard{background:color-mix(in srgb,var(--bad) 25%,var(--panel2));color:var(--bad)}
+
+/* bank / list rows */
+.fbox{display:grid;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.fr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bitem{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:8px 0}
+.bitem.drop{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.bitem.dim{opacity:.55}
+.brow{display:flex;gap:12px;align-items:flex-start;padding:10px 12px}
+.brow.sel{background:color-mix(in srgb,var(--accent) 10%,var(--panel));border-radius:12px}
+.brow .grab{cursor:grab;color:var(--muted);user-select:none;padding-top:1px}
+.brow .bn{width:2.2em;color:var(--muted);font-variant-numeric:tabular-nums}
+.bmain{flex:1;min-width:0}
+.bprompt{font-weight:600;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bmeta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px;font-size:.82rem;color:var(--muted)}
+.bacts{display:flex;gap:6px;align-items:center}
+.bedit{padding:0 12px 12px}
+.bedit .qcard{margin:0}
+.bulk{position:sticky;bottom:0;z-index:4;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;margin:10px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rbanner{margin:14px 0 6px;font-weight:700;color:var(--accent);display:flex;gap:8px;align-items:center}
+.gblock{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.gitem{display:flex;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--line)}
+.gitem .bprompt{flex:1;font-weight:500;-webkit-line-clamp:1}
+
+/* presenter */
+.pview{min-height:100vh;display:flex;flex-direction:column}
+.ptop{display:flex;align-items:center;gap:8px 12px;padding:10px 18px;flex-wrap:wrap}
+.ptitle{flex:1;min-width:8ch;text-align:center;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbtns{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.count{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px;white-space:nowrap}
+.pill{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.8rem;color:var(--muted);white-space:nowrap}
+.bar{height:4px;background:var(--panel2)} .bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.pstage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 28px;text-align:center;gap:18px}
+.kind{text-transform:uppercase;letter-spacing:.12em;font-size:.95rem;color:var(--accent);font-weight:700}
+.qprompt{font-size:clamp(1.8rem,4.6vw,3.8rem);font-weight:750;line-height:1.18;max-width:1200px;white-space:pre-wrap}
+.sub{font-size:clamp(1.2rem,2.4vw,2rem);color:var(--muted);max-width:900px}
+.qimg{max-width:min(100%,900px);max-height:34vh;border-radius:14px;object-fit:contain}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px;width:min(1200px,100%);text-align:left}
+.opts.one{grid-template-columns:1fr;max-width:820px}
+.opts.tf{max-width:800px}
+.opt{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:16px;background:var(--panel);border:2px solid var(--line);font-size:clamp(1.2rem,2.5vw,2.1rem);transition:opacity .2s,border-color .2s,background .2s}
+.opt .badge{flex:none;width:2.1em;height:2.1em;border-radius:50%;display:grid;place-items:center;background:var(--panel2);font-weight:700;font-size:.75em}
+.opt .otext{flex:1}
+.opt img{max-height:130px;max-width:220px;border-radius:10px;object-fit:contain}
+.opt .was{margin-left:.6em;color:var(--muted);font-size:.6em}
+.opts.tf .opt{justify-content:center;font-weight:700}
+.when-shown{display:none}
+.pstage.revealed .when-hidden{display:none}
+.pstage.revealed .when-shown{display:block}
+.pstage.revealed .opts.when-shown{display:grid}
+.pstage.revealed .opt{opacity:.35}
+.pstage.revealed .opt.correct{opacity:1;border-color:var(--good);background:color-mix(in srgb,var(--good) 20%,var(--panel))}
+.pstage.revealed .opt.correct .badge{background:var(--good);color:#06281a}
+.blanks{display:grid;gap:12px;justify-items:center}
+.blanks .qprompt{line-height:1.7}
+.blank{display:inline-flex;align-items:center;justify-content:center;min-width:2.6em;padding:0 .35em;margin:0 .1em;border:0;border-bottom:.08em solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:.2em .2em 0 0;color:inherit;font:inherit;line-height:1.3;cursor:pointer}
+.blank:hover{background:color-mix(in srgb,var(--accent) 28%,transparent)}
+.blank .bn{font-size:.6em;font-weight:800;color:var(--accent)}
+.blank .bw{display:none;color:var(--accent)}
+.blank.open .bw{display:inline}
+.blank.open .bn{display:none}
+.pstage.revealed .blank{background:none;border-bottom-color:transparent}
+.pstage.revealed .blank .bw{display:inline;color:inherit}
+.pstage.revealed .blank .bn{display:none}
+.pstage.revealed .blank.open .bw{color:var(--accent)}
+.sa-hidden{font-size:5rem;color:var(--line);font-weight:800}
+.sa-ans .big{font-size:clamp(2rem,5vw,4rem);font-weight:800;color:var(--good)}
+.sa-ans .also{color:var(--muted);margin-top:8px;font-size:1.2rem}
+.note{max-width:900px;color:var(--muted);font-size:clamp(1.05rem,1.8vw,1.4rem);border-top:1px solid var(--line);padding-top:14px}
+.bottom{position:sticky;bottom:0;padding-top:12px;background:linear-gradient(transparent,var(--bg) 35%)}
+.dock{display:flex;justify-content:center;gap:12px;padding:10px 14px 14px;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:.85rem;text-align:center;padding-bottom:12px}
+.strip{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;padding:0 14px 4px}
+.strip:empty{display:none}
+.tw{display:inline-flex;align-items:stretch}
+.team{display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:12px 0 0 12px;background:var(--panel);border:2px solid var(--line);border-right:0;cursor:pointer}
+.team:hover{border-color:var(--muted)}
+.team .tk{color:var(--muted);font-size:.8rem;border:1px solid var(--line);border-radius:6px;padding:0 6px}
+.team .tn{font-weight:600}
+.team .ts{font-weight:800;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.team .tp{color:var(--good);font-weight:700;font-size:.9rem}
+.team.won{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--panel))}
+.xbtn{background:var(--panel);border:2px solid var(--line);border-radius:0 12px 12px 0;padding:0 10px;cursor:pointer;color:var(--muted)}
+.xbtn:hover{color:var(--bad);border-color:var(--bad)}
+.tw.out .team{opacity:.45;text-decoration:line-through}
+.tw.out .xbtn{color:var(--good)}
+.win{font-weight:800;color:var(--good)}
+.lb{width:min(560px,100%)}
+.lb-row{display:flex;align-items:center;gap:16px;padding:10px 16px;border-radius:12px;background:var(--panel2);margin:8px 0;font-size:1.6rem;border:2px solid transparent}
+.lb-row.top{border-color:var(--good)}
+.lb-row.out{opacity:.45}
+.lb-rank{width:1.4em;color:var(--muted);font-weight:700}
+.lb-name{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis}
+.lb-score{font-weight:800;font-variant-numeric:tabular-nums}
+/* mirror mode: only the slide is on screen (for screen mirroring / casting from a phone) */
+.pview.mirror{min-height:100vh;min-height:100dvh;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.pview.mirror .ptop,.pview.mirror .bar,.pview.mirror .bottom,.pview.mirror .hint{display:none}
+.pview.mirror .pstage{min-height:100vh;min-height:100dvh;justify-content:center;gap:min(2.4vh,16px);
+  padding:max(env(safe-area-inset-top),12px) max(env(safe-area-inset-right),3vw) max(env(safe-area-inset-bottom),46px) max(env(safe-area-inset-left),3vw)}
+.pview.mirror .qprompt{font-size:clamp(1.5rem,min(5.2vw,9.5vh),4.2rem)}
+.pview.mirror .sub{font-size:clamp(1.1rem,min(2.8vw,5vh),2rem)}
+.pview.mirror .opt{font-size:clamp(1.05rem,min(2.6vw,5.4vh),2rem);padding:.45em .75em;gap:.6em}
+.pview.mirror .opts{gap:min(1.6vh,10px)}
+.pview.mirror .qimg{max-height:32vh}
+.pview.mirror .opt img{max-height:12vh}
+.pview.mirror .sa-hidden{font-size:min(10vh,4rem)}
+.pview.mirror .lb-row{font-size:clamp(1rem,min(3vw,5.5vh),1.6rem);padding:.25em .8em;margin:min(.8vh,6px) 0}
+.pview.mirror .blanks{gap:min(1vh,8px)}
+.pview.mirror .blanks .qprompt{font-size:clamp(1.15rem,min(3.4vw,6.4vh),3rem);line-height:1.55}
+.pview.mirror .sa-ans .big{font-size:clamp(1.5rem,min(5vw,9vh),3.4rem)}
+.pview.mirror .sa-ans .also{font-size:clamp(.9rem,3vh,1.2rem);margin-top:2px}
+.pview.mirror .note{font-size:clamp(.9rem,3vh,1.25rem);padding-top:6px}
+.pview.mirror #wcount{font-size:clamp(.75rem,2.4vh,1rem)}
+.pview.mirror .kind{font-size:clamp(.75rem,2.4vh,.95rem)}
+.mbtn{position:fixed;top:max(env(safe-area-inset-top),6px);right:max(env(safe-area-inset-right),8px);z-index:6;width:2.6rem;height:2.6rem;border-radius:50%;
+  border:1px solid var(--line);background:var(--panel);color:var(--muted);opacity:.3;font-size:1.3rem;cursor:pointer}
+.mbtn:active,.mbtn:hover{opacity:1}
+.mscores{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;
+  padding:6px 10px max(env(safe-area-inset-bottom),6px);background:linear-gradient(transparent,var(--bg) 70%);pointer-events:none}
+.mscores:empty{display:none}
+.mchip{display:inline-flex;gap:8px;align-items:baseline;padding:2px 12px;border-radius:999px;background:var(--panel);border:2px solid var(--line);font-size:clamp(.8rem,2.6vh,1.1rem)}
+.mchip b{font-variant-numeric:tabular-nums}
+.mchip.won{border-color:var(--good)}
+.mchip.out{opacity:.45;text-decoration:line-through}
+.mchip small{color:var(--good);font-weight:700}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:10px}
+@media (max-width:640px){
+  .ptop{padding:8px 10px}
+  .btn.big{padding:12px 14px;font-size:1rem}
+  .dock{gap:8px;padding:8px 10px 12px}
+  .pstage{padding:16px 12px}
+  .opt{padding:12px 14px}
+}
+
+/* overlay / toast */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:10}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(640px,92vw);max-height:84vh;overflow:auto;padding:16px}
+.modal.wide{width:min(980px,96vw)}
+.jrow{display:flex;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 6px;cursor:pointer}
+.jrow:hover{background:var(--panel2)}
+.jrow .jn{width:2.5em;color:var(--muted);font-variant-numeric:tabular-nums}
+.jrow .jt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jrow .jk{color:var(--muted);font-size:.85rem}
+.jrow.cur .jn{color:var(--accent);font-weight:700}
+.jhead{padding:10px 6px 4px;font-weight:700;color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.toast.act.show{pointer-events:auto}
+.toast .btn{color:var(--text)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay"></div>
+<div id="toast" class="toast"></div>
+<datalist id="tagopts"></datalist>
+<!-- Filled in by "Export HTML". When it holds a quiz, this file runs in presenter-only mode. -->
+<script id="quiz-data" type="application/json">null</script>
+<script>
+'use strict';
+
+/* =====================================================================
+   helpers
+   ===================================================================== */
+const app = document.getElementById('app');
+const overlay = document.getElementById('overlay');
+const $ = (sel, root = document) => root.querySelector(sel);
+
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  let value;
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'value') value = v;
+    else if (k === 'class') el.className = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'list') el.setAttribute('list', v);
+    else if (k in el) el[k] = v;
+    else el.setAttribute(k, v);
+  }
+  (function add(list) {
+    for (const c of list) {
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) add(c);
+      else el.append(c.nodeType ? c : document.createTextNode(c));
+    }
+  })(kids);
+  if (value != null) el.value = value;
+  return el;
+}
+
+/* replaceChildren that skips null/false and flattens arrays (the DOM method would print "null") */
+function fill(el, ...kids) {
+  const out = [];
+  (function add(list) { for (const c of list) { if (c == null || c === false) continue; if (Array.isArray(c)) add(c); else out.push(c); } })(kids);
+  el.replaceChildren(...out);
+}
+
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const letter = i => String.fromCharCode(65 + i);
+const slug = s => (s || 'quiz').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'quiz';
+const plural = (n, w, ws = w + 's') => `${n} ${n === 1 ? w : ws}`;
+const act = fn => e => { e.currentTarget.blur(); fn(e); };
+const pickOf = arr => arr[Math.floor(Math.random() * arr.length)];
+const fmtDate = t => new Date(t).toLocaleDateString();
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+let toastTimer;
+function toast(msg, action) {
+  const t = $('#toast');
+  t.replaceChildren(msg);
+  if (action) t.append(h('button', { class: 'btn small', style: 'margin-left:12px',
+    onclick: () => { t.classList.remove('show'); action.fn(); } }, action.label));
+  t.classList.toggle('act', !!action);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), action ? 8000 : 3800);
+}
+
+function download(name, text, mime) {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = h('a', { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/* =====================================================================
+   small synchronous settings (localStorage): sessions, prefs, backup stamp
+   ===================================================================== */
+const LS = { sess: 'trivia.sessions.v1', prefs: 'trivia.prefs.v1', backup: 'trivia.backup.v1',
+  oldLib: 'trivia.library.v1', migrated: 'trivia.migrated.v2' };
+const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
+function load(key, fallback) { try { const s = lsGet(key); return s ? JSON.parse(s) : fallback; } catch { return fallback; } }
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+  catch { toast('Could not save: browser storage is full or blocked. Export a backup.'); return false; }
+}
+
+const prefs = Object.assign({ zoom: 1, editList: false, mirror: false }, load(LS.prefs, {}));
+prefs.pts = Object.assign({ easy: 1, medium: 2, hard: 3 }, prefs.pts);
+const savePrefs = () => save(LS.prefs, prefs);
+
+const getSession = quizId => {
+  const s = load(LS.sess, {})[quizId] || {};
+  return { index: s.index | 0, revealed: s.revealed || {}, orders: s.orders || {},
+    teams: s.teams || [], awards: s.awards || {}, showScores: s.showScores !== false,
+    seq: Array.isArray(s.seq) ? s.seq : null, skipped: s.skipped || {}, logged: s.logged || {},
+    record: s.record !== false, showDiff: !!s.showDiff, words: s.words || {} };
+};
+function putSession(quizId, s) {
+  const all = load(LS.sess, {});
+  all[quizId] = { ...s, updated: Date.now() };
+  save(LS.sess, all);
+}
+function dropSession(quizId) { const all = load(LS.sess, {}); delete all[quizId]; save(LS.sess, all); }
+
+/* =====================================================================
+   durable storage: IndexedDB (quizzes, bank, usage) with a localStorage fallback.
+   Everything is held in memory and written through, so the UI stays synchronous.
+   ===================================================================== */
+let library = [], bank = [], usage = [];
+let backend = null;
+const collections = () => ({ quizzes: library, bank, usage });
+
+function openDb() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error('no indexedDB'));
+    const r = indexedDB.open('trivia', 1);
+    r.onupgradeneeded = () => {
+      const db = r.result;
+      for (const n of ['quizzes', 'bank', 'usage']) db.createObjectStore(n, { keyPath: 'id' });
+    };
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+function idbBackend(db) {
+  const run = (name, fn) => new Promise((res, rej) => {
+    const t = db.transaction(name, 'readwrite');
+    fn(t.objectStore(name));
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error);
+  });
+  return {
+    kind: 'idb',
+    all: name => new Promise((res, rej) => {
+      const r = db.transaction(name).objectStore(name).getAll();
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }),
+    put: (name, obj) => run(name, s => s.put(obj)),
+    putMany: (name, objs) => run(name, s => objs.forEach(o => s.put(o))),
+    del: (name, id) => run(name, s => s.delete(id)),
+    delMany: (name, ids) => run(name, s => ids.forEach(id => s.delete(id))),
+  };
+}
+
+function lsBackend() {
+  const key = n => `trivia.${n}.v2`;
+  const commit = name => save(key(name), collections()[name]) ? Promise.resolve() : Promise.reject(new Error('storage full'));
+  return { kind: 'ls', all: async name => load(key(name), []),
+    put: commit, putMany: commit, del: commit, delMany: commit };
+}
+
+const dbOk = () => true;
+const dbErr = () => { toast('Could not save: browser storage is full or blocked. Export a backup.'); return false; };
+const dbPut = (name, obj) => backend.put(name, obj).then(dbOk, dbErr);
+const dbPutMany = (name, objs) => objs.length ? backend.putMany(name, objs).then(dbOk, dbErr) : Promise.resolve(true);
+const dbDel = (name, id) => backend.del(name, id).then(dbOk, dbErr);
+const dbDelMany = (name, ids) => ids.length ? backend.delMany(name, ids).then(dbOk, dbErr) : Promise.resolve(true);
+
+async function initStore() {
+  try {
+    backend = idbBackend(await openDb());
+    [library, bank, usage] = await Promise.all([backend.all('quizzes'), backend.all('bank'), backend.all('usage')]);
+  } catch {
+    backend = lsBackend();
+    [library, bank, usage] = await Promise.all([backend.all('quizzes'), backend.all('bank'), backend.all('usage')]);
+  }
+  library = library.map(normalizeQuiz).filter(Boolean);
+  bank = bank.map(normalizeBank).filter(Boolean);
+  usage = usage.filter(u => u && u.qid && u.quizId && u.at);
+
+  // one-time move from the old localStorage-only version
+  if (!lsGet(LS.migrated)) {
+    if (!library.length) {
+      const old = (load(LS.oldLib, { quizzes: [] }).quizzes || []).map(normalizeQuiz).filter(Boolean);
+      if (old.length) { library = old; await dbPutMany('quizzes', old); }
+    }
+    save(LS.migrated, 1);
+  }
+  navigator.storage?.persist?.().catch(() => {});
+}
+
+/* =====================================================================
+   data model
+   ===================================================================== */
+const TYPES = { mc: 'Multiple choice', tf: 'True / False', ms: 'Multi-select', order: 'Ordering', sa: 'Short answer', blanks: 'Word reveal' };
+const KIND = { mc: 'Choose one', tf: 'True or false?', ms: 'Select all that apply', order: 'Put in the correct order', sa: 'Short answer', blanks: 'Guess the answer' };
+
+/* "Word reveal": words in [brackets] become numbered blanks; with no brackets every word is a blank */
+function parseBlanks(prompt) {
+  const toks = []; let n = 0;
+  if (/\[[^\]]+\]/.test(prompt)) {
+    const re = /\[([^\]]+)\]/g; let last = 0, m;
+    while ((m = re.exec(prompt))) {
+      if (m.index > last) toks.push({ text: prompt.slice(last, m.index) });
+      toks.push({ blank: true, n: ++n, text: m[1] });
+      last = re.lastIndex;
+    }
+    if (last < prompt.length) toks.push({ text: prompt.slice(last) });
+  } else {
+    for (const part of prompt.split(/(\s+)/)) {
+      if (!part) continue;
+      if (/^\s+$/.test(part)) toks.push({ text: part }); else toks.push({ blank: true, n: ++n, text: part });
+    }
+  }
+  return toks;
+}
+const DIFFS = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+const DIFF_RANK = { easy: 0, medium: 1, hard: 2, '': 3 };
+const isRound = q => q.type === 'round';
+
+const normTags = a => [...new Set((Array.isArray(a) ? a : String(a || '').split(/[,;|]/))
+  .map(t => String(t).trim().toLowerCase().replace(/\s+/g, ' ')).filter(Boolean))];
+const newOption = (text = '') => ({ text, image: null });
+
+function newQuestion(type = 'mc') {
+  return { id: uid(), type, prompt: '', image: null,
+    options: [newOption(), newOption(), newOption(), newOption()],
+    correct: 0, multi: [], tf: true, answers: [''], note: '', points: 1,
+    difficulty: '', tags: [], src: null, srcUpdated: 0 };
+}
+const newRound = (title = '') => ({ id: uid(), type: 'round', title, note: '' });
+function newQuiz() {
+  return { id: uid(), title: 'Untitled quiz', description: '', questions: [newQuestion()], updated: Date.now() };
+}
+
+const imgOk = v => (typeof v === 'string' && /^(data:image\/|https?:\/\/)/i.test(v)) ? v : null;
+
+function normalizeQuestion(q) {
+  if (!q || typeof q !== 'object') return null;
+  const id = typeof q.id === 'string' && q.id ? q.id : uid();
+  if (q.type === 'round') return { id, type: 'round', title: String(q.title ?? ''), note: String(q.note ?? '') };
+  const options = (Array.isArray(q.options) ? q.options : []).map(o =>
+    typeof o === 'string' ? newOption(o) : { text: String(o?.text ?? ''), image: imgOk(o?.image) });
+  while (options.length < 2) options.push(newOption());
+  return {
+    id, type: TYPES[q.type] ? q.type : 'mc',
+    prompt: String(q.prompt ?? ''), image: imgOk(q.image), options,
+    correct: Number.isInteger(q.correct) && q.correct >= 0 && q.correct < options.length ? q.correct : 0,
+    multi: Array.isArray(q.multi) ? q.multi.filter(i => Number.isInteger(i) && i >= 0 && i < options.length) : [],
+    tf: q.tf !== false,
+    answers: Array.isArray(q.answers) && q.answers.length ? q.answers.map(String) : [''],
+    note: String(q.note ?? ''),
+    points: Number.isFinite(q.points) && q.points >= 0 ? q.points : 1,
+    difficulty: DIFFS[q.difficulty] ? q.difficulty : '',
+    tags: normTags(q.tags),
+    src: typeof q.src === 'string' && q.src ? q.src : null,
+    srcUpdated: Number(q.srcUpdated) || 0,
+  };
+}
+
+function normalizeQuiz(raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.questions)) return null;
+  return {
+    id: typeof raw.id === 'string' && raw.id ? raw.id : uid(),
+    title: String(raw.title || 'Untitled quiz'), description: String(raw.description || ''),
+    questions: raw.questions.map(normalizeQuestion).filter(Boolean), updated: Number(raw.updated) || Date.now(),
+  };
+}
+
+function normalizeBank(raw) {
+  const q = normalizeQuestion(raw);
+  if (!q || isRound(q)) return null;
+  q.src = null; q.srcUpdated = 0;
+  q.created = Number(raw.created) || Date.now();
+  q.updated = Number(raw.updated) || q.created;
+  q.carry = !!raw.carry;
+  return q;
+}
+
+const quizJson = q => JSON.stringify({ trivia: 1, ...q }, null, 2);
+const cloneQ = q => JSON.parse(JSON.stringify(q));
+const CONTENT = ['type', 'prompt', 'image', 'options', 'correct', 'multi', 'tf', 'answers', 'note', 'points', 'difficulty', 'tags'];
+const contentOf = q => { const o = {}; for (const k of CONTENT) o[k] = cloneQ({ v: q[k] }).v; return o; };
+
+const sig = q => [q.type, q.prompt.trim().toLowerCase(),
+  q.type === 'sa' || q.type === 'blanks' ? q.answers.map(a => a.trim().toLowerCase()).filter(Boolean).join('|') : q.options.map(o => o.text.trim().toLowerCase()).join('|'),
+  q.type === 'tf' ? q.tf : ''].join('¦');
+
+const bankById = id => bank.find(q => q.id === id);
+
+function toBankRecord(q) {
+  const b = cloneQ(q);
+  b.id = uid(); b.created = b.updated = Date.now(); b.carry = false; b.src = null; b.srcUpdated = 0;
+  return b;
+}
+function copyToQuiz(bq) {
+  const c = cloneQ(bq);
+  delete c.created; delete c.updated; delete c.carry;
+  c.id = uid(); c.src = bq.id; c.srcUpdated = bq.updated;
+  if (bq.difficulty && prefs.pts[bq.difficulty] != null) c.points = prefs.pts[bq.difficulty];
+  return c;
+}
+
+/* put a quiz question into the bank (or link it to an identical one already there) */
+function saveToBank(q) {
+  const s = sig(q);
+  const existing = bank.find(b => sig(b) === s);
+  if (existing) { q.src = existing.id; q.srcUpdated = existing.updated; return { rec: existing, added: false }; }
+  const rec = toBankRecord(q);
+  bank.unshift(rec); dbPut('bank', rec);
+  q.src = rec.id; q.srcUpdated = rec.updated;
+  refreshTagList();
+  return { rec, added: true };
+}
+
+function allTags() {
+  const m = new Map();
+  for (const q of bank) for (const t of q.tags) m.set(t, (m.get(t) || 0) + 1);
+  return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+function refreshTagList() {
+  const dl = $('#tagopts'); if (!dl) return;
+  const set = new Set(allTags().map(x => x[0]));
+  for (const qz of library) for (const q of qz.questions) (q.tags || []).forEach(t => set.add(t));
+  dl.replaceChildren(...[...set].sort().map(t => h('option', { value: t })));
+}
+
+/* usage log: one entry each time a bank question is shown (answer revealed) or marked by hand */
+let usageMemo = null;
+function usageStats() {
+  if (usageMemo) return usageMemo;
+  const m = new Map();
+  for (const u of usage) {
+    const s = m.get(u.qid) || { count: 0, last: 0 };
+    s.count++; if (u.at > s.last) s.last = u.at;
+    m.set(u.qid, s);
+  }
+  return usageMemo = m;
+}
+function recentQids(n) {
+  const last = new Map();
+  for (const u of usage) if (u.at > (last.get(u.quizId) || 0)) last.set(u.quizId, u.at);
+  const quizzes = new Set([...last].sort((a, b) => b[1] - a[1]).slice(0, n).map(x => x[0]));
+  const out = new Set();
+  for (const u of usage) if (quizzes.has(u.quizId)) out.add(u.qid);
+  return out;
+}
+function markUsed(qids, quizId) {
+  const at = Date.now(), entries = [...new Set(qids)].map(qid => ({ id: uid(), qid, quizId, at }));
+  usage.push(...entries); usageMemo = null;
+  const carried = [];
+  for (const qid of qids) { const b = bankById(qid); if (b && b.carry) { b.carry = false; carried.push(b); } }
+  dbPutMany('usage', entries); dbPutMany('bank', carried);
+  return entries.length;
+}
+function markUnused(qids) {
+  const set = new Set(qids), gone = usage.filter(u => set.has(u.qid));
+  usage = usage.filter(u => !set.has(u.qid)); usageMemo = null;
+  dbDelMany('usage', gone.map(u => u.id));
+  return gone.length;
+}
+
+/* debounced writes of bank questions edited in place */
+const bankPending = new Map(); let bankTimer = null;
+function queueBankSave(q) { bankPending.set(q.id, q); clearTimeout(bankTimer); bankTimer = setTimeout(flushBank, 400); }
+function flushBank() {
+  clearTimeout(bankTimer); bankTimer = null;
+  const list = [...bankPending.values()]; bankPending.clear();
+  dbPutMany('bank', list);
+}
+
+/* =====================================================================
+   text / CSV parsing (shared question assembly)
+   ===================================================================== */
+const TYPE_ALIASES = { mc: 'mc', 'multiple choice': 'mc', 'multiple-choice': 'mc', choice: 'mc',
+  tf: 'tf', 'true/false': 'tf', 'true false': 'tf', 'true-false': 'tf', boolean: 'tf',
+  ms: 'ms', 'multi-select': 'ms', 'multi select': 'ms', multiselect: 'ms', 'select all': 'ms',
+  order: 'order', ordering: 'order', sa: 'sa', 'short answer': 'sa', 'short-answer': 'sa', text: 'sa',
+  blanks: 'blanks', 'word reveal': 'blanks', reveal: 'blanks', 'fill in the blanks': 'blanks' };
+
+function assemble(d) {
+  const q = newQuestion('mc');
+  q.prompt = d.prompt; q.note = d.note || '';
+  const diff = String(d.difficulty || '').toLowerCase();
+  q.difficulty = DIFFS[diff] ? diff : diff === 'med' ? 'medium' : '';
+  q.tags = normTags(d.tags || []);
+  if (Number.isFinite(d.points) && d.points >= 0) q.points = d.points;
+  const opts = d.options || [], ans = d.answer == null ? '' : String(d.answer).trim();
+  const find = part => {
+    const p = part.trim();
+    if (/^[A-Za-z]$/.test(p)) return p.toUpperCase().charCodeAt(0) - 65;
+    return opts.findIndex(o => o.toLowerCase() === p.toLowerCase());
+  };
+  let type = d.type;
+  if (!type) type = d.ordered && opts.length >= 2 ? 'order' : opts.length >= 2 ? 'mc'
+    : /^(true|false|t|f)$/i.test(ans) ? 'tf' : (d.prompt.match(/\[[^\]]+\]/g) || []).length >= 2 ? 'blanks' : 'sa';
+  q.type = type;
+  if (type === 'order') {
+    q.options = opts.map(newOption);
+    while (q.options.length < 2) q.options.push(newOption());
+  } else if (type === 'mc' || type === 'ms') {
+    q.options = opts.map(newOption);
+    while (q.options.length < 2) q.options.push(newOption());
+    const marked = [...(d.marked || [])];
+    if (!marked.length && ans) for (const part of ans.split('|')) {
+      const k = find(part);
+      if (k >= 0 && k < q.options.length && !marked.includes(k)) marked.push(k);
+    }
+    if (!d.type && marked.length >= 2) q.type = 'ms';
+    if (q.type === 'ms') q.multi = marked.sort((a, b) => a - b); else q.correct = marked[0] ?? 0;
+  } else if (type === 'tf') {
+    q.tf = !/^(false|f|no|0)$/i.test(ans);
+  } else {
+    q.answers = ans.split('|').map(s => s.trim()).filter(Boolean);
+    if (!q.answers.length) q.answers = [''];
+  }
+  return q;
+}
+
+/* blank line between questions; first line is the question */
+function parseBulk(text) {
+  const out = [];
+  for (const block of text.replace(/\r/g, '').split(/\n\s*\n/)) {
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) continue;
+    const promptLines = [lines[0].replace(/^q(uestion)?\s*\d*\s*[:.)]\s*/i, '')];
+    const opts = [], ordered = [], marked = [];
+    let answer = null, note = '', difficulty = '', tags = '', m;
+    for (const line of lines.slice(1)) {
+      if ((m = line.match(/^(?:difficulty|diff|level)\s*:\s*(.+)$/i))) difficulty = m[1].trim();
+      else if ((m = line.match(/^tags?\s*:\s*(.+)$/i))) tags = m[1];
+      else if ((m = line.match(/^(?:answers?|ans|a)\s*:\s*(.+)$/i))) answer = m[1];
+      else if ((m = line.match(/^(?:notes?|fact|n)\s*:\s*(.+)$/i))) note = m[1];
+      else if ((m = line.match(/^\d+[.)]\s+(.+)$/))) ordered.push(m[1]);
+      else if ((m = line.match(/^(?:[-•*]|[A-Za-z][.)])\s+(.+)$/))) {
+        let t = m[1];
+        if (/\s*\*\s*$/.test(t)) { marked.push(opts.length); t = t.replace(/\s*\*\s*$/, ''); }
+        opts.push(t);
+      } else promptLines.push(line);
+    }
+    const isOrder = ordered.length >= 2;
+    out.push(assemble({ prompt: promptLines.join('\n'), options: isOrder ? ordered : opts,
+      marked: isOrder ? [] : marked, ordered: isOrder, answer, note, difficulty, tags }));
+  }
+  return out;
+}
+
+function parseCsv(text) {
+  text = text.replace(/^﻿/, '');
+  const head = text.split(/\r?\n/, 1)[0] || '';
+  const delim = [',', ';', '\t'].map(d => [d, head.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], f = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else inQ = false; } else f += c;
+    } else if (c === '"' && f === '') inQ = true;
+    else if (c === delim) { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(f); rows.push(row); row = []; f = '';
+    } else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim() !== ''));
+}
+
+function csvToQuestions(text) {
+  const rows = parseCsv(text);
+  const alias = { question: 'prompt', prompt: 'prompt', q: 'prompt', type: 'type', difficulty: 'difficulty', level: 'difficulty',
+    tags: 'tags', tag: 'tags', category: 'tags', answer: 'answer', answers: 'answer', correct: 'answer',
+    options: 'options', choices: 'options', note: 'note', notes: 'note', fact: 'note', explanation: 'note', points: 'points' };
+  if (!rows.length) return { questions: [], skipped: 0 };
+  const cols = rows[0].map(c => alias[c.trim().toLowerCase()] || null);
+  if (!cols.includes('prompt')) throw new Error('the CSV needs a "question" column');
+  const questions = []; let skipped = 0;
+  for (const row of rows.slice(1)) {
+    const r = {}; cols.forEach((k, i) => { if (k) r[k] = (row[i] || '').trim(); });
+    if (!r.prompt) { skipped++; continue; }
+    const type = TYPE_ALIASES[(r.type || '').toLowerCase()];
+    questions.push(assemble({ prompt: r.prompt, options: (r.options || '').split('|').map(s => s.trim()).filter(Boolean),
+      answer: r.answer || null, type, difficulty: r.difficulty, tags: r.tags, note: r.note,
+      points: r.points ? parseFloat(r.points) : null, ordered: type === 'order' }));
+  }
+  return { questions, skipped };
+}
+
+function questionsToCsv(list) {
+  const esc = v => { v = String(v ?? ''); return /[",\n\r;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const opt = q => q.options.map(o => o.text.replace(/\|/g, '/'));
+  const rows = [['type', 'difficulty', 'tags', 'question', 'options', 'answer', 'note', 'points']];
+  for (const q of list) {
+    let options = '', answer = '';
+    if (q.type === 'mc') { options = opt(q).join('|'); answer = opt(q)[q.correct] || ''; }
+    else if (q.type === 'ms') { options = opt(q).join('|'); answer = q.multi.map(i => opt(q)[i]).join('|'); }
+    else if (q.type === 'order') options = opt(q).join('|');
+    else if (q.type === 'tf') answer = String(q.tf);
+    else answer = q.answers.filter(a => a.trim()).join('|');
+    rows.push([q.type, q.difficulty, q.tags.join('|'), q.prompt, options, answer, q.note, q.points]);
+  }
+  return '﻿' + rows.map(r => r.map(esc).join(',')).join('\r\n');
+}
+
+/* =====================================================================
+   images
+   ===================================================================== */
+function fileToDataUrl(file, maxDim, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const nw = img.naturalWidth || 1024, nh = img.naturalHeight || 768;
+      const scale = Math.min(1, maxDim / Math.max(nw, nh));
+      const w = Math.max(1, Math.round(nw * scale)), hh = Math.max(1, Math.round(nh * scale));
+      const c = document.createElement('canvas'); c.width = w; c.height = hh;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, hh);
+      ctx.drawImage(img, 0, 0, w, hh);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image file.')); };
+    img.src = url;
+  });
+}
+
+/* =====================================================================
+   state & routing
+   ===================================================================== */
+const embeddedRaw = (() => { try { return JSON.parse($('#quiz-data').textContent || 'null'); } catch { return null; } })();
+const EMBEDDED = embeddedRaw ? normalizeQuiz(embeddedRaw) : null;
+
+let view = null, edit = null, play = null;
+let saveTimer = null, dirty = false;
+
+function route() {
+  flushSave(); flushBank(); edit = null; play = null; closeOverlay(); view = null;
+  wake?.release().catch(() => {}); wake = null;
+  if (EMBEDDED) return startPlay(EMBEDDED);
+  refreshTagList();
+  const [, v, id] = location.hash.split('/');
+  const quiz = library.find(q => q.id === id);
+  if (v === 'edit' && quiz) startEdit(quiz);
+  else if (v === 'play' && quiz) startPlay(quiz);
+  else if (v === 'bank') renderBank();
+  else {
+    if (location.hash && location.hash !== '#/') history.replaceState(null, '', '#/');
+    renderLibrary();
+  }
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+const flushAll = () => { flushSave(); flushBank(); };
+window.addEventListener('pagehide', flushAll);
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushAll(); });
+
+/* =====================================================================
+   library view
+   ===================================================================== */
+const markBackup = () => save(LS.backup, Date.now());
+const lastBackup = () => load(LS.backup, 0);
+const countQ = quiz => quiz.questions.filter(q => !isRound(q)).length;
+
+function renderLibrary() {
+  view = 'library';
+  document.title = 'Trivia Host';
+  const sessions = load(LS.sess, {});
+  const last = lastBackup();
+  const staleBackup = !last || Date.now() - last > 14 * 864e5;
+  const fileIn = h('input', { type: 'file', multiple: true, accept: '.json,.html,.htm,.csv', hidden: true,
+    onchange: e => { importFiles([...e.target.files]); e.target.value = ''; } });
+  const storeNote = h('span', { id: 'storest' }, 'Storage…');
+
+  app.replaceChildren(h('div', { class: 'page' },
+    h('div', { class: 'top' },
+      h('h1', {}, 'Trivia Host'),
+      h('div', { class: 'row flex-wrap' },
+        fileIn,
+        h('a', { class: 'btn', href: '#/bank' }, `Question bank (${bank.length})`),
+        h('button', { class: 'btn', title: 'Import quizzes (.json / exported .html) or questions (.csv / .json)', onclick: () => fileIn.click() }, 'Import'),
+        h('button', { class: 'btn primary', onclick: createQuiz }, '+ New quiz'))),
+    library.length
+      ? h('div', { class: 'grid' }, library.map(q => libCard(q, sessions[q.id])))
+      : h('div', { class: 'empty' }, h('h3', {}, 'No quizzes yet'),
+          h('p', {}, 'Create one, build it from the question bank, or import a quiz .json / exported .html file.')),
+    h('div', { class: 'foot' },
+      storeNote,
+      backend && backend.kind === 'ls' ? h('span', { class: 'warnc' }, '· limited storage mode (IndexedDB unavailable)') : null,
+      h('span', {}, '·'),
+      h('button', { class: 'btn small', onclick: () => {
+        download('trivia-backup.json', JSON.stringify({ trivia: 1, quizzes: library, bank }, null, 2), 'application/json');
+        markBackup(); renderLibrary();
+      } }, 'Back up everything (JSON)'),
+      h('span', { class: staleBackup ? 'warnc' : '' },
+        last ? 'Last backup: ' + fmtDate(last) + (staleBackup ? ' (a while ago)' : '')
+          : 'Not backed up yet. Everything lives in this browser only.'))));
+
+  navigator.storage?.estimate?.().then(e => {
+    const el = $('#storest');
+    if (el) el.textContent = `Storage: ${(e.usage / 1048576).toFixed(1)} MB used` + (e.quota ? ` of ~${Math.round(e.quota / 1048576).toLocaleString()} MB available` : '');
+  }).catch(() => {});
+}
+
+function libCard(q, s) {
+  const nq = countQ(q), nr = q.questions.length - nq;
+  const shown = s ? Object.keys(s.revealed || {}).length : 0;
+  return h('article', { class: 'lcard' },
+    h('h3', {}, q.title || 'Untitled quiz'),
+    q.description ? h('p', { class: 'muted' }, q.description) : null,
+    h('div', { class: 'muted small' },
+      plural(nq, 'question') + (nr ? ' · ' + plural(nr, 'round') : '') + ' · edited ' + fmtDate(q.updated) +
+      (shown ? ` · in progress (${shown} shown)` : '')),
+    h('div', { class: 'row flex-wrap' },
+      h('a', { class: 'btn primary', href: '#/play/' + q.id }, 'Present'),
+      h('a', { class: 'btn', href: '#/edit/' + q.id }, 'Edit'),
+      h('button', { class: 'btn', title: 'Download a standalone HTML file with this quiz embedded', onclick: () => exportHtml(q) }, 'Export HTML')),
+    h('div', { class: 'row flex-wrap' },
+      h('button', { class: 'btn small', onclick: () => { download(slug(q.title) + '.json', quizJson(q), 'application/json'); markBackup(); renderLibrary(); } }, 'JSON'),
+      h('button', { class: 'btn small', onclick: () => duplicateQuiz(q) }, 'Duplicate'),
+      h('button', { class: 'btn small', title: 'Copy this quiz\'s questions into the question bank', onclick: () => quizToBank(q, renderLibrary) }, 'To bank'),
+      h('button', { class: 'btn small', title: 'Log this quiz\'s questions as used (for nights played from an exported file)', onclick: () => markPlayed(q) }, 'Mark played'),
+      h('button', { class: 'btn small danger', onclick: () => deleteQuiz(q) }, 'Delete')));
+}
+
+function createQuiz() {
+  const q = newQuiz();
+  library.unshift(q); dbPut('quizzes', q);
+  location.hash = '#/edit/' + q.id;
+}
+function duplicateQuiz(q) {
+  const copy = normalizeQuiz(JSON.parse(JSON.stringify(q)));
+  copy.id = uid(); copy.title += ' (copy)'; copy.updated = Date.now();
+  library.unshift(copy); dbPut('quizzes', copy); renderLibrary();
+}
+function deleteQuiz(q) {
+  if (!confirm(`Delete "${q.title}"? This can't be undone. (Export it first if unsure.)`)) return;
+  library = library.filter(x => x !== q);
+  dbDel('quizzes', q.id); dropSession(q.id); renderLibrary();
+}
+
+function quizToBank(quiz, after) {
+  let added = 0, linked = 0;
+  for (const q of quiz.questions) {
+    if (isRound(q)) continue;
+    const r = saveToBank(q); r.added ? added++ : linked++;
+  }
+  quiz.updated = Date.now(); dbPut('quizzes', quiz);
+  toast(`Bank: ${plural(added, 'question')} added` + (linked ? `, ${linked} already there` : ''));
+  after?.();
+}
+
+function markPlayed(quiz) {
+  const s = getSession(quiz.id), hasRun = Object.keys(s.revealed).length > 0;
+  const qs = quiz.questions.filter(q => !isRound(q) && q.src && bankById(q.src));
+  if (!qs.length) return toast('None of this quiz\'s questions came from the bank, so there is nothing to log.');
+  const played = hasRun ? qs.filter(q => s.revealed[q.id]) : qs;
+  const left = hasRun ? qs.filter(q => !s.revealed[q.id]) : [];
+  const msg = `Log ${plural(played.length, 'question')} from "${quiz.title}" as used?` +
+    (left.length ? `\n\n${plural(left.length, 'question')} not revealed in your last run will be flagged as carry-over.` : '');
+  if (!confirm(msg)) return;
+  markUsed(played.map(q => q.src), 'played:' + quiz.id + ':' + Date.now());
+  const carried = left.map(q => bankById(q.src));
+  carried.forEach(b => { b.carry = true; });
+  dbPutMany('bank', carried);
+  toast('Usage logged');
+}
+
+async function importFiles(files) {
+  let nq = 0, nb = 0, dup = 0;
+  const addBank = list => { const r = addToBank(list); nb += r.added; dup += r.dups; };
+  for (const f of files) {
+    try {
+      const text = await f.text();
+      if (/\.csv$/i.test(f.name)) { addBank(csvToQuestions(text).questions); continue; }
+      let data;
+      if (/\.html?$/i.test(f.name) || /^\s*</.test(text)) {
+        const el = new DOMParser().parseFromString(text, 'text/html').getElementById('quiz-data');
+        data = el && JSON.parse(el.textContent);
+        if (!data) throw new Error('no embedded quiz found');
+      } else data = JSON.parse(text);
+      if (Array.isArray(data)) { addBank(data.map(normalizeBank).filter(Boolean)); continue; }
+      if (Array.isArray(data?.bank)) addBank(data.bank.map(normalizeBank).filter(Boolean));
+      const quizzes = Array.isArray(data?.quizzes) ? data.quizzes : (Array.isArray(data?.questions) ? [data] : []);
+      if (!quizzes.length && !Array.isArray(data?.bank)) throw new Error('not a valid quiz or question file');
+      const fresh = [];
+      for (const raw of quizzes) {
+        const q = normalizeQuiz(raw);
+        if (!q) throw new Error('not a valid quiz file');
+        if (library.some(x => x.id === q.id)) q.id = uid();
+        library.unshift(q); fresh.push(q); nq++;
+      }
+      await dbPutMany('quizzes', fresh);
+    } catch (e) { toast(`${f.name}: ${e.message}`); }
+  }
+  const parts = [];
+  if (nq) parts.push(plural(nq, 'quiz', 'quizzes'));
+  if (nb) parts.push(plural(nb, 'bank question'));
+  if (dup) parts.push(`${dup} duplicate${dup === 1 ? '' : 's'} skipped`);
+  if (parts.length) toast('Imported ' + parts.join(', '));
+  route();
+}
+
+/* add questions to the bank, skipping exact duplicates */
+function addToBank(list) {
+  const seen = new Set(bank.map(sig)), fresh = []; let dups = 0;
+  for (const raw of list) {
+    const q = normalizeBank(raw); if (!q) continue;
+    if (seen.has(sig(q))) { dups++; continue; }
+    seen.add(sig(q));
+    if (bankById(q.id) || fresh.some(f => f.id === q.id)) q.id = uid();
+    fresh.push(q);
+  }
+  bank.unshift(...fresh); dbPutMany('bank', fresh); refreshTagList();
+  return { added: fresh.length, dups, fresh };
+}
+
+function exportHtml(quiz) {
+  const clone = document.documentElement.cloneNode(true);
+  for (const sel of ['#app', '#overlay', '#tagopts']) clone.querySelector(sel).replaceChildren();
+  const t = clone.querySelector('#toast'); t.replaceChildren(); t.className = 'toast';
+  clone.querySelector('title').textContent = quiz.title;
+  clone.querySelector('#quiz-data').textContent = JSON.stringify(quiz).replace(/</g, '\\u003c');
+  const name = slug(quiz.title) + '.html';
+  download(name, '<!doctype html>\n' + clone.outerHTML, 'text/html');
+  markBackup();
+  toast(`Exported ${name}`);
+}
+
+/* =====================================================================
+   quiz editor
+   ===================================================================== */
+function setStatus(msg) { const el = $('#savestat'); if (el) el.textContent = msg; }
+function touch() {
+  edit.quiz.updated = Date.now(); dirty = true;
+  setStatus('Saving…');
+  clearTimeout(saveTimer); saveTimer = setTimeout(flushSave, 400);
+}
+function flushSave() {
+  clearTimeout(saveTimer); saveTimer = null;
+  if (!dirty || !edit) { dirty = false; return; }
+  dirty = false;
+  dbPut('quizzes', edit.quiz).then(ok => setStatus(ok ? 'Saved' : '⚠ Not saved'));
+}
+
+const quizCtx = { kind: 'quiz', list: () => edit.quiz.questions, changed: () => touch() };
+const bankCtx = { kind: 'bank', changed: q => { q.updated = Date.now(); queueBankSave(q); } };
+
+function startEdit(quiz) { edit = { quiz, sel: new Set(), open: new Set() }; view = 'edit'; renderEdit(); }
+
+function renderEdit() {
+  const quiz = edit.quiz;
+  document.title = 'Editing: ' + quiz.title;
+  app.replaceChildren(h('div', { class: 'page' },
+    h('div', { class: 'top sticky' },
+      h('div', { class: 'row' },
+        h('a', { class: 'btn ghost', href: '#/' }, '← Library'),
+        h('span', { id: 'savestat', class: 'muted small' }, 'Saved')),
+      h('div', { class: 'row' },
+        h('div', { class: 'seg', title: 'Switch between full question editors and a compact list' },
+          h('button', { class: prefs.editList ? '' : 'on', onclick: () => setEditList(false) }, 'Cards'),
+          h('button', { class: prefs.editList ? 'on' : '', onclick: () => setEditList(true) }, 'List')),
+        h('button', { class: 'btn', onclick: () => exportHtml(quiz) }, 'Export HTML'),
+        h('a', { class: 'btn primary', href: '#/play/' + quiz.id }, '▶ Present'))),
+    h('input', { class: 'in title-in', value: quiz.title, placeholder: 'Quiz title',
+      oninput: e => { quiz.title = e.target.value; touch(); } }),
+    h('textarea', { class: 'in', style: 'margin-top:10px', placeholder: 'Description (optional, shown in your library)',
+      value: quiz.description, oninput: e => { quiz.description = e.target.value; touch(); } }),
+    h('div', { id: 'bulkbar' }),
+    h('div', { id: 'qlist' }),
+    h('div', { class: 'addbar' }, h('span', { class: 'muted' }, 'Add:'),
+      Object.entries(TYPES).map(([t, label]) => h('button', { class: 'btn', onclick: () => addQuestion(t) }, '+ ' + label)),
+      h('button', { class: 'btn', title: 'Add a round divider (shows a title slide)', onclick: addRound }, '+ Round')),
+    h('div', { class: 'addbar' },
+      h('button', { class: 'btn', onclick: openPicker }, 'From bank…'),
+      h('button', { class: 'btn', onclick: openGenerator }, 'Fill from bank…'),
+      h('button', { class: 'btn', title: 'Create many questions at once from pasted text', onclick: () => openBulk(addToQuiz) }, 'Paste from text'),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'btn', title: 'Copy every question in this quiz into the question bank', onclick: () => quizToBank(quiz, () => { renderList(); }) }, 'Save all to bank'))));
+  renderList();
+}
+
+function setEditList(on) { prefs.editList = on; savePrefs(); renderEdit(); }
+
+function renderList(focusQ) {
+  const box = $('#qlist'); if (!box) return;
+  const list = edit.quiz.questions;
+  box.replaceChildren(...(prefs.editList
+    ? listRows()
+    : list.map((q, i) => isRound(q) ? roundCard(q, i) : card(q, i, quizCtx))));
+  drawListBulk();
+  if (focusQ) (document.getElementById('c-' + focusQ.id) || document.getElementById('r-' + focusQ.id))?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function addToQuiz(qs) {
+  const list = edit.quiz.questions;
+  if (list.length === 1 && isBlank(list[0])) list.length = 0;
+  list.push(...qs); touch(); renderList(qs[0]);
+}
+function addQuestion(type) {
+  const q = newQuestion(type); if (type === 'order') q.options.length = 3;
+  addToQuiz([q]);
+  document.getElementById('c-' + q.id)?.querySelector('textarea')?.focus();
+}
+function addRound() {
+  const n = edit.quiz.questions.filter(isRound).length + 1;
+  const r = newRound(`Round ${n}`);
+  edit.quiz.questions.push(r); touch(); renderList(r);
+  document.getElementById('c-' + r.id)?.querySelector('input')?.select();
+}
+function moveQuestion(i, d) {
+  const qs = edit.quiz.questions, j = i + d;
+  if (j < 0 || j >= qs.length) return;
+  [qs[i], qs[j]] = [qs[j], qs[i]]; touch(); renderList(qs[j]);
+}
+function removeQuestion(i) {
+  const qs = edit.quiz.questions, [q] = qs.splice(i, 1);
+  edit.sel.delete(q.id);
+  touch(); renderList();
+  toast(isRound(q) ? 'Round deleted' : 'Question deleted', { label: 'Undo', fn: () => {
+    if (!edit || edit.quiz.questions !== qs) return toast('Undo is no longer available');
+    qs.splice(Math.min(i, qs.length), 0, q); touch(); renderList(q);
+  } });
+}
+function duplicateQuestion(i) {
+  const qs = edit.quiz.questions;
+  const copy = JSON.parse(JSON.stringify(qs[i])); copy.id = uid(); copy.src = null; copy.srcUpdated = 0;
+  qs.splice(i + 1, 0, copy); touch(); renderList(copy);
+}
+
+const isBlank = q => !isRound(q) && !q.prompt.trim() && !q.image && q.options.every(o => !o.text.trim() && !o.image) && q.answers.every(a => !a.trim());
+
+function issues(q) {
+  const out = [];
+  if (isRound(q)) return out;
+  if (!q.prompt.trim() && !q.image) out.push('Needs question text or an image');
+  if (['mc', 'ms', 'order'].includes(q.type) && q.options.some(o => !o.text.trim() && !o.image)) out.push('Some options are empty');
+  if (q.type === 'ms' && !q.multi.length) out.push('Mark at least one correct option');
+  if ((q.type === 'sa' || q.type === 'blanks') && !q.answers.some(a => a.trim())) out.push('Add an answer');
+  return out;
+}
+
+function imageField(get, set, maxDim, small, redraw, touchFn) {
+  const input = h('input', { type: 'file', accept: 'image/*', hidden: true, onchange: async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { set(await fileToDataUrl(f, maxDim)); touchFn(); redraw(); } catch (err) { toast(err.message); }
+  } });
+  const img = get();
+  return h('span', { class: 'imgfield' }, input,
+    img ? [
+      h('img', { class: 'thumb' + (small ? ' sm' : ''), src: img, alt: '', title: 'Click to replace', onclick: () => input.click() }),
+      h('button', { class: 'icon', title: 'Remove image', onclick: () => { set(null); touchFn(); redraw(); } }, '✕'),
+    ] : h('button', { class: 'btn small', title: 'Add image', onclick: () => input.click() }, '+ Image'));
+}
+
+function tagsEditor(q, t) {
+  const pills = h('span', { class: 'tags' });
+  const input = h('input', { class: 'in tag-in', placeholder: 'Add tag…', list: 'tagopts',
+    onkeydown: e => {
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(input.value); }
+      else if (e.key === 'Backspace' && !input.value && q.tags.length) { q.tags.pop(); t(); draw(); }
+    },
+    onchange: () => add(input.value) });
+  const add = v => {
+    const tags = normTags(v); if (!tags.length) return;
+    q.tags = normTags([...q.tags, ...tags]); input.value = ''; t(); draw(); refreshTagList(); input.focus();
+  };
+  const draw = () => pills.replaceChildren(...q.tags.map(tag => h('span', { class: 'tagpill' }, tag,
+    h('button', { class: 'x', title: 'Remove tag', onclick: () => { q.tags = q.tags.filter(x => x !== tag); t(); draw(); } }, '×'))));
+  draw();
+  return h('div', { class: 'tags' }, h('span', { class: 'lbl muted small' }, 'Tags'), pills, input);
+}
+
+function roundCard(r, i) {
+  const el = h('section', { class: 'qcard round', id: 'c-' + r.id });
+  const last = edit.quiz.questions.length - 1;
+  el.append(
+    h('div', { class: 'qhead' },
+      h('span', { class: 'qnum' }, 'ROUND'),
+      h('span', { class: 'muted small' }, 'Shows a title slide and ends with a recap of skipped questions'),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'icon', title: 'Move up', disabled: i === 0, onclick: () => moveQuestion(edit.quiz.questions.indexOf(r), -1) }, '▲'),
+      h('button', { class: 'icon', title: 'Move down', disabled: i === last, onclick: () => moveQuestion(edit.quiz.questions.indexOf(r), 1) }, '▼'),
+      h('button', { class: 'icon', title: 'Delete', onclick: () => removeQuestion(edit.quiz.questions.indexOf(r)) }, '✕')),
+    h('input', { class: 'in', style: 'font-weight:700', placeholder: 'Round title', value: r.title, oninput: e => { r.title = e.target.value; touch(); } }),
+    h('input', { class: 'in', placeholder: 'Subtitle (optional)', value: r.note, oninput: e => { r.note = e.target.value; touch(); } }));
+  return el;
+}
+
+function card(q, i, ctx = quizCtx) {
+  const el = h('section', { class: 'qcard', id: ctx.kind === 'quiz' ? 'c-' + q.id : null });
+  const warn = h('div', { class: 'warn' });
+  const refreshWarn = () => { warn.textContent = issues(q).join(' · '); };
+  const t = () => { ctx.changed(q); refreshWarn(); };
+  const promptHooks = [];
+  const idx = () => ctx.kind === 'quiz' ? ctx.list().indexOf(q) : i;
+  const redraw = () => { const fresh = card(q, idx(), ctx); el.replaceWith(fresh); return fresh; };
+  const quiz = ctx.kind === 'quiz';
+  const last = quiz ? ctx.list().length - 1 : 0;
+  const num = quiz ? ctx.list().slice(0, idx() + 1).filter(x => !isRound(x)).length : 0;
+
+  // paste a screenshot / copied image anywhere on the card to set the question image
+  el.addEventListener('paste', async e => {
+    const f = [...(e.clipboardData?.files || [])].find(x => x.type.startsWith('image/'));
+    if (!f) return;
+    e.preventDefault();
+    try { q.image = await fileToDataUrl(f, 1400); t(); redraw(); } catch (err) { toast(err.message); }
+  });
+
+  el.append(
+    h('div', { class: 'qhead' },
+      h('span', { class: 'qnum' }, quiz ? 'Q' + num : 'Bank'),
+      h('select', { value: q.type, onchange: e => {
+        q.type = e.target.value;
+        while (q.options.length < 2) q.options.push(newOption());
+        t(); redraw();
+      } }, Object.entries(TYPES).map(([k, label]) => h('option', { value: k }, label))),
+      h('select', { value: q.difficulty, title: 'Difficulty', onchange: e => { q.difficulty = e.target.value; t(); } },
+        h('option', { value: '' }, 'No level'), Object.entries(DIFFS).map(([k, label]) => h('option', { value: k }, label))),
+      h('label', { class: 'chk muted small', title: 'Points a player earns for a correct answer (used by the scorekeeper)' }, 'pts',
+        h('input', { class: 'in num', type: 'number', min: 0, step: 0.5, value: q.points,
+          oninput: e => { const v = parseFloat(e.target.value); q.points = Number.isFinite(v) && v >= 0 ? v : 1; t(); } })),
+      h('span', { class: 'spacer' }),
+      quiz ? [
+        h('button', { class: 'icon', title: 'Move up', disabled: idx() === 0, onclick: () => moveQuestion(idx(), -1) }, '▲'),
+        h('button', { class: 'icon', title: 'Move down', disabled: idx() === last, onclick: () => moveQuestion(idx(), 1) }, '▼'),
+        h('button', { class: 'icon', title: 'Show this question in presenter view', onclick: () => {
+          flushSave(); const s = getSession(edit.quiz.id); s.seq = null; s.index = edit.quiz.questions.indexOf(q);
+          putSession(edit.quiz.id, s); location.hash = '#/play/' + edit.quiz.id;
+        } }, '▶'),
+        h('button', { class: 'icon', title: 'Duplicate', onclick: () => duplicateQuestion(idx()) }, '⧉'),
+        h('button', { class: 'icon', title: 'Delete', onclick: () => removeQuestion(idx()) }, '✕'),
+      ] : null),
+    h('textarea', { class: 'in', placeholder: q.type === 'blanks' ? 'Question. Put the words to hide in [square brackets]' : 'Question', value: q.prompt,
+      oninput: e => { q.prompt = e.target.value; t(); promptHooks.forEach(f => f()); } }),
+    h('div', { class: 'row' }, h('span', { class: 'lbl muted small' }, 'Question image'),
+      imageField(() => q.image, v => { q.image = v; }, 1400, false, redraw, t)),
+    answerEditor(q, redraw, t, f => promptHooks.push(f)),
+    h('input', { class: 'in', placeholder: 'Note shown with the answer (optional, e.g. a fun fact)', value: q.note,
+      oninput: e => { q.note = e.target.value; ctx.changed(q); } }),
+    tagsEditor(q, t),
+    quiz ? bankLink(q, redraw, t) : null,
+    warn);
+  refreshWarn();
+  return el;
+}
+
+function bankLink(q, redraw, t) {
+  const b = q.src && bankById(q.src);
+  if (!b) {
+    return h('div', { class: 'row flex-wrap small' },
+      h('button', { class: 'btn small', onclick: () => {
+        const r = saveToBank(q); touch();
+        toast(r.added ? 'Saved to the question bank' : 'Linked to an identical bank question');
+        redraw();
+      } }, 'Save to bank'),
+      q.src ? h('span', { class: 'muted' }, '(its bank source was deleted)') : null);
+  }
+  const newer = b.updated > (q.srcUpdated || 0);
+  return h('div', { class: 'row flex-wrap small' },
+    h('span', { class: 'muted' }, 'From the question bank'),
+    h('button', { class: 'btn small', title: 'Copy this version into the bank', onclick: () => {
+      Object.assign(b, contentOf(q)); b.updated = Date.now(); q.srcUpdated = b.updated;
+      dbPut('bank', b); touch(); toast('Bank question updated'); redraw();
+    } }, 'Update bank from this'),
+    newer ? h('button', { class: 'btn small primary', onclick: () => {
+      Object.assign(q, contentOf(b)); q.srcUpdated = b.updated; t(); redraw();
+    } }, 'Bank has a newer version: use it') : null);
+}
+
+let groupN = 0;   // unique radio-group names per rendered editor
+
+function answerEditor(q, redraw, t, onPrompt = () => {}) {
+  const grp = 'g' + (++groupN);
+  if (q.type === 'blanks') {
+    const info = h('div', { class: 'muted small' }), chips = h('div', { class: 'chips' });
+    const refresh = () => {
+      const toks = parseBlanks(q.prompt), blanks = toks.filter(x => x.blank);
+      const bracketed = /\[[^\]]+\]/.test(q.prompt);
+      info.textContent = !blanks.length ? 'Type the question above, then put the words to hide in [square brackets].'
+        : `${plural(blanks.length, 'blank')}` + (bracketed ? '' : ': every word is hidden because no [brackets] are used');
+      fill(chips, blanks.map(x => h('span', { class: 'chip' }, `${x.n} · ${x.text}`)));
+    };
+    refresh(); onPrompt(refresh);
+    return h('div', { style: 'display:grid;gap:8px' },
+      h('div', { class: 'muted small' }, 'Contestants call a number and you reveal that word. The question stays hidden until then.'),
+      info, chips,
+      h('div', { class: 'row flex-wrap' },
+        h('button', { class: 'btn small', title: 'Wrap every word in [brackets]', onclick: () => {
+          q.prompt = q.prompt.replace(/\[|\]/g, '').split(/\s+/).filter(Boolean).map(w => `[${w}]`).join(' '); t(); redraw(); } }, 'Hide every word'),
+        h('button', { class: 'btn small', onclick: () => { q.prompt = q.prompt.replace(/\[|\]/g, ''); t(); redraw(); } }, 'Clear brackets')),
+      h('label', { class: 'lbl' }, 'Accepted answers, one per line (the first is shown on reveal)'),
+      h('textarea', { class: 'in', value: q.answers.join('\n'), oninput: e => { q.answers = e.target.value.split('\n'); t(); } }));
+  }
+  if (q.type === 'tf') {
+    return h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'Correct answer:'),
+      [true, false].map(val => h('label', { class: 'chk' },
+        h('input', { type: 'radio', name: 'tf' + grp, checked: q.tf === val, onchange: () => { q.tf = val; t(); } }),
+        val ? 'True' : 'False')));
+  }
+  if (q.type === 'sa') {
+    return h('div', {}, h('label', { class: 'lbl' }, 'Accepted answers, one per line (the first is shown on reveal; the rest appear as "also accepted")'),
+      h('textarea', { class: 'in', value: q.answers.join('\n'), oninput: e => { q.answers = e.target.value.split('\n'); t(); } }));
+  }
+  const mode = q.type, max = mode === 'order' ? 12 : 10;
+  const hint = { mc: 'Select the correct option.', ms: 'Tick every correct option.',
+    order: 'List the items in the CORRECT order. They are shuffled when presenting.' }[mode];
+  const swap = (a, b) => { [q.options[a], q.options[b]] = [q.options[b], q.options[a]]; t(); redraw(); };
+  const rows = q.options.map((o, j) => {
+    const mark = mode === 'mc'
+      ? h('input', { type: 'radio', name: grp, checked: q.correct === j, title: 'Correct answer', onchange: () => { q.correct = j; t(); } })
+      : mode === 'ms'
+        ? h('input', { type: 'checkbox', checked: q.multi.includes(j), title: 'Correct', onchange: e => {
+            const s = new Set(q.multi); e.target.checked ? s.add(j) : s.delete(j);
+            q.multi = [...s].sort((a, b) => a - b); t(); } })
+        : h('span', { class: 'ordn' }, String(j + 1));
+    return h('div', { class: 'optrow' }, mark,
+      mode === 'order' ? null : h('span', { class: 'letter' }, letter(j)),
+      h('input', { class: 'in', placeholder: mode === 'order' ? `Item ${j + 1}` : `Option ${letter(j)}`, value: o.text,
+        oninput: e => { o.text = e.target.value; t(); },
+        onkeydown: e => {                       // Enter = next option (adds one at the end of the list)
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          const inputs = e.target.closest('.qcard').querySelectorAll('.optrow .in');
+          if (inputs[j + 1]) return inputs[j + 1].focus();
+          if (q.options.length >= max) return;
+          q.options.push(newOption()); t();
+          [...redraw().querySelectorAll('.optrow .in')].pop()?.focus();
+        } }),
+      imageField(() => o.image, v => { o.image = v; }, 640, true, redraw, t),
+      mode === 'order' ? [
+        h('button', { class: 'icon', disabled: j === 0, title: 'Move up', onclick: () => swap(j, j - 1) }, '▲'),
+        h('button', { class: 'icon', disabled: j === q.options.length - 1, title: 'Move down', onclick: () => swap(j, j + 1) }, '▼'),
+      ] : null,
+      h('button', { class: 'icon', title: 'Remove', disabled: q.options.length <= 2, onclick: () => {
+        q.options.splice(j, 1);
+        if (q.correct === j) q.correct = 0; else if (q.correct > j) q.correct--;
+        q.multi = q.multi.filter(x => x !== j).map(x => x > j ? x - 1 : x);
+        t(); redraw();
+      } }, '✕'));
+  });
+  return h('div', { style: 'display:grid;gap:8px' }, h('div', { class: 'muted small' }, hint), rows,
+    q.options.length < max ? h('div', {}, h('button', { class: 'btn small', onclick: () => { q.options.push(newOption()); t(); redraw(); } }, '+ Add option')) : null);
+}
+
+/* ---------- compact list view of the quiz: select, drag to reorder, mark used ---------- */
+let dragId = null;
+
+function listRows() {
+  const list = edit.quiz.questions, stats = usageStats();
+  let n = 0;
+  return list.map((it, i) => {
+    const round = isRound(it), num = round ? null : ++n;
+    const wrap = h('div', { class: 'bitem', id: 'r-' + it.id });
+    const build = () => {
+      const sel = edit.sel.has(it.id), open = edit.open.has(it.id);
+      const st = !round && it.src ? stats.get(it.src) : null;
+      const row = h('div', { class: 'brow' + (sel ? ' sel' : '') },
+        h('input', { type: 'checkbox', checked: sel, onchange: e => {
+          e.target.checked ? edit.sel.add(it.id) : edit.sel.delete(it.id); build(); drawListBulk(); } }),
+        h('span', { class: 'grab', title: 'Drag to reorder' }, '⋮⋮'),
+        h('span', { class: 'bn' }, round ? '' : String(num)),
+        h('div', { class: 'bmain' },
+          round ? h('div', { class: 'bprompt', style: 'color:var(--accent)' }, '▸ ' + (it.title || 'Round'), it.note ? ' · ' + it.note : '')
+            : h('div', { class: 'bprompt' }, it.prompt.trim() || '(image only)'),
+          round ? null : h('div', { class: 'bmeta' },
+            h('span', { class: 'tbadge' }, TYPES[it.type]),
+            it.difficulty ? h('span', { class: 'dbadge ' + it.difficulty }, DIFFS[it.difficulty]) : null,
+            it.tags.map(tg => h('span', { class: 'tagpill' }, tg)),
+            st ? h('span', {}, `used ${st.count}× · last ${fmtDate(st.last)}`) : it.src ? h('span', {}, 'never used') : h('span', {}, 'not in bank'),
+            h('span', {}, fmtPts(it.points)))),
+        h('div', { class: 'bacts' },
+          h('button', { class: 'icon', title: 'Move up', disabled: i === 0, onclick: () => moveQuestion(list.indexOf(it), -1) }, '▲'),
+          h('button', { class: 'icon', title: 'Move down', disabled: i === list.length - 1, onclick: () => moveQuestion(list.indexOf(it), 1) }, '▼'),
+          h('button', { class: 'btn small', onclick: () => { open ? edit.open.delete(it.id) : edit.open.add(it.id); build(); } }, open ? 'Done' : 'Edit')));
+      row.draggable = true;
+      row.addEventListener('dragstart', e => { dragId = it.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', it.id); });
+      row.addEventListener('dragend', () => { dragId = null; document.querySelectorAll('.bitem.drop').forEach(x => x.classList.remove('drop')); });
+      fill(wrap, row, open ? h('div', { class: 'bedit' }, round ? roundCard(it, list.indexOf(it)) : card(it, list.indexOf(it), quizCtx)) : null);
+    };
+    wrap.addEventListener('dragover', e => { if (dragId && dragId !== it.id) { e.preventDefault(); wrap.classList.add('drop'); } });
+    wrap.addEventListener('dragleave', () => wrap.classList.remove('drop'));
+    wrap.addEventListener('drop', e => {
+      e.preventDefault(); wrap.classList.remove('drop');
+      const from = list.findIndex(x => x.id === dragId), to = list.indexOf(it);
+      if (from < 0 || to < 0 || from === to) return;
+      const [m] = list.splice(from, 1); list.splice(to, 0, m); touch(); renderList(m);
+    });
+    build();
+    return wrap;
+  });
+}
+const fmtPts = p => `${Math.round(p * 100) / 100} pt${p === 1 ? '' : 's'}`;
+
+function drawListBulk() {
+  const box = $('#bulkbar'); if (!box) return;
+  if (!prefs.editList || !edit.sel.size) { box.replaceChildren(); return; }
+  const list = edit.quiz.questions;
+  const selected = () => list.filter(x => edit.sel.has(x.id));
+  const selQs = () => selected().filter(x => !isRound(x));
+  const after = () => { touch(); renderList(); };
+  const tagIn = h('input', { class: 'in tag-in', placeholder: 'tag…', list: 'tagopts' });
+  const diffSel = h('select', {}, h('option', { value: '__' }, 'Set level…'), h('option', { value: '' }, 'No level'),
+    Object.entries(DIFFS).map(([k, l]) => h('option', { value: k }, l)));
+  const toBank = qs => qs.map(q => saveToBank(q));
+  box.replaceChildren(h('div', { class: 'bulk' },
+    h('strong', {}, `${edit.sel.size} selected`),
+    h('button', { class: 'btn small', title: 'Log as used right now', onclick: () => {
+      const qs = selQs(); if (!qs.length) return;
+      toBank(qs);
+      const n = markUsed(qs.map(q => q.src), 'manual:' + Date.now());
+      toast(`Marked ${plural(n, 'question')} as used`); after();
+    } }, 'Mark used'),
+    h('button', { class: 'btn small', onclick: () => {
+      const ids = selQs().map(q => q.src).filter(Boolean);
+      const n = markUnused(ids); toast(`Cleared usage history for ${plural(ids.length, 'question')} (${n} entries)`); after();
+    } }, 'Mark unused'),
+    diffSel,
+    h('button', { class: 'btn small', onclick: () => {
+      if (diffSel.value === '__') return;
+      selQs().forEach(q => { q.difficulty = diffSel.value; }); after();
+    } }, 'Apply'),
+    tagIn,
+    h('button', { class: 'btn small', onclick: () => {
+      const tags = normTags(tagIn.value); if (!tags.length) return;
+      selQs().forEach(q => { q.tags = normTags([...q.tags, ...tags]); }); refreshTagList(); after();
+    } }, '+ Tag'),
+    h('button', { class: 'btn small', onclick: () => {
+      const ids = new Set(selected().map(x => x.id)), keep = list.filter(x => !ids.has(x.id)), mv = list.filter(x => ids.has(x.id));
+      list.splice(0, list.length, ...mv, ...keep); after();
+    } }, 'To top'),
+    h('button', { class: 'btn small', onclick: () => {
+      const ids = new Set(selected().map(x => x.id)), keep = list.filter(x => !ids.has(x.id)), mv = list.filter(x => ids.has(x.id));
+      list.splice(0, list.length, ...keep, ...mv); after();
+    } }, 'To bottom'),
+    h('button', { class: 'btn small', onclick: () => { toBank(selQs()); toast('Saved to bank'); after(); } }, 'Save to bank'),
+    h('button', { class: 'btn small danger', onclick: () => {
+      if (!confirm(`Remove ${edit.sel.size} selected item(s) from this quiz?`)) return;
+      const ids = new Set(edit.sel); edit.quiz.questions = list.filter(x => !ids.has(x.id)); edit.sel.clear(); after();
+    } }, 'Remove'),
+    h('button', { class: 'btn small', onclick: () => { edit.sel.clear(); renderList(); } }, 'Clear')));
+}
+
+/* ---------- paste questions from text ---------- */
+function openBulk(onAdd, label = 'Add to quiz') {
+  const info = h('span', { class: 'muted small' });
+  const ta = h('textarea', { class: 'in', rows: 12, placeholder: 'Paste questions here…',
+    oninput: () => { const n = parseBulk(ta.value).length; info.textContent = n ? `${plural(n, 'question')} found` : ''; } });
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal', style: 'width:min(720px,94vw)' },
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h3', { style: 'flex:1' }, 'Paste questions from text'),
+        h('button', { class: 'btn small', onclick: closeOverlay }, 'Close')),
+      h('div', { class: 'paste-help' },
+`First line = the question. Blank line between questions.
+Options: "- text" or "A) text". Mark correct with a trailing *
+(one * = multiple choice, two or more = multi-select).
+Numbered lines (1. 2. 3.) in the right order = ordering.
+"Answer: true" = true/false. "Answer: Au | gold" = short answer.
+"Difficulty: hard", "Tags: movies, 90s", "Note: …" are optional.
+
+What is the capital of France?
+- Berlin
+- Paris *
+- Rome
+Difficulty: easy
+Tags: geography, europe
+
+The sun is a star.
+Answer: true
+
+Put these in order, smallest first:
+1. Ant
+2. Cat
+3. Horse`),
+      h('div', { style: 'margin-top:10px' }, ta),
+      h('div', { class: 'row', style: 'margin-top:10px' }, info, h('span', { class: 'spacer' }),
+        h('button', { class: 'btn primary', onclick: () => {
+          const qs = parseBulk(ta.value);
+          if (!qs.length) return toast('Nothing to add yet');
+          closeOverlay(); onAdd(qs);
+          toast(`Added ${plural(qs.length, 'question')}`);
+        } }, label)))));
+  ta.focus();
+}
+
+/* =====================================================================
+   question bank: browser (used on the Bank page and in the "From bank" picker)
+   ===================================================================== */
+function makeBankUI() {
+  return { search: '', diffs: new Set(), type: '', tags: new Set(), tagMode: 'any', usage: 'any', recentN: 3,
+    sort: 'new', shown: 50, selected: new Set(), open: new Set(), allTags: false };
+}
+const bankUIMain = makeBankUI();
+
+function filterBank(ui) {
+  const stats = usageStats();
+  const recent = ui.usage === 'recent' ? recentQids(ui.recentN) : null;
+  const s = ui.search.trim().toLowerCase();
+  const list = bank.filter(q => {
+    if (s) {
+      const hay = (q.prompt + ' ' + q.options.map(o => o.text).join(' ') + ' ' + q.answers.join(' ') + ' ' + q.tags.join(' ') + ' ' + q.note).toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    if (ui.diffs.size && !ui.diffs.has(q.difficulty || 'none')) return false;
+    if (ui.type && q.type !== ui.type) return false;
+    if (ui.tags.size) {
+      const has = t => q.tags.includes(t);
+      if (ui.tagMode === 'all' ? ![...ui.tags].every(has) : ![...ui.tags].some(has)) return false;
+    }
+    if (ui.usage === 'unused' && stats.has(q.id)) return false;
+    if (ui.usage === 'used' && !stats.has(q.id)) return false;
+    if (ui.usage === 'recent' && recent.has(q.id)) return false;
+    if (ui.usage === 'carry' && !q.carry) return false;
+    return true;
+  });
+  const last = q => stats.get(q.id)?.last || 0, cnt = q => stats.get(q.id)?.count || 0;
+  const sorts = {
+    new: (a, b) => b.created - a.created, old: (a, b) => a.created - b.created,
+    lru: (a, b) => last(a) - last(b) || a.created - b.created, most: (a, b) => cnt(b) - cnt(a),
+    az: (a, b) => a.prompt.localeCompare(b.prompt),
+  };
+  return list.sort(sorts[ui.sort] || sorts.new);
+}
+
+function bankBrowser({ ui, mode, exclude = new Set(), onSel = () => {} }) {
+  const root = h('div', {});
+  const diffChips = h('div', { class: 'chips' });
+  const tagBox = h('div', { class: 'chips' });
+  const info = h('span', { class: 'muted small' });
+  const listBox = h('div', {});
+  const bulkBox = h('div', {});
+  let matches = [];
+
+  const reset = () => { ui.shown = 50; };
+  const search = h('input', { class: 'in', placeholder: 'Search questions, answers, tags…', value: ui.search,
+    oninput: e => { ui.search = e.target.value; reset(); drawList(); } });
+  const typeSel = h('select', { value: ui.type, onchange: e => { ui.type = e.target.value; reset(); drawList(); } },
+    h('option', { value: '' }, 'Any type'), Object.entries(TYPES).map(([k, l]) => h('option', { value: k }, l)));
+  const nIn = h('input', { class: 'in num', type: 'number', min: 1, max: 99, value: ui.recentN,
+    onchange: e => { ui.recentN = clamp(parseInt(e.target.value) || 3, 1, 99); drawList(); } });
+  const nWrap = h('span', { class: 'row small' }, 'last', nIn, 'quizzes');
+  const usageSel = h('select', { value: ui.usage, onchange: e => { ui.usage = e.target.value; reset(); drawN(); drawList(); } },
+    h('option', { value: 'any' }, 'Any usage'), h('option', { value: 'unused' }, 'Never used'),
+    h('option', { value: 'used' }, 'Used before'), h('option', { value: 'recent' }, 'Not used recently…'),
+    h('option', { value: 'carry' }, 'Carry-over'));
+  const sortSel = h('select', { value: ui.sort, onchange: e => { ui.sort = e.target.value; drawList(); } },
+    h('option', { value: 'new' }, 'Newest first'), h('option', { value: 'old' }, 'Oldest first'),
+    h('option', { value: 'lru' }, 'Least recently used'), h('option', { value: 'most' }, 'Most used'),
+    h('option', { value: 'az' }, 'A to Z'));
+  const drawN = () => { nWrap.style.display = ui.usage === 'recent' ? '' : 'none'; };
+
+  const drawDiffs = () => diffChips.replaceChildren(...[['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard'], ['none', 'No level']].map(([k, l]) =>
+    h('button', { class: 'chip' + (ui.diffs.has(k) ? ' on' : ''), onclick: () => {
+      ui.diffs.has(k) ? ui.diffs.delete(k) : ui.diffs.add(k); reset(); drawDiffs(); drawList(); } }, l)));
+
+  const drawTags = () => {
+    const tags = allTags(), shown = ui.allTags ? tags : tags.slice(0, 24);
+    fill(tagBox,
+      ...shown.map(([t, c]) => h('button', { class: 'chip' + (ui.tags.has(t) ? ' on' : ''), onclick: () => {
+        ui.tags.has(t) ? ui.tags.delete(t) : ui.tags.add(t); reset(); drawTags(); drawList(); } }, t, h('small', {}, c))),
+      tags.length > 24 ? h('button', { class: 'chip', onclick: () => { ui.allTags = !ui.allTags; drawTags(); } }, ui.allTags ? 'fewer' : `+${tags.length - 24} more`) : null,
+      ui.tags.size > 1 ? h('span', { class: 'seg' },
+        h('button', { class: ui.tagMode === 'any' ? 'on' : '', onclick: () => { ui.tagMode = 'any'; reset(); drawTags(); drawList(); } }, 'any'),
+        h('button', { class: ui.tagMode === 'all' ? 'on' : '', onclick: () => { ui.tagMode = 'all'; reset(); drawTags(); drawList(); } }, 'all')) : null,
+      ui.tags.size ? h('button', { class: 'chip', onclick: () => { ui.tags.clear(); reset(); drawTags(); drawList(); } }, 'clear tags ✕') : null,
+      !tags.length ? h('span', { class: 'muted small' }, 'No tags yet. Add some to your questions.') : null);
+  };
+
+  const allBox = h('input', { type: 'checkbox', onchange: e => {
+    for (const q of matches) { if (exclude.has(q.id)) continue; e.target.checked ? ui.selected.add(q.id) : ui.selected.delete(q.id); }
+    drawList(); drawBulk(); onSel();
+  } });
+
+  const itemEl = (q, stats) => {
+    const wrap = h('div', { class: 'bitem' + (exclude.has(q.id) ? ' dim' : '') });
+    const build = () => {
+      const sel = ui.selected.has(q.id), open = ui.open.has(q.id), st = stats.get(q.id), dis = exclude.has(q.id);
+      const row = h('div', { class: 'brow' + (sel ? ' sel' : '') },
+        h('input', { type: 'checkbox', checked: sel, disabled: dis, onchange: e => {
+          e.target.checked ? ui.selected.add(q.id) : ui.selected.delete(q.id); build(); drawBulk(); onSel(); } }),
+        h('div', { class: 'bmain' },
+          h('div', { class: 'bprompt' }, q.prompt.trim() || '(image only)'),
+          h('div', { class: 'bmeta' },
+            h('span', { class: 'tbadge' }, TYPES[q.type]),
+            q.difficulty ? h('span', { class: 'dbadge ' + q.difficulty }, DIFFS[q.difficulty]) : null,
+            q.tags.map(tg => h('span', { class: 'tagpill' }, tg)),
+            h('span', {}, st ? `used ${st.count}× · last ${fmtDate(st.last)}` : 'never used'),
+            q.carry ? h('span', { class: 'dbadge medium' }, 'carry-over') : null,
+            dis ? h('span', {}, 'already in this quiz') : null)),
+        mode === 'manage' ? h('div', { class: 'bacts' },
+          h('button', { class: 'btn small', onclick: () => { open ? ui.open.delete(q.id) : ui.open.add(q.id); build(); } }, open ? 'Done' : 'Edit'),
+          h('button', { class: 'icon', title: 'Delete', onclick: () => deleteOne(q) }, '✕')) : null);
+      fill(wrap, row, open ? h('div', { class: 'bedit' }, card(q, 0, bankCtx)) : null);
+    };
+    build();
+    return wrap;
+  };
+
+  const deleteOne = q => {
+    const i = bank.indexOf(q);
+    bank.splice(i, 1); ui.selected.delete(q.id); ui.open.delete(q.id);
+    dbDel('bank', q.id); drawTags(); drawList(); drawBulk();
+    toast('Question deleted from the bank', { label: 'Undo', fn: () => {
+      bank.splice(Math.min(i, bank.length), 0, q); dbPut('bank', q); drawTags(); drawList();
+    } });
+  };
+
+  function drawList() {
+    matches = filterBank(ui);
+    const stats = usageStats();
+    info.textContent = `${plural(matches.length, 'question')} match` + (matches.length !== bank.length ? ` (of ${bank.length})` : '');
+    allBox.checked = matches.length > 0 && matches.every(q => exclude.has(q.id) || ui.selected.has(q.id));
+    fill(listBox,
+      ...matches.slice(0, ui.shown).map(q => itemEl(q, stats)),
+      matches.length > ui.shown ? h('button', { class: 'btn', onclick: () => { ui.shown += 50; drawList(); } },
+        `Show ${Math.min(50, matches.length - ui.shown)} more`) : null,
+      !matches.length ? h('div', { class: 'empty' }, bank.length ? 'No questions match these filters.'
+        : 'The bank is empty. Add questions here, import a CSV, or use "Save to bank" from any quiz.') : null);
+  }
+
+  function drawBulk() {
+    for (const id of [...ui.selected]) if (!bankById(id)) ui.selected.delete(id);
+    if (mode !== 'manage' || !ui.selected.size) { bulkBox.replaceChildren(); return; }
+    const recs = () => [...ui.selected].map(bankById).filter(Boolean);
+    const apply = fn => { const rs = recs(); rs.forEach(r => { fn(r); r.updated = Date.now(); }); dbPutMany('bank', rs); drawTags(); drawList(); drawBulk(); };
+    const quizSel = h('select', {}, library.map(q => h('option', { value: q.id }, q.title)), h('option', { value: '__new' }, '+ New quiz'));
+    const diffSel = h('select', {}, h('option', { value: '__' }, 'Set level…'), h('option', { value: '' }, 'No level'),
+      Object.entries(DIFFS).map(([k, l]) => h('option', { value: k }, l)));
+    const tagIn = h('input', { class: 'in tag-in', placeholder: 'tag…', list: 'tagopts' });
+    bulkBox.replaceChildren(h('div', { class: 'bulk' },
+      h('strong', {}, `${ui.selected.size} selected`),
+      quizSel,
+      h('button', { class: 'btn small primary', onclick: () => {
+        let quiz;
+        if (quizSel.value === '__new') { quiz = newQuiz(); quiz.questions = []; quiz.title = 'New quiz from bank'; library.unshift(quiz); }
+        else quiz = library.find(q => q.id === quizSel.value);
+        if (!quiz) return;
+        const copies = recs().map(copyToQuiz);
+        if (quiz.questions.length === 1 && isBlank(quiz.questions[0])) quiz.questions = [];
+        quiz.questions.push(...copies); quiz.updated = Date.now(); dbPut('quizzes', quiz);
+        toast(`Added ${plural(copies.length, 'question')} to "${quiz.title}"`, { label: 'Open', fn: () => { location.hash = '#/edit/' + quiz.id; } });
+        ui.selected.clear(); drawList(); drawBulk();
+      } }, 'Add to quiz'),
+      h('button', { class: 'btn small', onclick: () => {
+        const n = markUsed([...ui.selected], 'manual:' + Date.now()); toast(`Marked ${plural(n, 'question')} as used`); drawList(); drawBulk();
+      } }, 'Mark used'),
+      h('button', { class: 'btn small', onclick: () => {
+        markUnused([...ui.selected]); toast('Usage history cleared'); drawList(); drawBulk();
+      } }, 'Mark unused'),
+      h('button', { class: 'btn small', onclick: () => apply(r => { r.carry = !recs().every(x => x.carry); }) }, 'Toggle carry-over'),
+      diffSel,
+      h('button', { class: 'btn small', onclick: () => { if (diffSel.value !== '__') apply(r => { r.difficulty = diffSel.value; }); } }, 'Apply'),
+      tagIn,
+      h('button', { class: 'btn small', onclick: () => { const t = normTags(tagIn.value); if (t.length) apply(r => { r.tags = normTags([...r.tags, ...t]); }); } }, '+ Tag'),
+      h('button', { class: 'btn small', onclick: () => { const t = normTags(tagIn.value); if (t.length) apply(r => { r.tags = r.tags.filter(x => !t.includes(x)); }); } }, '− Tag'),
+      h('button', { class: 'btn small danger', onclick: () => {
+        if (!confirm(`Delete ${ui.selected.size} question(s) from the bank?`)) return;
+        const ids = [...ui.selected]; bank = bank.filter(q => !ui.selected.has(q.id));
+        dbDelMany('bank', ids); markUnused(ids); ui.selected.clear(); drawTags(); drawList(); drawBulk();
+      } }, 'Delete'),
+      h('button', { class: 'btn small', onclick: () => { ui.selected.clear(); drawList(); drawBulk(); onSel(); } }, 'Clear')));
+  }
+
+  root.append(
+    h('div', { class: 'fbox' },
+      search,
+      h('div', { class: 'fr' }, diffChips, typeSel, usageSel, nWrap, sortSel),
+      tagBox,
+      h('div', { class: 'fr' }, h('label', { class: 'chk small' }, allBox, 'Select all matching'), info)),
+    bulkBox, listBox);
+  drawDiffs(); drawTags(); drawN(); drawList(); drawBulk();
+  return { el: root, matches: () => matches, refresh: () => { drawTags(); drawList(); drawBulk(); } };
+}
+
+function renderBank() {
+  view = 'bank';
+  document.title = 'Question bank';
+  const ui = bankUIMain;
+  const br = bankBrowser({ ui, mode: 'manage' });
+  const fileIn = h('input', { type: 'file', multiple: true, accept: '.json,.csv', hidden: true,
+    onchange: e => { importFiles([...e.target.files]); e.target.value = ''; } });
+  const ptsIn = k => h('label', { class: 'chk small' }, DIFFS[k], h('input', { class: 'in num', type: 'number', min: 0, step: 0.5, value: prefs.pts[k],
+    onchange: e => { const v = parseFloat(e.target.value); prefs.pts[k] = Number.isFinite(v) && v >= 0 ? v : prefs.pts[k]; savePrefs(); } }));
+
+  app.replaceChildren(h('div', { class: 'page' },
+    h('div', { class: 'top' },
+      h('div', { class: 'row' }, h('a', { class: 'btn ghost', href: '#/' }, '← Library'), h('h1', {}, 'Question bank')),
+      h('div', { class: 'row flex-wrap' },
+        fileIn,
+        h('button', { class: 'btn primary', onclick: () => {
+          const q = toBankRecord(newQuestion('mc'));
+          bank.unshift(q); dbPut('bank', q); ui.open.add(q.id); ui.search = ''; ui.diffs.clear(); ui.tags.clear(); ui.usage = 'any'; ui.type = '';
+          renderBank();
+        } }, '+ New question'),
+        h('button', { class: 'btn', onclick: () => openBulk(qs => {
+          const r = addToBank(qs); toast(`Added ${plural(r.added, 'question')}` + (r.dups ? `, ${r.dups} duplicate(s) skipped` : '')); renderBank();
+        }, 'Add to bank') }, 'Paste from text'),
+        h('button', { class: 'btn', title: '.csv (columns: type, difficulty, tags, question, options, answer, note, points) or .json', onclick: () => fileIn.click() }, 'Import CSV / JSON'),
+        h('button', { class: 'btn', onclick: () => {
+          const list = br.matches();
+          download('trivia-bank.json', JSON.stringify({ trivia: 1, bank: list }, null, 2), 'application/json'); markBackup();
+          toast(`Exported ${plural(list.length, 'question')}`);
+        } }, 'Export JSON'),
+        h('button', { class: 'btn', onclick: () => {
+          const list = br.matches(), imgs = list.filter(q => q.image || q.options.some(o => o.image)).length;
+          download('trivia-bank.csv', questionsToCsv(list), 'text/csv');
+          toast(`Exported ${plural(list.length, 'question')} to CSV` + (imgs ? ` (images in ${imgs} aren't included in CSV)` : ''));
+        } }, 'Export CSV'))),
+    h('div', { class: 'row flex-wrap small muted', style: 'margin-bottom:10px' },
+      'Points given when a question is added to a quiz:', ptsIn('easy'), ptsIn('medium'), ptsIn('hard')),
+    br.el));
+}
+
+/* ---------- "From bank…" picker (hand-pick into the quiz being edited) ---------- */
+function openPicker() {
+  const ui = makeBankUI();
+  const inQuiz = new Set(edit.quiz.questions.map(q => q.src).filter(Boolean));
+  const addBtn = h('button', { class: 'btn primary', disabled: true }, 'Add selected');
+  const br = bankBrowser({ ui, mode: 'pick', exclude: inQuiz, onSel: () => {
+    addBtn.disabled = !ui.selected.size; addBtn.textContent = ui.selected.size ? `Add ${ui.selected.size} selected` : 'Add selected'; } });
+  addBtn.onclick = () => {
+    const qs = [...ui.selected].map(bankById).filter(Boolean).map(copyToQuiz);
+    if (!qs.length) return;
+    closeOverlay(); addToQuiz(qs); toast(`Added ${plural(qs.length, 'question')} from the bank`);
+  };
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal wide' },
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h3', { style: 'flex:1' }, 'Add from the question bank'),
+        addBtn, h('button', { class: 'btn small', onclick: closeOverlay }, 'Close')),
+      br.el)));
+}
+
+/* ---------- "Fill from bank…" generator ---------- */
+const gen = { tags: new Set(), tagMode: 'any', avoid: true, avoidN: 3, carry: true, skipInQuiz: true, order: 'shuffle',
+  rounds: [{ title: '', easy: 3, medium: 3, hard: 2, any: 0 }], drawn: null, drawer: null, notes: [] };
+
+function makeDrawer(o) {
+  const recent = o.avoid ? recentQids(o.avoidN) : new Set(), stats = usageStats();
+  const inQuiz = o.skipInQuiz ? new Set(edit.quiz.questions.map(q => q.src).filter(Boolean)) : new Set();
+  const pool = bank.filter(q => {
+    if (inQuiz.has(q.id)) return false;
+    if (!o.tags.size) return true;
+    const has = t => q.tags.includes(t);
+    return o.tagMode === 'all' ? [...o.tags].every(has) : [...o.tags].some(has);
+  });
+  const taken = new Set();
+  const pickOne = (bucket, exclude = new Set()) => {
+    const ok = q => !taken.has(q.id) && !exclude.has(q.id) && (bucket === 'any' || q.difficulty === bucket);
+    const fresh = pool.filter(q => ok(q) && !recent.has(q.id));
+    if (fresh.length) {
+      const carry = o.carry ? fresh.filter(q => q.carry) : [];
+      const q = pickOf(carry.length ? carry : fresh);
+      taken.add(q.id); return { q, bucket, reused: false };
+    }
+    const old = pool.filter(ok).sort((a, b) => (stats.get(a.id)?.last || 0) - (stats.get(b.id)?.last || 0));
+    if (old.length) { taken.add(old[0].id); return { q: old[0], bucket, reused: true }; }
+    return null;
+  };
+  return { pickOne, taken, poolSize: pool.length };
+}
+
+function sortDrawn(items, order) {
+  if (order === 'ramp') items.sort((a, b) => DIFF_RANK[a.q.difficulty] - DIFF_RANK[b.q.difficulty]);
+  return items;
+}
+
+function runDraw() {
+  const g = gen;
+  const d = makeDrawer(g); g.drawer = d; g.notes = [];
+  g.drawn = g.rounds.map((r, ri) => {
+    const items = [];
+    for (const bucket of ['easy', 'medium', 'hard', 'any']) {
+      const want = r[bucket] | 0; let got = 0;
+      for (let k = 0; k < want; k++) { const p = d.pickOne(bucket); if (!p) break; items.push(p); got++; }
+      if (got < want) g.notes.push(`${r.title || 'Round ' + (ri + 1)}: wanted ${want} ${bucket === 'any' ? 'of any level' : bucket}, found ${got}.`);
+    }
+    if (g.order === 'shuffle') shuffle(items); else sortDrawn(items, g.order);
+    return { title: r.title, items };
+  });
+}
+
+function openGenerator() {
+  const g = gen, prevScroll = overlay.querySelector('.modal')?.scrollTop || 0;
+  const sumTotal = () => g.rounds.reduce((n, r) => n + (r.easy | 0) + (r.medium | 0) + (r.hard | 0) + (r.any | 0), 0);
+  const totalEl = h('span', { class: 'muted small' }), drawBtn = h('button', { class: 'btn primary' });
+  const recalc = () => {
+    const n = sumTotal();
+    totalEl.textContent = `${plural(n, 'question')} total`;
+    drawBtn.disabled = !n || !bank.length;
+  };
+  const num = (obj, key) => h('input', { class: 'in num', type: 'number', min: 0, max: 99, value: obj[key],
+    oninput: e => { obj[key] = clamp(parseInt(e.target.value) || 0, 0, 99); recalc(); } });
+  const tags = allTags();
+  drawBtn.textContent = g.drawn ? 'Draw again' : 'Draw questions';
+  drawBtn.onclick = () => { runDraw(); openGenerator(); };
+  recalc();
+  const avail = makeDrawer(g).poolSize;
+  const body = [
+    h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h3', { style: 'flex:1' }, 'Fill the quiz from the bank'),
+      h('button', { class: 'btn small', onclick: closeOverlay }, 'Close')),
+    !bank.length ? h('div', { class: 'empty' }, 'The question bank is empty. Add questions to it first (Save to bank, Paste from text, or Import).') : null,
+    h('div', { class: 'fbox' },
+      h('div', { class: 'lbl' }, `Limit to tags (optional) · ${plural(avail, 'question')} available with these settings`),
+      h('div', { class: 'chips' },
+        ...tags.slice(0, 40).map(([t, c]) => h('button', { class: 'chip' + (g.tags.has(t) ? ' on' : ''), onclick: () => {
+          g.tags.has(t) ? g.tags.delete(t) : g.tags.add(t); openGenerator(); } }, t, h('small', {}, c))),
+        g.tags.size > 1 ? h('span', { class: 'seg' },
+          h('button', { class: g.tagMode === 'any' ? 'on' : '', onclick: () => { g.tagMode = 'any'; openGenerator(); } }, 'any'),
+          h('button', { class: g.tagMode === 'all' ? 'on' : '', onclick: () => { g.tagMode = 'all'; openGenerator(); } }, 'all')) : null),
+      h('div', { class: 'fr' },
+        h('label', { class: 'chk small' }, h('input', { type: 'checkbox', checked: g.avoid, onchange: e => { g.avoid = e.target.checked; openGenerator(); } }),
+          'Avoid questions used in the last', h('input', { class: 'in num', type: 'number', min: 1, max: 99, value: g.avoidN,
+            onchange: e => { g.avoidN = clamp(parseInt(e.target.value) || 3, 1, 99); openGenerator(); } }), 'quizzes'),
+        h('label', { class: 'chk small' }, h('input', { type: 'checkbox', checked: g.carry, onchange: e => { g.carry = e.target.checked; } }), 'Carry-over questions first'),
+        h('label', { class: 'chk small' }, h('input', { type: 'checkbox', checked: g.skipInQuiz, onchange: e => { g.skipInQuiz = e.target.checked; openGenerator(); } }), 'Skip questions already in this quiz'),
+        h('label', { class: 'chk small' }, 'Order in round',
+          h('select', { value: g.order, onchange: e => { g.order = e.target.value; } },
+            h('option', { value: 'shuffle' }, 'Shuffled'), h('option', { value: 'ramp' }, 'Easy to hard'))))),
+    h('div', { class: 'fbox' },
+      h('div', { class: 'lbl' }, 'Rounds: how many questions of each level'),
+      ...g.rounds.map((r, ri) => h('div', { class: 'fr' },
+        h('input', { class: 'in', style: 'flex:1;min-width:10em', placeholder: g.rounds.length > 1 ? `Round ${ri + 1} title` : 'Round title (optional)', value: r.title,
+          oninput: e => { r.title = e.target.value; } }),
+        h('label', { class: 'chk small' }, 'Easy', num(r, 'easy')), h('label', { class: 'chk small' }, 'Medium', num(r, 'medium')),
+        h('label', { class: 'chk small' }, 'Hard', num(r, 'hard')), h('label', { class: 'chk small', title: 'Any level, including unlevelled' }, 'Any', num(r, 'any')),
+        g.rounds.length > 1 ? h('button', { class: 'icon', onclick: () => { g.rounds.splice(ri, 1); openGenerator(); } }, '✕') : null)),
+      h('div', { class: 'fr' },
+        h('button', { class: 'btn small', onclick: () => { g.rounds.push({ title: '', easy: 3, medium: 3, hard: 2, any: 0 }); openGenerator(); } }, '+ Round'),
+        h('span', { class: 'spacer' }),
+        totalEl, drawBtn)),
+  ];
+  if (g.drawn) {
+    const reroll = (r, it) => {
+      const ex = new Set(r.items.map(x => x.q.id));
+      g.drawer.taken.delete(it.q.id);
+      const p = g.drawer.pickOne(it.bucket, ex);
+      if (!p) { g.drawer.taken.add(it.q.id); return toast('No other question matches that slot'); }
+      r.items[r.items.indexOf(it)] = p; if (g.order === 'ramp') sortDrawn(r.items, 'ramp'); openGenerator();
+    };
+    body.push(...g.notes.map(n => h('div', { class: 'warnc small' }, n)));
+    body.push(...g.drawn.map((r, ri) => h('div', { class: 'gblock' },
+      h('div', { class: 'row' }, h('strong', { style: 'flex:1' }, r.title || (g.drawn.length > 1 ? `Round ${ri + 1}` : 'Questions')),
+        h('span', { class: 'muted small' }, plural(r.items.length, 'question'))),
+      ...r.items.map(it => h('div', { class: 'gitem' },
+        it.q.difficulty ? h('span', { class: 'dbadge ' + it.q.difficulty }, DIFFS[it.q.difficulty]) : h('span', { class: 'tbadge' }, 'no level'),
+        h('span', { class: 'bprompt' }, it.q.prompt.trim() || '(image only)'),
+        it.reused ? h('span', { class: 'warnc small', title: 'Not enough fresh questions, so a recently used one was reused' }, 'reused') : null,
+        it.q.carry ? h('span', { class: 'dbadge medium' }, 'carry') : null,
+        h('button', { class: 'icon', title: 'Swap for another question', onclick: () => reroll(r, it) }, '↻'),
+        h('button', { class: 'icon', title: 'Drop', onclick: () => { r.items.splice(r.items.indexOf(it), 1); g.drawer.taken.delete(it.q.id); openGenerator(); } }, '✕'))))));
+    const count = g.drawn.reduce((n, r) => n + r.items.length, 0);
+    body.push(h('div', { class: 'row' }, h('span', { class: 'spacer' }),
+      h('button', { class: 'btn primary', disabled: !count, onclick: () => {
+        const out = [], multi = g.drawn.length > 1 || g.drawn.some(r => r.title.trim());
+        g.drawn.forEach((r, ri) => {
+          if (!r.items.length) return;
+          if (multi) out.push(newRound(r.title.trim() || `Round ${ri + 1}`));
+          r.items.forEach(it => out.push(copyToQuiz(it.q)));
+        });
+        g.drawn = null; closeOverlay(); addToQuiz(out);
+        toast(`Added ${plural(count, 'question')}` + (multi ? ` in ${plural(g.rounds.length, 'round')}` : ''));
+      } }, `Add ${count} to quiz`)));
+  }
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal wide' }, body)));
+  overlay.querySelector('.modal').scrollTop = prevScroll;
+}
+
+/* =====================================================================
+   presenter
+   ===================================================================== */
+const baseId = e => e.split('~')[0];
+const isRecap = e => e === '~recap';
+const isRevisit = e => typeof e === 'string' && e.endsWith('~r');
+
+const entryItem = e => (e && !isRecap(e)) ? play.byId.get(baseId(e)) : null;
+const isRoundEntry = e => { const it = entryItem(e); return !!it && isRound(it); };
+const curEntry = () => play.sess.seq[play.sess.index];
+const curItem = () => entryItem(curEntry());
+const persist = () => putSession(play.quiz.id, play.sess);
+
+function kindNow() {
+  const { seq, index } = play.sess;
+  if (!seq.length || index >= seq.length) return 'end';
+  if (isRecap(seq[index])) return 'recap';
+  return isRound(entryItem(seq[index])) ? 'round' : 'q';
+}
+const curQ = () => kindNow() === 'q' ? curItem() : null;
+
+function ensureSeq(quiz, sess) {
+  const ids = quiz.questions.map(q => q.id), set = new Set(ids);
+  const base = (sess.seq || []).filter(e => !e.includes('~'));
+  const ok = Array.isArray(sess.seq) && base.length === ids.length && new Set(base).size === ids.length && base.every(id => set.has(id));
+  if (!ok) sess.seq = ids.slice();
+  sess.seq = sess.seq.filter(e => isRecap(e) || set.has(baseId(e)));
+  sess.index = clamp(sess.index, 0, sess.seq.length);
+  for (const k of Object.keys(sess.skipped)) if (!set.has(k)) delete sess.skipped[k];
+}
+
+function startPlay(quiz) {
+  const sess = getSession(quiz.id);
+  ensureSeq(quiz, sess);
+  const byId = new Map(quiz.questions.map(q => [q.id, q]));
+  const qnum = new Map(); let n = 0;
+  for (const q of quiz.questions) if (!isRound(q)) qnum.set(q.id, ++n);
+  play = { quiz, sess, byId, qnum, totalQ: n }; view = 'play';
+  renderPlay();
+  keepAwake();
+}
+
+/* keep the screen on while presenting */
+let wake = null;
+async function keepAwake() {
+  try {
+    if (view !== 'play' || wake || !navigator.wakeLock) return;
+    wake = await navigator.wakeLock.request('screen');
+    wake.addEventListener('release', () => { wake = null; });
+  } catch { /* unsupported or denied */ }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) keepAwake(); });
+
+function bumpZoom(d) {
+  prefs.zoom = clamp(Math.round((prefs.zoom + d) * 10) / 10, 0.7, 1.6);
+  savePrefs();
+  const st = $('.pstage'); if (st) st.style.zoom = prefs.zoom;
+}
+
+/* ---------- scorekeeper: score = points awarded per question + manual adjustment ---------- */
+const fmt = n => String(Math.round(n * 100) / 100);
+const teamName = (t, i) => t.name.trim() || `Player ${i + 1}`;
+function scoreOf(t) {
+  let sum = t.adjust || 0;
+  for (const a of Object.values(play.sess.awards)) sum += a[t.id] || 0;
+  return sum;
+}
+function standings() {
+  const list = play.sess.teams.map((t, i) => ({ t, i, score: scoreOf(t) }))
+    .sort((a, b) => (a.t.out ? 1 : 0) - (b.t.out ? 1 : 0) || b.score - a.score || a.i - b.i);
+  let rank = 0, last = null;
+  list.forEach((r, k) => {
+    const key = (r.t.out ? 'o' : 'a') + r.score;
+    if (key !== last) { rank = k + 1; last = key; }
+    r.rank = rank;
+  });
+  return list;
+}
+const aliveCount = () => play.sess.teams.filter(t => !t.out).length;
+const leaderboardRows = () => standings().map(r =>
+  h('div', { class: 'lb-row' + (r.rank === 1 && r.score > 0 && !r.t.out ? ' top' : '') + (r.t.out ? ' out' : '') },
+    h('span', { class: 'lb-rank' }, r.t.out ? '✕' : String(r.rank)), h('span', { class: 'lb-name' }, teamName(r.t, r.i)),
+    r.t.out ? h('span', { class: 'muted small' }, 'out') : null,
+    h('span', { class: 'lb-score' }, fmt(r.score))));
+
+function toggleAward(teamId) {
+  const q = curQ(), s = play.sess, t = s.teams.find(x => x.id === teamId);
+  if (!q || !t) return;
+  if (t.out) return toast(`${teamName(t, s.teams.indexOf(t))} is eliminated`);
+  const a = s.awards[q.id] || (s.awards[q.id] = {});
+  if (teamId in a) delete a[teamId]; else a[teamId] = q.points;
+  if (!Object.keys(a).length) delete s.awards[q.id];
+  persist(); renderStrip();
+}
+function toggleOut(teamId) {
+  const t = play.sess.teams.find(x => x.id === teamId); if (!t) return;
+  t.out = !t.out; persist(); renderStrip();
+}
+
+/* compact, non-interactive score bar shown in mirror mode */
+function renderMScores() {
+  const el = $('#mscores'); if (!el) return;
+  const s = play.sess, q = curQ(), aw = q ? (s.awards[q.id] || {}) : {};
+  fill(el, s.teams.map((t, i) => h('span', { class: 'mchip' + (t.out ? ' out' : '') + (t.id in aw ? ' won' : '') },
+    teamName(t, i), s.showScores ? h('b', {}, fmt(scoreOf(t))) : null, t.id in aw ? h('small', {}, '+' + fmt(aw[t.id])) : null)));
+}
+
+function renderStrip() {
+  renderMScores();
+  const el = $('#strip'); if (!el) return;
+  const s = play.sess, q = curQ();
+  if (!q || !s.teams.length) { el.replaceChildren(); return; }
+  const aw = s.awards[q.id] || {};
+  const alive = aliveCount(), anyOut = s.teams.some(t => t.out);
+  fill(el,
+    ...s.teams.map((t, i) => h('span', { class: 'tw' + (t.out ? ' out' : '') },
+      h('button', { class: 'team' + (t.id in aw ? ' won' : ''),
+        title: `Award ${fmt(q.points)} pt${q.points === 1 ? '' : 's'} (key ${i + 1})`, onclick: act(() => toggleAward(t.id)) },
+        i < 9 ? h('span', { class: 'tk' }, String(i + 1)) : null,
+        h('span', { class: 'tn' }, teamName(t, i)),
+        s.showScores ? h('span', { class: 'ts' }, fmt(scoreOf(t))) : null,
+        t.id in aw ? h('span', { class: 'tp' }, '+' + fmt(aw[t.id])) : null),
+      h('button', { class: 'xbtn', title: t.out ? 'Bring back' : `Eliminate (Shift+${i + 1})`, onclick: act(() => toggleOut(t.id)) }, t.out ? '↺' : '✕'))),
+    anyOut ? h('span', { class: 'muted small' }, `${alive} left`) : null,
+    anyOut && alive === 1 && s.teams.length > 1 ? h('span', { class: 'win' }, '🏆 ' + teamName(s.teams.find(t => !t.out), s.teams.findIndex(t => !t.out)) + ' wins!') : null,
+    h('button', { class: 'btn ghost small', onclick: act(openLeaderboard) }, 'Leaderboard'));
+}
+
+function openTeams(focusLast) {
+  const s = play.sess;
+  const sync = () => { persist(); renderStrip(); };
+  const rows = s.teams.map((t, i) => h('div', { class: 'optrow' },
+    h('span', { class: 'ordn' }, String(i + 1)),
+    h('input', { class: 'in team-name', value: t.name, placeholder: `Player ${i + 1}`, oninput: e => { t.name = e.target.value; sync(); } }),
+    h('button', { class: 'icon', title: 'Subtract 1 point', onclick: () => { t.adjust = (t.adjust || 0) - 1; sync(); openTeams(); } }, '−'),
+    h('span', { style: 'min-width:3em;text-align:center;font-weight:700' }, fmt(scoreOf(t))),
+    h('button', { class: 'icon', title: 'Add 1 point', onclick: () => { t.adjust = (t.adjust || 0) + 1; sync(); openTeams(); } }, '+'),
+    h('button', { class: 'btn small' + (t.out ? ' on' : ''), title: 'Eliminated players stay on the board but can\'t score', onclick: () => { t.out = !t.out; sync(); openTeams(); } }, t.out ? 'Out' : 'In'),
+    h('button', { class: 'icon', title: 'Remove', onclick: () => {
+      if (scoreOf(t) && !confirm(`Remove ${teamName(t, i)} and its ${fmt(scoreOf(t))} points?`)) return;
+      s.teams = s.teams.filter(x => x !== t);
+      for (const a of Object.values(s.awards)) delete a[t.id];
+      sync(); openTeams();
+    } }, '✕')));
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal' },
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h3', { style: 'flex:1' }, 'Players & scores'),
+        h('button', { class: 'btn small', onclick: closeOverlay }, 'Close')),
+      s.teams.length ? null : h('p', { class: 'muted small' },
+        'Scoring is off until you add a player. Then tap a player (or press its number key) to award the question\'s points; tap again to undo. The ✕ beside a player (or Shift + its number) eliminates them.'),
+      h('div', { style: 'display:grid;gap:8px' }, rows),
+      h('div', { class: 'row flex-wrap', style: 'margin-top:12px' },
+        h('button', { class: 'btn', onclick: () => { s.teams.push({ id: uid(), name: '', adjust: 0, out: false }); sync(); openTeams(true); } }, '+ Add player'),
+        s.teams.length ? [
+          h('button', { class: 'btn', onclick: () => { closeOverlay(); openLeaderboard(); } }, 'Leaderboard'),
+          h('button', { class: 'btn', onclick: () => { s.teams.forEach(t => { t.out = false; }); sync(); openTeams(); } }, 'Bring everyone back'),
+          h('button', { class: 'btn danger', onclick: () => {
+            if (!confirm('Reset every score to 0 and bring everyone back?')) return;
+            s.awards = {}; s.teams.forEach(t => { t.adjust = 0; t.out = false; }); sync(); openTeams();
+          } }, 'Reset scores'),
+        ] : null),
+      s.teams.length ? h('label', { class: 'chk', style: 'margin-top:12px' },
+        h('input', { type: 'checkbox', checked: s.showScores, onchange: e => { s.showScores = e.target.checked; sync(); } }),
+        'Show scores on the presentation screen') : null)));
+  if (focusLast === true) [...overlay.querySelectorAll('.team-name')].pop()?.focus();
+}
+
+function openLeaderboard() {
+  if (!play.sess.teams.length) return openTeams();
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal lb', style: 'width:min(560px,92vw)' },
+      h('h3', { style: 'text-align:center;font-size:1.6rem' }, 'Leaderboard'), leaderboardRows(),
+      h('div', { class: 'row', style: 'justify-content:center;margin-top:12px' },
+        h('button', { class: 'btn', onclick: closeOverlay }, 'Close')))));
+}
+
+/* ---------- slides ---------- */
+function orderFor(q) {
+  const n = q.options.length, o = play.sess.orders[q.id];
+  if (Array.isArray(o) && o.length === n && new Set(o).size === n && o.every(i => i >= 0 && i < n)) return o;
+  let p, tries = 0;
+  do { p = shuffle([...Array(n).keys()]); tries++; } while (p.every((v, i) => v === i) && tries < 10);
+  play.sess.orders[q.id] = p;
+  return p;
+}
+
+const opt = (badge, o, correct, extra) => h('div', { class: 'opt' + (correct ? ' correct' : '') },
+  h('span', { class: 'badge' }, badge),
+  h('span', { class: 'otext' }, o.text, extra ? h('small', { class: 'was' }, extra) : null),
+  o.image ? h('img', { src: o.image, alt: '' }) : null);
+
+const wordsLine = (open, total) => `${open} of ${total} words revealed · say a number, then click it`;
+
+function blanksEl(q) {
+  const open = new Set(play.sess.words[q.id] || []), toks = parseBlanks(q.prompt);
+  const total = toks.filter(x => x.blank).length;
+  return h('div', { class: 'blanks' },
+    h('div', { class: 'qprompt' }, toks.map(x => x.blank
+      ? h('button', { class: 'blank' + (open.has(x.n) ? ' open' : ''), 'data-n': x.n, onclick: act(() => toggleWord(x.n)) },
+          h('span', { class: 'bn' }, String(x.n)), h('span', { class: 'bw' }, x.text))
+      : x.text)),
+    h('div', { class: 'muted', id: 'wcount' }, wordsLine(open.size, total)));
+}
+
+function toggleWord(n) {
+  const q = curQ(); if (!q || q.type !== 'blanks') return;
+  const total = parseBlanks(q.prompt).filter(x => x.blank).length;
+  if (n < 1 || n > total) return;
+  const s = play.sess, open = new Set(s.words[q.id] || []);
+  open.has(n) ? open.delete(n) : open.add(n);
+  if (open.size) s.words[q.id] = [...open]; else delete s.words[q.id];
+  persist();
+  $(`.blank[data-n="${n}"]`)?.classList.toggle('open', open.has(n));
+  const wc = $('#wcount'); if (wc) wc.textContent = wordsLine(open.size, total);
+}
+
+function stageFor(q) {
+  const kids = [h('div', { class: 'kind' }, KIND[q.type] + (play.sess.showDiff && q.difficulty ? ' · ' + DIFFS[q.difficulty] : ''))];
+  if (q.type === 'blanks') kids.push(blanksEl(q));
+  else if (q.prompt.trim()) kids.push(h('div', { class: 'qprompt' }, q.prompt));
+  if (q.image) kids.push(h('img', { class: 'qimg', src: q.image, alt: '' }));
+  if (q.type === 'mc') {
+    kids.push(h('div', { class: 'opts' }, q.options.map((o, j) => opt(letter(j), o, q.correct === j))));
+  } else if (q.type === 'ms') {
+    kids.push(h('div', { class: 'opts' }, q.options.map((o, j) => opt(letter(j), o, q.multi.includes(j)))));
+  } else if (q.type === 'tf') {
+    kids.push(h('div', { class: 'opts tf' }, [true, false].map(v =>
+      h('div', { class: 'opt' + (q.tf === v ? ' correct' : '') }, h('span', { class: 'otext', style: 'text-align:center' }, v ? 'True' : 'False')))));
+  } else if (q.type === 'order') {
+    const ord = orderFor(q);
+    kids.push(h('div', { class: 'opts one when-hidden' }, ord.map((idx, k) => opt(letter(k), q.options[idx], false))));
+    kids.push(h('div', { class: 'opts one when-shown' }, q.options.map((o, j) => opt(String(j + 1), o, true, `(${letter(ord.indexOf(j))})`))));
+  } else {
+    const ans = q.answers.map(s => s.trim()).filter(Boolean);
+    kids.push(h('div', {},
+      h('div', { class: 'sa-hidden when-hidden' }, '?'),
+      h('div', { class: 'sa-ans when-shown' },
+        h('div', { class: 'big' }, ans[0] || '(no answer set)'),
+        ans.length > 1 ? h('div', { class: 'also' }, 'Also accepted: ' + ans.slice(1).join(', ')) : null)));
+  }
+  if (q.note.trim()) kids.push(h('div', { class: 'note when-shown' }, q.note));
+  return kids;
+}
+
+function roundStage(item) {
+  const { quiz, sess } = play;
+  const rounds = quiz.questions.filter(isRound), ordinal = rounds.indexOf(item) + 1;
+  const at = quiz.questions.indexOf(item);
+  let count = 0;
+  for (let k = at + 1; k < quiz.questions.length && !isRound(quiz.questions[k]); k++) count++;
+  const anyScore = sess.teams.length && (ordinal > 1 || sess.teams.some(t => t.out)) && standings().some(r => r.score > 0 || r.t.out);
+  return h('div', { class: 'pstage' },
+    h('div', { class: 'kind' }, `Round ${ordinal} of ${rounds.length}`),
+    h('div', { class: 'qprompt' }, item.title || `Round ${ordinal}`),
+    item.note ? h('div', { class: 'sub' }, item.note) : null,
+    h('div', { class: 'muted' }, plural(count, 'question')),
+    anyScore ? h('div', { class: 'lb' }, h('div', { class: 'kind' }, `Standings · ${aliveCount()} of ${sess.teams.length} still in`), leaderboardRows()) : null);
+}
+
+function recapStage() {
+  const ids = segmentSkipped(play.sess.index);
+  return h('div', { class: 'pstage' },
+    h('div', { class: 'kind' }, 'Round recap'),
+    h('div', { class: 'qprompt' }, plural(ids.length, 'skipped question')),
+    h('div', { class: 'sub' }, 'Ask them now before moving on?'),
+    prefs.mirror ? h('div', { class: 'row flex-wrap', style: 'justify-content:center' },
+      h('button', { class: 'btn big primary', onclick: act(askSkipped) }, 'Ask them now'),
+      h('button', { class: 'btn big', onclick: act(next) }, 'Continue →')) : null);
+}
+
+function endStage() {
+  const { quiz, sess } = play;
+  const nQ = play.totalQ;
+  const skipped = allSkipped();
+  const carryable = skipped.filter(id => { const it = play.byId.get(id); return it.src && bankById(it.src); });
+  return h('div', { class: 'pstage' },
+    h('div', { class: 'qprompt' }, nQ ? `That's all ${plural(nQ, 'question')}!` : 'This quiz has no questions yet.'),
+    sess.teams.length && nQ ? h('div', { class: 'lb' }, h('div', { class: 'kind' }, 'Final standings'), leaderboardRows()) : null,
+    skipped.length && !prefs.mirror ? h('div', { class: 'muted' }, `${plural(skipped.length, 'question')} skipped`) : null,
+    prefs.mirror ? null : h('div', { class: 'row flex-wrap', style: 'justify-content:center' },
+      skipped.length ? h('button', { class: 'btn big primary', onclick: act(askSkipped) }, 'Ask skipped now') : null,
+      carryable.length && !EMBEDDED ? h('button', { class: 'btn big', title: 'The bank will prefer these next time you generate a quiz', onclick: act(flagCarry) }, `Flag ${carryable.length} for next time`) : null,
+      nQ ? h('button', { class: 'btn big', onclick: act(() => go(0)) }, 'Back to start') : h('a', { class: 'btn big primary', href: '#/edit/' + quiz.id }, 'Edit quiz'),
+      nQ ? h('button', { class: 'btn big', onclick: act(resetProgress) }, 'Clear progress') : null));
+}
+
+function renderPlay() {
+  const { quiz, sess } = play, n = sess.seq.length, i = sess.index;
+  const kind = kindNow(), e = sess.seq[i];
+  const q = kind === 'q' ? entryItem(e) : null;
+  const revealed = !!(q && sess.revealed[q.id]);
+  document.title = quiz.title;
+
+  const stage = kind === 'q' ? h('div', { class: 'pstage' + (revealed ? ' revealed' : ''), id: 'stage' }, stageFor(q))
+    : kind === 'round' ? roundStage(entryItem(e))
+    : kind === 'recap' ? recapStage() : endStage();
+  stage.style.zoom = prefs.zoom;
+  stage.addEventListener('click', mirrorTap);
+
+  const nx = sess.seq[i + 1];
+  const canPark = kind === 'q' && nx && !isRecap(nx) && !isRoundEntry(nx);
+  let dock;
+  if (kind === 'q') dock = h('div', { class: 'dock' },
+    h('button', { class: 'btn big', disabled: i === 0, onclick: act(prev) }, '← Prev'),
+    h('button', { class: 'btn big ghost', disabled: !canPark, title: 'Send this question to the end of the round (P)', onclick: act(park) }, 'Park ↷'),
+    h('button', { id: 'revbtn', class: 'btn big' + (revealed ? '' : ' primary'), onclick: act(toggleReveal) }, revealed ? 'Hide answer' : 'Reveal answer'),
+    h('button', { id: 'nextbtn', class: 'btn big' + (revealed ? ' primary' : ''), onclick: act(next) }, i === n - 1 ? 'Finish →' : 'Next →'));
+  else if (kind === 'round') dock = h('div', { class: 'dock' },
+    h('button', { class: 'btn big', disabled: i === 0, onclick: act(prev) }, '← Prev'),
+    h('button', { class: 'btn big primary', onclick: act(next) }, 'Start round →'));
+  else if (kind === 'recap') dock = h('div', { class: 'dock' },
+    h('button', { class: 'btn big', onclick: act(prev) }, '← Back'),
+    h('button', { class: 'btn big primary', onclick: act(askSkipped) }, 'Ask them now'),
+    h('button', { class: 'btn big', onclick: act(next) }, 'Continue →'));
+  else dock = n ? h('div', { class: 'dock' }, h('button', { class: 'btn big', onclick: act(prev) }, '← Back')) : null;
+
+  const countText = kind === 'q' ? `${play.qnum.get(q.id)} / ${play.totalQ}${isRevisit(e) ? ' ↻' : ''}`
+    : kind === 'round' ? 'Round' : kind === 'recap' ? 'Recap' : n ? 'Done' : '';
+  const skippedN = Object.keys(sess.skipped).length;
+
+  app.replaceChildren(h('div', { class: 'pview' + (prefs.mirror ? ' mirror' : '') },
+    prefs.mirror ? h('button', { class: 'mbtn', title: 'Host menu (M exits mirror mode)', onclick: act(openHostMenu) }, '⋯') : null,
+    prefs.mirror ? h('div', { class: 'mscores', id: 'mscores' }) : null,
+    h('div', { class: 'ptop' },
+      EMBEDDED ? h('span', { style: 'width:1px' }) : h('a', { class: 'btn ghost', href: '#/' }, '← Library'),
+      h('div', { class: 'ptitle' }, quiz.title),
+      h('div', { class: 'pbtns' },
+        !sess.record && !EMBEDDED ? h('span', { class: 'pill', title: 'Revealed questions are not being logged as used' }, 'not recording') : null,
+        h('span', { class: 'count' }, countText),
+        skippedN ? h('button', { class: 'btn ghost small', onclick: act(() => openJump(true)) }, `Skipped ${skippedN}`) : null,
+        n ? h('button', { class: 'btn ghost small', onclick: act(() => openJump(false)) }, 'Questions') : null,
+        n ? h('button', { class: 'btn ghost small', onclick: act(openTeams) }, sess.teams.length ? 'Players' : 'Scorekeeper') : null,
+        h('button', { class: 'btn ghost small', title: 'Smaller text', onclick: act(() => bumpZoom(-0.1)) }, 'A−'),
+        h('button', { class: 'btn ghost small', title: 'Larger text', onclick: act(() => bumpZoom(0.1)) }, 'A+'),
+        h('button', { class: 'btn ghost small', onclick: act(openSettings) }, '⚙'),
+        h('button', { class: 'btn ghost small', title: 'Hide all controls for screen mirroring (M)', onclick: act(() => setMirror(true)) }, 'Mirror'),
+        h('button', { class: 'btn ghost small', onclick: act(toggleFs) }, 'Fullscreen'),
+        n ? h('button', { class: 'btn ghost small', onclick: act(resetProgress) }, 'Restart') : null)),
+    h('div', { class: 'bar' }, h('i', { style: `width:${n ? (i / n) * 100 : 0}%` })),
+    stage,
+    dock ? h('div', { class: 'bottom' }, kind === 'q' ? h('div', { class: 'strip', id: 'strip' }) : null, dock) : null,
+    kind === 'q' ? h('div', { class: 'hint' }, 'Space: reveal / next · ← →: previous / next · P: park · F: fullscreen' +
+      (q.type === 'blanks' ? ' · 1–0: reveal word 1–10 (click for more)' + (sess.teams.length ? ' · click a player to award · Shift+number: eliminate · L: leaderboard' : '')
+        : sess.teams.length ? ` · 1–${Math.min(9, sess.teams.length)}: award · Shift+number: eliminate · L: leaderboard` : '')) : null));
+  renderStrip();
+  persist();
+}
+
+/* ---------- navigation: running order (seq), skipping, parking, recaps ---------- */
+function go(i) {
+  play.sess.index = clamp(i, 0, play.sess.seq.length);
+  renderPlay(); window.scrollTo(0, 0);
+}
+const prev = () => go(play.sess.index - 1);
+
+function segmentStart(idx) {
+  const s = play.sess;
+  for (let k = idx - 1; k >= 0; k--) if (isRoundEntry(s.seq[k])) return k + 1;
+  return 0;
+}
+function segmentSkipped(idx) {
+  const s = play.sess, seen = new Set(), out = [];
+  for (let k = segmentStart(idx); k < idx; k++) {
+    const it = entryItem(s.seq[k]);
+    if (it && !isRound(it) && s.skipped[it.id] && !seen.has(it.id)) { seen.add(it.id); out.push(it.id); }
+  }
+  return out;
+}
+const allSkipped = () => play.quiz.questions.filter(q => !isRound(q) && play.sess.skipped[q.id]).map(q => q.id);
+
+function next() {
+  const s = play.sess, i = s.index, e = s.seq[i], it = entryItem(e);
+  // moving on without revealing counts as skipping
+  if (it && !isRound(it)) { if (s.revealed[it.id]) delete s.skipped[it.id]; else s.skipped[it.id] = true; }
+  const nx = s.seq[i + 1];
+  const leaving = it && !isRound(it) && (nx === undefined || isRoundEntry(nx));
+  if (leaving && segmentSkipped(i + 1).length) s.seq.splice(i + 1, 0, '~recap');
+  else if (nx !== undefined && isRecap(nx) && !segmentSkipped(i + 1).length) s.seq.splice(i + 1, 1);
+  go(i + 1);
+}
+
+function park() {
+  const s = play.sess, i = s.index, e = s.seq[i], it = curItem();
+  if (!it || isRound(it)) return;
+  let j = i + 1;
+  while (j < s.seq.length && !isRoundEntry(s.seq[j]) && !isRecap(s.seq[j])) j++;
+  if (j === i + 1) return toast('This is already the last question of the round');
+  s.seq.splice(i, 1); s.seq.splice(j - 1, 0, e);
+  delete s.skipped[it.id];
+  renderPlay();
+}
+
+function askSkipped() {
+  const s = play.sess, i = s.index;
+  let ids, at;
+  if (kindNow() === 'recap') { ids = segmentSkipped(i); at = i + 1; }
+  else { ids = allSkipped(); at = s.seq.length; }
+  if (!ids.length) return;
+  s.seq.splice(at, 0, ...ids.map(id => id + '~r'));
+  ids.forEach(id => { delete s.skipped[id]; });
+  go(at);
+}
+
+function flagCarry() {
+  const recs = allSkipped().map(id => play.byId.get(id)).filter(it => it.src).map(it => bankById(it.src)).filter(Boolean);
+  recs.forEach(b => { b.carry = true; });
+  dbPutMany('bank', recs);
+  toast(`${plural(recs.length, 'question')} flagged as carry-over`);
+}
+
+function toggleReveal() {
+  const q = curQ(); if (!q) return;
+  const s = play.sess, on = !s.revealed[q.id];
+  if (on) {
+    s.revealed[q.id] = true; delete s.skipped[q.id];
+    if (!EMBEDDED && s.record && q.src && !s.logged[q.id] && bankById(q.src)) { s.logged[q.id] = true; markUsed([q.src], play.quiz.id); }
+  } else delete s.revealed[q.id];
+  persist();
+  $('#stage').classList.toggle('revealed', on);
+  const rb = $('#revbtn'); rb.textContent = on ? 'Hide answer' : 'Reveal answer'; rb.classList.toggle('primary', !on);
+  $('#nextbtn').classList.toggle('primary', on);
+}
+
+function resetProgress() {
+  if (!confirm('Clear progress and scores and start this quiz over? Player names are kept.')) return;
+  const { teams, showScores, record, showDiff } = play.sess;
+  play.sess = { index: 0, revealed: {}, orders: {}, awards: {}, showScores, record, showDiff, seq: null, skipped: {}, logged: {}, words: {},
+    teams: teams.map(t => ({ ...t, adjust: 0, out: false })) };
+  ensureSeq(play.quiz, play.sess);
+  renderPlay();
+}
+
+/* ---------- mirror mode ---------- */
+function primaryAction() {
+  const kind = kindNow();
+  if (kind === 'q') { if (play.sess.revealed[curItem().id]) next(); else toggleReveal(); }
+  else if (kind === 'round') next();
+  else if (kind === 'recap') askSkipped();
+}
+function backAction() {
+  const q = curQ();
+  if (q && play.sess.revealed[q.id]) toggleReveal(); else prev();
+}
+/* tap right side: reveal / next · left side: hide answer / back · middle: nothing (avoids accidents) */
+function mirrorTap(e) {
+  if (!prefs.mirror || overlay.firstChild) return;
+  if (e.target.closest('.blank,button,a,input,select,textarea')) return;
+  const x = e.clientX / window.innerWidth;
+  if (x > 0.6) primaryAction(); else if (x < 0.3) backAction();
+}
+
+async function setMirror(on) {
+  prefs.mirror = on; savePrefs();
+  if (on) {
+    toast('Mirror mode: tap the right side to reveal / next, the left side to go back, ⋯ for the menu');
+    try {
+      await document.documentElement.requestFullscreen?.();
+      await screen.orientation?.lock?.('landscape');
+    } catch { /* fullscreen / orientation lock aren't available everywhere (e.g. iPhone Safari) */ }
+  } else {
+    try { screen.orientation?.unlock?.(); if (document.fullscreenElement) await document.exitFullscreen(); } catch { /* ignore */ }
+  }
+  if (view === 'play') renderPlay();
+}
+
+function openHostMenu() {
+  const s = play.sess, kind = kindNow(), nx = s.seq[s.index + 1];
+  const canPark = kind === 'q' && nx && !isRecap(nx) && !isRoundEntry(nx);
+  const skippedN = Object.keys(s.skipped).length, sk = allSkipped();
+  const carryable = sk.filter(id => { const it = play.byId.get(id); return it.src && bankById(it.src); });
+  const item = (label, fn, o = {}) => h('button', { class: 'btn big' + (o.primary ? ' primary' : ''),
+    onclick: () => { if (!o.keep) closeOverlay(); fn(); } }, label);
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal', style: 'width:min(560px,94vw)' },
+      h('div', { class: 'mgrid' },
+        s.teams.length && kind === 'q' ? item('Award / eliminate', openAward, { primary: true }) : null,
+        item(s.teams.length ? 'Players & scores' : 'Scorekeeper', openTeams),
+        s.teams.length ? item('Leaderboard', openLeaderboard) : null,
+        item('Questions', () => openJump(false)),
+        skippedN ? item(`Skipped (${skippedN})`, () => openJump(true)) : null,
+        canPark ? item('Park ↷', park) : null,
+        sk.length && (kind === 'recap' || kind === 'end') ? item('Ask skipped now', askSkipped) : null,
+        kind === 'end' && carryable.length && !EMBEDDED ? item('Flag skipped for next time', flagCarry) : null,
+        item('Text smaller', () => bumpZoom(-0.1), { keep: true }), item('Text larger', () => bumpZoom(0.1), { keep: true }),
+        item('Fullscreen', toggleFs),
+        item('Settings', openSettings),
+        item('Restart quiz', resetProgress),
+        item('Exit mirror mode', () => setMirror(false)),
+        item('Close', () => {})))));
+}
+
+/* big-button sheet for awarding points / eliminating players with a finger */
+function openAward() {
+  const s = play.sess, q = curQ(), aw = q ? (s.awards[q.id] || {}) : {};
+  const again = () => openAward();
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal', style: 'width:min(560px,94vw)' },
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h3', { style: 'flex:1' }, q ? `Award ${fmt(q.points)} pt${q.points === 1 ? '' : 's'}` : 'Players'),
+        h('button', { class: 'btn small', onclick: closeOverlay }, 'Done')),
+      h('div', { style: 'display:grid;gap:8px' }, s.teams.map((t, i) => h('div', { class: 'optrow' },
+        h('div', { style: 'flex:1;font-weight:600' }, teamName(t, i), h('span', { class: 'muted small' }, `  ${fmt(scoreOf(t))} pts`)),
+        q ? h('button', { class: 'btn big' + (t.id in aw ? ' primary' : ''), disabled: t.out,
+          onclick: () => { toggleAward(t.id); again(); } }, t.id in aw ? `✓ +${fmt(aw[t.id])}` : `+${fmt(q.points)}`) : null,
+        h('button', { class: 'btn' + (t.out ? ' on' : ''), onclick: () => { toggleOut(t.id); again(); } }, t.out ? 'Out ↺' : 'Eliminate')))))));
+}
+
+function toggleFs() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen?.().catch(() => {});
+}
+
+function openSettings() {
+  const s = play.sess;
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal' },
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h3', { style: 'flex:1' }, 'Presenter settings'),
+        h('button', { class: 'btn small', onclick: () => { closeOverlay(); renderPlay(); } }, 'Close')),
+      h('div', { style: 'display:grid;gap:12px' },
+        EMBEDDED ? null : h('label', { class: 'chk' },
+          h('input', { type: 'checkbox', checked: s.record, onchange: e => { s.record = e.target.checked; persist(); } }),
+          'Record question usage when answers are revealed (turn off for rehearsals)'),
+        h('label', { class: 'chk' },
+          h('input', { type: 'checkbox', checked: s.showDiff, onchange: e => { s.showDiff = e.target.checked; persist(); } }),
+          'Show difficulty on question slides'),
+        h('label', { class: 'chk' },
+          h('input', { type: 'checkbox', checked: s.showScores, onchange: e => { s.showScores = e.target.checked; persist(); } }),
+          'Show scores on the presentation screen')))));
+}
+
+function openJump(onlySkipped) {
+  const { quiz, sess } = play;
+  const rows = [];
+  for (const it of quiz.questions) {
+    if (isRound(it)) { if (!onlySkipped) rows.push(h('div', { class: 'jhead' }, it.title || 'Round')); continue; }
+    if (onlySkipped && !sess.skipped[it.id]) continue;
+    const at = sess.seq.indexOf(it.id), here = sess.seq[sess.index] && baseId(sess.seq[sess.index]) === it.id;
+    rows.push(h('button', { class: 'jrow' + (here ? ' cur' : ''), onclick: () => { closeOverlay(); go(at >= 0 ? at : 0); } },
+      h('span', { class: 'jn' }, String(play.qnum.get(it.id))),
+      h('span', { class: 'jt' }, it.prompt.trim() || '(image only)'),
+      h('span', { class: 'jk' }, (sess.revealed[it.id] ? '✓ ' : '') + (sess.skipped[it.id] ? '⏭ ' : '') + TYPES[it.type])));
+  }
+  overlay.replaceChildren(h('div', { class: 'overlay', onclick: e => { if (e.target === e.currentTarget) closeOverlay(); } },
+    h('div', { class: 'modal' },
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, h('h3', { style: 'flex:1' }, onlySkipped ? 'Skipped questions' : 'Jump to question'),
+        h('button', { class: 'btn small', onclick: closeOverlay }, 'Close')),
+      rows.length ? rows : h('p', { class: 'muted' }, 'Nothing here.'))));
+}
+
+function closeOverlay() {
+  const wasOpen = !!overlay.firstChild;
+  overlay.replaceChildren();
+  // changes made in a dialog must show up on the slide underneath
+  if (wasOpen && view === 'play' && play && kindNow() !== 'q') renderPlay();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeOverlay(); return; }
+  if (view !== 'play' || overlay.firstChild || e.ctrlKey || e.metaKey || e.altKey) return;
+  const tg = e.target instanceof Element ? e.target : document.body;
+  if (tg.closest('input,textarea,select')) return;
+  const onControl = !!tg.closest('button,a');
+  const kind = kindNow();
+  const dm = /^(?:Digit|Numpad)(\d)$/.exec(e.code || '');
+  if (dm && kind === 'q') {
+    const d = +dm[1];
+    if (curItem().type === 'blanks' && !e.shiftKey) { toggleWord(d === 0 ? 10 : d); return; }   // word reveal: digits pick a word
+    const t = d ? play.sess.teams[d - 1] : null;
+    if (t) e.shiftKey ? toggleOut(t.id) : toggleAward(t.id);
+    return;
+  }
+  switch (e.key) {
+    case 'ArrowRight': case 'PageDown': e.preventDefault(); if (kind !== 'end') next(); break;
+    case 'ArrowLeft': case 'PageUp': e.preventDefault(); prev(); break;
+    case ' ': case 'Enter':
+      if (onControl) return;
+      e.preventDefault();
+      primaryAction();
+      break;
+    case 'm': case 'M': setMirror(!prefs.mirror); break;
+    case 'p': case 'P': if (kind === 'q') park(); break;
+    case 'f': case 'F': toggleFs(); break;
+    case 'l': case 'L': openLeaderboard(); break;
+    case '+': case '=': bumpZoom(0.1); break;
+    case '-': bumpZoom(-0.1); break;
+  }
+});
+
+/* =====================================================================
+   boot
+   ===================================================================== */
+(async function boot() {
+  if (!EMBEDDED) {
+    try { await initStore(); }
+    catch (err) {
+      app.replaceChildren(h('div', { class: 'page' }, h('h1', {}, 'Trivia Host'),
+        h('p', {}, 'Could not open browser storage: ' + err.message)));
+      return;
+    }
+  }
+  route();
+})();
+</script>
+</body>
+</html>
