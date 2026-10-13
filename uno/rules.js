@@ -132,7 +132,7 @@ window.RULES = {
             "Draw cards <b>stack</b>, with a few restrictions.",
             "Stuck? <b>Draw until you can play</b>, or ask the table for a bailout.",
             "<b>Wild Draw Four is unrestricted.</b> Play it anytime, even if you have a matching color, and it can't be challenged.",
-            "<b>Sneaky play is encouraged.</b> See below."
+            "<b>Spice it up.</b> Sneaky moves are encouraged. See below."
           ]}
         ]
       },
@@ -164,7 +164,7 @@ window.RULES = {
       },
       {
         id: "stacking",
-        title: "Stacking +2 and +4",
+        title: "Stacking +2/+4",
         blocks: [
           { type: "p", text: "When a draw card is played against you, don't draw yet. Pass it along by stacking another one on top, and <b>the total keeps growing</b>: a +2 then a +4 makes 6, and another +4 makes 10. The first player who can't (or won't) stack draws the whole total." },
           { type: "points", items: [
@@ -196,15 +196,14 @@ window.RULES = {
         blocks: [
           { type: "p", text: "Same as regular Uno, with a few wrinkles:" },
           { type: "list", items: [
-            "<b>During a 7:</b> you can't say it, so raise a finger instead. Other players can raise a finger to call you out, too.",
-            "Saying “UNO” out loud during silence counts as talking, so whoever says it draws 1, even if it's you.",
+            "<b>During a 7:</b> you can't say it, so raise a finger instead. Other players can raise a finger to call you out, too. If anyone says “UNO” out loud, it still counts as a call, but they draw 1 for speaking.",
             "<b>After a hand swap:</b> if a 0 or 1 leaves someone with one card, that player has to remember to call UNO themselves."
           ]}
         ]
       },
       {
         id: "sneaky",
-        title: "Sneaky Play",
+        title: "Spice It Up",
         blocks: [
           { type: "p", text: "Spicy Uno rewards a sharp eye and quick hands. If you spot an opening, take it. For example:" },
           { type: "list", items: [

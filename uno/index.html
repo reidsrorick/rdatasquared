@@ -54,11 +54,11 @@
   .switch button[aria-pressed="true"]{background:var(--ink); color:var(--pop)}
 
   /* section nav chips */
-  .toc{order:2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:20px 16px 8px}
+  .toc{order:2; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:20px 16px 8px}
   .toc a{display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink);
-    background:var(--paper); border:2.5px solid var(--ink); border-radius:999px; padding:7px 14px 7px 8px;
-    font:600 15px 'Fredoka',sans-serif; min-height:40px}
-  .toc i{font-style:normal; display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px}
+    background:var(--paper); border:2.5px solid var(--ink); border-radius:16px; padding:8px 10px 8px 8px;
+    font:600 15px/1.15 'Fredoka',sans-serif; min-height:52px}
+  .toc i{font-style:normal; display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; flex:none}
   .toc a:active{transform:translateY(2px)}
 
   /* sections */
