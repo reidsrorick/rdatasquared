@@ -26,6 +26,11 @@
     return "";
   }
 
+  var SHARE_URL = "https://rdatasquared.com/uno";
+
+  var QR_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">' +
+    '<path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm8-2h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3z"/></svg>';
+
   function pad(n) { return (n < 10 ? "0" : "") + n; }
 
   function mount(opts) {
@@ -46,7 +51,8 @@
         return '<button type="button" data-game="' + n + '" aria-pressed="' + (n === game) + '">' + window.RULES[n].label + '</button>';
       }).join("") + '</div>';
 
-      var hero = '<header class="hero"><div class="hero-inner"><p class="eyebrow">' + g.eyebrow + '</p><h1>' + g.title +
+      var hero = '<header class="hero"><div class="hero-inner"><div class="hero-top"><p class="eyebrow">' + g.eyebrow + '</p>' +
+        '<button type="button" class="qr-top" data-share aria-label="Show QR code">' + QR_ICON + '<span>QR</span></button></div><h1>' + g.title +
         '</h1><p class="tag">' + g.tagline + '</p><ul class="meta">' + g.meta.map(function (m) {
           return '<li><span>' + m.k + '</span><b>' + m.v + '</b></li>';
         }).join("") + '</ul></div></header>';
@@ -66,9 +72,17 @@
           '</h2></div><div class="sec-body">' + inner + '</div></section>';
       }).join("") + '</main>';
 
-      var foot = '<footer class="foot">Made for game night. Draft layout. Rules subject to house debate.</footer>';
+      var foot = '<footer class="foot"><button type="button" class="share-btn" data-share>Show QR code</button>' +
+        '<p>Made for game night. Draft layout. Rules subject to house debate.</p></footer>';
 
-      app.innerHTML = switchHtml + hero + toc + secs + foot;
+      var dialog = '<dialog class="qr-dialog" aria-labelledby="qr-title"><form method="dialog">' +
+        '<h2 id="qr-title">Scan to open the rules</h2>' +
+        '<img src="qr.svg" width="260" height="260" alt="QR code linking to ' + SHARE_URL + '">' +
+        '<a class="qr-url" href="' + SHARE_URL + '">rdatasquared.com/uno</a>' +
+        '<div class="qr-actions"><a class="qr-dl" href="qr.svg" download="uno-rules-qr.svg">Download</a>' +
+        '<button class="qr-close">Close</button></div></form></dialog>';
+
+      app.innerHTML = switchHtml + hero + toc + secs + foot + dialog;
     }
 
     function setGame(n) {
@@ -80,6 +94,9 @@
     }
 
     app.addEventListener("click", function (e) {
+      var dlg = app.querySelector(".qr-dialog");
+      if (e.target.closest("[data-share]")) { if (dlg && dlg.showModal) dlg.showModal(); return; }
+      if (e.target === dlg) { dlg.close(); return; } // backdrop click
       var btn = e.target.closest("button[data-game]");
       if (btn) { setGame(btn.getAttribute("data-game")); return; }
       var a = e.target.closest(".toc a");
