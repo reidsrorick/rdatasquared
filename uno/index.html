@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ff5a1f">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>Uno Rules</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  /* Card Table design: playful, chunky, the colors of the real deck */
+  :root{
+    --red:#ed1c24; --yellow:#ffd500; --green:#12a150; --blue:#0a6fc2;
+    --ink:#1c1b22; --bg:#fff4dc; --paper:#fff;
+    --accent:var(--red); --accent-ink:#fff;
+    --pop:var(--yellow);
+  }
+  #app[data-game="spicy"]{ --accent:#ff5a1f; --pop:#ffb400; }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:400 17px/1.55 'Nunito',system-ui,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  #app{display:flex; flex-direction:column; max-width:720px; margin:0 auto; min-height:100vh; padding-bottom:env(safe-area-inset-bottom)}
+
+  /* hero */
+  .hero{order:0; position:relative; overflow:hidden; background:var(--accent); color:#fff;
+    padding:calc(28px + env(safe-area-inset-top)) 20px 64px; border-radius:0 0 36px 36px; transition:background .3s}
+  .hero::before,.hero::after{content:""; position:absolute; width:78px; height:112px; border-radius:14px; border:5px solid #fff}
+  .hero::before{right:-6px; top:-56px; background:var(--blue); transform:rotate(18deg)}
+  .hero::after{right:62px; top:-46px; background:var(--green); transform:rotate(-8deg)}
+  #app[data-game="spicy"] .hero::before{background:#7a0f2b}
+  #app[data-game="spicy"] .hero::after{background:#1c1b22}
+  .hero-inner{position:relative; z-index:1}
+  .eyebrow{margin:0 0 4px; font:700 13px 'Fredoka',sans-serif; letter-spacing:.14em; text-transform:uppercase; opacity:.9}
+  h1{margin:0; font:700 clamp(54px,17vw,92px)/.95 'Fredoka',sans-serif; font-style:italic; letter-spacing:-.01em;
+    color:var(--pop); -webkit-text-stroke:3px var(--ink); paint-order:stroke fill; text-shadow:4px 5px 0 var(--ink)}
+  .tag{margin:14px 0 18px; max-width:30ch; font-weight:800; font-size:18px; line-height:1.35}
+  .meta{display:flex; gap:8px; list-style:none; padding:0; margin:0; flex-wrap:wrap}
+  .meta li{background:rgba(0,0,0,.22); border-radius:999px; padding:6px 14px; display:flex; gap:8px; align-items:baseline; font-size:14px}
+  .meta span{opacity:.85}
+  .meta b{font-family:'Fredoka',sans-serif; font-size:16px}
+
+  /* game switch */
+  .switch{order:1; display:flex; gap:6px; align-self:center; margin:-28px 0 0; padding:6px; z-index:3;
+    background:var(--paper); border:3px solid var(--ink); border-radius:999px; box-shadow:0 5px 0 var(--ink)}
+  .switch button{font:600 18px 'Fredoka',sans-serif; border:0; background:transparent; color:var(--ink);
+    padding:10px 26px; border-radius:999px; cursor:pointer; min-height:44px; transition:.15s}
+  .switch button[aria-pressed="true"]{background:var(--ink); color:var(--pop)}
+
+  /* section nav chips */
+  .toc{order:2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:20px 16px 8px}
+  .toc a{display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink);
+    background:var(--paper); border:2.5px solid var(--ink); border-radius:999px; padding:7px 14px 7px 8px;
+    font:600 15px 'Fredoka',sans-serif; min-height:40px}
+  .toc i{font-style:normal; display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px}
+  .toc a:active{transform:translateY(2px)}
+
+  /* sections */
+  .sections{order:3; padding:6px 16px 8px; display:grid; gap:20px}
+  .sec{scroll-margin-top:16px; background:var(--paper); border:3px solid var(--ink); border-radius:26px; padding:18px 18px 20px;
+    box-shadow:0 6px 0 var(--c,var(--red)), 0 6px 0 3px var(--ink); margin-bottom:6px}
+  .sec:nth-child(4n+1){--c:var(--red)} .sec:nth-child(4n+2){--c:var(--yellow)}
+  .sec:nth-child(4n+3){--c:var(--green)} .sec:nth-child(4n+4){--c:var(--blue)}
+  .sec-head{display:flex; align-items:center; gap:12px; margin-bottom:10px}
+  .num{display:grid; place-items:center; flex:none; width:40px; height:40px; border-radius:50%; background:var(--c); color:#fff;
+    font:700 17px 'Fredoka',sans-serif; border:3px solid var(--ink)}
+  .sec:nth-child(4n+2) .num{color:var(--ink)}
+  h2{margin:0; font:700 25px/1.15 'Fredoka',sans-serif}
+  .sec-body p{margin:.5em 0}
+  .sec-body b{font-weight:800}
+
+  .list,.steps{margin:.6em 0; padding:0; list-style:none; display:grid; gap:10px}
+  .list li{position:relative; padding-left:28px}
+  .list li::before{content:""; position:absolute; left:4px; top:.5em; width:12px; height:12px; border-radius:50% 50% 50% 0; background:var(--c); border:2px solid var(--ink); transform:rotate(-45deg)}
+  .steps{counter-reset:s}
+  .steps li{counter-increment:s; position:relative; padding:2px 0 2px 44px; min-height:34px}
+  .steps li::before{content:counter(s); position:absolute; left:0; top:0; width:32px; height:32px; border-radius:9px; display:grid; place-items:center;
+    background:var(--ink); color:var(--pop); font:700 17px 'Fredoka',sans-serif; transform:rotate(-6deg)}
+
+  /* mini cards */
+  .cardgrid{display:grid; gap:14px; margin:.8em 0 .2em}
+  .gc{display:grid; grid-template-columns:72px 1fr; gap:14px; align-items:center}
+  .gc-sym{display:grid; place-items:center; width:72px; height:100px; border-radius:14px; border:4px solid #fff; outline:3px solid var(--ink);
+    font:700 32px 'Fredoka',sans-serif; color:#fff; background:var(--cc); transform:rotate(-5deg); box-shadow:3px 4px 0 rgba(0,0,0,.2)}
+  .gc:nth-child(even) .gc-sym{transform:rotate(4deg)}
+  .gc-body>b{font:700 20px 'Fredoka',sans-serif; display:block}
+  .gc p{margin:2px 0 0; font-size:15.5px; line-height:1.4}
+  .gc-red{--cc:var(--red)} .gc-yellow{--cc:var(--yellow)} .gc-green{--cc:var(--green)} .gc-blue{--cc:var(--blue)}
+  .gc-yellow .gc-sym{color:var(--ink)}
+  .gc-wild .gc-sym{background:conic-gradient(var(--red) 0 25%,var(--blue) 0 50%,var(--green) 0 75%,var(--yellow) 0);text-shadow:0 2px 0 var(--ink),0 0 6px rgba(0,0,0,.5)}
+  .gc-spicy{--cc:#ff5a1f}
+
+  /* points */
+  .points{margin:.8em 0; display:grid; gap:8px}
+  .points div{display:flex; justify-content:space-between; gap:12px; align-items:center; background:var(--bg); border:2.5px solid var(--ink); border-radius:14px; padding:10px 14px}
+  .points dt{font-weight:600} .points dd{margin:0; font:700 18px 'Fredoka',sans-serif; background:var(--ink); color:var(--pop); padding:2px 12px; border-radius:999px; white-space:nowrap}
+
+  .callout{margin:1em 0 .2em; padding:14px 16px; border-radius:16px; background:#fff3b0; border:2.5px dashed var(--ink)}
+  .callout>b{font:700 17px 'Fredoka',sans-serif; display:block}
+  .callout p{margin:.2em 0 0; font-size:15.5px}
+
+  .foot{order:4; text-align:center; font-size:13px; opacity:.6; padding:18px 20px 28px}
+
+  @media (min-width:700px){
+    .hero{border-radius:0 0 48px 48px; padding-left:36px}
+    .cardgrid{grid-template-columns:1fr 1fr}
+    .sections{padding:6px 0 8px}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="rules.js"></script>
+<script src="render.js"></script>
+<script>RulesApp.mount();</script>
+</body>
+</html>
