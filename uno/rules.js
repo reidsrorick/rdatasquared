@@ -207,7 +207,6 @@ window.RULES = {
         blocks: [
           { type: "p", text: "Spicy Uno rewards a sharp eye and quick hands. If you spot an opening, take it. For example:" },
           { type: "list", items: [
-            "Someone leaves the table? Look at their hand, and <b>take a card</b> you like.",
             "Fake a slap to bait someone into a false slap.",
             "Lie when someone asks you for a bailout.",
             "Jump in the second you see a match."

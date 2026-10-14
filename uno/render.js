@@ -77,7 +77,7 @@
 
       var dialog = '<dialog class="qr-dialog" aria-labelledby="qr-title"><form method="dialog">' +
         '<h2 id="qr-title">Scan to open the rules</h2>' +
-        '<img src="qr.svg" width="260" height="260" alt="QR code linking to ' + SHARE_URL + '">' +
+        '<img src="qr.svg?v=3" width="260" height="260" alt="QR code linking to ' + SHARE_URL + '">' +
         '<a class="qr-url" href="' + SHARE_URL + '">rdatasquared.com/uno</a>' +
         '<div class="qr-actions"><a class="qr-dl" href="qr.svg" download="uno-rules-qr.svg">Download</a>' +
         '<button class="qr-close">Close</button></div></form></dialog>';
