@@ -1,37 +1,265 @@
 {
   "schemaVersion": 1,
   "updated": "2026-10-26",
-  "categories": ["Movies & TV", "Words", "Logic", "Geography", "Music", "Gaming", "Faith"],
+  "categories": [
+    "Movies & TV",
+    "Words",
+    "Logic",
+    "Geography",
+    "Music",
+    "Gaming",
+    "Faith"
+  ],
   "games": [
-    { "id": "moviedle", "name": "Moviedle", "url": "https://pix-media.com/games/moviedle", "desc": "Can you name the movie in 6 seconds or less?", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "moviedle2", "name": "Moviedle 2", "url": "https://moviedle.xyz/", "desc": "Guess today's movie by exploring its cast, directors, genres and when it was released.", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "cine2nerdle", "name": "Cine2Nerdle", "url": "https://www.cinenerdle2.app/", "desc": "Movie equation puzzle", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "framed", "name": "Framed", "url": "https://framed.wtf/", "desc": "Guess the movie from a frame", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "episode", "name": "Episode", "url": "https://episode.wtf/", "desc": "Guess the TV episode from stills", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "plotwords", "name": "Plotwords", "url": "https://plotwords.com/daily", "desc": "Guess the name of the movie using as few plot keywords as possible!", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "gaps", "name": "Gaps", "url": "https://gaps.wtf/", "desc": "Guess the name of the movie!", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "spotle_movie", "name": "Spotle.Movie", "url": "https://spotle.movie/", "desc": "Guess the movie", "category": "Movies & TV", "tags": ["Daily"] },
-    { "id": "Flickle", "name": "Flickle", "url": "https://flickle.app/", "desc": "Watch the clip and guess the movie of the day!", "category": "Movies & TV", "tags": ["Daily"] },
-
-    { "id": "wordle", "name": "Wordle", "url": "https://www.nytimes.com/games/wordle/index.html", "desc": "Classic daily word puzzle", "category": "Words", "tags": ["Daily"] },
-    { "id": "connections", "name": "Connections", "url": "https://www.nytimes.com/games/connections", "desc": "Create four groups of four!", "category": "Words", "tags": ["Daily"] },
-    { "id": "strands", "name": "Strands", "url": "https://www.nytimes.com/games/strands", "desc": "Find hidden words and uncover the day’s theme.", "category": "Words", "tags": ["Daily"] },
-    { "id": "spellingbee", "name": "Spelling Bee", "url": "https://www.nytimes.com/puzzles/spelling-bee", "desc": "Make words from a letter hive", "category": "Words", "tags": ["Daily"] },
-    { "id": "contexto", "name": "Contexto", "url": "https://contexto.me/", "desc": "Find the secret word by similarity", "category": "Words", "tags": ["Daily"] },
-    { "id": "Redactle", "name": "Redactle", "url": "https://redactle.net/", "desc": "Guess a word to reveal matches in the article.", "category": "Words", "tags": ["Daily"] },
-    { "id": "decipher", "name": "Decipher", "url": "https://decipher.wtf/", "desc": "Decipher the hidden message", "category": "Words", "tags": ["Daily"] },
-
-    { "id": "spots", "name": "Spots", "url": "https://spots.wtf/", "desc": "Guess the secret 4-color code. There are 6 possible colors.", "category": "Logic", "tags": ["Daily"] },
-    { "id": "shikaku", "name": "Daily Shikaku", "url": "https://shikakuofthe.day/", "desc": "Divide the grid into rectangles", "category": "Logic", "tags": ["Daily"] },
-    { "id": "linkedIn", "name": "LinkedIn Games", "url": "https://www.linkedin.com/games/", "desc": "Prep your mind for the workday and compare results.", "category": "Logic", "tags": ["Daily"] },
-
-    { "id": "worldle", "name": "Worldle", "url": "https://worldle.teuteuf.fr/", "desc": "Guess the territory", "category": "Geography", "tags": ["Daily"] },
-
-    { "id": "spotle", "name": "Spotle", "url": "https://spotle.io/", "desc": "10 guesses, 1000 artists. Will you win today?", "category": "Music", "tags": ["Daily"] },
-
-    { "id": "GuessTheGame", "name": "GTG", "url": "https://guessthe.game/", "desc": "Watch the clip and guess the game of the day", "category": "Gaming", "tags": ["Daily"] },
-
-    { "id": "Lordle", "name": "Lordle", "url": "https://www.lordle.com/", "desc": "Let's drill down to the book of the Bible for the verse.", "category": "Faith", "tags": ["Daily"] },
-    { "id": "Bibdle", "name": "Bibdle", "url": "https://bibdle.com/", "desc": "What book of the Bible is this verse from?", "category": "Faith", "tags": ["Daily"] }
+    {
+      "id": "moviedle",
+      "name": "Moviedle",
+      "url": "https://pix-media.com/games/moviedle",
+      "desc": "Can you name the movie in 6 seconds or less?",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "moviedle2",
+      "name": "Moviedle 2",
+      "url": "https://moviedle.xyz/",
+      "desc": "Guess today's movie by exploring its cast, directors, genres and when it was released.",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "cine2nerdle",
+      "name": "Cine2Nerdle",
+      "url": "https://www.cinenerdle2.app/",
+      "desc": "Movie equation puzzle",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "framed",
+      "name": "Framed",
+      "url": "https://framed.wtf/",
+      "desc": "Guess the movie from a frame",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "episode",
+      "name": "Episode",
+      "url": "https://episode.wtf/",
+      "desc": "Guess the TV episode from stills",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "plotwords",
+      "name": "Plotwords",
+      "url": "https://plotwords.com/daily",
+      "desc": "Guess the name of the movie using as few plot keywords as possible!",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "gaps",
+      "name": "Gaps",
+      "url": "https://gaps.wtf/",
+      "desc": "Guess the name of the movie!",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "spotle_movie",
+      "name": "Spotle.Movie",
+      "url": "https://spotle.movie/",
+      "desc": "Guess the movie",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "Flickle",
+      "name": "Flickle",
+      "url": "https://flickle.app/",
+      "desc": "Watch the clip and guess the movie of the day!",
+      "category": "Movies & TV",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "wordle",
+      "name": "Wordle",
+      "url": "https://www.nytimes.com/games/wordle/index.html",
+      "desc": "Classic daily word puzzle",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "connections",
+      "name": "Connections",
+      "url": "https://www.nytimes.com/games/connections",
+      "desc": "Create four groups of four!",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "strands",
+      "name": "Strands",
+      "url": "https://www.nytimes.com/games/strands",
+      "desc": "Find hidden words and uncover the day’s theme.",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "spellingbee",
+      "name": "Spelling Bee",
+      "url": "https://www.nytimes.com/puzzles/spelling-bee",
+      "desc": "Make words from a letter hive",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "contexto",
+      "name": "Contexto",
+      "url": "https://contexto.me/",
+      "desc": "Find the secret word by similarity",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "Redactle",
+      "name": "Redactle",
+      "url": "https://redactle.net/",
+      "desc": "Guess a word to reveal matches in the article.",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "decipher",
+      "name": "Decipher",
+      "url": "https://decipher.wtf/",
+      "desc": "Decipher the hidden message",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "spots",
+      "name": "Spots",
+      "url": "https://spots.wtf/",
+      "desc": "Guess the secret 4-color code. There are 6 possible colors.",
+      "category": "Logic",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "shikaku",
+      "name": "Daily Shikaku",
+      "url": "https://shikakuofthe.day/",
+      "desc": "Divide the grid into rectangles",
+      "category": "Logic",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "linkedIn",
+      "name": "LinkedIn Games",
+      "url": "https://www.linkedin.com/games/",
+      "desc": "Prep your mind for the workday and compare results.",
+      "category": "Logic",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "worldle",
+      "name": "Worldle",
+      "url": "https://worldle.teuteuf.fr/",
+      "desc": "Guess the territory",
+      "category": "Geography",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "spotle",
+      "name": "Spotle",
+      "url": "https://spotle.io/",
+      "desc": "10 guesses, 1000 artists. Will you win today?",
+      "category": "Music",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "GuessTheGame",
+      "name": "GTG",
+      "url": "https://guessthe.game/",
+      "desc": "Watch the clip and guess the game of the day",
+      "category": "Gaming",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "Lordle",
+      "name": "Lordle",
+      "url": "https://www.lordle.com/",
+      "desc": "Let's drill down to the book of the Bible for the verse.",
+      "category": "Faith",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "Bibdle",
+      "name": "Bibdle",
+      "url": "https://bibdle.com/",
+      "desc": "What book of the Bible is this verse from?",
+      "category": "Faith",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "custom_krillion-io_mvpgjm4j",
+      "name": "Krillion.io",
+      "url": "https://krillion.io/",
+      "desc": "Trivia where rare answers dive deepest.",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    }
   ]
 }
