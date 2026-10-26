@@ -94,7 +94,14 @@
   .ib.star.on{color:#e8a800}
   .sectionLabel{margin:26px 4px 10px;font-size:13px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px}
   .sectionLabel:after{content:"";flex:1;height:1px;background:var(--border)}
-  .sectionLabel .mini{order:3}
+  .sectionLabel .mini,.sectionLabel .miniSel{order:3}
+  .miniSel{border:1px solid var(--border);background:var(--card);border-radius:9px;padding:4px 8px;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:600}
+  .miniSel:hover{border-color:var(--accent)}
+  .card.hasGrip{padding-left:32px}
+  .grip{position:absolute;left:0;top:0;bottom:0;width:26px;border:0;background:none;color:var(--muted);cursor:grab;touch-action:none;font-size:15px;letter-spacing:-3px;border-radius:var(--r) 0 0 var(--r);opacity:.7}
+  .grip:hover,.grip:focus-visible{opacity:1;color:var(--accent);background:color-mix(in oklab,var(--accent) 10%,transparent)}
+  .card.dragging{transform:scale(1.02);cursor:grabbing;opacity:.85;box-shadow:0 0 0 3px var(--focus),0 18px 40px rgba(0,0,0,.25);z-index:5;transition:none}
+  .favHint{margin:-2px 4px 10px;font-size:12px;color:var(--muted)}
   details.doneBox>summary{list-style:none;cursor:pointer}
   details.doneBox>summary::-webkit-details-marker{display:none}
   details.doneBox>summary .arrow{transition:transform .15s}
@@ -211,7 +218,7 @@
 
   <div class="controls">
     <div class="search"><input id="q" type="search" placeholder="Search games, categories…" autocomplete="off" aria-label="Search games" /></div>
-    <select class="btn" id="sort" aria-label="Sort order">
+    <select class="btn" id="sort" aria-label="Sort order" title="Sorts the games below your Favorites (Favorites have their own sort)">
       <option value="az">Sort: A–Z</option>
       <option value="stale">Sort: Not played recently</option>
       <option value="mine">Sort: List order</option>
@@ -2626,7 +2633,7 @@ var qrcode = function() {
 </script>
 <script>
 "use strict";
-const VERSION = "v2.1.0";
+const VERSION = "v2.2.0";
 
 /* ---------- helpers ---------- */
 const $ = (s, r = document) => r.querySelector(s);
@@ -2708,7 +2715,7 @@ const avatar = g => `<div class="av" style="background:${catColor(g.category)}" 
 /* ---------- user state ---------- */
 let stars = (store.get(K.stars, []) || []).filter(x => typeof x === "string");
 let results = store.get(K.results, {}) || {};   // results[YYYY-MM-DD][gameId] = { ts, result:"win"|"loss"|"", score, note }
-let prefs = Object.assign({ theme: null, sort: "az", cat: "All", doneOpen: true }, store.get(K.prefs, {}));
+let prefs = Object.assign({ theme: null, sort: "az", favSort: "mine", cat: "All", doneOpen: true }, store.get(K.prefs, {}));
 const legacyLast = {};
 (function migrateLegacy() {
   const old = store.get(K.clicks, {}) || {}, today = todayKey();
@@ -2810,9 +2817,10 @@ function statusLine(g) {
     ? `<span class="score">${icon}${esc(e.score)}</span><span>${fmtTime(e.ts)}</span>`
     : `<span>✓ ${fmtTime(e.ts)}</span><span>${icon ? icon.trim() : "no score"}</span>`;
 }
-function cardHtml(g) {
+function cardHtml(g, { grip = false } = {}) {
   const e = entry(g.id), isDone = !!e, isStar = stars.includes(g.id);
-  return `<div class="card${isDone ? " done" : ""}${isStar && !isDone ? " starred" : ""}" data-id="${esc(g.id)}" role="link" tabindex="0" aria-label="Open ${esc(g.name)} in a new tab">
+  return `<div class="card${isDone ? " done" : ""}${isStar && !isDone ? " starred" : ""}${grip ? " hasGrip" : ""}" data-id="${esc(g.id)}" role="link" tabindex="0" aria-label="Open ${esc(g.name)} in a new tab">
+    ${grip ? `<button class="grip" type="button" data-grip title="Drag to reorder (or use the arrow keys)" aria-label="Reorder ${esc(g.name)}: drag, or press the arrow keys">⋮⋮</button>` : ""}
     ${avatar(g)}
     <div class="meta"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p>
       <div class="sub"><span class="tag">${esc(g.category)}</span>${statusLine(g)}</div></div>
@@ -2837,13 +2845,25 @@ function render() {
 
   const visible = games.filter(g => (prefs.cat === "All" || g.category === prefs.cat) &&
     (!query || `${g.name} ${g.desc} ${g.category} ${g.tags.join(" ")}`.toLowerCase().includes(query)));
-  const todo = sortGames(visible.filter(g => !entry(g.id)), prefs.sort)
-    .sort((a, b) => (stars.includes(b.id) ? 1 : 0) - (stars.includes(a.id) ? 1 : 0));
+  const vis = new Set(visible.map(g => g.id));
+  // Favorites: your starred games still to play, in your own order (the order of the stars list) unless a smart sort is chosen
+  let favs = stars.map(id => games.find(g => g.id === id)).filter(g => g && vis.has(g.id) && !entry(g.id));
+  const favMode = prefs.favSort;
+  if (favMode === "played" || favMode === "stale") {
+    const plays = {}; if (favMode === "played") for (const x of perGame()) plays[x.id] = x.plays;
+    favs = favs.map((g, i) => [g, i]).sort((a, b) => favMode === "played"
+      ? (plays[b[0].id] || 0) - (plays[a[0].id] || 0) || a[1] - b[1]
+      : (lastIdx[a[0].id] || 0) - (lastIdx[b[0].id] || 0) || a[1] - b[1]).map(x => x[0]);
+  }
+  const favIds = new Set(favs.map(g => g.id));
+  const todo = sortGames(visible.filter(g => !entry(g.id) && !favIds.has(g.id)), prefs.sort);
   const done = visible.filter(g => entry(g.id)).sort((a, b) => entry(b.id).ts - entry(a.id).ts);
 
+  const favSel = `<select class="miniSel" data-favsort aria-label="Sort favorites">${[["mine", "My order"], ["played", "Most played"], ["stale", "Not played recently"]].map(([v, l]) => `<option value="${v}"${v === favMode ? " selected" : ""}>${l}</option>`).join("")}</select>`;
   let html = "";
-  if (todo.length) html += `<div class="sectionLabel">To play · ${todo.length}</div><div class="grid">${todo.map(cardHtml).join("")}</div>`;
-  if (done.length) html += `<details class="doneBox"${prefs.doneOpen ? " open" : ""}><summary class="sectionLabel"><span class="arrow" aria-hidden="true">▸</span>Done today · ${done.length}<button class="mini" type="button" data-reset>↺ Reset today</button></summary><div class="grid" style="margin-top:10px">${done.map(cardHtml).join("")}</div></details>`;
+  if (favs.length) html += `<div class="sectionLabel">★ Favorites · ${favs.length}${favSel}</div>${favMode === "mine" && favs.length > 1 ? `<div class="favHint">Drag ⋮⋮ to put them in your order.</div>` : ""}<div class="grid" data-favgrid>${favs.map(g => cardHtml(g, { grip: favMode === "mine" })).join("")}</div>`;
+  if (todo.length) html += `<div class="sectionLabel">${favs.length ? "Everything else" : "To play"} · ${todo.length}</div><div class="grid">${todo.map(g => cardHtml(g)).join("")}</div>`;
+  if (done.length) html += `<details class="doneBox"${prefs.doneOpen ? " open" : ""}><summary class="sectionLabel"><span class="arrow" aria-hidden="true">▸</span>Done today · ${done.length}<button class="mini" type="button" data-reset>↺ Reset today</button></summary><div class="grid" style="margin-top:10px">${done.map(g => cardHtml(g)).join("")}</div></details>`;
   if (!html) html = `<div class="empty">${total ? "No games match." : "No games yet — open <b>Manage games</b> to add some."}</div>`;
   out.innerHTML = html;
 
@@ -2891,8 +2911,61 @@ function resetToday() {
   if (!confirm(`Clear today's ${n} completed game${n > 1 ? "s" : ""}, including any scores logged today?`)) return;
   delete results[d]; saveResults(); render(); toast("Reset today");
 }
+/* Favorites reordering: positions are written back into the stars list, so partial views (search/category) still reorder correctly */
+function applyFavOrder(orderedIds) {
+  const set = new Set(orderedIds), slots = [];
+  stars.forEach((id, i) => { if (set.has(id)) slots.push(i); });
+  orderedIds.forEach((id, k) => { stars[slots[k]] = id; });
+  saveStars();
+}
+const gridIds = grid => [...grid.querySelectorAll(":scope > .card")].map(c => c.dataset.id);
+let drag = null;
+out.addEventListener("pointerdown", e => {
+  const g = e.target.closest("[data-grip]"); if (!g || (e.pointerType === "mouse" && e.button !== 0)) return;
+  const card = g.closest(".card");
+  e.preventDefault();
+  try { g.setPointerCapture(e.pointerId); } catch {}
+  drag = { card, grid: card.parentElement, before: gridIds(card.parentElement).join() };
+  card.classList.add("dragging");
+});
+out.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const over = document.elementsFromPoint(e.clientX, e.clientY).find(el => el.classList && el.classList.contains("card") && el !== drag.card && el.parentElement === drag.grid);
+  if (!over) return;
+  const r = over.getBoundingClientRect(), mine = drag.card.getBoundingClientRect();
+  const sameRow = Math.abs(r.top - mine.top) < r.height / 2;
+  const before = sameRow ? e.clientX < r.left + r.width / 2 : e.clientY < r.top + r.height / 2;
+  const ref = before ? over : over.nextElementSibling;
+  if (ref !== drag.card && drag.card.nextElementSibling !== ref) drag.grid.insertBefore(drag.card, ref);
+});
+function endDrag() {
+  if (!drag) return;
+  const { card, grid, before } = drag; drag = null;
+  card.classList.remove("dragging");
+  const ids = gridIds(grid);
+  if (ids.join() !== before) { applyFavOrder(ids); toast("Favorites order saved"); }
+  render();
+}
+out.addEventListener("pointerup", endDrag);
+out.addEventListener("pointercancel", endDrag);
+out.addEventListener("keydown", e => {
+  const g = e.target.closest && e.target.closest("[data-grip]"); if (!g) return;
+  const dir = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key]; if (!dir) return;
+  e.preventDefault();
+  const card = g.closest(".card"), ids = gridIds(card.parentElement), i = ids.indexOf(card.dataset.id), j = i + dir;
+  if (j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  applyFavOrder(ids); render();
+  out.querySelector(`.card[data-id="${CSS.escape(card.dataset.id)}"] [data-grip]`)?.focus();
+  toast(`${gameAny(card.dataset.id).name}: #${j + 1} of ${ids.length}`);
+});
+out.addEventListener("change", e => {
+  if (e.target.matches("[data-favsort]")) { prefs.favSort = e.target.value; savePrefs(); render(); }
+});
 out.addEventListener("click", e => {
+  if (e.target.closest("[data-grip]")) return;
   if (e.target.closest("[data-reset]")) { e.preventDefault(); resetToday(); return; }
+  if (e.target.closest("[data-favsort]")) return;
   const card = e.target.closest(".card"); if (!card) return;
   const id = card.dataset.id, b = e.target.closest("button[data-act]");
   if (b) { const a = b.dataset.act; if (a === "done") toggleDone(id); else if (a === "star") toggleStar(id); else if (a === "log") openLog(id); return; }
@@ -2910,8 +2983,7 @@ $("#theme").addEventListener("click", () => {
   prefs.theme = n; savePrefs(); applyTheme(n);
 });
 $("#random").addEventListener("click", () => {
-  const cards = [...out.querySelectorAll(".grid")[0]?.querySelectorAll(".card:not(.done)") || []];
-  const pool = cards.filter(c => !c.closest("details"));
+  const pool = [...out.querySelectorAll(".card:not(.done)")].filter(c => !c.closest("details"));
   if (!pool.length) return toast("Nothing left to play 🎉");
   const c = pool[Math.floor(Math.random() * pool.length)];
   c.scrollIntoView({ behavior: "smooth", block: "center" });
