@@ -137,6 +137,17 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .tlbar{position:absolute;height:20px;border-radius:6px;font-size:12px;line-height:20px;padding:0 9px;pointer-events:auto;cursor:grab;display:flex;align-items:center;overflow:hidden;touch-action:none}
 .tlbar:active{cursor:grabbing}
 .tlbar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.tldue{position:absolute;height:20px;border-radius:5px;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--panel);font-size:11.5px;line-height:18px;padding:0 6px 0 5px;display:flex;align-items:center;gap:5px;pointer-events:auto;cursor:pointer;overflow:hidden}
+.tldue:hover{border-color:var(--accent)}
+.tldue span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;pointer-events:none}
+.tldue em{font-style:normal;color:var(--mute);font-size:10.5px;margin-right:3px}
+.tldue .dk{flex:none;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--mute);background:none;padding:0}
+.tldue .dk:hover{border-color:var(--green);background:color-mix(in srgb,var(--green) 35%,transparent)}
+.tldue.done{opacity:.5}.tldue.done span{text-decoration:line-through}.tldue.done .dk{background:var(--green);border-color:var(--green)}
+.tldue.late{background:var(--redbg)}.tldue.late span{color:var(--red)}
+.tldue.ghost{border-style:dashed;background:transparent;opacity:.7}
+.tlmore{position:absolute;height:18px;font-size:11px;color:var(--mute);padding:0 6px;pointer-events:auto;cursor:pointer;line-height:18px;border-radius:5px}
+.tlmore:hover{color:var(--accent);background:var(--hover2)}
 .tlbar i.dsc{font-style:normal;opacity:.7;margin-left:6px;font-size:11px;pointer-events:none}
 .tlbar:hover{filter:brightness(1.08);box-shadow:0 1px 5px rgba(0,0,0,.25)}
 .tlbar .h:hover{background:rgba(255,255,255,.35)}
@@ -157,6 +168,8 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .tlin:focus{border-color:var(--accent)}
 .tlrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;color:var(--mute);font-size:13px}
 .tlrow label{display:flex;gap:6px;align-items:center}
+.tlrow select,.tlrow input[type=text]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit}
+.tlrow input[type=text]{flex:1;min-width:150px}
 .tlrow input[type=date]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;color-scheme:light dark}
 .tldonel{display:flex;gap:6px;align-items:center;font-size:13px;margin-bottom:6px}
 .tllink{font-size:12.5px;color:var(--mute);margin:4px 0 0}
@@ -324,8 +337,10 @@ dialog p{color:var(--mute);font-size:13px}
   <textarea id="tlt" class="tlin" rows="2" placeholder="Title: what are you planning?" style="margin-bottom:6px"></textarea>
   <textarea id="tld" class="tlin" rows="3" placeholder="Description (optional): details, who, why, links…"></textarea>
   <div class="tlrow"><label>Start <input type="date" id="tls"></label><label>End <input type="date" id="tle"></label><span id="tllen"></span></div>
+  <div class="tlrow"><label>Repeat <select id="tlrep"></select></label><input type="text" id="tlreptx" placeholder="or type: every other Friday"><label id="tlunw">Until <input type="date" id="tlun"></label></div>
+  <p id="tlrephint" class="tllink" style="margin:-4px 0 10px"></p>
   <div class="chips" id="tlcats" style="padding:0 0 10px"></div>
-  <label class="tldonel"><input type="checkbox" id="tldone"> Done</label>
+  <label class="tldonel"><input type="checkbox" id="tldone"> <span id="tldonet">Done</span></label>
   <p id="tllink" class="tllink"></p>
   <div class="dfoot"><button data-act="tldel" style="color:var(--red)">Delete</button><span><button data-act="tlcancel">Cancel</button> <button class="pri" data-act="tlsave">Save</button></span></div>
 </dialog>
@@ -609,6 +624,7 @@ function completeToggle(o, item, checked){
 const DEFAULT_CATS = () => [{id:'work', name:'Work', color:'#3b6ea5'}, {id:'personal', name:'Personal', color:'#4f8a5b'}, {id:'admin', name:'Admin', color:'#c2862d'}];
 const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[]});
 let db = BLANK();
+const strDates = a => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x)))].sort() : [];
 function normalize(d){
   const rich = d.bodyFormat === 'html', conv = s => rich ? cleanHtml(s || '') : plainToHtml(s || '');      // files from before formatting hold plain text
   d.categories = Array.isArray(d.categories) ? d.categories.map(c => ({id:c.id || uid(), name:c.name || 'Untitled', color:c.color || '#888888'})) : DEFAULT_CATS();
@@ -621,7 +637,7 @@ function normalize(d){
   }));
   d.plan = (Array.isArray(d.plan) ? d.plan : []).filter(b => b && /^\d{4}-\d\d-\d\d$/.test(b.start || '')).map(b => {      // Timeline blocks: when YOU plan something to happen (separate from due dates)
     let s = b.start, e = /^\d{4}-\d\d-\d\d$/.test(b.end || '') ? b.end : b.start; if(e < s) [s, e] = [e, s];
-    return {id:b.id || uid(), title:b.title || '', desc:typeof b.desc === 'string' ? b.desc : '', start:s, end:e, cat:b.cat || '', done:!!b.done, link:b.link && b.link.item ? {item:b.link.item, ck:b.link.ck || ''} : null, created:b.created || now(), updated:b.updated || now()};
+    return {id:b.id || uid(), title:b.title || '', desc:typeof b.desc === 'string' ? b.desc : '', start:s, end:e, cat:b.cat || '', done:!!b.done, repeat:cleanRepeat(b.repeat), until:/^\d{4}-\d\d-\d\d$/.test(b.until || '') ? b.until : '', doneOn:strDates(b.doneOn), skip:strDates(b.skip), link:b.link && b.link.item ? {item:b.link.item, ck:b.link.ck || ''} : null, created:b.created || now(), updated:b.updated || now()};
   });
   d.version = 3; d.bodyFormat = 'html';
   return d;
@@ -641,12 +657,12 @@ const byId = id => db.items.find(i => i.id === id);
 let selCk = '';                    // when you open an action item from the list, which one (so it can be highlighted in its note)
 let selId = null, filter = 'all', search = '', sortMode = 'updated', hideDone = false;
 let actGroup = 'due', actCat = '', actDone = false, actTimer = null, autoDates = true, railOff = false, listOff = false;
-let tlWork = false, tlCat = '', tlHideDone = false;                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
+let tlWork = false, tlCat = '', tlHideDone = false, tlLayer = 'blocks';        // tlLayer: 'blocks' (your plan only), 'due' (tasks and actions on their due dates), or 'both'                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
 let chipsOff = {all:[], note:[]}, listCat = '', datedOnly = false;     // list filter bar: which type chips are switched off (remembered), category, dated-only
 const openNotes = new Set();       // ids of actions whose notes box is expanded (not saved)
-try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' ? 'note' : (u.filter || 'all'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone;
+try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' ? 'note' : (u.filter || 'all'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks';
   if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['task','note','meeting','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
-function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone})); } catch {} }
+function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer})); } catch {} }
 
 /* ================= file saving ================= */
 const SUPPORTED = typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
@@ -907,7 +923,7 @@ function renderRail(){
   const cnt = t => db.items.filter(i => i.type === t).length;
   const openActions = allActions().filter(x => !x.done && x.text.trim()).length;
   const everything = db.items.length + db.items.reduce((n, i) => n + i.checklist.filter(c => c.text.trim()).length, 0);
-  const planned = db.plan.filter(b => !b.done && b.end >= todayStr()).length;
+  const planned = db.plan.filter(b => b.repeat ? !b.until || b.until >= todayStr() : !b.done && b.end >= todayStr()).length;
   const F = [['all','Everything',everything],['actions','⚑ Actions',openActions],['timeline','▦ Timeline',planned],['task','☐ Tasks',open],['note','✎ Notes & meetings',cnt('note')]];
   $('#filters').innerHTML = F.map(([k,l,n]) => `<div class="f ${filter===k?'on':''}" data-filter="${k}">${l} <small>${n}</small></div>`).join('');
   const tags = {}; db.items.forEach(i => i.tags.forEach(t => tags[t] = (tags[t] || 0) + 1));
@@ -1109,11 +1125,31 @@ function tlWeeks(){                                           // the Mondays of 
   const first = mondayOf(new Date(a.getFullYear(), a.getMonth(), 1)), last = new Date(a.getFullYear(), a.getMonth() + 1, 0);
   return Array.from({length: Math.ceil((Math.round((last - first) / 864e5) + 1) / 7)}, (_, i) => addD(first, i * 7));
 }
-const tlBlocks = () => db.plan.filter(b => (!tlCat || b.cat === tlCat) && !(tlHideDone && blockDone(b)));
+const tlBlocks = () => db.plan.filter(b => !tlCat || b.cat === tlCat);
+/* a recurring block (e.g. "Timecards due", every other Friday) is drawn once per occurrence; each keeps its own done state */
+function tlExpand(blocks, s0){
+  const out = [], a0 = ymd(s0);
+  for(const b of blocks){
+    if(!b.repeat){ out.push(b); continue; }
+    const len = Math.min(366, diffDays(b.start, b.end)), anchor = ymd(b.start);
+    for(let i = -len; i <= 6; i++){
+      const d = addD(a0, i), ds = dstr(d);
+      if(ds < b.start || (b.until && ds > b.until) || b.skip.includes(ds) || !ruleMatches(b.repeat, anchor, d)) continue;
+      out.push(Object.assign({}, b, {start:ds, end:shiftStr(ds, len), done:b.doneOn.includes(ds), occ:true}));
+    }
+  }
+  return out;
+}
+function presetRule(key, dateStr){
+  if(!key) return null;
+  const d = ymd(dateStr), mk = (freq, extra) => cleanRepeat(Object.assign({freq, n:1}, extra));
+  return ({daily: mk('daily'), weekdays: mk('weekly', {days:[1, 2, 3, 4, 5]}), weekly: mk('weekly', {days:[d.getDay()]}), biweekly: mk('weekly', {n:2, days:[d.getDay()]}),
+    monthly: mk('monthly', {dom:d.getDate()}), yearly: mk('yearly', {month:d.getMonth(), dom:d.getDate()})})[key] || null;
+}
 const NC = () => tlWork ? 5 : 7;                              // columns shown per week
 function weekSegments(ws, blocks){                            // bars for one week row, stacked into lanes so they don't overlap
   const s0 = dstr(ws), s1 = dstr(addD(ws, 6));
-  const segs = blocks.filter(b => b.end >= s0 && b.start <= s1).map(b => ({b, s: b.start < s0 ? 0 : diffDays(s0, b.start), e: b.end > s1 ? 6 : diffDays(s0, b.end), clipL: b.start < s0, clipR: b.end > s1}))
+  const segs = tlExpand(blocks, s0).filter(b => !(tlHideDone && blockDone(b))).filter(b => b.end >= s0 && b.start <= s1).map(b => ({b, s: b.start < s0 ? 0 : diffDays(s0, b.start), e: b.end > s1 ? 6 : diffDays(s0, b.end), clipL: b.start < s0, clipR: b.end > s1}))
     .filter(sg => sg.s < NC()).map(sg => sg.e >= NC() ? Object.assign(sg, {e: NC() - 1, clipR: true}) : sg);        // weekend days hidden: bars are cut at Friday
   segs.sort((x, y) => x.s - y.s || (y.e - y.s) - (x.e - x.s) || x.b.start.localeCompare(y.b.start) || x.b.id.localeCompare(y.b.id));
   const lanes = []; segs.forEach(sg => { let l = lanes.findIndex(end => end < sg.s); if(l < 0){ l = lanes.length; lanes.push(-1); } lanes[l] = sg.e; sg.lane = l; });
@@ -1122,24 +1158,59 @@ function weekSegments(ws, blocks){                            // bars for one we
 const rangeLabel = b => b.start === b.end ? fmtDay(b.start) : `${fmtDay(b.start)} – ${fmtDay(b.end)}`;
 function barHtml(sg){
   const b = sg.b, col = blockColor(b);
-  const inner = `<span>${b.link ? '🔗 ' : ''}${esc(b.title || 'Untitled')}</span>${b.desc ? '<i class="dsc" title="Has a description: click the block to read it">≡</i>' : ''}`;
-  return `<div class="tlbar ${blockDone(b) ? 'done' : ''} ${sg.clipL ? 'clipL' : ''} ${sg.clipR ? 'clipR' : ''}" data-id="${b.id}" style="left:calc(${sg.s} * 100% / ${NC()} + 3px);width:calc(${sg.e - sg.s + 1} * 100% / ${NC()} - 6px);top:${28 + sg.lane * 24}px;background:${esc(col)};color:${inkFor(col)}" title="${esc(b.title || 'Untitled')} · ${esc(rangeLabel(b))}">${sg.clipL ? '' : '<i class="h l"></i>'}${inner}${sg.clipR ? '' : '<i class="h r"></i>'}</div>`;
+  const inner = `<span>${b.link ? '🔗 ' : ''}${b.repeat ? '↻ ' : ''}${esc(b.title || 'Untitled')}</span>${b.desc ? '<i class="dsc" title="Has a description: click the block to read it">≡</i>' : ''}`;
+  return `<div class="tlbar ${blockDone(b) ? 'done' : ''} ${sg.clipL ? 'clipL' : ''} ${sg.clipR ? 'clipR' : ''}" data-id="${b.id}" data-occ="${b.occ ? b.start : ''}" style="left:calc(${sg.s} * 100% / ${NC()} + 3px);width:calc(${sg.e - sg.s + 1} * 100% / ${NC()} - 6px);top:${28 + sg.lane * 24}px;background:${esc(col)};color:${inkFor(col)}" title="${esc(b.title || 'Untitled')} · ${esc(rangeLabel(b))}${b.repeat ? ' · ' + esc(describeRepeat(b.repeat)) + ' (click to edit the series)' : ''}">${sg.clipL || b.repeat ? '' : '<i class="h l"></i>'}${inner}${sg.clipR || b.repeat ? '' : '<i class="h r"></i>'}</div>`;
+}
+const compactTime = t => fmtTime(t).replace(':00', '').replace(' ', '').toLowerCase();
+function tlDueItems(ws){                                      // open and done tasks/actions with a due date, per day of this week; repeating ones also show their next dates (ghosts)
+  const days = Array.from({length: 7}, () => []), s0 = dstr(ws), s1 = dstr(addD(ws, 6));
+  for(const a of allActions()){
+    if(!a.due || !a.text.trim() || (tlCat && a.cat !== tlCat) || (tlHideDone && a.done)) continue;
+    if(a.due >= s0 && a.due <= s1) days[diffDays(s0, a.due)].push({a, ghost:false});
+    if(a.repeat && !a.done){ const anchor = ymd(a.due); for(let i = 0; i < 7; i++){ const d = addD(ws, i); if(dstr(d) > a.due && ruleMatches(a.repeat, anchor, d)) days[i].push({a, ghost:true}); } }
+  }
+  days.forEach(l => l.sort((x, y) => (x.a.time || '99:99').localeCompare(y.a.time || '99:99') || x.a.text.localeCompare(y.a.text)));
+  return days;
+}
+function dueHtml(x, ds, i, top){
+  const a = x.a, c = catById(a.cat), late = !a.done && !x.ghost && ds < todayStr();
+  return `<div class="tldue ${a.done ? 'done' : ''} ${late ? 'late' : ''} ${x.ghost ? 'ghost' : ''}" data-key="${a.key}" ${x.ghost ? '' : 'draggable="true"'} style="left:calc(${i} * 100% / ${NC()} + 3px);width:calc(100% / ${NC()} - 6px);top:${top}px;${c ? 'border-left-color:' + esc(c.color) : ''}" title="${esc(a.text)} · ${x.ghost ? 'next ' : 'due '}${esc(fmtDay(ds))}${a.time ? ' ' + esc(fmtTime(a.time)) : ''}${a.repeat ? ' · ' + esc(describeRepeat(a.repeat)) : ''}">${x.ghost ? '' : `<button class="dk" data-act="tldone" data-key="${a.key}" title="${a.done ? 'Mark not done' : 'Mark done'}"></button>`}<span>${a.time ? `<em>${compactTime(a.time)}</em>` : ''}${a.repeat ? '↻ ' : ''}${esc(a.text)}</span></div>`;
 }
 function renderTlGrid(){
   const el = $('#tlgrid'); if(!el) return;
-  const weeks = tlWeeks(), anchor = ymd(tlAnchor), today = todayStr();
+  const weeks = tlWeeks(), anchor = ymd(tlAnchor), today = todayStr(), cap = tlView === 'week' ? 60 : 3;
   el.style.setProperty('--cols', NC());
   let html = `<div class="tldow">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].slice(0, NC()).map(d => `<div>${d}</div>`).join('')}</div>`;
   for(const ws of weeks){
-    const {segs, n} = weekSegments(ws, tlBlocks());
-    html += `<div class="tlweek"><div class="tlcells" style="min-height:${Math.max(tlView === 'week' ? 360 : 96, 32 + n * 24 + 8)}px">`;
+    const {segs, n} = tlLayer === 'due' ? {segs:[], n:0} : weekSegments(ws, tlBlocks());
+    const due = tlLayer === 'blocks' ? null : tlDueItems(ws);
+    let chips = '', rows = 0;
+    if(due) for(let i = 0; i < NC(); i++){
+      const list = due[i], ds = dstr(addD(ws, i)), shown = list.slice(0, cap);
+      shown.forEach((x, k) => { chips += dueHtml(x, ds, i, 28 + (n + k) * 24); });
+      if(list.length > cap) chips += `<div class="tlmore" data-act="tlmore" data-id="${ds}" style="left:calc(${i} * 100% / ${NC()} + 3px);top:${28 + (n + cap) * 24}px">+${list.length - cap} more</div>`;
+      rows = Math.max(rows, shown.length + (list.length > cap ? 1 : 0));
+    }
+    html += `<div class="tlweek"><div class="tlcells" style="min-height:${Math.max(tlView === 'week' ? 360 : 96, 32 + (n + rows) * 24 + 8)}px">`;
     for(let i = 0; i < NC(); i++){
       const d = addD(ws, i), s = dstr(d), other = tlView === 'month' && d.getMonth() !== anchor.getMonth();
       html += `<div class="tlday ${s === today ? 'today' : ''} ${other ? 'other' : ''} ${i > 4 ? 'wknd' : ''}" data-date="${s}"><span class="dn">${d.getDate() === 1 || tlView === 'week' ? MONTHS[d.getMonth()] + ' ' + d.getDate() : d.getDate()}</span></div>`;
     }
-    html += `</div><div class="tlbars">${segs.map(barHtml).join('')}</div></div>`;
+    html += `</div><div class="tlbars">${segs.map(barHtml).join('')}${chips}</div></div>`;
   }
   el.innerHTML = html;
+}
+/* tick a task / action from the calendar (a repeating one rolls to its next date, like everywhere else) */
+function tlTick(key){
+  const a = allActions().find(x => x.key === key); if(!a) return;
+  completeToggle(a.kind === 'task' ? a.item : a.ck, a.item, !a.done);
+  edited(a.item); renderTlGrid(); renderTlTray();
+}
+/* drag a due chip onto another day to reschedule it */
+function moveDue(key, date){
+  const a = allActions().find(x => x.key === key); if(!a || a.due === date) return;
+  const prev = a.due; setAction(a, 'due', date); renderTlGrid(); renderTlTray();
+  toast(`Moved “${a.text}” to ${fmtDay(date)}.`, () => { const b = allActions().find(x => x.key === key); if(b){ setAction(b, 'due', prev); renderTlGrid(); renderTlTray(); } });
 }
 function tlSuggestions(){                                     // open tasks / action items you haven't planned yet: past due first, then by due date
   const planned = new Set(db.plan.filter(b => b.link).map(b => b.link.ck || b.link.item));
@@ -1164,10 +1235,10 @@ function renderTimeline(){
       <button data-act="tlprev" title="Previous">‹</button><button data-act="tltoday">Today</button><button data-act="tlnext" title="Next">›</button>
       <div class="seg"><button data-act="tlweek" class="${tlView === 'week' ? 'on' : ''}">Week</button><button data-act="tlmonth" class="${tlView === 'month' ? 'on' : ''}">Month</button><button data-act="tlweeks" class="${tlView === 'weeks' ? 'on' : ''}">8 weeks</button></div>
       <button data-act="tlwork" class="${tlWork ? 'on' : ''}" title="Hide Saturday and Sunday">Mon–Fri</button>
-      <button class="tladd" data-act="tlnew">+ New block</button></div>
-    <p class="psub">Plan when things happen. Drag across days to make a block, drag a block to move it, and drag either end to stretch it. Blocks don't change due dates.</p>
-    <div class="chips tlfilter" style="padding:0 0 12px"><button class="chip cchip ${!tlCat ? 'on' : ''}" data-act="tlcat" data-id="">All</button>${db.categories.map(c => `<button class="chip cchip ${tlCat === c.id ? 'on' : ''}" data-act="tlcat" data-id="${esc(c.id)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('')}<button class="chip cchip tlhd ${tlHideDone ? 'on' : ''}" data-act="tlhidedone">Hide done</button></div>
-    <div class="tlmain"><div id="tlgrid"></div><aside id="tltray"></aside></div>`;
+      ${tlLayer === 'due' ? '' : '<button class="tladd" data-act="tlnew">+ New block</button>'}</div>
+    <p class="psub">${tlLayer === 'due' ? 'Your tasks and action items on the day they\'re due. Click one to open it, tick its circle to finish it, or drag it to another day to change its due date. Repeating ones show their next dates as dashed outlines.' : 'Plan when things happen. Drag across days to make a block, drag a block to move it, and drag either end to stretch it. Blocks don\'t change due dates.' + (tlLayer === 'both' ? ' Tasks and actions show underneath, on their due dates.' : '')}</p>
+    <div class="chips tlfilter" style="padding:0 0 12px"><div class="seg" title="What the calendar shows"><button data-act="tllayer" data-id="blocks" class="${tlLayer === 'blocks' ? 'on' : ''}">Plan</button><button data-act="tllayer" data-id="due" class="${tlLayer === 'due' ? 'on' : ''}">Due dates</button><button data-act="tllayer" data-id="both" class="${tlLayer === 'both' ? 'on' : ''}">Both</button></div><button class="chip cchip ${!tlCat ? 'on' : ''}" data-act="tlcat" data-id="">All</button>${db.categories.map(c => `<button class="chip cchip ${tlCat === c.id ? 'on' : ''}" data-act="tlcat" data-id="${esc(c.id)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('')}<button class="chip cchip tlhd ${tlHideDone ? 'on' : ''}" data-act="tlhidedone">Hide done</button></div>
+    <div class="tlmain"><div id="tlgrid"></div>${tlLayer === 'due' ? '' : '<aside id="tltray"></aside>'}</div>`;
   renderTlGrid(); renderTlTray();
 }
 function tlNav(dir){
@@ -1185,17 +1256,18 @@ document.addEventListener('pointerdown', e => {
   if(bar){
     const b = planById(bar.dataset.id); if(!b) return;
     const h = e.target.closest('.h');
-    tlDrag = {b, mode: h ? (h.classList.contains('l') ? 'start' : 'end') : 'move', grab: dayAt(e.clientX, e.clientY) || b.start, orig: {start:b.start, end:b.end}, moved:false};
+    tlDrag = {b, occ: bar.dataset.occ, mode: b.repeat ? 'click' : h ? (h.classList.contains('l') ? 'start' : 'end') : 'move', grab: dayAt(e.clientX, e.clientY) || b.start, orig: {start:b.start, end:b.end}, moved:false};
     e.preventDefault(); return;
   }
   const d = e.target.closest('.tlday');
-  if(d){ tlSel = {a:d.dataset.date, b:d.dataset.date}; paintSel(); e.preventDefault(); }
+  if(d && tlLayer !== 'due'){ tlSel = {a:d.dataset.date, b:d.dataset.date}; paintSel(); e.preventDefault(); }
 });
 const hintEl = () => $('#tlhint') || document.body.appendChild(Object.assign(document.createElement('div'), {id:'tlhint'}));
 function tlHint(e, a, b){ const h = hintEl(), n = diffDays(a, b) + 1; h.textContent = `${a === b ? fmtDay(a) : fmtDay(a) + ' – ' + fmtDay(b)} · ${n} day${n > 1 ? 's' : ''}`; h.style.left = e.clientX + 14 + 'px'; h.style.top = e.clientY + 16 + 'px'; h.style.display = ''; }
 const tlHintOff = () => { const h = $('#tlhint'); if(h) h.style.display = 'none'; };
 document.addEventListener('pointermove', e => {
   if(tlDrag){
+    if(tlDrag.mode === 'click') return;
     const t = dayAt(e.clientX, e.clientY); if(!t) return;
     const delta = diffDays(tlDrag.grab, t), o = tlDrag.orig, b = tlDrag.b;
     if(delta === 0 && !tlDrag.moved) return;
@@ -1208,15 +1280,19 @@ document.addEventListener('pointermove', e => {
 });
 document.addEventListener('pointerup', () => {
   tlHintOff();
-  if(tlDrag){ const d = tlDrag; tlDrag = null; if(d.moved){ d.b.updated = now(); touch(); renderTlGrid(); renderRail(); } else openBlockDlg(d.b, false); return; }
+  if(tlDrag){ const d = tlDrag; tlDrag = null; if(d.moved){ d.b.updated = now(); touch(); renderTlGrid(); renderRail(); } else openBlockDlg(d.b, false, d.occ); return; }
   if(tlSel){
     const [a, b] = tlSel.a <= tlSel.b ? [tlSel.a, tlSel.b] : [tlSel.b, tlSel.a]; tlSel = null;
     document.querySelectorAll('.tlday.sel').forEach(c => c.classList.remove('sel'));
-    openBlockDlg({id:uid(), title:'', desc:'', start:a, end:b, cat:'', done:false, link:null, created:now(), updated:now()}, true);
+    openBlockDlg({id:uid(), title:'', desc:'', start:a, end:b, cat:'', done:false, repeat:null, until:'', doneOn:[], skip:[], link:null, created:now(), updated:now()}, true);
   }
 });
 /* dragging a suggestion onto a day */
-document.addEventListener('dragstart', e => { const s = e.target.closest && e.target.closest('.tlsug'); if(s){ e.dataTransfer.setData('text/plain', 'plan:' + s.dataset.key); e.dataTransfer.effectAllowed = 'copy'; } });
+document.addEventListener('dragstart', e => {
+  const s = e.target.closest && e.target.closest('.tlsug'), c = e.target.closest && e.target.closest('.tldue');
+  if(s){ e.dataTransfer.setData('text/plain', 'plan:' + s.dataset.key); e.dataTransfer.effectAllowed = 'copy'; }
+  else if(c){ e.dataTransfer.setData('text/plain', 'due:' + c.dataset.key); e.dataTransfer.effectAllowed = 'move'; }
+});
 document.addEventListener('dragover', e => {
   const d = e.target.closest && e.target.closest('.tlday');
   if(d && e.dataTransfer && [...e.dataTransfer.types].includes('text/plain')){ e.preventDefault(); document.querySelectorAll('.tlday.over').forEach(x => { if(x !== d) x.classList.remove('over'); }); d.classList.add('over'); }
@@ -1224,23 +1300,23 @@ document.addEventListener('dragover', e => {
 document.addEventListener('dragend', () => document.querySelectorAll('.tlday.over').forEach(x => x.classList.remove('over')));
 document.addEventListener('drop', e => {
   const d = e.target.closest && e.target.closest('.tlday'); if(!d || !e.dataTransfer) return;
-  const t = e.dataTransfer.getData('text/plain'); if(!t.startsWith('plan:')) return;
+  const t = e.dataTransfer.getData('text/plain'); if(!t.startsWith('plan:') && !t.startsWith('due:')) return;
   e.preventDefault(); document.querySelectorAll('.tlday.over').forEach(x => x.classList.remove('over'));
-  planSuggestion(t.slice(5), d.dataset.date);
+  if(t.startsWith('due:')) moveDue(t.slice(4), d.dataset.date); else planSuggestion(t.slice(5), d.dataset.date);
 });
 function planSuggestion(key, date){
   const a = allActions().find(x => x.key === key); if(!a) return;
   const end = a.due && a.due > date && diffDays(date, a.due) <= 28 ? a.due : date;           // if it's due soon after, the block runs to its deadline (stretch it if you like)
-  const b = {id:uid(), title:a.text, desc:'', start:date, end, cat:a.cat || '', done:false, link:{item:a.item.id, ck:a.kind === 'ck' ? a.ck.id : ''}, created:now(), updated:now()};
+  const b = {id:uid(), title:a.text, desc:'', start:date, end, cat:a.cat || '', done:false, repeat:null, until:'', doneOn:[], skip:[], link:{item:a.item.id, ck:a.kind === 'ck' ? a.ck.id : ''}, created:now(), updated:now()};
   db.plan.push(b); touch(); renderRail(); renderTlGrid(); renderTlTray();
   toast(`Planned “${a.text}” for ${rangeLabel(b)}.`, () => { db.plan = db.plan.filter(x => x !== b); touch(); renderRail(); renderTlGrid(); renderTlTray(); });
 }
 
 /* the block editor */
-function openBlockDlg(b, isNew){
-  tlEdit = {b:Object.assign({}, b, {link: b.link ? Object.assign({}, b.link) : null}), isNew, orig:b};
+function openBlockDlg(b, isNew, occ = ''){
+  tlEdit = {b:Object.assign({}, b, {link: b.link ? Object.assign({}, b.link) : null, repeat: cleanRepeat(b.repeat)}), isNew, orig:b, occ};
   $('#tlhdr').textContent = isNew ? 'New block' : 'Edit block';
-  $('#tlt').value = b.title; $('#tld').value = b.desc || ''; $('#tls').value = b.start; $('#tle').value = b.end; $('#tldone').checked = b.done;
+  $('#tlt').value = b.title; $('#tld').value = b.desc || ''; $('#tls').value = b.start; $('#tle').value = b.end; $('#tldone').checked = b.repeat ? b.doneOn.includes(occ || b.start) : b.done; $('#tlun').value = b.until || ''; $('#tlreptx').value = '';
   $('#tldlg [data-act=tldel]').style.display = isNew ? 'none' : '';
   renderTlDlg(); $('#tldlg').showModal(); $('#tlt').focus();
 }
@@ -1248,6 +1324,11 @@ function renderTlDlg(){
   const e = tlEdit.b, t = linkTarget(e);
   $('#tlcats').innerHTML = db.categories.map(c => `<button type="button" class="chip cchip ${e.cat === c.id ? 'on' : ''}" data-tlcat="${esc(c.id)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('');
   $('#tllink').innerHTML = e.link ? (t ? `🔗 Linked to “${esc(t.text)}” · <a data-act="tlopen">Open it</a> · <a data-act="tlunlink">Unlink</a>` : '🔗 The linked item no longer exists · <a data-act="tlunlink">Unlink</a>') : 'Not linked to a task.';
+  $('#tlrep').innerHTML = repeatOptions(e.repeat);
+  $('#tlunw').style.display = e.repeat ? '' : 'none';
+  $('#tldonet').textContent = e.repeat ? 'Done (this one)' : 'Done';
+  $('#tlrephint').innerHTML = e.repeat ? `↻ ${esc(describeRepeat(e.repeat))}. Start is the first one; End sets how long each lasts.${tlEdit.occ && !tlEdit.isNew ? ` · <a data-act="tlskip">Skip ${esc(fmtDay(tlEdit.occ))}</a>` : ''}` : '';
+  $('#tldlg [data-act=tldel]').textContent = e.repeat ? 'Delete series' : 'Delete';
   updateTlLen();
 }
 function updateTlLen(){ const s = $('#tls').value, e = $('#tle').value, n = s && e && e >= s ? diffDays(s, e) + 1 : 0; $('#tllen').textContent = n ? `${n} day${n > 1 ? 's' : ''}` : ''; }
@@ -1255,8 +1336,12 @@ function saveBlockDlg(){
   const x = tlEdit; if(!x) return;
   let s = $('#tls').value, en = $('#tle').value || s; if(!s){ toast('Pick a start date first.'); return; }
   if(en < s) [s, en] = [en, s];
+  let rule = x.b.repeat; if(rule && repeatKey(rule) !== 'custom') rule = presetRule(repeatKey(rule), s);
+  if(rule){ const m = firstMatch(rule, ymd(s), ymd(s), 0); if(m && dstr(m) !== s){ const len = diffDays(s, en); s = dstr(m); en = shiftStr(s, len); } }          // the start is always a day the rule lands on
+  let until = rule ? $('#tlun').value : ''; if(until && until < s) until = '';
   const t = linkTarget(x.b), title = $('#tlt').value.replace(/\s*\n\s*/g, ' ').trim() || (t && t.text) || 'Untitled';
-  Object.assign(x.orig, {title, desc:$('#tld').value.trim(), start:s, end:en, cat:x.b.cat, done:$('#tldone').checked, link:x.b.link, updated:now()});
+  Object.assign(x.orig, {title, desc:$('#tld').value.trim(), start:s, end:en, cat:x.b.cat, done:rule ? false : $('#tldone').checked, repeat:rule, until, link:x.b.link, updated:now()});
+  if(rule){ const set = new Set(x.orig.doneOn), occ = x.occ || s; $('#tldone').checked ? set.add(occ) : set.delete(occ); x.orig.doneOn = [...set].sort(); } else { x.orig.doneOn = []; x.orig.skip = []; }
   if(x.isNew) db.plan.push(x.orig);
   tlEdit = null; $('#tldlg').close(); touch(); renderRail(); renderTlGrid(); renderTlTray();
 }
@@ -1266,11 +1351,20 @@ function deleteBlock(){
   tlEdit = null; $('#tldlg').close(); touch(); renderRail(); renderTlGrid(); renderTlTray();
   toast(`Deleted “${b.title || 'Untitled'}”.`, () => { db.plan.splice(Math.min(at, db.plan.length), 0, b); touch(); renderRail(); renderTlGrid(); renderTlTray(); });
 }
-function openLinkedFromBlock(){
-  const t = linkTarget(tlEdit.b); if(!t) return;
-  $('#tldlg').close(); filter = 'all'; selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
+function skipOccurrence(){
+  const x = tlEdit; if(!x || !x.occ) return;
+  const b = x.orig, d = x.occ; b.skip = [...b.skip, d].sort(); b.updated = now();
+  tlEdit = null; $('#tldlg').close(); touch(); renderRail(); renderTlGrid();
+  toast(`Skipped “${b.title || 'Untitled'}” on ${fmtDay(d)}.`, () => { b.skip = b.skip.filter(y => y !== d); b.updated = now(); touch(); renderTlGrid(); });
+}
+function openActionByKey(key){
+  const t = allActions().find(a => a.key === key); if(!t) return;
+  if($('#tldlg').open) $('#tldlg').close();
+  filter = 'all'; selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
   if(selCk){ const ai = document.querySelector(`#detail [data-ci="${selCk}"]`), r = ai && ai.closest('.ai'); if(r){ r.classList.add('flash'); r.scrollIntoView({block:'center'}); } }
 }
+function openLinkedFromBlock(){ const t = linkTarget(tlEdit.b); if(t) openActionByKey(t.key); }
+document.addEventListener('click', e => { const c = filter === 'timeline' && e.target.closest && e.target.closest('.tldue'); if(c && !e.target.closest('button')) openActionByKey(c.dataset.key); });
 
 /* ---- category manager ---- */
 function renderCats(){
@@ -1426,6 +1520,15 @@ $('#catrows').addEventListener('input', e => {
 });
 $('#catdlg').addEventListener('close', () => renderAll());
 $('#tldlg').addEventListener('close', () => { tlEdit = null; });
+$('#tlrep').addEventListener('change', e => { if(e.target.value === 'custom') return; tlEdit.b.repeat = presetRule(e.target.value, $('#tls').value || todayStr()); renderTlDlg(); });
+$('#tlreptx').addEventListener('change', e => {                    // "every other Friday" typed in plain words
+  const text = e.target.value.trim(); if(!text) return;
+  const p = parseWhen(text), r = p && cleanRepeat(p.repeat);
+  if(!r){ toast("Couldn't find a repeat in that. Try “every Friday”, “every other Friday” or “monthly on the 1st”."); return; }
+  tlEdit.b.repeat = r; let s = $('#tls').value || todayStr(), en = $('#tle').value || s; if(en < s) en = s;
+  const m = firstMatch(r, ymd(p.date || s), ymd(p.date || s), 0); if(m){ const len = diffDays(s, en); s = dstr(m); $('#tls').value = s; $('#tle').value = shiftStr(s, len); }
+  e.target.value = ''; renderTlDlg();
+});
 $('#tls').addEventListener('input', updateTlLen); $('#tle').addEventListener('input', updateTlLen);
 document.addEventListener('keydown', e => {                       // Timeline: left/right arrows move by a week or month, T jumps to today
   if(filter !== 'timeline' || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return;
@@ -1453,11 +1556,11 @@ document.addEventListener('click', e => {
     else if(act === 'addaction') addAction();
     else if(act === 'tlprev') tlNav(-1); else if(act === 'tlnext') tlNav(1);
     else if(act === 'tltoday'){ tlAnchor = todayStr(); renderTimeline(); }
-    else if(act === 'tlmonth'){ tlView = 'month'; renderTimeline(); } else if(act === 'tlweeks'){ tlView = 'weeks'; renderTimeline(); } else if(act === 'tlweek'){ tlView = 'week'; renderTimeline(); } else if(act === 'tlcat'){ tlCat = a.dataset.id; saveUi(); renderTimeline(); } else if(act === 'tlhidedone'){ tlHideDone = !tlHideDone; saveUi(); renderTimeline(); } else if(act === 'tlwork'){ tlWork = !tlWork; saveUi(); renderTimeline(); }
-    else if(act === 'tlnew') openBlockDlg({id:uid(), title:'', desc:'', start:todayStr(), end:todayStr(), cat:'', done:false, link:null, created:now(), updated:now()}, true);
+    else if(act === 'tlmonth'){ tlView = 'month'; renderTimeline(); } else if(act === 'tlweeks'){ tlView = 'weeks'; renderTimeline(); } else if(act === 'tlweek'){ tlView = 'week'; renderTimeline(); } else if(act === 'tllayer'){ tlLayer = a.dataset.id; saveUi(); renderTimeline(); } else if(act === 'tldone') tlTick(a.dataset.key); else if(act === 'tlmore'){ tlView = 'week'; tlAnchor = a.dataset.id; renderTimeline(); } else if(act === 'tlcat'){ tlCat = a.dataset.id; saveUi(); renderTimeline(); } else if(act === 'tlhidedone'){ tlHideDone = !tlHideDone; saveUi(); renderTimeline(); } else if(act === 'tlwork'){ tlWork = !tlWork; saveUi(); renderTimeline(); }
+    else if(act === 'tlnew') openBlockDlg({id:uid(), title:'', desc:'', start:todayStr(), end:todayStr(), cat:'', done:false, repeat:null, until:'', doneOn:[], skip:[], link:null, created:now(), updated:now()}, true);
     else if(act === 'tlsave') saveBlockDlg(); else if(act === 'tldel') deleteBlock();
     else if(act === 'tlcancel'){ tlEdit = null; $('#tldlg').close(); }
-    else if(act === 'tlopen') openLinkedFromBlock(); else if(act === 'tlunlink'){ tlEdit.b.link = null; renderTlDlg(); }
+    else if(act === 'tlskip') skipOccurrence(); else if(act === 'tlopen') openLinkedFromBlock(); else if(act === 'tlunlink'){ tlEdit.b.link = null; renderTlDlg(); }
     else if(act === 'resetfilters'){ chipsOff[chipView()] = []; listCat = ''; datedOnly = false; hideDone = false; saveUi(); fixSelection(); renderList(); renderDetail(); }
     else if(act === 'scandates') scanDates();
     else if(act === 'toastundo'){ const u = toastUndo; toastUndo = null; $('#toast').classList.remove('show'); if(u) u(); }
