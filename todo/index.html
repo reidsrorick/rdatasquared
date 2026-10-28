@@ -8,9 +8,13 @@
 <meta name="theme-color" content="#c2562d">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<script>try{var t=JSON.parse(localStorage.getItem('notebook-ui')||'{}').theme;if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <style>
 :root{--bg:#faf8f4;--rail:#f0ece4;--panel:#fff;--field:#fffdfa;--line:#e4dfd3;--hover:#e7e2d7;--hover2:#f4f0e8;--text:#2b2a27;--mute:#8a857a;--accent:#c2562d;--soft:#f6e6dd;--green:#4f8a5b;--blue:#3b6ea5;--red:#c0392b;--redbg:#fdecea;--amberbg:#fff4d6;--amber:#8a6100;--pill:#efe9dc}
-@media(prefers-color-scheme:dark){:root{--bg:#1c1b19;--rail:#161513;--panel:#232220;--field:#1f1e1c;--line:#34322e;--hover:#2a2926;--hover2:#262522;--text:#ebe8e1;--mute:#9a958a;--accent:#e2784f;--soft:#3a2a22;--green:#7cc08a;--blue:#7fb0e6;--red:#ff8a7a;--redbg:#3d1f1b;--amberbg:#3a2f12;--amber:#f0c25a;--pill:#34322e}}
+:root{color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1c1b19;--rail:#161513;--panel:#232220;--field:#1f1e1c;--line:#34322e;--hover:#2a2926;--hover2:#262522;--text:#ebe8e1;--mute:#9a958a;--accent:#e2784f;--soft:#3a2a22;--green:#7cc08a;--blue:#7fb0e6;--red:#ff8a7a;--redbg:#3d1f1b;--amberbg:#3a2f12;--amber:#f0c25a;--pill:#34322e}}
+:root[data-theme=dark]{--bg:#1c1b19;--rail:#161513;--panel:#232220;--field:#1f1e1c;--line:#34322e;--hover:#2a2926;--hover2:#262522;--text:#ebe8e1;--mute:#9a958a;--accent:#e2784f;--soft:#3a2a22;--green:#7cc08a;--blue:#7fb0e6;--red:#ff8a7a;--redbg:#3d1f1b;--amberbg:#3a2f12;--amber:#f0c25a;--pill:#34322e;color-scheme:dark}
+:root[data-theme=light]{color-scheme:light}
 *{box-sizing:border-box;margin:0}
 body{font:14px/1.5 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
 button{font:inherit;cursor:pointer}
@@ -36,6 +40,54 @@ a[data-act]{color:var(--accent);cursor:pointer;text-decoration:underline}
 .tag span::before{content:"#";color:var(--accent)}
 .tag small{color:var(--mute)}
 .fileinfo{margin-top:auto;font-size:12px;color:var(--mute);padding:10px;line-height:1.6}
+.fileinfo a{white-space:nowrap}
+#trashrow{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+#trashrow+.fileinfo{margin-top:0}
+.trashlink{opacity:.7;font-size:13px}
+.f small.hot{color:#fff;background:var(--red);border-radius:99px;padding:0 7px;font-weight:600}
+.gh2.today{color:var(--amber)}
+.gh2 a{color:var(--accent);cursor:pointer;text-decoration:underline;text-transform:none;letter-spacing:0;font-size:12.5px}
+.it.late{box-shadow:inset 3px 0 var(--red)}.it.todayrow{box-shadow:inset 3px 0 var(--amber)}.it.on{box-shadow:inset 3px 0 var(--accent)}
+.gh.late{background:var(--redbg);color:var(--red);border-left:4px solid var(--red);padding:5px 10px;border-radius:6px;align-items:center}
+.gh.today{background:var(--amberbg);color:var(--amber);border-left:4px solid var(--amber);padding:5px 10px;border-radius:6px;align-items:center}
+.act.late{border-left:3px solid var(--red);background:color-mix(in srgb,var(--redbg) 55%,transparent);padding-left:8px}
+.act.today{border-left:3px solid var(--amber);background:color-mix(in srgb,var(--amberbg) 60%,transparent);padding-left:8px}
+.act.done{background:none;border-left-color:transparent}
+.mtgrow{display:grid;grid-template-columns:22px 1fr auto;gap:12px;align-items:center;padding:9px 4px 9px 8px;border-bottom:1px solid var(--line);cursor:pointer}
+.mtgrow:hover{background:var(--hover2)}
+.mtgrow .mi{color:var(--mute);font-size:15px;text-align:center}
+.mtgrow b{font-weight:600}.mtgrow small{display:block;color:var(--mute)}
+.mtgrow time{color:var(--mute);font-size:12.5px;white-space:nowrap}
+.tdblock{display:inline-flex;align-items:center;gap:7px;margin:3px 8px 3px 0;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:13px}
+.tdblock:hover{border-color:var(--accent)}
+.tdsum{display:flex;gap:10px;flex-wrap:wrap;margin:-6px 0 16px}
+.tdsum span{padding:3px 12px;border-radius:99px;background:var(--pill);font-size:13px}
+.tdsum span.bad{background:var(--redbg);color:var(--red);font-weight:600}.tdsum span.warn{background:var(--amberbg);color:var(--amber);font-weight:600}
+.qapv{color:var(--mute);font-size:12.5px;min-height:18px;margin:-8px 0 12px}
+.trow{display:grid;grid-template-columns:22px 1fr auto;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
+.trow .ti{color:var(--mute);text-align:center}.trow b{font-weight:600}.trow small{display:block;color:var(--mute)}
+.trow button{border:1px solid var(--line);background:none;color:var(--text);border-radius:8px;padding:5px 12px;margin-left:6px}
+.trow button:hover{background:var(--hover)}.trow button.danger{color:var(--red)}
+#kbdlg{width:min(820px,94vw);max-height:92vh;overflow:auto}
+#kbdlg .kbgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:4px 28px;margin-top:10px}
+#kbdlg h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:14px 0 4px}
+#kbdlg .kr{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 14px;padding:3px 0;font-size:13.5px;border-bottom:1px dotted var(--line)}
+#kbdlg .kr>span:first-child{flex:1 1 170px}
+#kbdlg .kr>span:last-child{text-align:right}
+#kbdlg kbd{font:600 12px Consolas,monospace;background:var(--hover);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 6px;white-space:normal}
+#qadlg{width:min(560px,94vw)}
+#qadlg input{width:100%;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:10px 12px;font:inherit;font-size:15px;outline:none;margin:8px 0 6px}
+#qadlg input:focus{border-color:var(--accent)}
+.foot .fbtns{display:flex;gap:8px}
+.foot .fbtns button.plain{color:var(--text)}
+#ctxmenu{position:fixed;z-index:70;min-width:210px;max-width:300px;max-height:calc(100vh - 16px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.35);padding:5px;font-size:13.5px}
+#ctxmenu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:0;color:var(--text);padding:6px 10px;border-radius:6px;font:inherit}
+#ctxmenu button:hover,#ctxmenu button:focus{background:var(--hover);outline:none}
+#ctxmenu button.danger{color:var(--red)}
+#ctxmenu button i{width:14px;text-align:center;font-style:normal;color:var(--mute)}
+#ctxmenu .sep{height:1px;background:var(--line);margin:4px 6px}
+#ctxmenu .hd{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);padding:6px 10px 2px}
+.it.ctx{outline:1px dashed var(--accent);outline-offset:-2px}
 .fileinfo b{color:var(--green);font-weight:600;word-break:break-all}
 .fileinfo.bad b{color:var(--red)}
 
@@ -70,7 +122,7 @@ a[data-act]{color:var(--accent);cursor:pointer;text-decoration:underline}
 .meta{display:flex;gap:10px 22px;color:var(--mute);margin-bottom:18px;flex-wrap:wrap;font-size:13px;align-items:center}
 .meta label{display:flex;gap:6px;align-items:center}
 .meta .grow{flex:1;min-width:180px}.meta .grow input{flex:1}
-.meta input[type=text],.meta input[type=date],.meta input[type=time]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;outline:none;color-scheme:light dark}
+.meta input[type=text],.meta input[type=date],.meta input[type=time]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;outline:none;color-scheme:inherit}
 .meta input:focus{border-color:var(--accent)}
 .meta .chk{color:var(--text);cursor:pointer;font-weight:600}
 .meta .chk input{accent-color:var(--accent);width:16px;height:16px}
@@ -170,7 +222,7 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .tlrow label{display:flex;gap:6px;align-items:center}
 .tlrow select,.tlrow input[type=text]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit}
 .tlrow input[type=text]{flex:1;min-width:150px}
-.tlrow input[type=date]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;color-scheme:light dark}
+.tlrow input[type=date]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;color-scheme:inherit}
 .tldonel{display:flex;gap:6px;align-items:center;font-size:13px;margin-bottom:6px}
 .tllink{font-size:12.5px;color:var(--mute);margin:4px 0 0}
 .tllink a{color:var(--accent);cursor:pointer;text-decoration:underline}
@@ -181,8 +233,8 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
 .tag span.cn::before{content:none}
 .lbl a{float:right;text-transform:none;letter-spacing:0;font-weight:500;font-size:12px}
-.meta select,.ai select,.addrow select,.afilters select,.act select{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 6px;font:inherit;font-size:13px;outline:none;color-scheme:light dark;max-width:100%}
-.ai input[type=date],.act input[type=date],.addrow input[type=date],.ai input[type=time],.act input[type=time]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px;outline:none;color-scheme:light dark}
+.meta select,.ai select,.addrow select,.afilters select,.act select{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 6px;font:inherit;font-size:13px;outline:none;color-scheme:inherit;max-width:100%}
+.ai input[type=date],.act input[type=date],.addrow input[type=date],.ai input[type=time],.act input[type=time]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px;outline:none;color-scheme:inherit}
 .ai select{max-width:130px}
 .meta select{max-width:200px}
 .app.rail-off{--rw:46px}.app.list-off{--lw:46px}
@@ -210,6 +262,11 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .rt blockquote{margin:0 0 0 2em;padding:0;border:0}
 .rt mark{background:#ffe58a;color:#222;border-radius:2px;padding:0 1px}
 .rt a{color:var(--accent);text-decoration:underline;cursor:text}
+.rt table{border-collapse:collapse;margin:.5em 0;width:100%;table-layout:fixed;font-size:.95em}
+.rt td,.rt th{border:1px solid var(--line);padding:5px 9px;vertical-align:top;line-height:1.45;min-width:40px}
+.rt th{background:var(--hover);text-align:left;font-weight:600}
+.rt td:focus-within,.rt th:focus-within{background:color-mix(in srgb,var(--soft) 50%,transparent)}
+#tblbar{display:none;gap:4px;align-items:center;padding-left:6px;border-left:1px solid var(--line)}
 .rt hr{border:0;border-top:1px solid var(--line);margin:.8em 0}
 .rt code,.rt pre{font-family:Consolas,monospace;background:var(--hover);border-radius:4px;padding:0 4px}
 .rt.cknote{flex-basis:100%;width:calc(100% - 26px);margin:2px 0 6px 26px;min-height:70px;font:14px/1.5 "Segoe UI",system-ui,sans-serif;padding:10px}
@@ -283,6 +340,7 @@ dialog p{color:var(--mute);font-size:13px}
     <div id="cats"></div>
     <div class="lbl">Tags</div>
     <div id="tags"></div>
+    <div id="trashrow"></div>
     <div class="fileinfo" id="fileinfo"></div>
   </nav>
   <section class="list">
@@ -291,9 +349,10 @@ dialog p{color:var(--mute);font-size:13px}
       <input type="search" id="q" placeholder="Search everything…">
       <button class="new" id="newbtn" title="New item">+</button>
       <div class="menu" id="newmenu">
-        <button data-new="task">☐ Task</button>
+        <button data-new="task">☐ Action</button>
         <button data-new="note">✎ Note</button>
         <button data-new="meeting">◷ Meeting note</button>
+        <button data-act="quickadd">⚡ Quick add…</button>
       </div>
     </div>
     <div class="chips" id="chips"></div>
@@ -321,6 +380,8 @@ dialog p{color:var(--mute);font-size:13px}
       <select id="fmtblock" title="Text style"><option value="div">Normal text</option><option value="h1">Heading</option><option value="h2">Subheading</option><option value="h3">Small heading</option></select>
       <button data-cmd="link" title="Add a link (Ctrl+K)">🔗</button>
       <button data-cmd="hr" title="Divider line">―</button>
+      <button data-cmd="table" title="Insert a table">▦ Table</button>
+      <span id="tblbar"><button data-cmd="tbl-addrow" title="Add a row below">+ Row</button><button data-cmd="tbl-addcol" title="Add a column to the right">+ Col</button><button data-cmd="tbl-delrow" title="Delete this row">− Row</button><button data-cmd="tbl-delcol" title="Delete this column">− Col</button><button data-cmd="tbl-deltable" title="Delete the whole table" style="color:var(--red)">✕ Table</button></span>
       <button data-cmd="removeFormat" title="Clear formatting">✕ Clear</button>
     </div>
     <article class="detail" id="detail"></article>
@@ -344,6 +405,14 @@ dialog p{color:var(--mute);font-size:13px}
   <p id="tllink" class="tllink"></p>
   <div class="dfoot"><button data-act="tldel" style="color:var(--red)">Delete</button><span><button data-act="tlcancel">Cancel</button> <button class="pri" data-act="tlsave">Save</button></span></div>
 </dialog>
+<dialog id="qadlg">
+  <h3>⚡ Quick add</h3>
+  <p>Type it the way you'd say it, e.g. “call Sam Friday 3pm” or “timecards every other Friday”. Start with <b>note:</b> or <b>meeting:</b> to make one of those instead.</p>
+  <input type="text" id="qai" placeholder="What needs doing, and when?" autocomplete="off">
+  <div class="qapv" id="qapv2" style="margin:0 0 4px"></div>
+  <div class="dfoot"><span></span><span><button data-act="qacancel">Cancel</button> <button class="pri" data-act="qasave">Add</button></span></div>
+</dialog>
+<dialog id="kbdlg"><h3>⌨ Keyboard shortcuts &amp; tips</h3><p>Press <kbd>?</kbd> any time to open this. Shortcuts that are single keys work when you're not typing in a box.</p><div id="kbbody"></div><div class="dfoot"><span></span><button class="pri" data-act="kbclose">Close</button></div></dialog>
 <div id="toast"></div>
 <div id="status"></div>
 
@@ -370,10 +439,10 @@ function fmtDay(s){
 function fmtTime(t){ if(!t) return ''; let [h,m] = t.split(':').map(Number); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${pad(m)} ${ap}`; }
 
 /* ================= rich text (the Details / notes boxes) =================
-   Notes are stored as a small, safe subset of HTML (bold, italic, underline, strike, highlight, lists, headings, indent, links).
+   Notes are stored as a small, safe subset of HTML (bold, italic, underline, strike, highlight, lists, headings, indent, links, simple tables).
    Anything pasted in or read from the file goes through cleanHtml(), so nothing else (scripts, styles, images) can get in. */
 const RT_TAGS = {B:'b', STRONG:'b', I:'i', EM:'i', U:'u', S:'s', STRIKE:'s', DEL:'s', UL:'ul', OL:'ol', LI:'li', BR:'br', HR:'hr', P:'div', DIV:'div', H1:'h1', H2:'h2', H3:'h3', BLOCKQUOTE:'blockquote', MARK:'mark', CODE:'code', PRE:'pre'};
-const isBlank = h => !h || (!/<(?:li|hr)\b/i.test(h) && h.replace(/<[^>]*>/g, '').replace(/&nbsp;| /g, ' ').trim() === '');
+const isBlank = h => !h || (!/<(?:li|hr|table)\b/i.test(h) && h.replace(/<[^>]*>/g, '').replace(/&nbsp;| /g, ' ').trim() === '');
 function cleanHtml(html){
   if(!html) return '';
   const doc = new DOMParser().parseFromString('<!doctype html><body>' + html, 'text/html');
@@ -386,6 +455,11 @@ function cleanHtml(html){
       const href = (n.getAttribute('href') || '').trim();
       return /^(?:https?:|mailto:)/i.test(href) ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : inner;
     }
+    if(tag === 'TABLE') return `<table>${inner}</table>`;                    // simple tables only: rows and cells (no merged cells, widths or colours)
+    if(tag === 'TR') return `<tr>${inner}</tr>`;
+    if(tag === 'TD' || tag === 'TH') return `<${tag.toLowerCase()}>${inner || '<br>'}</${tag.toLowerCase()}>`;
+    if(['THEAD', 'TBODY', 'TFOOT'].includes(tag)) return inner;
+    if(['COLGROUP', 'COL', 'CAPTION'].includes(tag)) return '';
     const t = RT_TAGS[tag], st = n.style || {};
     if(t === 'br' || t === 'hr') return `<${t}>`;
     let out = inner;
@@ -415,11 +489,28 @@ function plainToHtml(s){
   }
   close(); return out.join('');
 }
+function htmlToPlain(h){                                 // a note as readable plain text: bullets and numbers kept, table cells tab-separated
+  if(!h) return '';
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + h, 'text/html');
+  const walk = (n, depth) => {
+    if(n.nodeType === 3) return n.nodeValue;
+    if(n.nodeType !== 1) return '';
+    const t = n.tagName, inner = () => Array.from(n.childNodes, c => walk(c, depth)).join('');
+    if(t === 'BR') return '\n';
+    if(t === 'HR') return '\n---\n';
+    if(t === 'UL' || t === 'OL'){ let k = 0; return '\n' + Array.from(n.children, li => { k++; return '  '.repeat(depth) + (t === 'OL' ? k + '. ' : '• ') + Array.from(li.childNodes, c => walk(c, depth + 1)).join('').replace(/\n+$/, ''); }).join('\n') + '\n'; }
+    if(t === 'TD' || t === 'TH') return inner().replace(/\s+$/, '') + '\t';
+    if(t === 'TR') return inner().replace(/\t$/, '') + '\n';
+    if(['DIV', 'P', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'PRE', 'TABLE'].includes(t)) return '\n' + inner() + '\n';
+    return inner();
+  };
+  return Array.from(doc.body.childNodes, c => walk(c, 0)).join('').replace(/\n{3,}/g, '\n\n').trim();
+}
 const textMemo = new Map();
 function htmlText(h){                                    // plain text of a note, for search and the list preview
   if(!h) return '';
   if(textMemo.has(h)) return textMemo.get(h);
-  const doc = new DOMParser().parseFromString('<!doctype html><body>' + h.replace(/<\/(?:div|li|h[1-3]|p|blockquote|pre)>|<br\s*\/?>|<hr\s*\/?>/gi, m => m + '\n'), 'text/html');
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + h.replace(/<\/(?:td|th)>/gi, m => m + ' ').replace(/<\/(?:div|li|h[1-3]|p|blockquote|pre|tr)>|<br\s*\/?>|<hr\s*\/?>/gi, m => m + '\n'), 'text/html');
   const t = doc.body.textContent; if(textMemo.size > 800) textMemo.clear(); textMemo.set(h, t); return t;
 }
 
@@ -622,19 +713,22 @@ function completeToggle(o, item, checked){
 
 /* ================= data ================= */
 const DEFAULT_CATS = () => [{id:'work', name:'Work', color:'#3b6ea5'}, {id:'personal', name:'Personal', color:'#4f8a5b'}, {id:'admin', name:'Admin', color:'#c2862d'}];
-const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[]});
+const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[], trash:[]});
+const TRASH_DAYS = 30;
 let db = BLANK();
 const strDates = a => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x)))].sort() : [];
 function normalize(d){
   const rich = d.bodyFormat === 'html', conv = s => rich ? cleanHtml(s || '') : plainToHtml(s || '');      // files from before formatting hold plain text
   d.categories = Array.isArray(d.categories) ? d.categories.map(c => ({id:c.id || uid(), name:c.name || 'Untitled', color:c.color || '#888888'})) : DEFAULT_CATS();
-  d.items = (d.items || []).map(i => ({
+  const item = i => ({
     id: i.id || uid(), type: i.type === 'task' ? 'task' : 'note',      // older files had a separate "meeting" type: meetings are now just notes that have a date
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
-    done: !!i.done, checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
+    done: !!i.done, pinned: !!i.pinned, checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
     created: i.created || now(), updated: i.updated || now()
-  }));
+  });
+  d.items = (d.items || []).map(item);
+  d.trash = (Array.isArray(d.trash) ? d.trash : []).filter(t => t && t.item && Date.now() - Date.parse(t.deleted) < TRASH_DAYS * 864e5).map(t => ({item:item(t.item), deleted:t.deleted}));      // deleted items wait here for 30 days
   d.plan = (Array.isArray(d.plan) ? d.plan : []).filter(b => b && /^\d{4}-\d\d-\d\d$/.test(b.start || '')).map(b => {      // Timeline blocks: when YOU plan something to happen (separate from due dates)
     let s = b.start, e = /^\d{4}-\d\d-\d\d$/.test(b.end || '') ? b.end : b.start; if(e < s) [s, e] = [e, s];
     return {id:b.id || uid(), title:b.title || '', desc:typeof b.desc === 'string' ? b.desc : '', start:s, end:e, cat:b.cat || '', done:!!b.done, repeat:cleanRepeat(b.repeat), until:/^\d{4}-\d\d-\d\d$/.test(b.until || '') ? b.until : '', doneOn:strDates(b.doneOn), skip:strDates(b.skip), link:b.link && b.link.item ? {item:b.link.item, ck:b.link.ck || ''} : null, created:b.created || now(), updated:b.updated || now()};
@@ -648,21 +742,25 @@ const catDot = id => { const c = catById(id); return c ? `<i class="cdot" style=
 const catOptions = (sel, blank) => `<option value="">${esc(blank)}</option>` + db.categories.map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 function welcomeNote(){
   return {id:uid(), type:'note', title:'Welcome to your notebook', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[],
-    body:plainToHtml('Everything here saves automatically to the JSON file you choose.\nIf saving ever stops, a red bar appears at the top telling you why.\n\n• Use the + button to add a task, note or meeting note. A meeting is just a note with a date and attendees.\n• Notes can have action items, each with its own due date, category and notes.\n• The Actions tab collects every task and action item from everywhere in one list.\n• The Timeline tab is a planning calendar: drag across days to make a block, stretch it over weeks, and drag tasks in from “Not planned yet”. Blocks are separate from due dates.\n• Type things like “send SOW by Friday 3pm” or “weekly report every Monday” and the date fills itself in (with Undo). Recurring actions roll to their next date when you tick them off.\n• Format notes with the toolbar above them: bold, underline, bullets, numbered lists, headings. Tab indents, and typing “- ” or “1. ” starts a list.\n• The « buttons hide the sidebars (Ctrl+\\ hides the left one).\n• Categories (Edit in the sidebar) group things; tags are free-form, e.g. acme, q4-planning.\n\nDelete this note whenever you like.'),
+    body:plainToHtml('Everything here saves automatically to the JSON file you choose.\nIf saving ever stops, a red bar appears at the top telling you why.\n\n• Use the + button to add an action, note or meeting note. A meeting is just a note with a date and attendees.\n• Notes can have action items, each with its own due date, category and notes.\n• An action is anything you need to do. It can stand on its own, or sit inside a note or meeting as an action item. The Actions tab collects all of them in one list.\n• The Timeline tab is a planning calendar: drag across days to make a block, stretch it over weeks, and drag actions in from “Not planned yet”. Blocks are separate from due dates.\n• Type things like “send SOW by Friday 3pm” or “weekly report every Monday” and the date fills itself in (with Undo). Recurring actions roll to their next date when you tick them off.\n• Format notes with the toolbar above them: bold, underline, bullets, numbered lists, headings. Tab indents, and typing “- ” or “1. ” starts a list.\n• The « buttons hide the sidebars (Ctrl+\\ hides the left one).\n• Categories (Edit in the sidebar) group things; tags are free-form, e.g. acme, q4-planning.\n\nDelete this note whenever you like.'),
     created:now(), updated:now()};
 }
 const byId = id => db.items.find(i => i.id === id);
 
 /* ================= UI state ================= */
 let selCk = '';                    // when you open an action item from the list, which one (so it can be highlighted in its note)
-let selId = null, filter = 'all', search = '', sortMode = 'updated', hideDone = false;
+let selId = null, filter = 'today', search = '', sortMode = 'updated', hideDone = false;
 let actGroup = 'due', actCat = '', actDone = false, actTimer = null, autoDates = true, railOff = false, listOff = false;
+let theme = 'auto';
 let tlWork = false, tlCat = '', tlHideDone = false, tlLayer = 'blocks';        // tlLayer: 'blocks' (your plan only), 'due' (tasks and actions on their due dates), or 'both'                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
 let chipsOff = {all:[], note:[]}, listCat = '', datedOnly = false;     // list filter bar: which type chips are switched off (remembered), category, dated-only
 const openNotes = new Set();       // ids of actions whose notes box is expanded (not saved)
-try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' ? 'note' : (u.filter || 'all'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks';
-  if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['task','note','meeting','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
-function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer})); } catch {} }
+try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto';
+  if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['note','meeting','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
+function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer, theme})); } catch {} }
+
+function applyTheme(){ if(theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme); }
+applyTheme();
 
 /* ================= file saving ================= */
 const SUPPORTED = typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
@@ -717,6 +815,9 @@ function mergeDb(fileDb, local){
   const plan = new Map(fileDb.plan.map(b => [b.id, b]));
   for(const b of local.plan) { const o = plan.get(b.id); if(!o || (b.updated || '') > (o.updated || '')) plan.set(b.id, b); }
   fileDb.plan = [...plan.values()];
+  const tr = new Map(fileDb.trash.map(t => [t.item.id, t]));
+  for(const t of local.trash || []) if(!tr.has(t.item.id)) tr.set(t.item.id, t);
+  fileDb.trash = [...tr.values()].filter(t => !fileDb.items.some(i => i.id === t.item.id));
   return fileDb;
 }
 
@@ -766,6 +867,44 @@ async function reconnect(){
   } catch(e) { writeError = e.message; }
   renderAll();
 }
+/* Refresh: pull in whatever changed in the file since this page last looked (your own unsaved edits are merged in, never dropped),
+   and, on the installed/hosted version, check whether a newer copy of the app itself has been published. */
+async function refreshData(){
+  if(fileState === 'needs-permission'){ await reconnect(); return fileState === 'ready' ? 'updated' : 'blocked'; }
+  if(fileState !== 'ready' || !fileHandle) return 'nofile';
+  const f = await fileHandle.getFile();
+  if(f.lastModified === lastModified && !externalChange) return 'same';
+  let fd = null; try { fd = JSON.parse(await f.text()); } catch {}
+  if(!fd || !Array.isArray(fd.items)) return 'bad';
+  normalize(fd); lastModified = f.lastModified; externalChange = false;
+  if(dirty){ db = mergeDb(fd, db); touch(); } else { db = fd; cacheWrite(); }
+  fixSelection(); renderAll();
+  return 'updated';
+}
+async function latestBuild(){ try { const t = await (await fetch('sw.js', {cache:'reload'})).text(), m = /notebook-(\d+)/.exec(t); return m ? m[1] : ''; } catch { return ''; } }
+async function updateApp(){                                          // fetch the newest copy of the page past the browser's cache, then reload
+  try { await fetch(location.pathname, {cache:'reload'}); const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); } catch {}
+  if(dirty) await flush();
+  location.reload();
+}
+let refreshing = false;
+async function refreshAll(){
+  if(refreshing) return; refreshing = true;
+  const link = document.querySelector('[data-act=refresh]'); if(link) link.textContent = '↻ Refreshing…';
+  let msg = '';
+  try {
+    const r = await refreshData();
+    if(dirty && fileState === 'ready') await flush();
+    msg = {updated:'Loaded the latest from ' + (fileHandle ? fileHandle.name : 'the file') + '.', same:'Already up to date.', nofile:'No save file is connected, so there is nothing to reload.', bad:'The file couldn\'t be read, so nothing was changed.', blocked:'Brave still needs your OK to open the file.'}[r];
+  } catch(e) { msg = 'Couldn\'t refresh: ' + ((e && e.message) || e); }
+  refreshing = false; renderFileInfo();
+  if(window.NB_BUILD){
+    const latest = await latestBuild();
+    if(latest && latest !== window.NB_BUILD){ toast('A newer version of the app is available.', updateApp, 'Update now'); return; }
+    if(latest) msg += ' The app is up to date.';
+  }
+  toast(msg);
+}
 async function reloadFromDisk(){ try { await loadFromFile('force'); fixSelection(); } catch(e) { writeError = e.message; } renderAll(); }
 async function keepMine(){ try { lastModified = (await fileHandle.getFile()).lastModified; } catch {} externalChange = false; touch(); renderBanner(); }
 function downloadBackup(){
@@ -795,10 +934,10 @@ async function init(){
 
 /* ================= rendering ================= */
 /* ---- the list's shared filter bar: type chips, category, sort ---- */
-const typeOf = i => i.type === 'task' ? 'task' : isMeeting(i) ? 'meeting' : 'note';          // chips: task / plain note / meeting
+const typeOf = i => i.type === 'task' ? 'action' : isMeeting(i) ? 'meeting' : 'note';          // chips: action / plain note / meeting
 const itemDate = i => i.type === 'task' ? i.due : i.date;
 /* Due-date groups, shared by the main list and the Actions tab. Weeks run Monday to Sunday. */
-const BUCKETS = ['Past due', 'Today', 'Tomorrow', 'Later this week', 'Next week', 'Later', 'No date', 'Past', 'Completed'];
+const BUCKETS = ['Pinned', 'Past due', 'Today', 'Tomorrow', 'Later this week', 'Next week', 'Later', 'No date', 'Past', 'Completed'];
 function dueBucket(dateStr, done, isAction, from = new Date()){
   if(done) return 'Completed';
   if(!dateStr) return 'No date';
@@ -815,12 +954,13 @@ const eTime = e => e.kind === 'ck' ? e.ck.time : e.item.time;
 const eDone = e => e.kind === 'ck' ? e.ck.done : (e.item.type === 'task' && e.item.done);
 const eType = e => e.kind === 'ck' ? 'action' : typeOf(e.item);
 function bucketOf(e){
+  if(e.kind === 'item' && e.item.pinned) return 'Pinned';
   return dueBucket(eDate(e), eDone(e), e.kind === 'ck' || e.item.type === 'task');
 }
 const chipView = () => filter === 'note' ? 'note' : 'all';          // chip choices are remembered separately for "Notes & meetings" and for everything else
 function filteredItems(opts = {}){
   let a = db.items.slice();
-  if(['task','note'].includes(filter)) a = a.filter(i => i.type === filter);
+  if(['task','note'].includes(filter) && !search.trim()) a = a.filter(i => i.type === filter);          // typing in the search box looks through everything
   else if(filter.startsWith('tag:')) a = a.filter(i => i.tags.includes(filter.slice(4)));
   else if(filter.startsWith('cat:')) a = a.filter(i => i.category === filter.slice(4));
   if(listCat === 'none') a = a.filter(i => !i.category); else if(listCat && !filter.startsWith('cat:')) a = a.filter(i => i.category === listCat);
@@ -832,9 +972,9 @@ function filteredItems(opts = {}){
   if(!opts.skipChips && filter !== 'task' && off.length) a = a.filter(i => !off.includes(typeOf(i)));
   return a;
 }
-/* action items (checklist lines) show up in Everything, and in tag / category views; the Tasks and Notes & meetings tabs stay about items */
+/* action items (checklist lines) show up in tag / category views and in search results; the Tasks and Notes & meetings tabs stay about items */
 function filteredCks(opts = {}){
-  if(!(filter === 'all' || filter.startsWith('tag:') || filter.startsWith('cat:'))) return [];
+  if(!(filter === 'all' || filter.startsWith('tag:') || filter.startsWith('cat:') || search.trim())) return [];
   const off = chipsOff[chipView()] || [];
   if(!opts.skipChips && off.includes('action')) return [];
   const q = search.trim().toLowerCase(), out = [];
@@ -864,6 +1004,8 @@ function listEntries(opts = {}){
       const kx = key(x), ky = key(y);
       if(kx && ky && kx !== ky) return BUCKETS[bx] === 'Past' ? (kx < ky ? 1 : -1) : (kx < ky ? -1 : 1);     // past items: most recent first
     } else {
+      const px = x.kind === 'item' && x.item.pinned, py = y.kind === 'item' && y.item.pinned;
+      if(px !== py) return px ? -1 : 1;
       const dx = eDone(x), dy = eDone(y);
       if(dx !== dy) return dx ? 1 : -1;
     }
@@ -878,7 +1020,7 @@ function renderFilterBar(){
   chips.style.display = show ? '' : 'none';
   if(show){
     const view = chipView(), off = chipsOff[view] || [], base = listEntries({skipChips:true});
-    const defs = [['task', '☐ Tasks'], ['action', '⚑ Actions'], ['note', '✎ Notes'], ['meeting', '◷ Meetings']].filter(([k]) => !(view === 'note' && (k === 'task' || k === 'action')));
+    const defs = [['action', '⚑ Actions'], ['note', '✎ Notes'], ['meeting', '◷ Meetings']].filter(([k]) => !(view === 'note' && k === 'action'));
     chips.innerHTML = defs.map(([k, l]) => `<button class="chip ${off.includes(k) ? '' : 'on'}" data-chip="${k}" aria-pressed="${!off.includes(k)}" title="${off.includes(k) ? 'Show' : 'Hide'} ${l.slice(2).toLowerCase()}">${l} <small>${base.filter(e => eType(e) === k).length}</small></button>`).join('');
   }
   if(listCat && listCat !== 'none' && !catById(listCat)) listCat = '';
@@ -916,16 +1058,16 @@ function renderFileInfo(){
   const el = $('#fileinfo'), ok = fileState === 'ready' && !writeError;
   el.className = 'fileinfo' + (ok || fileState === 'loading' ? '' : ' bad');
   el.innerHTML = (fileHandle ? `${ok ? 'Autosaving to' : 'Not saving to'}<br><b>${esc(fileHandle.name)}</b><br>` : '<b>No save file chosen</b><br>')
-    + `<a data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file' : 'Choose file'}</a> · <a data-act="backup">Backup</a>`;
+    + `<a data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file' : 'Choose file'}</a> · <a data-act="backup">Backup</a> · <a data-act="refresh" title="Reload the file and check for a newer version of the app">↻ Refresh</a><br><a data-act="theme" title="Switch between automatic, light and dark">◐ Theme: ${{auto:'Auto', light:'Light', dark:'Dark'}[theme]}</a> · <a data-act="shortcuts" title="Keyboard shortcuts (press ?)">⌨ Shortcuts</a>`;
 }
 function renderRail(){
-  const open = db.items.filter(i => i.type === 'task' && !i.done).length;
   const cnt = t => db.items.filter(i => i.type === t).length;
   const openActions = allActions().filter(x => !x.done && x.text.trim()).length;
-  const everything = db.items.length + db.items.reduce((n, i) => n + i.checklist.filter(c => c.text.trim()).length, 0);
   const planned = db.plan.filter(b => b.repeat ? !b.until || b.until >= todayStr() : !b.done && b.end >= todayStr()).length;
-  const F = [['all','Everything',everything],['actions','⚑ Actions',openActions],['timeline','▦ Timeline',planned],['task','☐ Tasks',open],['note','✎ Notes & meetings',cnt('note')]];
-  $('#filters').innerHTML = F.map(([k,l,n]) => `<div class="f ${filter===k?'on':''}" data-filter="${k}">${l} <small>${n}</small></div>`).join('');
+  const T0 = todayStr(), dueNow = allActions().filter(x => !x.done && x.text.trim() && x.due && x.due <= T0), overdueN = dueNow.filter(x => x.due < T0).length;
+  const F = [['today','☀ Today',dueNow.length,overdueN ? 'hot' : ''],['actions','⚑ Actions',openActions],['timeline','▦ Timeline',planned],['note','✎ Notes & meetings',cnt('note')]];
+  $('#filters').innerHTML = F.map(([k,l,n,cls]) => `<div class="f ${filter === k || (k === 'actions' && filter === 'task') ? 'on' : ''}" data-filter="${k}">${l} <small class="${cls || ''}">${n}</small></div>`).join('');
+  $('#trashrow').innerHTML = `<div class="f trashlink ${filter === 'trash' ? 'on' : ''}" data-filter="trash" title="Deleted items are kept for ${TRASH_DAYS} days (press 5)">🗑 Trash <small>${db.trash.length || ''}</small></div>`;
   const tags = {}; db.items.forEach(i => i.tags.forEach(t => tags[t] = (tags[t] || 0) + 1));
   $('#cats').innerHTML = db.categories.length ? db.categories.map(c => `<div class="tag ${filter==='cat:'+c.id?'on':''}" data-filter="cat:${esc(c.id)}"><span class="cn"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</span><small>${db.items.filter(i => i.category === c.id).length}</small></div>`).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>No categories</small></div>';
   const names = Object.keys(tags).sort();
@@ -953,25 +1095,26 @@ function renderList(){
   for(const e of v){
     if(sortMode === 'date'){                      // date sort is grouped (see BUCKETS)
       const b = bucketOf(e);
-      if(b !== last){ html += `<div class="gh2 ${b === 'Past due' ? 'late' : ''}">${b} <small>${counts[b]}</small></div>`; last = b; }
+      if(b !== last){ html += `<div class="gh2 ${b === 'Past due' ? 'late' : b === 'Today' ? 'today' : ''}">${b} <small>${counts[b]}</small></div>`; last = b; }
     }
     const i = e.item;
     if(e.kind === 'ck'){                          // an action item: tick it off here, click to jump to the note it lives in
       const c = e.ck, cat = c.cat || i.category;
       const w = c.done ? {t:'Done'} : !c.due ? {t:''} : dayDiff(c.due) < 0 ? {t:'Past due', cls:'late'} : {t:[fmtDay(c.due), fmtTime(c.time)].filter(Boolean).join(' ')};
-      html += `<div class="it ck ${selCk === c.id && selId === i.id ? 'on' : ''} ${c.done ? 'done' : ''}" data-id="${i.id}" data-ck="${c.id}">
+      html += `<div class="it ck ${selCk === c.id && selId === i.id ? 'on' : ''} ${c.done ? 'done' : ''} ${!c.done && c.due && c.due < todayStr() ? 'late' : !c.done && c.due === todayStr() ? 'todayrow' : ''}" data-id="${i.id}" data-ck="${c.id}">
       <span class="ic"><input type="checkbox" class="lc" ${c.done ? 'checked' : ''} aria-label="Done"></span>
       <div><b>${catDot(cat)}${esc(c.text)}</b><small>⚑ ${esc(i.title || 'Untitled')}${c.repeat ? ' · ' + esc(describeRepeat(c.repeat)) : ''}</small></div>
       <time class="${w.cls || ''}">${esc(w.t)}</time></div>`;
       continue;
     }
-    const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk));
-    html += `<div class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''}" data-id="${i.id}">
+    const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk)), dd = itemDate(i), openT = !(i.type === 'task' && i.done);
+    html += `<div class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
       <span class="ic">${i.type==='task' ? `<input type="checkbox" class="lc" ${i.done?'checked':''} aria-label="Done">` : isMeeting(i) ? '◷' : '✎'}</span>
-      <div><b>${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
+      <div><b>${i.pinned ? '📌 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
       <time class="${w.cls||''}">${esc(w.t)}</time></div>`;
   }
   const filtered = (chipsOff[chipView()] || []).length || listCat || hideDone || (sortMode === 'date' && datedOnly);
+  if(filter === 'task') html = `<div class="gh2"><a data-filter="actions">‹ Back to all actions</a></div>` + html;
   $('#items').innerHTML = v.length ? html
     : `<div class="empty">${search ? 'Nothing matches your search.' : filtered && db.items.length ? 'Nothing matches these filters.<br><a data-act="resetfilters">Reset filters</a>' : 'Nothing here yet.<br>Use + to add something.'}</div>`;
 }
@@ -997,7 +1140,7 @@ function setAction(a, f, v){
 function groupActions(list){
   const map = new Map(), add = (k, l, x) => { if(!map.has(k)) map.set(k, {k, l, rows:[]}); map.get(k).rows.push(x); };
   for(const x of list){
-    if(actGroup === 'source') add(x.kind === 'task' ? '~standalone' : x.item.id, x.kind === 'task' ? 'Standalone tasks' : (x.item.title || 'Untitled'), x);
+    if(actGroup === 'source') add(x.kind === 'task' ? '~standalone' : x.item.id, x.kind === 'task' ? 'Standalone actions' : (x.item.title || 'Untitled'), x);
     else if(actGroup === 'category'){ const c = catById(x.cat); add(c ? c.id : '~none', c ? c.name : 'No category', x); }
     else { const b = dueBucket(x.due, x.done, true); add(b, b, x); }
   }
@@ -1012,8 +1155,8 @@ function groupActions(list){
 function actRow(x){
   const late = !x.done && x.due && dayDiff(x.due) < 0, c = catById(x.cat), inh = x.kind === 'ck' ? catById(x.item.category) : null;
   const blank = inh ? inh.name + ' (inherited)' : 'No category';
-  const src = x.kind === 'task' ? '☐ Standalone task' : `${x.item.type === 'task' ? '☐' : isMeeting(x.item) ? '◷' : '✎'} ${esc(x.item.title || 'Untitled')}`;
-  return `<div class="act ${x.done?'done':''}" data-key="${x.key}">
+  const src = x.kind === 'task' ? '☐ Standalone action' : `${x.item.type === 'task' ? '☐' : isMeeting(x.item) ? '◷' : '✎'} ${esc(x.item.title || 'Untitled')}`;
+  return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''}" data-key="${x.key}">
     <input type="checkbox" data-ax="done" ${x.done?'checked':''}>
     <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline"><a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a></div></div>
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
@@ -1032,7 +1175,7 @@ function renderActions(){
   $('#detail').innerHTML = `
     <div class="type">Actions</div>
     <h1 class="ptitle">Everything to do</h1>
-    <p class="psub">Every task, plus every action item from your notes and meetings. ${open} open.</p>
+    <p class="psub">Every action: the standalone ones, plus the action items inside your notes and meetings. ${open} open.</p>
     <div class="addrow"><input type="text" id="anew" placeholder="Add an action…"><input type="date" id="adue" title="Due date"><select id="acat">${catOptions('', 'No category')}</select><button data-act="addaction">Add</button></div>
     <div class="afilters">
       <label>Group by <select id="agroup">${opt('due','Due date',actGroup)}${opt('source','Note / meeting',actGroup)}${opt('category','Category',actGroup)}</select></label>
@@ -1041,7 +1184,7 @@ function renderActions(){
       <label title="When an action has no date, look for things like “by Friday 3pm” or “in 3 days” in its text"><input type="checkbox" id="aauto" ${autoDates?'checked':''}> Auto-detect dates</label>
       <a data-act="scandates" style="margin-left:auto;cursor:pointer;color:var(--accent)">Find dates in my existing actions</a>
     </div>
-    ${groups.length ? groups.map(g => `<h4 class="gh ${g.k==='Past due'&&actGroup==='due'?'late':''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : '<div class="empty">Nothing to do here.</div>'}`;
+    ${groups.length ? groups.map(g => `<h4 class="gh ${g.k==='Past due'&&actGroup==='due'?'late':g.k==='Today'&&actGroup==='due'?'today':''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : '<div class="empty">Nothing to do here.</div>'}`;
   $('#detail').querySelectorAll('.anote').forEach(grow);
 }
 function addAction(){
@@ -1065,9 +1208,9 @@ function addAction(){
 
 /* ---- auto-detect dates + undo toast ---- */
 let toastUndo = null, toastTimer = null;
-function toast(msg, undo){
+function toast(msg, undo, label = 'Undo'){
   toastUndo = undo || null; const el = $('#toast');
-  el.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button data-act="toastundo">Undo</button>' : ''}<button data-act="toastx" aria-label="Dismiss">×</button>`;
+  el.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button data-act="toastundo">${esc(label)}</button>` : ''}<button data-act="toastx" aria-label="Dismiss">×</button>`;
   el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 9000);
 }
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
@@ -1236,7 +1379,7 @@ function renderTimeline(){
       <div class="seg"><button data-act="tlweek" class="${tlView === 'week' ? 'on' : ''}">Week</button><button data-act="tlmonth" class="${tlView === 'month' ? 'on' : ''}">Month</button><button data-act="tlweeks" class="${tlView === 'weeks' ? 'on' : ''}">8 weeks</button></div>
       <button data-act="tlwork" class="${tlWork ? 'on' : ''}" title="Hide Saturday and Sunday">Mon–Fri</button>
       ${tlLayer === 'due' ? '' : '<button class="tladd" data-act="tlnew">+ New block</button>'}</div>
-    <p class="psub">${tlLayer === 'due' ? 'Your tasks and action items on the day they\'re due. Click one to open it, tick its circle to finish it, or drag it to another day to change its due date. Repeating ones show their next dates as dashed outlines.' : 'Plan when things happen. Drag across days to make a block, drag a block to move it, and drag either end to stretch it. Blocks don\'t change due dates.' + (tlLayer === 'both' ? ' Tasks and actions show underneath, on their due dates.' : '')}</p>
+    <p class="psub">${tlLayer === 'due' ? 'Your actions on the day they\'re due. Click one to open it, tick its circle to finish it, or drag it to another day to change its due date. Repeating ones show their next dates as dashed outlines.' : 'Plan when things happen. Drag across days to make a block, drag a block to move it, and drag either end to stretch it. Blocks don\'t change due dates.' + (tlLayer === 'both' ? ' Tasks and actions show underneath, on their due dates.' : '')}</p>
     <div class="chips tlfilter" style="padding:0 0 12px"><div class="seg" title="What the calendar shows"><button data-act="tllayer" data-id="blocks" class="${tlLayer === 'blocks' ? 'on' : ''}">Plan</button><button data-act="tllayer" data-id="due" class="${tlLayer === 'due' ? 'on' : ''}">Due dates</button><button data-act="tllayer" data-id="both" class="${tlLayer === 'both' ? 'on' : ''}">Both</button></div><button class="chip cchip ${!tlCat ? 'on' : ''}" data-act="tlcat" data-id="">All</button>${db.categories.map(c => `<button class="chip cchip ${tlCat === c.id ? 'on' : ''}" data-act="tlcat" data-id="${esc(c.id)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('')}<button class="chip cchip tlhd ${tlHideDone ? 'on' : ''}" data-act="tlhidedone">Hide done</button></div>
     <div class="tlmain"><div id="tlgrid"></div>${tlLayer === 'due' ? '' : '<aside id="tltray"></aside>'}</div>`;
   renderTlGrid(); renderTlTray();
@@ -1357,10 +1500,11 @@ function skipOccurrence(){
   tlEdit = null; $('#tldlg').close(); touch(); renderRail(); renderTlGrid();
   toast(`Skipped “${b.title || 'Untitled'}” on ${fmtDay(d)}.`, () => { b.skip = b.skip.filter(y => y !== d); b.updated = now(); touch(); renderTlGrid(); });
 }
+const viewFor = i => i.type === 'task' ? 'task' : 'note';           // which list an item lives in
 function openActionByKey(key){
   const t = allActions().find(a => a.key === key); if(!t) return;
   if($('#tldlg').open) $('#tldlg').close();
-  filter = 'all'; selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
+  filter = viewFor(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
   if(selCk){ const ai = document.querySelector(`#detail [data-ci="${selCk}"]`), r = ai && ai.closest('.ai'); if(r){ r.classList.add('flash'); r.scrollIntoView({block:'center'}); } }
 }
 function openLinkedFromBlock(){ const t = linkTarget(tlEdit.b); if(t) openActionByKey(t.key); }
@@ -1374,8 +1518,10 @@ function renderDetail(){
   $('#detail').classList.toggle('tl', filter === 'timeline');
   if(filter === 'timeline'){ renderTimeline(); return; }
   if(filter === 'actions'){ renderActions(); return; }
+  if(filter === 'today'){ renderToday(); return; }
+  if(filter === 'trash'){ renderTrash(); return; }
   const el = $('#detail'), i = byId(selId);
-  if(!i){ el.innerHTML = `<div class="welcome"><p style="font-size:18px;margin-bottom:12px">Nothing selected</p><button data-new="task">+ Task</button><button data-new="note">+ Note</button><button data-new="meeting">+ Meeting note</button></div>`; return; }
+  if(!i){ el.innerHTML = `<div class="welcome"><p style="font-size:18px;margin-bottom:12px">Nothing selected</p><button data-new="task">+ Action</button><button data-new="note">+ Note</button><button data-new="meeting">+ Meeting note</button></div>`; return; }
   const fld = (f, label, type = 'text', extra = '') => `<label>${label} <input type="${type}" data-f="${f}" value="${esc(i[f])}" ${extra}></label>`;
   let meta = '';
   if(i.type === 'task') meta = fld('due', 'Due', 'date') + fld('time', 'Time', 'time') + `<label>Repeat <select data-rp="item">${repeatOptions(i.repeat)}</select></label><label class="chk"><input type="checkbox" data-f="done" ${i.done?'checked':''}> Done</label>`;
@@ -1384,15 +1530,15 @@ function renderDetail(){
   meta += `<label class="grow">Tags <input type="text" data-f="tags" value="${esc(i.tags.join(', '))}" placeholder="acme, q4-planning"></label>`;
   const bodyLabel = i.type === 'task' ? 'Details' : isMeeting(i) ? 'Agenda & notes' : 'Notes';
   el.innerHTML = `
-    <div class="type">${i.type === 'task' ? 'Task' : isMeeting(i) ? 'Meeting' : 'Note'}</div>
+    <div class="type">${i.type === 'task' ? 'Action' : isMeeting(i) ? 'Meeting' : 'Note'}</div>
     <textarea class="title" rows="1" data-f="title" placeholder="Untitled">${esc(i.title)}</textarea>
     <div class="meta">${meta}</div>
     <h4>${bodyLabel}</h4>
     <div class="rt ${i.type==='note'?'big':''}" contenteditable="true" spellcheck="true" data-f="body" data-ph="Start typing…" ${isBlank(i.body)?'data-empty':''}>${i.body}</div>
-    <h4>${i.type === 'note' ? 'Action items' : 'Checklist'}</h4>
+    <h4>Action items</h4>
     <div id="cklist">${ckRows(i)}</div>
     <div class="ai add"><input type="checkbox" disabled><input type="text" id="newck" placeholder="Add an item and press Enter…"></div>
-    <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><button data-act="delete">Delete ${i.type}</button></div>`;
+    <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns"><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
 }
 function grow(t){
   if(!t || t.isContentEditable) return;                  // rich editors size themselves
@@ -1400,9 +1546,10 @@ function grow(t){
   const min = t.classList.contains('big') ? 320 : /cknote|anote/.test(t.className) ? 70 : 150;
   t.style.height = Math.max(t.scrollHeight + 2, min) + 'px';
 }
+const FULL_PAGES = ['actions', 'timeline', 'today', 'trash'];          // pages that use the whole width instead of list + detail
 function applyMode(){
   const app = document.querySelector('.app');
-  app.classList.toggle('actions-mode', filter === 'actions' || filter === 'timeline'); app.classList.toggle('rail-off', railOff); app.classList.toggle('list-off', listOff);
+  app.classList.toggle('actions-mode', FULL_PAGES.includes(filter)); app.classList.toggle('rail-off', railOff); app.classList.toggle('list-off', listOff);
   const r = document.querySelector('[data-act=togglerail]'), l = document.querySelector('[data-act=togglelist]');
   r.textContent = railOff ? '»' : '«'; r.title = railOff ? 'Show sidebar (Ctrl+\\)' : 'Hide sidebar (Ctrl+\\)';
   l.textContent = listOff ? '»' : '«'; l.title = listOff ? 'Show the list' : 'Hide the list';
@@ -1420,19 +1567,315 @@ function newItem(kind){                      // kind: 'task', 'note' or 'meeting
   const type = kind === 'task' ? 'task' : 'note';
   const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: kind === 'meeting' ? todayStr() : '', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   db.items.push(i); selId = i.id; search = '';
-  if(['task','note'].includes(filter) && filter !== type) filter = 'all';
+  if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter)) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
 }
-function delItem(){
-  const i = byId(selId); if(!i) return;
-  if(!confirm(`Delete “${i.title || 'Untitled'}”? This can’t be undone.`)) return;
-  const v = visible(), at = v.findIndex(x => x.id === selId);
-  db.items = db.items.filter(x => x !== i);
-  db.plan.forEach(b => { if(b.link && b.link.item === i.id) b.link = null; });                 // planned blocks stay, just unlinked
-  const n = visible(); selId = n.length ? n[Math.min(at, n.length - 1)].id : null;
-  touch(); renderAll();
+function delItem(){ const i = byId(selId); if(i) deleteItemUndo(i); }
+/* ---- right-click menu on the list ---- */
+function itemAsText(i){
+  const L = [i.title || 'Untitled'], meta = [];
+  if(i.type === 'task'){ if(i.due) meta.push('Due ' + fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.repeat) meta.push(describeRepeat(i.repeat)); if(i.done) meta.push('Done'); }
+  else { if(i.date) meta.push(fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.attendees) meta.push('With ' + i.attendees); }
+  const c = catById(i.category); if(c) meta.push(c.name); if(i.tags.length) meta.push(i.tags.map(t => '#' + t).join(' '));
+  if(meta.length) L.push(meta.join(' · '));
+  const body = htmlToPlain(i.body); if(body) L.push('', body);
+  const cks = i.checklist.filter(k => k.text.trim());
+  if(cks.length) L.push('', 'Action items:', ...cks.map(k => `${k.done ? '[x]' : '[ ]'} ${k.text}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`));
+  return L.join('\n');
 }
+const ckAsText = (c, i) => [c.text, [c.due && 'Due ' + fmtDay(c.due) + (c.time ? ' ' + fmtTime(c.time) : ''), c.repeat && describeRepeat(c.repeat), 'From: ' + (i.title || 'Untitled')].filter(Boolean).join(' · '), htmlToPlain(c.note)].filter(Boolean).join('\n');
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); }
+  catch { const ta = Object.assign(document.createElement('textarea'), {value:t}); ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch {} ta.remove(); }
+  toast('Copied to the clipboard.');
+}
+function dupItem(i){
+  const n = JSON.parse(JSON.stringify(i)); n.id = uid(); n.title = (i.title || 'Untitled') + ' (copy)'; n.done = false; n.created = n.updated = now();
+  n.checklist.forEach(c => { c.id = uid(); c.done = false; });
+  db.items.splice(db.items.indexOf(i) + 1, 0, n); selId = n.id; selCk = ''; touch(); renderAll();
+  toast(`Duplicated “${i.title || 'Untitled'}”.`, () => { db.items = db.items.filter(x => x !== n); selId = i.id; touch(); renderAll(); });
+}
+function dupCk(i, c){
+  const n = Object.assign({}, c, {id:uid(), done:false, repeat: c.repeat ? Object.assign({}, c.repeat, {days:[...c.repeat.days]}) : null});
+  i.checklist.splice(i.checklist.indexOf(c) + 1, 0, n); i.updated = now(); touch(); renderAll();
+  toast(`Duplicated the action.`, () => { i.checklist = i.checklist.filter(x => x !== n); i.updated = now(); touch(); renderAll(); });
+}
+function deleteItemUndo(i){                               // no confirm box: it goes to the Trash, and the toast can put it straight back
+  const at = db.items.indexOf(i), v = visible(), vi = v.findIndex(x => x === i), links = db.plan.filter(b => b.link && b.link.item === i.id).map(b => [b, b.link]);
+  const entry = {item:i, deleted:now()};
+  db.items = db.items.filter(x => x !== i); db.trash.unshift(entry); links.forEach(([b]) => { b.link = null; });
+  if(selId === i.id){ const n = visible(); selId = n.length ? n[Math.min(vi, n.length - 1)].id : null; selCk = ''; }
+  touch(); renderAll();
+  toast(`Moved “${i.title || 'Untitled'}” to the Trash.`, () => { db.trash = db.trash.filter(t => t !== entry); db.items.splice(Math.min(at, db.items.length), 0, i); links.forEach(([b, l]) => { b.link = l; }); touch(); renderAll(); });
+}
+function deleteCkUndo(i, c){
+  const at = i.checklist.indexOf(c), links = db.plan.filter(b => b.link && b.link.ck === c.id).map(b => [b, b.link]);
+  i.checklist = i.checklist.filter(x => x !== c); links.forEach(([b]) => { b.link = null; }); if(selCk === c.id) selCk = '';
+  i.updated = now(); touch(); renderAll();
+  toast(`Deleted the action “${c.text}”.`, () => { i.checklist.splice(Math.min(at, i.checklist.length), 0, c); links.forEach(([b, l]) => { b.link = l; }); i.updated = now(); touch(); renderAll(); });
+}
+function menuForObj(i, c, openFn){
+  const o = c || i, isTask = !!c || i.type === 'task', cur = c ? c.cat : i.category;
+  const setCat = id => { if(c) c.cat = id; else i.category = id; edited(i); refreshViews(); };
+  const m = [{l: c ? 'Open in its note' : 'Open', ic: '↗', fn: openFn}];
+  if(isTask) m.push({l: o.done ? 'Mark not done' : 'Mark done', ic: '✓', fn: () => { completeToggle(o, i, !o.done); edited(i); refreshViews(); }});
+  if(!c) m.push({l: i.pinned ? 'Unpin' : 'Pin to top', ic: '📌', fn: () => { i.pinned = !i.pinned; edited(i); refreshViews(); }});
+  m.push({sep:1}, {l: c ? 'Duplicate action' : 'Duplicate', ic: '⧉', fn: () => c ? dupCk(i, c) : dupItem(i)}, {l: c ? 'Copy action as text' : 'Copy as text', ic: '⎘', fn: () => copyText(c ? ckAsText(c, i) : itemAsText(i))});
+  if(!c) m.push({hd:'Export'}, ...exportEntries(i));
+  if(db.categories.length){ m.push({sep:1}, {hd:'Category'}, {l:'None', ic: !cur ? '✓' : '', fn: () => setCat('')}, ...db.categories.map(k => ({l:k.name, ic: cur === k.id ? '✓' : '', dot:k.color, fn: () => setCat(k.id)}))); }
+  m.push({sep:1}, {l: c ? 'Delete action' : 'Move to Trash', ic: '🗑', cls:'danger', fn: () => c ? deleteCkUndo(i, c) : deleteItemUndo(i)});
+  return m;
+}
+function menuFor(row){
+  const i = byId(row.dataset.id); if(!i) return null;
+  const c = row.dataset.ck ? i.checklist.find(x => x.id === row.dataset.ck) : null; if(row.dataset.ck && !c) return null;
+  return menuForObj(i, c, () => row.click());
+}
+function dupBlock(b){
+  const n = JSON.parse(JSON.stringify(b)); n.id = uid(); n.title = (b.title || 'Untitled') + ' (copy)'; n.done = false; n.doneOn = []; n.skip = []; n.link = null; n.created = n.updated = now();
+  db.plan.push(n); touch(); renderRail(); renderTlGrid(); renderTlTray();
+  toast(`Duplicated “${b.title || 'Untitled'}”.`, () => { db.plan = db.plan.filter(x => x !== n); touch(); renderRail(); renderTlGrid(); renderTlTray(); });
+}
+function deleteBlockUndo(b){
+  const at = db.plan.indexOf(b); db.plan = db.plan.filter(x => x !== b); touch(); renderRail(); renderTlGrid(); renderTlTray();
+  toast(`Deleted “${b.title || 'Untitled'}”.`, () => { db.plan.splice(Math.min(at, db.plan.length), 0, b); touch(); renderRail(); renderTlGrid(); renderTlTray(); });
+}
+function menuForBlock(b, occ){
+  const d = occ || b.start, m = [{l:'Edit…', ic:'✎', fn: () => openBlockDlg(b, false, occ)}];
+  if(b.repeat){ const done = b.doneOn.includes(d); m.push({l: done ? 'Mark this one not done' : 'Mark this one done', ic:'✓', fn: () => { b.doneOn = done ? b.doneOn.filter(x => x !== d) : [...b.doneOn, d].sort(); b.updated = now(); touch(); renderTlGrid(); }}); }
+  else m.push({l: b.done ? 'Mark not done' : 'Mark done', ic:'✓', fn: () => { b.done = !b.done; b.updated = now(); touch(); renderTlGrid(); renderRail(); }});
+  m.push({sep:1}, {l:'Duplicate', ic:'⧉', fn: () => dupBlock(b)}, {sep:1}, {l: b.repeat ? 'Delete series' : 'Delete', ic:'🗑', cls:'danger', fn: () => deleteBlockUndo(b)});
+  return m;
+}
+let ctxRow = null;
+function closeMenu(){ const el = $('#ctxmenu'); if(el) el.remove(); if(ctxRow){ ctxRow.classList.remove('ctx'); ctxRow = null; } }
+function openMenu(x, y, items, row){
+  closeMenu(); ctxRow = row || null; if(row) row.classList.add('ctx');
+  const el = Object.assign(document.createElement('div'), {id:'ctxmenu'}); el.setAttribute('role', 'menu');
+  el.innerHTML = items.map((m, k) => m.sep ? '<div class="sep"></div>' : m.hd ? `<div class="hd">${esc(m.hd)}</div>`
+    : `<button role="menuitem" data-k="${k}" class="${m.cls || ''}"><i>${m.dot ? `<span class="cdot" style="background:${esc(m.dot)};margin:0"></span>` : esc(m.ic || '')}</i>${esc(m.l)}${m.dot && m.ic ? ' <i style="margin-left:auto">✓</i>' : ''}</button>`).join('');
+  document.body.appendChild(el);
+  const r = el.getBoundingClientRect(); el.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + 'px'; el.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + 'px';
+  el.addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if(!b) return; const fn = items[+b.dataset.k].fn; closeMenu(); fn(); });
+  el.addEventListener('keydown', e => {
+    const bs = [...el.querySelectorAll('button')], k = bs.indexOf(document.activeElement);
+    if(e.key === 'ArrowDown'){ e.preventDefault(); bs[(k + 1) % bs.length].focus(); } else if(e.key === 'ArrowUp'){ e.preventDefault(); bs[(k - 1 + bs.length) % bs.length].focus(); }
+  });
+  el.querySelector('button').focus();
+}
+$('#items').addEventListener('contextmenu', e => {
+  const row = e.target.closest('.it'); if(!row) return;
+  const m = menuFor(row); if(!m) return;
+  e.preventDefault(); openMenu(e.clientX, e.clientY, m, row);
+});
+$('#detail').addEventListener('contextmenu', e => {               // the same menus on the Actions page, Today, and the Timeline (note boxes and fields keep the normal browser menu)
+  const t = e.target; if(t.closest('.rt, input, select, button')) return;
+  const bar = t.closest('.tlbar');
+  if(bar){ const b = planById(bar.dataset.id); if(b){ e.preventDefault(); openMenu(e.clientX, e.clientY, menuForBlock(b, bar.dataset.occ), bar); } return; }
+  const row = t.closest('.act[data-key], .tldue[data-key]');
+  if(row){ const a = allActions().find(x => x.key === row.dataset.key); if(a){ e.preventDefault(); openMenu(e.clientX, e.clientY, menuForObj(a.item, a.kind === 'ck' ? a.ck : null, () => openActionByKey(a.key)), row); } return; }
+  const mg = t.closest('.mtgrow[data-open]');
+  if(mg){ const i = byId(mg.dataset.open); if(i){ e.preventDefault(); openMenu(e.clientX, e.clientY, menuForObj(i, null, () => mg.click()), mg); } }
+});
+document.addEventListener('mousedown', e => { if(!e.target.closest('#ctxmenu')) closeMenu(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('#ctxmenu')){ e.preventDefault(); closeMenu(); } });
+window.addEventListener('blur', closeMenu); $('#items').addEventListener('scroll', closeMenu);
+/* ---- export a note: Markdown, plain text, or print / save as PDF ---- */
+function htmlToMd(h){
+  if(!h) return '';
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + h, 'text/html');
+  const md = (n, depth) => {
+    if(n.nodeType === 3) return n.nodeValue;
+    if(n.nodeType !== 1) return '';
+    const t = n.tagName, inner = () => Array.from(n.childNodes, c => md(c, depth)).join('');
+    switch(t){
+      case 'B': return '**' + inner() + '**';
+      case 'I': return '*' + inner() + '*';
+      case 'S': return '~~' + inner() + '~~';
+      case 'MARK': return '==' + inner() + '==';
+      case 'CODE': return '`' + inner() + '`';
+      case 'PRE': return '\n```\n' + inner() + '\n```\n';
+      case 'A': return `[${inner()}](${n.getAttribute('href') || ''})`;
+      case 'BR': return '  \n';
+      case 'HR': return '\n\n---\n\n';
+      case 'H1': return '\n\n# ' + inner() + '\n\n';
+      case 'H2': return '\n\n## ' + inner() + '\n\n';
+      case 'H3': return '\n\n### ' + inner() + '\n\n';
+      case 'BLOCKQUOTE': return '\n> ' + inner().trim().replace(/\n/g, '\n> ') + '\n';
+      case 'UL': case 'OL': { let k = 0; return '\n' + Array.from(n.children, li => { k++; return '  '.repeat(depth) + (t === 'OL' ? k + '. ' : '- ') + Array.from(li.childNodes, c => md(c, depth + 1)).join('').replace(/^\n+|\n+$/g, ''); }).join('\n') + '\n'; }
+      case 'TABLE': {
+        const rows = Array.from(n.rows, r => Array.from(r.cells, c => c.textContent.replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim()));
+        if(!rows.length) return '';
+        const w = Math.max(...rows.map(r => r.length)), line = r => '| ' + Array.from({length:w}, (_, k) => r[k] || '').join(' | ') + ' |';
+        return '\n\n' + [line(rows[0]), '| ' + Array(w).fill('---').join(' | ') + ' |', ...rows.slice(1).map(line)].join('\n') + '\n\n';
+      }
+      case 'DIV': case 'P': return '\n' + inner() + '\n';
+      default: return inner();
+    }
+  };
+  return Array.from(doc.body.childNodes, c => md(c, 0)).join('').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function itemMeta(i){
+  const m = [], c = catById(i.category);
+  if(i.type === 'task'){ if(i.due) m.push(['Due', fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.repeat) m.push(['Repeats', describeRepeat(i.repeat)]); if(i.done) m.push(['Status', 'Done']); }
+  else { if(i.date) m.push(['Date', fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.attendees) m.push(['With', i.attendees]); }
+  if(c) m.push(['Category', c.name]); if(i.tags.length) m.push(['Tags', i.tags.map(t => '#' + t).join(' ')]);
+  return m;
+}
+function itemToMd(i){
+  const L = ['# ' + (i.title || 'Untitled'), ''], meta = itemMeta(i);
+  if(meta.length) L.push(meta.map(([k, v]) => `**${k}:** ${v}`).join('  \n'), '');
+  const body = htmlToMd(i.body); if(body) L.push(body, '');
+  const cks = i.checklist.filter(k => k.text.trim());
+  if(cks.length){ L.push('## Action items', ''); cks.forEach(k => L.push(`- [${k.done ? 'x' : ' '}] ${k.text}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`)); L.push(''); }
+  return L.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+function itemPrintHtml(i){
+  const meta = itemMeta(i), cks = i.checklist.filter(k => k.text.trim());
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(i.title || 'Untitled')}</title><style>
+    body{font:12pt/1.55 Georgia,serif;color:#222;max-width:42em;margin:2em auto;padding:0 1em}
+    h1{font-size:22pt;margin:0 0 .2em}.meta{color:#555;font:10pt "Segoe UI",sans-serif;margin-bottom:1.2em}.meta b{color:#222}
+    h2{font-size:13pt;margin:1.4em 0 .3em;border-bottom:1px solid #ccc}ul,ol{margin:.3em 0 .3em 1.5em;padding:0}blockquote{margin:0 0 0 2em}
+    table{border-collapse:collapse;width:100%;margin:.6em 0}td,th{border:1px solid #999;padding:4px 8px;vertical-align:top}th{background:#eee;text-align:left}
+    mark{background:#ffe58a}a{color:#222}.ck{list-style:none;margin-left:0}.ck li::before{content:"☐ "}.ck li.d::before{content:"☑ "}.ck li.d{color:#666}
+  </style></head><body><h1>${esc(i.title || 'Untitled')}</h1>
+  ${meta.length ? `<div class="meta">${meta.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join(' &nbsp;·&nbsp; ')}</div>` : ''}
+  <div>${i.body || ''}</div>
+  ${cks.length ? `<h2>Action items</h2><ul class="ck">${cks.map(k => `<li class="${k.done ? 'd' : ''}">${esc(k.text)}${k.due ? ` <small>(due ${esc(fmtDay(k.due))}${k.time ? ' ' + esc(fmtTime(k.time)) : ''})</small>` : ''}</li>`).join('')}</ul>` : ''}
+  <\/body><\/html>`;
+}
+const fileSlug = i => (i.title || 'note').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'note';
+function downloadFile(name, text, type){
+  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(new Blob([text], {type})), download: name});
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+function exportItem(i, fmt){
+  if(fmt === 'md'){ downloadFile(fileSlug(i) + '.md', itemToMd(i), 'text/markdown'); toast(`Saved ${fileSlug(i)}.md to your downloads.`); }
+  else if(fmt === 'txt'){ downloadFile(fileSlug(i) + '.txt', itemAsText(i) + '\n', 'text/plain'); toast(`Saved ${fileSlug(i)}.txt to your downloads.`); }
+  else {                                                   // print / save as PDF: a clean page in a hidden frame
+    const f = Object.assign(document.createElement('iframe'), {srcdoc: itemPrintHtml(i)});
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch {} setTimeout(() => f.remove(), 60000); };
+    document.body.appendChild(f);
+  }
+}
+const exportEntries = i => [{l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}];
+
+/* ---- Trash ---- */
+function renderTrash(){
+  const rows = db.trash.map(t => {
+    const i = t.item, left = Math.max(0, Math.ceil(TRASH_DAYS - (Date.now() - Date.parse(t.deleted)) / 864e5));
+    return `<div class="trow" data-id="${i.id}"><span class="ti">${i.type === 'task' ? '☐' : isMeeting(i) ? '◷' : '✎'}</span><div><b>${esc(i.title || 'Untitled')}</b><small>${i.type === 'task' ? 'Action' : isMeeting(i) ? 'Meeting' : 'Note'} · deleted ${esc(fmtDay(dstr(new Date(t.deleted))))} · ${left} day${left === 1 ? '' : 's'} left${i.checklist.length ? ' · ' + i.checklist.length + ' action item' + (i.checklist.length === 1 ? '' : 's') : ''}</small></div><span><button data-act="trestore" data-id="${i.id}">Restore</button><button class="danger" data-act="tpurge" data-id="${i.id}">Delete forever</button></span></div>`;
+  }).join('');
+  $('#detail').innerHTML = `<div class="type">Trash</div><h1 class="ptitle">Deleted items</h1>
+    <p class="psub">Deleted actions, notes and meetings wait here for ${TRASH_DAYS} days, then go for good.${db.trash.length ? ' <a data-act="tempty">Empty the trash now</a>' : ''}</p>
+    ${rows || '<div class="empty">The trash is empty.</div>'}`;
+}
+function restoreItem(id){
+  const t = db.trash.find(x => x.item.id === id); if(!t) return;
+  db.trash = db.trash.filter(x => x !== t); if(!byId(id)) db.items.push(t.item); t.item.updated = now(); touch(); renderRail(); renderDetail();
+  toast(`Restored “${t.item.title || 'Untitled'}”.`, () => { db.items = db.items.filter(x => x !== t.item); db.trash.unshift(t); touch(); renderRail(); renderDetail(); });
+}
+function purgeItem(id){
+  const t = db.trash.find(x => x.item.id === id); if(!t) return;
+  if(!confirm(`Delete “${t.item.title || 'Untitled'}” for good? This can’t be undone.`)) return;
+  db.trash = db.trash.filter(x => x !== t); touch(); renderRail(); renderDetail();
+}
+function emptyTrash(){
+  if(!db.trash.length || !confirm(`Delete all ${db.trash.length} item${db.trash.length === 1 ? '' : 's'} in the trash for good? This can’t be undone.`)) return;
+  db.trash = []; touch(); renderRail(); renderDetail();
+}
+
+/* ---- Today: what needs you right now ---- */
+const mtgRow = i => `<div class="mtgrow" data-open="${i.id}"><span class="mi">◷</span><div><b>${esc(i.title || 'Untitled')}</b><small>${esc([i.attendees, i.checklist.length ? i.checklist.filter(c => c.done).length + '/' + i.checklist.length + ' actions done' : ''].filter(Boolean).join(' · ') || 'Meeting')}</small></div><time>${esc(fmtTime(i.time))}</time></div>`;
+function renderToday(){
+  const T = todayStr(), TM = shiftStr(T, 1), tk = x => x.time || '99:99';
+  const acts = allActions().filter(x => x.text.trim() && x.due);
+  const overdue = acts.filter(x => !x.done && x.due < T).sort((a, b) => a.due.localeCompare(b.due) || tk(a).localeCompare(tk(b)));
+  const day = d => [...acts.filter(x => x.due === d).map(x => ({k:(x.done ? '~' : '') + tk(x), x})), ...db.items.filter(i => i.type === 'note' && i.date === d).map(i => ({k:i.time || '99:99', m:i}))]
+    .sort((a, b) => a.k.localeCompare(b.k));
+  const today = day(T), tomorrow = day(TM), rows = list => list.map(e => e.x ? actRow(e.x) : mtgRow(e.m)).join('');
+  const blocks = tlExpand(db.plan, T).filter(b => b.start <= T && b.end >= T && !blockDone(b));
+  const openToday = today.filter(e => e.x && !e.x.done).length, meetN = today.filter(e => e.m).length;
+  const none = !overdue.length && !today.length && !blocks.length;
+  $('#detail').innerHTML = `
+    <div class="type">Today</div>
+    <h1 class="ptitle">${esc(new Date().toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'}))}</h1>
+    <div class="tdsum"><span class="${overdue.length ? 'bad' : ''}">${overdue.length} past due</span><span class="${openToday ? 'warn' : ''}">${openToday} due today</span><span>${meetN} meeting${meetN === 1 ? '' : 's'}</span><span>${blocks.length} planned</span></div>
+    <div class="addrow"><input type="text" id="tqa" placeholder="Quick add: “call Sam Friday 3pm”, “note: ideas”, “meeting: kickoff Monday 10am”" autocomplete="off"><button data-act="qadd">Add</button></div>
+    <div class="qapv" id="tqapv"></div>
+    ${overdue.length ? `<h4 class="gh late">Past due <small>${overdue.length}</small></h4>${overdue.map(actRow).join('')}` : ''}
+    ${today.length ? `<h4 class="gh today">Today <small>${today.length}</small></h4>${rows(today)}` : ''}
+    ${blocks.length ? `<h4 class="gh">On your timeline <small>${blocks.length}</small></h4><div>${blocks.map(b => `<span class="tdblock" data-act="gotl" title="Open the Timeline"><i class="cdot" style="background:${esc(blockColor(b))};margin:0"></i>${b.repeat ? '↻ ' : ''}${esc(b.title || 'Untitled')}${b.start !== b.end ? ` <small style="color:var(--mute)">${esc(rangeLabel(b))}</small>` : ''}</span>`).join('')}</div>` : ''}
+    ${none ? '<div class="empty">Nothing due or planned for today. 🎉</div>' : ''}
+    ${tomorrow.length ? `<h4 class="gh">Tomorrow <small>${tomorrow.length}</small></h4>${rows(tomorrow)}` : ''}`;
+  $('#detail').querySelectorAll('.anote').forEach(grow);
+}
+
+/* ---- Quick add: type it the way you'd say it ---- */
+function qaParse(raw){
+  let text = String(raw).trim(), kind = 'task';
+  const m = text.match(/^(note|meeting|action|task|n|m|a|t)\s*:\s*/i);
+  if(m){ kind = {n:'note', m:'meeting', a:'task', t:'task'}[m[1][0].toLowerCase()]; text = text.slice(m[0].length).trim(); }
+  const p = text ? parseWhen(text) : null;
+  return {kind, title:text, date:p && p.date || '', time:p && p.time || '', repeat:p && p.repeat || null};
+}
+function qaSummary(q){
+  if(!q.title) return 'Type something to add.';
+  const date = q.date || (q.kind === 'meeting' ? todayStr() : '');
+  return [{task:'☐ Action', note:'✎ Note', meeting:'◷ Meeting'}[q.kind], [date ? fmtDay(date) : '', q.time ? fmtTime(q.time) : ''].filter(Boolean).join(' '), q.repeat ? '↻ ' + describeRepeat(q.repeat) : ''].filter(Boolean).join(' · ');
+}
+function quickAdd(raw){
+  const q = qaParse(raw); if(!q.title) return null;
+  const i = {id:uid(), type: q.kind === 'task' ? 'task' : 'note', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  if(q.kind === 'task'){ i.due = q.date; i.time = q.time; i.repeat = q.repeat; } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; }
+  db.items.push(i); touch(); refreshViews();
+  toast(`Added “${q.title}” — ${qaSummary(q)}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
+  return i;
+}
+function openQuickAdd(){ $('#qai').value = ''; $('#qapv2').textContent = qaSummary(qaParse('')); $('#qadlg').showModal(); $('#qai').focus(); }
+$('#qai').addEventListener('input', e => { $('#qapv2').textContent = qaSummary(qaParse(e.target.value)); });
+$('#qai').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(quickAdd(e.target.value)) $('#qadlg').close(); } });
+$('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) : ''; });
+function todayAdd(){ const el = $('#tqa'); if(!el) return; if(!el.value.trim()){ el.focus(); toast('Type what needs doing first.'); return; } quickAdd(el.value); const n = $('#tqa'); if(n) n.focus(); }
+
+/* ---- keyboard shortcuts + the cheat sheet ---- */
+const SHORTCUTS = [
+  ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['M', 'New meeting note'], ['Q', 'Quick add (type it in plain words)']]],
+  ['Go to', [['1', 'Today'], ['2', 'Actions'], ['3', 'Timeline'], ['4', 'Notes & meetings'], ['5', 'Trash'], ['/', 'Search everything']]],
+  ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P', 'Pin or unpin the selected item'], ['Ctrl + S', 'Save right now'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
+  ['In notes', [['Ctrl + B / I / U', 'Bold, italic, underline'], ['Ctrl + K', 'Add a link'], ['Tab / Shift + Tab', 'Indent / outdent (in a table: next / previous cell)'], ['- or 1. then space', 'Start a bulleted or numbered list']]],
+  ['Timeline', [['← →', 'Previous / next week or month'], ['T', 'Jump to today'], ['Drag across days', 'Make a block'], ['Click a block', 'Edit it and read its description']]],
+  ['Mouse tips', [['Right-click a row', 'Open, mark done, pin, duplicate, copy, export, category, trash'], ['Right-click on any page', 'Today, Actions and Timeline have the same menu'], ['Drag a due date chip', 'Timeline “Due dates” view: reschedule it']]],
+  ['Typing dates', [['“by Friday 3pm”', 'Dates, times and repeats like “in 3 days” or “every Monday” fill in on their own (with Undo)']]]
+];
+function openShortcuts(){
+  $('#kbbody').innerHTML = '<div class="kbgrid">' + SHORTCUTS.map(([h, rows]) => `<div><h4>${esc(h)}</h4>${rows.map(([k, d]) => `<div class="kr"><span>${esc(d)}</span><span>${k.split(' / ').map(x => `<kbd>${esc(x)}</kbd>`).join(' ')}</span></div>`).join('')}</div>`).join('') + '</div>';
+  $('#kbdlg').showModal();
+}
+const VIEW_KEYS = ['today', 'actions', 'timeline', 'note', 'trash'];
+function goView(v){ filter = v; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
+document.addEventListener('keydown', e => {
+  const t = e.target, typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === 'Enter'){          // done / not done, from anywhere
+    const act = t.closest && t.closest('.act'), ai = t.closest && t.closest('.ai');
+    if(act){ const a = allActions().find(x => x.key === act.dataset.key); if(a){ e.preventDefault(); completeToggle(a.kind === 'task' ? a.item : a.ck, a.item, !a.done); edited(a.item); refreshViews(); } return; }
+    const i = byId(selId); if(FULL_PAGES.includes(filter) || !i) return;
+    if(ai){ const c = i.checklist.find(x => x.id === (ai.querySelector('[data-ci]') || {dataset:{}}).dataset.ci); if(c){ e.preventDefault(); completeToggle(c, i, !c.done); edited(i); renderDetail(); } return; }
+    if(i.type === 'task'){ e.preventDefault(); completeToggle(i, i, !i.done); edited(i); renderDetail(); }
+    return;
+  }
+  if(typing || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]') || $('#ctxmenu')) return;
+  const k = e.key;
+  if(k === '?'){ e.preventDefault(); openShortcuts(); }
+  else if(k === 'n'){ e.preventDefault(); newItem('task'); } else if(k === 'N'){ e.preventDefault(); newItem('note'); } else if(k === 'm' || k === 'M'){ e.preventDefault(); newItem('meeting'); }
+  else if(k === 'q' || k === 'Q'){ e.preventDefault(); openQuickAdd(); }
+  else if(k === '/'){ e.preventDefault(); if(FULL_PAGES.includes(filter)){ filter = 'note'; saveUi(); fixSelection(); renderAll(); } if(listOff){ listOff = false; applyMode(); } $('#q').focus(); }
+  else if(/^[1-5]$/.test(k)){ e.preventDefault(); goView(VIEW_KEYS[+k - 1]); }
+  else if((k === 'p' || k === 'P') && !FULL_PAGES.includes(filter)){ const i = byId(selId); if(i){ e.preventDefault(); i.pinned = !i.pinned; edited(i); refreshViews(); toast(i.pinned ? 'Pinned to the top.' : 'Unpinned.'); } }
+});
+
 function addCk(){
   const i = byId(selId), inp = $('#newck'); if(!i || !inp.value.trim()) return;
   const c = {id:uid(), text:inp.value.trim(), done:false, due:'', time:'', cat:'', note:'', repeat:null};
@@ -1462,7 +1905,7 @@ $('#detail').addEventListener('input', e => {
     else if(f === 'repeat'){ setRepeat(o, t.value); edited(a.item); row.querySelector('[data-ax=due]').value = o.due; t.innerHTML = repeatOptions(o.repeat); }
     else setAction(a, f, val(t));
     if(f === 'note'){ const has = !isBlank(o.note !== undefined ? o.note : val(t)), nl = row.querySelector('.nlink'); if(nl){ nl.classList.toggle('has', has); nl.textContent = '📝 ' + (has ? 'Notes' : 'Add note'); } }
-    if(f === 'done'){ row.classList.toggle('done', t.checked); clearTimeout(actTimer); actTimer = setTimeout(() => { if(filter === 'actions') renderDetail(); }, 700); }
+    if(f === 'done'){ row.classList.toggle('done', t.checked); clearTimeout(actTimer); actTimer = setTimeout(() => { if(filter === 'actions' || filter === 'today') renderDetail(); }, 700); }
     return;
   }
   const i = byId(selId); if(!i) return;
@@ -1487,6 +1930,7 @@ $('#detail').addEventListener('input', e => {
 $('#detail').addEventListener('keydown', e => {
   if(e.key === 'Enter' && e.target.id === 'newck'){ e.preventDefault(); addCk(); }
   if(e.key === 'Enter' && e.target.id === 'anew'){ e.preventDefault(); addAction(); }
+  if(e.key === 'Enter' && e.target.id === 'tqa'){ e.preventDefault(); todayAdd(); }
   if(e.key === 'Enter' && e.target.matches && e.target.matches('textarea.title, textarea.tx')){ e.preventDefault(); e.target.blur(); }      // titles wrap visually but stay one line of text
 });
 $('#detail').addEventListener('change', e => {            // Actions tab controls that regroup the list
@@ -1501,7 +1945,7 @@ $('#detail').addEventListener('change', e => {            // Actions tab control
     const o = a && (a.kind === 'task' ? a.item : a.ck);
     if(o && autoDate(o, a.text, a.item)){
       touch(); row.querySelector('[data-ax=due]').value = o.due; row.querySelector('[data-ax=time]').value = o.time; row.querySelector('[data-ax=repeat]').innerHTML = repeatOptions(o.repeat);
-      clearTimeout(actTimer); actTimer = setTimeout(() => { if(filter === 'actions') renderDetail(); }, 900);   // regroup shortly after
+      clearTimeout(actTimer); actTimer = setTimeout(() => { if(filter === 'actions' || filter === 'today') renderDetail(); }, 900);   // regroup shortly after
     }
   }
   else if(t.dataset.ci){
@@ -1538,7 +1982,7 @@ document.addEventListener('keydown', e => {                       // Timeline: l
 $('#tlt').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); saveBlockDlg(); } });
 document.addEventListener('click', e => {
   const n = e.target.closest('[data-new]'); if(n){ $('#newmenu').classList.remove('open'); newItem(n.dataset.new); return; }
-  const o = e.target.closest('[data-open]'); if(o){ filter = 'all'; selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
+  const o = e.target.closest('[data-open]'); if(o){ filter = viewFor(byId(o.dataset.open) || {}); selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
   const tc = e.target.closest('[data-tlcat]'); if(tc && tlEdit){ tlEdit.b.cat = tlEdit.b.cat === tc.dataset.tlcat ? '' : tc.dataset.tlcat; renderTlDlg(); return; }
   const sb = e.target.closest('[data-sort]'); if(sb){ sortMode = sb.dataset.sort; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const lcat = e.target.closest('[data-lcat]'); if(lcat){ listCat = listCat === lcat.dataset.lcat ? '' : lcat.dataset.lcat; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
@@ -1562,6 +2006,15 @@ document.addEventListener('click', e => {
     else if(act === 'tlcancel'){ tlEdit = null; $('#tldlg').close(); }
     else if(act === 'tlskip') skipOccurrence(); else if(act === 'tlopen') openLinkedFromBlock(); else if(act === 'tlunlink'){ tlEdit.b.link = null; renderTlDlg(); }
     else if(act === 'resetfilters'){ chipsOff[chipView()] = []; listCat = ''; datedOnly = false; hideDone = false; saveUi(); fixSelection(); renderList(); renderDetail(); }
+    else if(act === 'refresh') refreshAll();
+    else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
+    else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
+    else if(act === 'quickadd'){ $('#newmenu').classList.remove('open'); openQuickAdd(); }
+    else if(act === 'qasave'){ if(quickAdd($('#qai').value)) $('#qadlg').close(); else $('#qai').focus(); } else if(act === 'qacancel') $('#qadlg').close();
+    else if(act === 'qadd') todayAdd();
+    else if(act === 'gotl'){ tlAnchor = todayStr(); goView('timeline'); }
+    else if(act === 'export'){ const i = byId(selId); if(i){ const r = a.getBoundingClientRect(); openMenu(r.left, r.bottom + 4, [{hd:'Export this ' + (i.type === 'task' ? 'action' : 'note')}, ...exportEntries(i)], null); } }
+    else if(act === 'trestore') restoreItem(a.dataset.id); else if(act === 'tpurge') purgeItem(a.dataset.id); else if(act === 'tempty') emptyTrash();
     else if(act === 'scandates') scanDates();
     else if(act === 'toastundo'){ const u = toastUndo; toastUndo = null; $('#toast').classList.remove('show'); if(u) u(); }
     else if(act === 'toastx') $('#toast').classList.remove('show');
@@ -1585,7 +2038,7 @@ document.addEventListener('click', e => {
         db.categories = db.categories.filter(x => x !== c);
         db.items.forEach(i => { if(i.category === c.id) i.category = ''; i.checklist.forEach(k => { if(k.cat === c.id) k.cat = ''; }); });
         db.plan.forEach(b => { if(b.cat === c.id) b.cat = ''; });
-        if(actCat === c.id) actCat = ''; if(listCat === c.id) listCat = ''; if(filter === 'cat:' + c.id) filter = 'all';
+        if(actCat === c.id) actCat = ''; if(listCat === c.id) listCat = ''; if(filter === 'cat:' + c.id) filter = 'today';
         touch(); renderCats();
       }
     }
@@ -1614,7 +2067,36 @@ window.addEventListener('focus', async () => {
 /* ---- rich text editing: toolbar, Tab to indent, "- " / "1. " lists, Ctrl+K links, safe paste ---- */
 let lastEd = null, lastRange = null;
 const inRt = n => n && (n.nodeType === 1 ? n : n.parentElement) && (n.nodeType === 1 ? n : n.parentElement).closest('.rt');
+const cellOf = n => { const el = n && (n.nodeType === 1 ? n : n.parentElement); return el && el.closest ? el.closest('td,th') : null; };
+const putCaret = el => { const r = document.createRange(); r.selectNodeContents(el); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+function replaceNode(node, html){                         // goes through the editor's own insert so Ctrl+Z still undoes it
+  const r = document.createRange(); r.selectNode(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  document.execCommand('insertHTML', false, html);
+}
+function insertTable(ed){
+  const s = getSelection(); if(s.rangeCount && cellOf(s.anchorNode)){ toast('You\'re already inside a table.'); return; }
+  const head = '<th><br></th>'.repeat(3), row = `<tr>${'<td><br></td>'.repeat(3)}</tr>`;
+  document.execCommand('insertHTML', false, `<table data-new="1"><tbody><tr>${head}</tr>${row}${row}</tbody></table><div><br></div>`);
+  const t = ed.querySelector('table[data-new]'); if(t){ t.removeAttribute('data-new'); putCaret(t.querySelector('th,td')); }
+}
+function tableCmd(name, firstCol){
+  const s = getSelection(), cell = s.rangeCount && cellOf(s.anchorNode); if(!cell) return;
+  const table = cell.closest('table'), ed = inRt(table); if(!ed) return;
+  const tr = cell.parentElement, r = tr.rowIndex, c = cell.cellIndex, rows = table.rows.length, cols = tr.cells.length;
+  const ti = [...ed.querySelectorAll('table')].indexOf(table);
+  if(name === 'deltable' || (name === 'delrow' && rows === 1) || (name === 'delcol' && cols === 1)){ replaceNode(table, '<div><br></div>'); return; }
+  const copy = table.cloneNode(true); let tr2 = r, tc = c;
+  const mk = tag => { const x = document.createElement(tag); x.innerHTML = '<br>'; return x; };
+  if(name === 'addrow'){ const nr = document.createElement('tr'); for(let i = 0; i < cols; i++) nr.appendChild(mk('td')); copy.rows[r].after(nr); tr2 = r + 1; }
+  else if(name === 'addcol'){ for(const row of copy.rows){ const ref = row.cells[Math.min(c, row.cells.length - 1)]; ref.after(mk(ref.tagName.toLowerCase())); } tc = c + 1; }
+  else if(name === 'delrow'){ copy.rows[r].remove(); tr2 = Math.min(r, rows - 2); }
+  else if(name === 'delcol'){ for(const row of copy.rows) if(row.cells[c]) row.cells[c].remove(); tc = Math.min(c, cols - 2); }
+  else return;
+  replaceNode(table, copy.outerHTML);
+  const t = ed.querySelectorAll('table')[ti], target = t && t.rows[tr2] && t.rows[tr2].cells[firstCol ? 0 : tc]; if(target) putCaret(target);
+}
 function fmtState(){
+  const sel = getSelection(); $('#tblbar').style.display = sel.rangeCount && cellOf(sel.anchorNode) ? 'flex' : 'none';
   const st = c => { try { return document.queryCommandState(c); } catch { return false; } };
   document.querySelectorAll('#fmtbar [data-cmd]').forEach(b => { if(['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList'].includes(b.dataset.cmd)) b.classList.toggle('on', st(b.dataset.cmd)); });
   let blk = ''; try { blk = String(document.queryCommandValue('formatBlock')).toLowerCase().replace(/[<>]/g, ''); } catch {}
@@ -1640,7 +2122,9 @@ function runCmd(cmd, arg){
     let url = prompt('Link address (e.g. https://example.com)'); if(!url) return;
     url = url.trim(); if(!/^(?:https?:|mailto:)/i.test(url)) url = 'https://' + url;
     document.execCommand('createLink', false, url);
-  } else if(cmd === 'hr') document.execCommand('insertHorizontalRule');
+  } else if(cmd === 'table') insertTable(ed);
+  else if(cmd.startsWith('tbl-')) tableCmd(cmd.slice(4));
+  else if(cmd === 'hr') document.execCommand('insertHorizontalRule');
   else if(cmd === 'formatBlock') document.execCommand('formatBlock', false, '<' + arg + '>');
   else document.execCommand(cmd, false, null);
   ed.dispatchEvent(new Event('input', {bubbles:true})); fmtState();
@@ -1658,7 +2142,14 @@ if(!(window.CSS && CSS.supports && CSS.supports('field-sizing', 'content'))){   
 }
 document.addEventListener('keydown', e => {
   const ed = e.target.closest && e.target.closest('.rt'); if(!ed) return;
-  if(e.key === 'Tab'){ e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); ed.dispatchEvent(new Event('input', {bubbles:true})); return; }
+  if(e.key === 'Tab'){
+    const cell = cellOf(getSelection().anchorNode);
+    if(cell){                                                                       // in a table, Tab moves between cells (and adds a row after the last one)
+      e.preventDefault(); const cells = [...cell.closest('table').querySelectorAll('th,td')], i = cells.indexOf(cell);
+      if(e.shiftKey){ if(i > 0) putCaret(cells[i - 1]); } else if(i < cells.length - 1) putCaret(cells[i + 1]); else { tableCmd('addrow', true); ed.dispatchEvent(new Event('input', {bubbles:true})); }
+      return;
+    }
+    e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); ed.dispatchEvent(new Event('input', {bubbles:true})); return; }
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); runCmd('link'); return; }
   if(e.key === ' ' && !e.ctrlKey && !e.metaKey){                                   // "- " or "1. " at the start of a line starts a list
     const s = getSelection(); if(!s.isCollapsed || !s.anchorNode || s.anchorNode.nodeType !== 3 || s.anchorNode.previousSibling) return;
@@ -1666,6 +2157,7 @@ document.addEventListener('keydown', e => {
     if(!/^(?:[-*•]|\d{1,2}\.)$/.test(typed) || (node.parentElement && node.parentElement.closest('li'))) return;
     e.preventDefault();
     node.nodeValue = node.nodeValue.slice(s.anchorOffset);
+    if(!node.nodeValue && !node.nextSibling) node.parentNode.appendChild(document.createElement('br'));       // keep the (now empty) line a real line, or the list swallows the line above it
     const r = document.createRange(); r.setStart(node, 0); r.collapse(true); s.removeAllRanges(); s.addRange(r);
     document.execCommand(/\d/.test(typed) ? 'insertOrderedList' : 'insertUnorderedList');
     ed.dispatchEvent(new Event('input', {bubbles:true}));
@@ -1685,6 +2177,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
+<script>window.NB_BUILD = '20261028092744';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
