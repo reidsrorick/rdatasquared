@@ -995,7 +995,7 @@ function filteredCks(opts = {}){
 }
 function listEntries(opts = {}){
   const a = filteredItems(opts).map(i => ({kind:'item', item:i})).concat(filteredCks(opts));
-  const key = e => eDate(e) ? eDate(e) + (eTime(e) || '') : '', upd = e => e.item.updated || '';
+  const key = e => eDate(e) ? eDate(e) + sortTime(eTime(e), e.kind === 'ck' ? e.ck.text : e.item.title) : '', upd = e => e.item.updated || '';
   const order = e => e.kind === 'item' ? -1 : e.item.checklist.indexOf(e.ck);               // an item comes before its own action items
   a.sort((x, y) => {
     if(sortMode === 'date'){
@@ -1124,6 +1124,8 @@ function ckRows(i){
 }
 
 /* ---- Actions tab: every task + every checklist/action item, in one list ---- */
+const textTime = text => (parseWhen(text || '') || {}).time || '';
+const sortTime = (time, text) => time || textTime(text) || '99:99';          // untimed things go after timed ones; a time only written in the text still counts
 function allActions(){
   const out = [];
   for(const it of db.items){
@@ -1148,7 +1150,7 @@ function groupActions(list){
   if(actGroup === 'due') groups.sort((p, q) => BUCKETS.indexOf(p.k) - BUCKETS.indexOf(q.k));
   else if(actGroup === 'category'){ const o = db.categories.map(c => c.id), r = k => k === '~none' ? 999 : o.indexOf(k); groups.sort((p, q) => r(p.k) - r(q.k)); }
   else groups.sort((p, q) => p.l.localeCompare(q.l));
-  const dk = x => (x.due || '9999') + (x.time || '');
+  const dk = x => (x.due || '9999') + sortTime(x.time, x.text);
   groups.forEach(g => g.rows.sort((p, q) => dk(p) < dk(q) ? -1 : dk(p) > dk(q) ? 1 : p.text.localeCompare(q.text)));
   return groups;
 }
@@ -1790,11 +1792,11 @@ function emptyTrash(){
 /* ---- Today: what needs you right now ---- */
 const mtgRow = i => `<div class="mtgrow" data-open="${i.id}"><span class="mi">◷</span><div><b>${esc(i.title || 'Untitled')}</b><small>${esc([i.attendees, i.checklist.length ? i.checklist.filter(c => c.done).length + '/' + i.checklist.length + ' actions done' : ''].filter(Boolean).join(' · ') || 'Meeting')}</small></div><time>${esc(fmtTime(i.time))}</time></div>`;
 function renderToday(){
-  const T = todayStr(), TM = shiftStr(T, 1), tk = x => x.time || '99:99';
+  const T = todayStr(), TM = shiftStr(T, 1), tk = x => sortTime(x.time, x.text);
   const acts = allActions().filter(x => x.text.trim() && x.due);
-  const overdue = acts.filter(x => !x.done && x.due < T).sort((a, b) => a.due.localeCompare(b.due) || tk(a).localeCompare(tk(b)));
-  const day = d => [...acts.filter(x => x.due === d).map(x => ({k:(x.done ? '~' : '') + tk(x), x})), ...db.items.filter(i => i.type === 'note' && i.date === d).map(i => ({k:i.time || '99:99', m:i}))]
-    .sort((a, b) => a.k.localeCompare(b.k));
+  const overdue = acts.filter(x => !x.done && x.due < T).sort((a, b) => a.due.localeCompare(b.due) || (tk(a) < tk(b) ? -1 : tk(a) > tk(b) ? 1 : 0));
+  const day = d => [...acts.filter(x => x.due === d).map(x => ({k:tk(x), done:x.done, x})), ...db.items.filter(i => i.type === 'note' && i.date === d).map(i => ({k:i.time || '99:99', done:false, m:i}))]
+    .sort((a, b) => (a.done - b.done) || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));          // open things by time first, finished ones after
   const today = day(T), tomorrow = day(TM), rows = list => list.map(e => e.x ? actRow(e.x) : mtgRow(e.m)).join('');
   const blocks = tlExpand(db.plan, T).filter(b => b.start <= T && b.end >= T && !blockDone(b));
   const openToday = today.filter(e => e.x && !e.x.done).length, meetN = today.filter(e => e.m).length;
@@ -2177,7 +2179,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261028092744';</script>
+<script>window.NB_BUILD = '20261028093712';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
