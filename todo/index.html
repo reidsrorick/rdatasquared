@@ -250,6 +250,25 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .app.list-off .top>:not(.sb){display:none}
 .ai .nb{border:0;background:none;font-size:14px;opacity:.35;padding:0 4px}
 .ai .nb:hover,.ai .nb.has{opacity:1}
+input.who{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;font-size:13px;outline:none;min-width:0;width:100%}
+input.who:focus{border-color:var(--accent)}
+.ai input.who{flex:0 0 100px;width:100px;border:1px solid var(--line);border-bottom:1px solid var(--line)}
+.meta input.who{width:130px}
+.pcnt{color:var(--mute);font-size:12px;white-space:nowrap}
+.nbhead{display:flex;gap:6px;align-items:center}
+.nbbar{display:flex;gap:12px;padding:2px 16px 8px;font-size:12.5px;align-items:center}
+.nbbar a{color:var(--mute);cursor:pointer;text-decoration:none;white-space:nowrap}.nbbar a:hover{color:var(--accent);text-decoration:underline}
+.nbgh{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:8px 14px;font-weight:700;background:color-mix(in srgb,var(--nbc) 16%,var(--bg));border-left:4px solid var(--nbc);border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+.nbgh:hover{background:color-mix(in srgb,var(--nbc) 24%,var(--bg))}
+.nbgh .nbc{width:14px;color:var(--mute);font-size:11px;flex:none}
+.nbgh .nbn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nbgh small{color:var(--mute);font-weight:400}
+.nbgh button{border:0;background:none;color:var(--mute);font-size:16px;line-height:1;padding:0 6px;border-radius:6px;opacity:.55}
+.nbgh button:hover{opacity:1;color:var(--accent);background:var(--hover)}
+.nbempty{padding:10px 16px 12px 30px;color:var(--mute);font-size:12.5px;border-bottom:1px solid var(--line)}
+[data-nbdrop].over{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--soft)}
+.tdmine{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mute);margin:-8px 0 14px}
+#people .tag span::before{content:"@";color:var(--accent)}
 .rt{width:100%;min-height:150px;border:1px solid var(--line);border-radius:10px;padding:14px;font:15px/1.6 Georgia,serif;color:var(--text);outline:none;background:var(--field);overflow-wrap:anywhere}
 .rt.big{min-height:320px}
 .rt:focus{border-color:var(--accent)}
@@ -267,6 +286,20 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .rt th{background:var(--hover);text-align:left;font-weight:600}
 .rt td:focus-within,.rt th:focus-within{background:color-mix(in srgb,var(--soft) 50%,transparent)}
 #tblbar{display:none;gap:4px;align-items:center;padding-left:6px;border-left:1px solid var(--line)}
+.rt mark.h-green{background:#bff0c8}.rt mark.h-blue{background:#bfe0ff}.rt mark.h-pink{background:#ffc9de}.rt mark.h-orange{background:#ffd6aa}
+.rt .sz-s,.rt font[size="1"],.rt font[size="2"]{font-size:.82em}
+.rt .sz-l,.rt font[size="4"],.rt font[size="5"]{font-size:1.3em;line-height:1.3}
+.rt .sz-xl,.rt font[size="6"],.rt font[size="7"]{font-size:1.75em;line-height:1.25}
+.rt li[data-fold]>ul,.rt li[data-fold]>ol{display:none}
+.rt li[data-fold]::marker{content:"▸  ";color:var(--accent)}
+.rt li:has(>ul),.rt li:has(>ol){cursor:default}
+.rt{--rk:var(--accent)}
+.rt [data-raid]{border-left:3px solid var(--rk);padding-left:9px;border-radius:3px;background:color-mix(in srgb,var(--rk) 9%,transparent);margin:2px 0}
+.rt [data-raid=action]{--rk:#c2562d}.rt [data-raid=risk]{--rk:#b8860b}.rt [data-raid=issue]{--rk:#c0392b}.rt [data-raid=decision]{--rk:#2f7d5b}
+.rt .rtag{font-weight:700;font-size:.78em;letter-spacing:.07em;padding:1px 7px;border-radius:5px;color:#fff;margin-right:6px;background:var(--rk)}
+.rt .rtag.t-action{background:#c2562d}.rt .rtag.t-risk{background:#b8860b}.rt .rtag.t-issue{background:#c0392b}.rt .rtag.t-decision{background:#2f7d5b}
+.rbadge{display:inline-block;font:700 10px/1 "Segoe UI",sans-serif;letter-spacing:.07em;padding:3px 6px;border-radius:4px;color:#fff;margin-right:6px;vertical-align:1px;text-transform:uppercase}
+.rbadge.t-risk{background:#b8860b}.rbadge.t-issue{background:#c0392b}.rbadge.t-decision{background:#2f7d5b}.rbadge.t-action{background:#c2562d}
 .rt hr{border:0;border-top:1px solid var(--line);margin:.8em 0}
 .rt code,.rt pre{font-family:Consolas,monospace;background:var(--hover);border-radius:4px;padding:0 4px}
 .rt.cknote{flex-basis:100%;width:calc(100% - 26px);margin:2px 0 6px 26px;min-height:70px;font:14px/1.5 "Segoe UI",system-ui,sans-serif;padding:10px}
@@ -302,7 +335,7 @@ a.nlink:hover,a.nlink.has{color:var(--accent)}
 .gh{display:flex;gap:8px;align-items:baseline;margin:24px 0 4px}
 .gh small{font-weight:400;letter-spacing:0}
 .gh.late{color:var(--red)}
-.act{display:grid;grid-template-columns:22px 1fr 134px 100px 158px 128px;gap:12px;align-items:start;padding:8px 4px;border-bottom:1px solid var(--line)}
+.act{display:grid;grid-template-columns:22px 1fr 134px 100px 158px 128px 112px;gap:12px;align-items:start;padding:8px 4px;border-bottom:1px solid var(--line)}
 .act .atext{min-width:0}
 .act .atext textarea{width:100%;border:0;border-bottom:1px solid transparent;background:none;color:var(--text);font:inherit;line-height:1.4;outline:none;padding:2px 0}
 .act .atext textarea:focus{border-color:var(--line)}
@@ -336,8 +369,12 @@ dialog p{color:var(--mute);font-size:13px}
   <nav class="rail">
     <div class="railtop"><h3>My Notebook</h3><button class="sb" data-act="togglerail">«</button></div>
     <div id="filters"></div>
+    <div class="lbl">RAID log</div>
+    <div id="raid"></div>
     <div class="lbl">Categories <a data-act="editcats">Edit</a></div>
     <div id="cats"></div>
+    <div class="lbl">People <a data-act="editpeople">Edit</a></div>
+    <div id="people"></div>
     <div class="lbl">Tags</div>
     <div id="tags"></div>
     <div id="trashrow"></div>
@@ -351,15 +388,16 @@ dialog p{color:var(--mute);font-size:13px}
       <div class="menu" id="newmenu">
         <button data-new="task">☐ Action</button>
         <button data-new="note">✎ Note</button>
-        <button data-new="meeting">◷ Meeting note</button>
         <button data-act="quickadd">⚡ Quick add…</button>
       </div>
     </div>
+    <div class="nbbar" id="nbbar"></div>
     <div class="chips" id="chips"></div>
     <div class="chips" id="catchips"></div>
     <div class="opts">
       <div class="seg" id="sortseg" title="How the list is ordered"><button data-sort="updated">Recent</button><button data-sort="date">By date</button></div>
       <label><input type="checkbox" id="hidedone"> Hide completed</label>
+      <label id="qscopewrap" style="display:none" title="You're searching inside one notebook. Tick this to search every notebook."><input type="checkbox" id="qscope"> All notebooks</label>
       <label id="datedwrap" title="Only show items that have a due date or note date"><input type="checkbox" id="datedonly"> Dated only</label>
     </div>
     <div class="items" id="items"></div>
@@ -370,16 +408,21 @@ dialog p{color:var(--mute);font-size:13px}
       <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
       <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
       <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
-      <button data-cmd="highlight" title="Highlight">🖍</button>
+      <button data-cmd="highlight" title="Highlight (yellow on / off)">🖍</button>
+      <select id="fmthl" title="Highlight colour"><option value="">Colour…</option><option value="#ffe58a">Yellow</option><option value="#bff0c8">Green</option><option value="#bfe0ff">Blue</option><option value="#ffc9de">Pink</option><option value="#ffd6aa">Orange</option><option value="transparent">No highlight</option></select>
+      <select id="fmtsize" title="Text size"><option value="">Size…</option><option value="2">Small</option><option value="3">Normal</option><option value="5">Large</option><option value="6">Huge</option></select>
       <span class="sep"></span>
       <button data-cmd="insertUnorderedList" title="Bulleted list (or type “- ”)">• List</button>
       <button data-cmd="insertOrderedList" title="Numbered list (or type “1. ”)">1. List</button>
       <button data-cmd="outdent" title="Decrease indent (Shift+Tab)">⇤</button>
       <button data-cmd="indent" title="Increase indent (Tab)">⇥</button>
+      <button data-cmd="fold" title="Fold or unfold this bullet's sub-points (or click its bullet)">⊟ Fold</button>
+      <button data-cmd="unfoldall" title="Unfold every bullet">⊞ All</button>
       <span class="sep"></span>
       <select id="fmtblock" title="Text style"><option value="div">Normal text</option><option value="h1">Heading</option><option value="h2">Subheading</option><option value="h3">Small heading</option></select>
       <button data-cmd="link" title="Add a link (Ctrl+K)">🔗</button>
       <button data-cmd="hr" title="Divider line">―</button>
+      <select id="fmttag" title="Tag a line. Tagged lines become action items and RAID entries"><option value="">＋ Tag…</option><option value="ACTION">ACTION</option><option value="RISK">RISK</option><option value="ISSUE">ISSUE</option><option value="DECISION">DECISION</option></select>
       <button data-cmd="table" title="Insert a table">▦ Table</button>
       <span id="tblbar"><button data-cmd="tbl-addrow" title="Add a row below">+ Row</button><button data-cmd="tbl-addcol" title="Add a column to the right">+ Col</button><button data-cmd="tbl-delrow" title="Delete this row">− Row</button><button data-cmd="tbl-delcol" title="Delete this column">− Col</button><button data-cmd="tbl-deltable" title="Delete the whole table" style="color:var(--red)">✕ Table</button></span>
       <button data-cmd="removeFormat" title="Clear formatting">✕ Clear</button>
@@ -387,6 +430,20 @@ dialog p{color:var(--mute);font-size:13px}
     <article class="detail" id="detail"></article>
   </div>
 </div>
+<dialog id="nbdlg">
+  <h3>Notebooks</h3>
+  <p>Group your pages, like OneNote. Each note lives in one notebook. Actions, risks, issues and decisions still roll up everywhere, and you can filter them by notebook. Deleting a notebook moves its pages to another one.</p>
+  <div id="nbrows"></div>
+  <div class="dfoot"><button data-act="addnb">+ Add notebook</button><button class="pri" data-act="closenb">Done</button></div>
+</dialog>
+<dialog id="pdlg">
+  <h3>People</h3>
+  <p>Anyone you assign actions to. Typing “@Sam” in an action adds Sam here by itself. Removing someone just unassigns their actions.</p>
+  <div id="prows"></div>
+  <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--mute)">I am <select id="pme"></select><span>(Today can then show just your actions, plus anything unassigned)</span></label>
+  <div class="dfoot"><button data-act="addperson">+ Add person</button><button class="pri" data-act="closepeople">Done</button></div>
+</dialog>
+<datalist id="peoplelist"></datalist>
 <dialog id="catdlg">
   <h3>Categories</h3>
   <p>Group your items and actions. Deleting a category just un-categorises things; nothing else is removed.</p>
@@ -407,7 +464,7 @@ dialog p{color:var(--mute);font-size:13px}
 </dialog>
 <dialog id="qadlg">
   <h3>⚡ Quick add</h3>
-  <p>Type it the way you'd say it, e.g. “call Sam Friday 3pm” or “timecards every other Friday”. Start with <b>note:</b> or <b>meeting:</b> to make one of those instead.</p>
+  <p>Type it the way you'd say it, e.g. “call Sam Friday 3pm” or “timecards every other Friday”. Start with <b>note:</b> to make a note instead, or <b>risk:</b>, <b>issue:</b> or <b>decision:</b> for the RAID log.</p>
   <input type="text" id="qai" placeholder="What needs doing, and when?" autocomplete="off">
   <div class="qapv" id="qapv2" style="margin:0 0 4px"></div>
   <div class="dfoot"><span></span><span><button data-act="qacancel">Cancel</button> <button class="pri" data-act="qasave">Add</button></span></div>
@@ -443,6 +500,14 @@ function fmtTime(t){ if(!t) return ''; let [h,m] = t.split(':').map(Number); con
    Anything pasted in or read from the file goes through cleanHtml(), so nothing else (scripts, styles, images) can get in. */
 const RT_TAGS = {B:'b', STRONG:'b', I:'i', EM:'i', U:'u', S:'s', STRIKE:'s', DEL:'s', UL:'ul', OL:'ol', LI:'li', BR:'br', HR:'hr', P:'div', DIV:'div', H1:'h1', H2:'h2', H3:'h3', BLOCKQUOTE:'blockquote', MARK:'mark', CODE:'code', PRE:'pre'};
 const isBlank = h => !h || (!/<(?:li|hr|table)\b/i.test(h) && h.replace(/<[^>]*>/g, '').replace(/&nbsp;| /g, ' ').trim() === '');
+const HL_COLORS = {yellow:[255, 229, 138], green:[191, 240, 200], blue:[191, 224, 255], pink:[255, 201, 222], orange:[255, 214, 170]};
+function hlClass(bg){                                       // which of our highlight colours is this background closest to? (yellow is the plain <mark>)
+  let m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(bg), rgb = m && [+m[1], +m[2], +m[3]];
+  if(!rgb && (m = /^#([0-9a-f]{6})$/i.exec(bg))){ const v = parseInt(m[1], 16); rgb = [v >> 16, (v >> 8) & 255, v & 255]; }
+  if(!rgb) return '';
+  let best = '', bd = 1e9; for(const [k, c] of Object.entries(HL_COLORS)){ const d = (c[0] - rgb[0]) ** 2 + (c[1] - rgb[1]) ** 2 + (c[2] - rgb[2]) ** 2; if(d < bd){ bd = d; best = k; } }
+  return best === 'yellow' ? '' : best;
+}
 function cleanHtml(html){
   if(!html) return '';
   const doc = new DOMParser().parseFromString('<!doctype html><body>' + html, 'text/html');
@@ -455,6 +520,12 @@ function cleanHtml(html){
       const href = (n.getAttribute('href') || '').trim();
       return /^(?:https?:|mailto:)/i.test(href) ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : inner;
     }
+    if(tag === 'FONT'){ const z = +n.getAttribute('size'); const c = z && z <= 2 ? 'sz-s' : z >= 6 ? 'sz-xl' : z >= 4 ? 'sz-l' : ''; return c ? `<span class="${c}">${inner}</span>` : inner; }       // text size (the browser's own size command makes <font size>)
+    if(tag === 'SPAN'){
+      const cl = n.getAttribute('class') || '', tg = /\bt-(action|risk|issue|decision)\b/.exec(cl), rid = n.getAttribute('data-rid') || '';
+      if(/\brtag\b/.test(cl)) return tg && /^[\w-]{3,40}$/.test(rid) ? `<span class="rtag t-${tg[1]}" data-rid="${rid}">${inner}</span>` : inner;       // ACTION: / RISK: / ISSUE: / DECISION: markers
+      const sz = /\bsz-(s|l|xl)\b/.exec(cl); if(sz) return `<span class="sz-${sz[1]}">${inner}</span>`;
+    }
     if(tag === 'TABLE') return `<table>${inner}</table>`;                    // simple tables only: rows and cells (no merged cells, widths or colours)
     if(tag === 'TR') return `<tr>${inner}</tr>`;
     if(tag === 'TD' || tag === 'TH') return `<${tag.toLowerCase()}>${inner || '<br>'}</${tag.toLowerCase()}>`;
@@ -464,14 +535,20 @@ function cleanHtml(html){
     if(t === 'br' || t === 'hr') return `<${t}>`;
     let out = inner;
     const docsWrapper = t === 'b' && /^(?:normal|[1-4]00)$/.test(st.fontWeight || '');          // Google Docs wraps pastes in <b style="font-weight:normal">
-    if(t && !docsWrapper) out = `<${t}>${inner}</${t}>`;
+    if(t && !docsWrapper){
+      let at = '';
+      if(t === 'div' || t === 'li'){ const rk = n.getAttribute('data-raid'); if(['action', 'risk', 'issue', 'decision'].includes(rk)) at += ` data-raid="${rk}"`; }
+      if(t === 'li' && n.getAttribute('data-fold')) at += ' data-fold="1"';                       // a folded bullet (its sub-points are hidden)
+      const hc = t === 'mark' ? (/\bh-(green|blue|pink|orange)\b/.exec(n.getAttribute('class') || '') || [])[1] : '';
+      out = `<${t}${at}${hc ? ` class="h-${hc}"` : ''}>${inner}</${t}>`;
+    }
     if(t !== 'b' && (st.fontWeight === 'bold' || +st.fontWeight >= 600)) out = `<b>${out}</b>`;       // formatting that arrives as styles (Word, Docs, web pages)
     if(t !== 'i' && st.fontStyle === 'italic') out = `<i>${out}</i>`;
     const td = st.textDecorationLine || st.textDecoration || '';
     if(t !== 'u' && /underline/.test(td)) out = `<u>${out}</u>`;
     if(t !== 's' && /line-through/.test(td)) out = `<s>${out}</s>`;
     const bg = st.backgroundColor;
-    if(t !== 'mark' && bg && !/transparent|rgba\(0, ?0, ?0, ?0\)|^white$|rgb\(255, ?255, ?255\)|^#fff(?:fff)?$/i.test(bg)) out = `<mark>${out}</mark>`;
+    if(t !== 'mark' && bg && !/transparent|rgba\(0, ?0, ?0, ?0\)|^white$|rgb\(255, ?255, ?255\)|^#fff(?:fff)?$/i.test(bg)){ const hc = hlClass(bg); out = `<mark${hc ? ` class="h-${hc}"` : ''}>${out}</mark>`; }
     return out;
   };
   const out = Array.from(doc.body.childNodes, walk).join('');
@@ -713,10 +790,11 @@ function completeToggle(o, item, checked){
 
 /* ================= data ================= */
 const DEFAULT_CATS = () => [{id:'work', name:'Work', color:'#3b6ea5'}, {id:'personal', name:'Personal', color:'#4f8a5b'}, {id:'admin', name:'Admin', color:'#c2862d'}];
-const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[], trash:[]});
+const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[], trash:[], people:[], me:'', notebooks:[{id:'general', name:'General', color:'#3b6ea5'}]});
 const TRASH_DAYS = 30;
 let db = BLANK();
 const strDates = a => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x)))].sort() : [];
+const cleanPeople = a => { const seen = new Set(), out = []; for(const n of Array.isArray(a) ? a : []){ const v = typeof n === 'string' ? n.trim() : ''; if(v && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); out.push(v); } } return out; };
 function normalize(d){
   const rich = d.bodyFormat === 'html', conv = s => rich ? cleanHtml(s || '') : plainToHtml(s || '');      // files from before formatting hold plain text
   d.categories = Array.isArray(d.categories) ? d.categories.map(c => ({id:c.id || uid(), name:c.name || 'Untitled', color:c.color || '#888888'})) : DEFAULT_CATS();
@@ -724,10 +802,15 @@ function normalize(d){
     id: i.id || uid(), type: i.type === 'task' ? 'task' : 'note',      // older files had a separate "meeting" type: meetings are now just notes that have a date
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
-    done: !!i.done, pinned: !!i.pinned, checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
+    done: !!i.done, pinned: !!i.pinned, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
     created: i.created || now(), updated: i.updated || now()
   });
   d.items = (d.items || []).map(item);
+  const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length]})).filter(n => { nbSeen.add(n.id); return true; });
+  if(!d.notebooks.length) d.notebooks = [{id:'general', name:'General', color:NB_COLORS[0]}];
+  d.items.forEach(i => { if(i.type === 'note' && !d.notebooks.some(n => n.id === i.notebook)) i.notebook = d.notebooks[0].id; });          // every note lives in a notebook
+  d.people = cleanPeople(d.people); d.me = typeof d.me === 'string' ? d.me.trim() : '';
+  d.items.forEach(i => { for(const o of [i, ...i.checklist]) if(o.assignee && !d.people.some(n => n.toLowerCase() === o.assignee.toLowerCase())) d.people.push(o.assignee); });
   d.trash = (Array.isArray(d.trash) ? d.trash : []).filter(t => t && t.item && Date.now() - Date.parse(t.deleted) < TRASH_DAYS * 864e5).map(t => ({item:item(t.item), deleted:t.deleted}));      // deleted items wait here for 30 days
   d.plan = (Array.isArray(d.plan) ? d.plan : []).filter(b => b && /^\d{4}-\d\d-\d\d$/.test(b.start || '')).map(b => {      // Timeline blocks: when YOU plan something to happen (separate from due dates)
     let s = b.start, e = /^\d{4}-\d\d-\d\d$/.test(b.end || '') ? b.end : b.start; if(e < s) [s, e] = [e, s];
@@ -742,22 +825,28 @@ const catDot = id => { const c = catById(id); return c ? `<i class="cdot" style=
 const catOptions = (sel, blank) => `<option value="">${esc(blank)}</option>` + db.categories.map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 function welcomeNote(){
   return {id:uid(), type:'note', title:'Welcome to your notebook', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[],
-    body:plainToHtml('Everything here saves automatically to the JSON file you choose.\nIf saving ever stops, a red bar appears at the top telling you why.\n\n• Use the + button to add an action, note or meeting note. A meeting is just a note with a date and attendees.\n• Notes can have action items, each with its own due date, category and notes.\n• An action is anything you need to do. It can stand on its own, or sit inside a note or meeting as an action item. The Actions tab collects all of them in one list.\n• The Timeline tab is a planning calendar: drag across days to make a block, stretch it over weeks, and drag actions in from “Not planned yet”. Blocks are separate from due dates.\n• Type things like “send SOW by Friday 3pm” or “weekly report every Monday” and the date fills itself in (with Undo). Recurring actions roll to their next date when you tick them off.\n• Format notes with the toolbar above them: bold, underline, bullets, numbered lists, headings. Tab indents, and typing “- ” or “1. ” starts a list.\n• The « buttons hide the sidebars (Ctrl+\\ hides the left one).\n• Categories (Edit in the sidebar) group things; tags are free-form, e.g. acme, q4-planning.\n\nDelete this note whenever you like.'),
+    body:plainToHtml('Everything here saves automatically to the JSON file you choose.\nIf saving ever stops, a red bar appears at the top telling you why.\n\n• Use the + button to add an action or a note. A note can have a date and attendees too, which makes it a good place for meeting minutes.\n• Type ACTION:, RISK:, ISSUE: or DECISION: at the start of a line in a note and it becomes its own entry (with a due date and @person if you write them). Risks, issues and decisions get their own pages under RAID log.\n• Notes can have action items, each with its own due date, category and notes.\n• An action is anything you need to do. It can stand on its own, or sit inside a note or meeting as an action item. The Actions tab collects all of them in one list.\n• The Timeline tab is a planning calendar: drag across days to make a block, stretch it over weeks, and drag actions in from “Not planned yet”. Blocks are separate from due dates.\n• Type things like “send SOW by Friday 3pm” or “weekly report every Monday” and the date fills itself in (with Undo). Recurring actions roll to their next date when you tick them off.\n• Format notes with the toolbar above them: bold, underline, bullets, numbered lists, headings. Tab indents, and typing “- ” or “1. ” starts a list.\n• The « buttons hide the sidebars (Ctrl+\\ hides the left one).\n• Categories (Edit in the sidebar) group things; tags are free-form, e.g. acme, q4-planning.\n\nDelete this note whenever you like.'),
     created:now(), updated:now()};
 }
 const byId = id => db.items.find(i => i.id === id);
+const NB_COLORS = ['#3b6ea5', '#4f8a5b', '#c2862d', '#8a6bbf', '#c2562d', '#2f8f9d'];
+const nbById = id => db.notebooks.find(n => n.id === id);
+const nextNbColor = () => NB_COLORS.find(c => !db.notebooks.some(n => n.color === c)) || NB_COLORS[db.notebooks.length % NB_COLORS.length];
+const nbKey = i => nbById(i.notebook) ? i.notebook : db.notebooks[0].id;          // the notebook a note really lives in
+const curNb = () => filter.startsWith('nb:') && nbById(filter.slice(3)) ? filter.slice(3) : (nbById(lastNb) ? lastNb : db.notebooks[0].id);
 
 /* ================= UI state ================= */
 let selCk = '';                    // when you open an action item from the list, which one (so it can be highlighted in its note)
 let selId = null, filter = 'today', search = '', sortMode = 'updated', hideDone = false;
 let actGroup = 'due', actCat = '', actDone = false, actTimer = null, autoDates = true, railOff = false, listOff = false;
-let theme = 'auto';
+let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '';
+const nbFold = new Set();          // notebooks folded closed in the Notes list
 let tlWork = false, tlCat = '', tlHideDone = false, tlLayer = 'blocks';        // tlLayer: 'blocks' (your plan only), 'due' (tasks and actions on their due dates), or 'both'                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
 let chipsOff = {all:[], note:[]}, listCat = '', datedOnly = false;     // list filter bar: which type chips are switched off (remembered), category, dated-only
 const openNotes = new Set();       // ids of actions whose notes box is expanded (not saved)
-try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto';
-  if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['note','meeting','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
-function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer, theme})); } catch {} }
+try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' || String(u.filter).startsWith('nb:') ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto'; actPerson = u.actPerson || ''; todayMine = !!u.todayMine; actNb = u.actNb || ''; lastNb = u.lastNb || ''; (Array.isArray(u.nbFold) ? u.nbFold : []).forEach(x => nbFold.add(x));
+  if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['note','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
+function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer, theme, actPerson, todayMine, actNb, lastNb, nbFold:[...nbFold]})); } catch {} }
 
 function applyTheme(){ if(theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme); }
 applyTheme();
@@ -818,18 +907,34 @@ function mergeDb(fileDb, local){
   const tr = new Map(fileDb.trash.map(t => [t.item.id, t]));
   for(const t of local.trash || []) if(!tr.has(t.item.id)) tr.set(t.item.id, t);
   fileDb.trash = [...tr.values()].filter(t => !fileDb.items.some(i => i.id === t.item.id));
+  const nbm = new Map(fileDb.notebooks.map(n => [n.id, n])); for(const n of local.notebooks || []) if(!nbm.has(n.id)) nbm.set(n.id, n); fileDb.notebooks = [...nbm.values()];
+  fileDb.people = cleanPeople([...fileDb.people, ...(local.people || [])]); if(!fileDb.me) fileDb.me = local.me || '';
   return fileDb;
 }
 
+/* If the file has lost its notebooks (an older copy of the app saved over it) but this browser still remembers them, bring them back,
+   and which pages were in them. A file that has a notebooks list is never touched. */
+function restoreFromCache(){
+  const cn = cached && cached.db && Array.isArray(cached.db.notebooks) ? cached.db.notebooks : [];
+  const lost = cn.filter(n => n && n.id && typeof n.name === 'string' && !db.notebooks.some(x => x.id === n.id));
+  if(!lost.length) return;
+  const ids = new Set(lost.map(n => n.id));
+  db.notebooks.push(...lost.map(n => ({id:n.id, name:n.name, color:/^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : nextNbColor()})));
+  let moved = 0;
+  for(const ci of cached.db.items || []){ if(ci && ids.has(ci.notebook)){ const i = byId(ci.id); if(i && i.type === 'note'){ i.notebook = ci.notebook; moved++; } } }
+  dirty = true; db.savedAt = now();
+  setTimeout(() => toast(`Brought back ${lost.length} notebook${lost.length === 1 ? '' : 's'} that the file had lost${moved ? ' (and ' + moved + ' page' + (moved === 1 ? '' : 's') + ')' : ''}.`), 600);
+}
 /* mode: 'resume' (same file as last time), 'adopt' (user just picked it), 'force' (reload from disk) */
 async function loadFromFile(mode){
   const f = await fileHandle.getFile();
   lastModified = f.lastModified;
   const text = await f.text();
-  let fd = null;
+  let fd = null, hadNb = true;
   if(text.trim()){
     try { fd = JSON.parse(text); } catch { fd = null; }
     if(!fd || !Array.isArray(fd.items)){ fileState = 'badfile'; return; }
+    hadNb = Array.isArray(fd.notebooks);
     normalize(fd);
   }
   if(fd){
@@ -839,6 +944,7 @@ async function loadFromFile(mode){
     else if(c && mode === 'adopt' && confirm('You have changes that were never saved to a file.\n\nOK = add them to this file\nCancel = use the file as it is')){ db = mergeDb(fd, c); db.savedAt = now(); dirty = true; }
     else { db = fd; dirty = false; }
   } else { dirty = true; }        // brand-new empty file: write what we have into it
+  if(fd && db === fd && !hadNb) restoreFromCache();          // the file has no notebooks field at all: an older copy of the app saved over it
   fileState = 'ready'; writeError = ''; externalChange = false;
   cacheWrite();
   if(dirty) flush();
@@ -934,7 +1040,7 @@ async function init(){
 
 /* ================= rendering ================= */
 /* ---- the list's shared filter bar: type chips, category, sort ---- */
-const typeOf = i => i.type === 'task' ? 'action' : isMeeting(i) ? 'meeting' : 'note';          // chips: action / plain note / meeting
+const typeOf = i => i.type === 'task' ? 'action' : 'note';          // chips: action / note
 const itemDate = i => i.type === 'task' ? i.due : i.date;
 /* Due-date groups, shared by the main list and the Actions tab. Weeks run Monday to Sunday. */
 const BUCKETS = ['Pinned', 'Past due', 'Today', 'Tomorrow', 'Later this week', 'Next week', 'Later', 'No date', 'Past', 'Completed'];
@@ -958,16 +1064,18 @@ function bucketOf(e){
   return dueBucket(eDate(e), eDone(e), e.kind === 'ck' || e.item.type === 'task');
 }
 const chipView = () => filter === 'note' ? 'note' : 'all';          // chip choices are remembered separately for "Notes & meetings" and for everything else
+const catChipsShown = () => filter !== 'actions' && filter !== 'note' && !filter.startsWith('cat:') && db.categories.length > 0;          // the Notes list has no category chips: notebooks do that job
 function filteredItems(opts = {}){
   let a = db.items.slice();
   if(['task','note'].includes(filter) && !search.trim()) a = a.filter(i => i.type === filter);          // typing in the search box looks through everything
+  else if(filter.startsWith('nb:') && !(search.trim() && searchAll)) a = a.filter(i => i.type === 'note' && nbKey(i) === filter.slice(3));          // inside a notebook, search stays in it (unless you tick “All notebooks”)
   else if(filter.startsWith('tag:')) a = a.filter(i => i.tags.includes(filter.slice(4)));
   else if(filter.startsWith('cat:')) a = a.filter(i => i.category === filter.slice(4));
-  if(listCat === 'none') a = a.filter(i => !i.category); else if(listCat && !filter.startsWith('cat:')) a = a.filter(i => i.category === listCat);
+  if(catChipsShown()){ if(listCat === 'none') a = a.filter(i => !i.category); else if(listCat) a = a.filter(i => i.category === listCat); }
   if(hideDone) a = a.filter(i => !(i.type === 'task' && i.done));
   if(sortMode === 'date' && datedOnly) a = a.filter(i => !!itemDate(i));
   const q = search.trim().toLowerCase();
-  if(q) a = a.filter(i => [i.title, htmlText(i.body), i.attendees, i.tags.join(' '), i.checklist.map(c => c.text + ' ' + htmlText(c.note)).join(' ')].join('\n').toLowerCase().includes(q));
+  if(q) a = a.filter(i => [i.title, htmlText(i.body), i.attendees, i.assignee, i.tags.join(' '), i.checklist.map(c => c.text + ' ' + htmlText(c.note)).join(' ')].join('\n').toLowerCase().includes(q));
   const off = chipsOff[chipView()] || [];
   if(!opts.skipChips && filter !== 'task' && off.length) a = a.filter(i => !off.includes(typeOf(i)));
   return a;
@@ -980,14 +1088,15 @@ function filteredCks(opts = {}){
   const q = search.trim().toLowerCase(), out = [];
   for(const it of db.items){
     if(filter.startsWith('tag:') && !it.tags.includes(filter.slice(4))) continue;
+    if(filter.startsWith('nb:') && !searchAll && (it.type !== 'note' || nbKey(it) !== filter.slice(3))) continue;
     for(const c of it.checklist){
       if(!c.text.trim()) continue;
       const cat = c.cat || it.category;
       if(filter.startsWith('cat:') && cat !== filter.slice(4)) continue;
-      if(listCat === 'none' ? cat : (listCat && !filter.startsWith('cat:') && cat !== listCat)) continue;
+      if(catChipsShown() && (listCat === 'none' ? cat : (listCat && cat !== listCat))) continue;
       if(hideDone && c.done) continue;
       if(sortMode === 'date' && datedOnly && !c.due) continue;
-      if(q && !(c.text + ' ' + htmlText(c.note)).toLowerCase().includes(q)) continue;
+      if(q && !(c.text + ' ' + (c.assignee || '') + ' ' + htmlText(c.note)).toLowerCase().includes(q)) continue;
       out.push({kind:'ck', item:it, ck:c});
     }
   }
@@ -1016,19 +1125,22 @@ function listEntries(opts = {}){
 }
 const visible = opts => listEntries(opts).filter(e => e.kind === 'item').map(e => e.item);        // just the items (used when picking the next one after a delete)
 function renderFilterBar(){
-  const chips = $('#chips'), show = filter !== 'task' && filter !== 'actions';
+  const chips = $('#chips'), show = filter !== 'task' && filter !== 'actions' && filter !== 'note' && !filter.startsWith('nb:');
   chips.style.display = show ? '' : 'none';
   if(show){
     const view = chipView(), off = chipsOff[view] || [], base = listEntries({skipChips:true});
-    const defs = [['action', '⚑ Actions'], ['note', '✎ Notes'], ['meeting', '◷ Meetings']].filter(([k]) => !(view === 'note' && k === 'action'));
+    const defs = [['action', '⚑ Actions'], ['note', '✎ Notes']];
     chips.innerHTML = defs.map(([k, l]) => `<button class="chip ${off.includes(k) ? '' : 'on'}" data-chip="${k}" aria-pressed="${!off.includes(k)}" title="${off.includes(k) ? 'Show' : 'Hide'} ${l.slice(2).toLowerCase()}">${l} <small>${base.filter(e => eType(e) === k).length}</small></button>`).join('');
   }
   if(listCat && listCat !== 'none' && !catById(listCat)) listCat = '';
-  const cc = $('#catchips'), showCats = filter !== 'actions' && !filter.startsWith('cat:') && db.categories.length > 0;
+  const cc = $('#catchips'), showCats = catChipsShown();
   cc.style.display = showCats ? '' : 'none';
   if(showCats) cc.innerHTML = db.categories.map(c => `<button class="chip cchip ${listCat === c.id ? 'on' : ''}" data-lcat="${esc(c.id)}" aria-pressed="${listCat === c.id}" title="${listCat === c.id ? 'Show all categories again' : 'Only show ' + esc(c.name)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('');
   document.querySelectorAll('#sortseg [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === sortMode));
+  const bar = $('#nbbar'); bar.style.display = filter === 'note' ? '' : 'none';
+  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><span style="flex:1"></span><a data-act="nbfoldall">Collapse all</a><a data-act="nbunfoldall">Expand all</a>`;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
+  $('#qscopewrap').style.display = filter.startsWith('nb:') && search.trim() ? '' : 'none'; $('#qscope').checked = searchAll;
   $('#datedonly').checked = datedOnly; $('#hidedone').checked = hideDone;
 }
 function fixSelection(){ const v = listEntries(); if(!v.some(e => e.item.id === selId)){ selId = v[0] ? v[0].item.id : null; selCk = ''; } }
@@ -1064,10 +1176,15 @@ function renderRail(){
   const cnt = t => db.items.filter(i => i.type === t).length;
   const openActions = allActions().filter(x => !x.done && x.text.trim()).length;
   const planned = db.plan.filter(b => b.repeat ? !b.until || b.until >= todayStr() : !b.done && b.end >= todayStr()).length;
-  const T0 = todayStr(), dueNow = allActions().filter(x => !x.done && x.text.trim() && x.due && x.due <= T0), overdueN = dueNow.filter(x => x.due < T0).length;
-  const F = [['today','☀ Today',dueNow.length,overdueN ? 'hot' : ''],['actions','⚑ Actions',openActions],['timeline','▦ Timeline',planned],['note','✎ Notes & meetings',cnt('note')]];
-  $('#filters').innerHTML = F.map(([k,l,n,cls]) => `<div class="f ${filter === k || (k === 'actions' && filter === 'task') ? 'on' : ''}" data-filter="${k}">${l} <small class="${cls || ''}">${n}</small></div>`).join('');
-  $('#trashrow').innerHTML = `<div class="f trashlink ${filter === 'trash' ? 'on' : ''}" data-filter="trash" title="Deleted items are kept for ${TRASH_DAYS} days (press 5)">🗑 Trash <small>${db.trash.length || ''}</small></div>`;
+  const T0 = todayStr(), dueNow = allEntries().filter(x => !x.done && x.text.trim() && x.due && x.due <= T0), overdueN = dueNow.filter(x => x.due < T0).length;
+  const F = [['today','☀ Today',dueNow.length,overdueN ? 'hot' : ''],['actions','⚑ Actions',openActions],['note','✎ Notes',cnt('note')],['timeline','▦ Timeline',planned]];
+  $('#filters').innerHTML = F.map(([k,l,n,cls]) => `<div class="f ${filter === k || (k === 'actions' && filter === 'task') || (k === 'note' && filter.startsWith('nb:')) ? 'on' : ''}" data-filter="${k}">${l} <small class="${cls || ''}">${n}</small></div>`).join('');
+  $('#trashrow').innerHTML = `<div class="f trashlink ${filter === 'trash' ? 'on' : ''}" data-filter="trash" title="Deleted items are kept for ${TRASH_DAYS} days (press 8)">🗑 Trash <small>${db.trash.length || ''}</small></div>`;
+  $('#peoplelist').innerHTML = db.people.map(n => `<option value="${esc(n)}"></option>`).join('');
+  const openBy = {}; allActions().forEach(x => { if(!x.done && x.assignee && x.text.trim()) openBy[x.assignee.toLowerCase()] = (openBy[x.assignee.toLowerCase()] || 0) + 1; });
+  $('#people').innerHTML = db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<div class="tag ${filter === 'actions' && actPerson.toLowerCase() === n.toLowerCase() ? 'on' : ''}" data-person="${esc(n)}"><span class="cn">${esc(n)}</span><small>${openBy[n.toLowerCase()] || 0}</small></div>`).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>Type @name in an action</small></div>';
+  const raidOpen = k => allRaid().filter(x => x.raid === k && !x.done && x.text.trim()).length;
+  $('#raid').innerHTML = ['risk', 'issue', 'decision'].map(k => `<div class="f ${filter === k ? 'on' : ''}" data-filter="${k}">${RAID_META[k].icon} ${RAID_META[k].many} <small>${raidOpen(k)}</small></div>`).join('');
   const tags = {}; db.items.forEach(i => i.tags.forEach(t => tags[t] = (tags[t] || 0) + 1));
   $('#cats').innerHTML = db.categories.length ? db.categories.map(c => `<div class="tag ${filter==='cat:'+c.id?'on':''}" data-filter="cat:${esc(c.id)}"><span class="cn"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</span><small>${db.items.filter(i => i.category === c.id).length}</small></div>`).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>No categories</small></div>';
   const names = Object.keys(tags).sort();
@@ -1081,61 +1198,88 @@ function whenOf(i){
 function subOf(i){
   const p = [];
   if(i.attendees) p.push(i.attendees);
+  if(i.assignee) p.push('→ ' + i.assignee);
   if(i.checklist.length) p.push(`${i.checklist.filter(c => c.done).length}/${i.checklist.length} done`);
   if(i.tags.length) p.push(i.tags.map(t => '#' + t).join(' '));
   const line = htmlText(i.body).split('\n').find(l => l.trim());
   if(line) p.push(line.trim());
   return p.join(' · ') || 'No details';
 }
+function entryHtml(e){
+  const i = e.item;
+  if(e.kind === 'ck'){                          // an action item: tick it off here, click to jump to the note it lives in
+    const c = e.ck, cat = c.cat || i.category;
+    const w = c.done ? {t:'Done'} : !c.due ? {t:''} : dayDiff(c.due) < 0 ? {t:'Past due', cls:'late'} : {t:[fmtDay(c.due), fmtTime(c.time)].filter(Boolean).join(' ')};
+    return `<div class="it ck ${selCk === c.id && selId === i.id ? 'on' : ''} ${c.done ? 'done' : ''} ${!c.done && c.due && c.due < todayStr() ? 'late' : !c.done && c.due === todayStr() ? 'todayrow' : ''}" data-id="${i.id}" data-ck="${c.id}">
+      <span class="ic"><input type="checkbox" class="lc" ${c.done ? 'checked' : ''} aria-label="Done"></span>
+      <div><b>${catDot(cat)}${esc(c.text)}</b><small>⚑ ${esc(i.title || 'Untitled')}${c.repeat ? ' · ' + esc(describeRepeat(c.repeat)) : ''}${c.assignee ? ' · → ' + esc(c.assignee) : ''}</small></div>
+      <time class="${w.cls || ''}">${esc(w.t)}</time></div>`;
+  }
+  const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk)), dd = itemDate(i), openT = !(i.type === 'task' && i.done);
+  return `<div ${i.type === 'note' ? `draggable="true" data-nbdrop="${esc(nbKey(i))}" ` : ''}class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
+      <span class="ic">${i.type==='task' ? `<input type="checkbox" class="lc" ${i.done?'checked':''} aria-label="Done">` : isMeeting(i) ? '◷' : '✎'}</span>
+      <div><b>${i.pinned ? '📌 ' : ''}${i.raid ? raidBadge(i.raid) : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
+      <time class="${w.cls||''}">${esc(w.t)}</time></div>`;
+}
 function renderList(){
   renderFilterBar();
   const v = listEntries(), counts = {};
-  v.forEach(e => { const b = bucketOf(e); counts[b] = (counts[b] || 0) + 1; });
   let html = '', last = '';
-  for(const e of v){
-    if(sortMode === 'date'){                      // date sort is grouped (see BUCKETS)
-      const b = bucketOf(e);
-      if(b !== last){ html += `<div class="gh2 ${b === 'Past due' ? 'late' : b === 'Today' ? 'today' : ''}">${b} <small>${counts[b]}</small></div>`; last = b; }
+  if(filter === 'note'){                        // Notes: one collapsible section per notebook
+    const filtering = !!search.trim(), groups = db.notebooks.map(n => ({id:n.id, nb:n, rows:[]})), other = {id:'~act', nb:null, rows:[]};
+    v.forEach(e => (e.item.type === 'note' ? groups.find(g => g.id === nbKey(e.item)) : other).rows.push(e));
+    if(other.rows.length) groups.push(other);
+    for(const g of groups){
+      if(!g.rows.length && filtering) continue;
+      const folded = nbFold.has(g.id) && !search.trim(), n = g.rows.filter(e => e.kind === 'item').length;
+      html += `<div class="nbgh ${folded ? 'folded' : ''}" data-nbfold="${esc(g.id)}" ${g.nb ? `data-nbdrop="${esc(g.id)}"` : ''} style="--nbc:${esc(g.nb ? g.nb.color : 'var(--mute)')}"><span class="nbc">${folded ? '▸' : '▾'}</span><span class="nbn">${esc(g.nb ? g.nb.name : 'Action items from other places')}</span><small>${n} ${n === 1 ? 'page' : 'pages'}</small>${g.nb ? `<button data-act="nbnewpage" data-id="${esc(g.id)}" title="New page in ${esc(g.nb.name)}">＋</button>` : ''}</div>`;
+      if(folded) continue;
+      html += g.rows.length ? g.rows.map(entryHtml).join('') : `<div class="nbempty" data-nbdrop="${esc(g.id)}">No pages yet. Press ＋ or drag a page here.</div>`;
     }
-    const i = e.item;
-    if(e.kind === 'ck'){                          // an action item: tick it off here, click to jump to the note it lives in
-      const c = e.ck, cat = c.cat || i.category;
-      const w = c.done ? {t:'Done'} : !c.due ? {t:''} : dayDiff(c.due) < 0 ? {t:'Past due', cls:'late'} : {t:[fmtDay(c.due), fmtTime(c.time)].filter(Boolean).join(' ')};
-      html += `<div class="it ck ${selCk === c.id && selId === i.id ? 'on' : ''} ${c.done ? 'done' : ''} ${!c.done && c.due && c.due < todayStr() ? 'late' : !c.done && c.due === todayStr() ? 'todayrow' : ''}" data-id="${i.id}" data-ck="${c.id}">
-      <span class="ic"><input type="checkbox" class="lc" ${c.done ? 'checked' : ''} aria-label="Done"></span>
-      <div><b>${catDot(cat)}${esc(c.text)}</b><small>⚑ ${esc(i.title || 'Untitled')}${c.repeat ? ' · ' + esc(describeRepeat(c.repeat)) : ''}</small></div>
-      <time class="${w.cls || ''}">${esc(w.t)}</time></div>`;
-      continue;
+  } else {
+    v.forEach(e => { const b = bucketOf(e); counts[b] = (counts[b] || 0) + 1; });
+    for(const e of v){
+      if(sortMode === 'date'){                      // date sort is grouped (see BUCKETS)
+        const b = bucketOf(e);
+        if(b !== last){ html += `<div class="gh2 ${b === 'Past due' ? 'late' : b === 'Today' ? 'today' : ''}">${b} <small>${counts[b]}</small></div>`; last = b; }
+      }
+      html += entryHtml(e);
     }
-    const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk)), dd = itemDate(i), openT = !(i.type === 'task' && i.done);
-    html += `<div class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
-      <span class="ic">${i.type==='task' ? `<input type="checkbox" class="lc" ${i.done?'checked':''} aria-label="Done">` : isMeeting(i) ? '◷' : '✎'}</span>
-      <div><b>${i.pinned ? '📌 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
-      <time class="${w.cls||''}">${esc(w.t)}</time></div>`;
   }
-  const filtered = (chipsOff[chipView()] || []).length || listCat || hideDone || (sortMode === 'date' && datedOnly);
+  const filtered = (chipsOff[chipView()] || []).length || (catChipsShown() && listCat) || hideDone || (sortMode === 'date' && datedOnly);
   if(filter === 'task') html = `<div class="gh2"><a data-filter="actions">‹ Back to all actions</a></div>` + html;
-  $('#items').innerHTML = v.length ? html
-    : `<div class="empty">${search ? 'Nothing matches your search.' : filtered && db.items.length ? 'Nothing matches these filters.<br><a data-act="resetfilters">Reset filters</a>' : 'Nothing here yet.<br>Use + to add something.'}</div>`;
+  $('#items').innerHTML = (filter === 'note' ? html : v.length ? html : '') || `<div class="empty">${search ? 'Nothing matches your search.' : filtered && db.items.length ? 'Nothing matches these filters.<br><a data-act="resetfilters">Reset filters</a>' : 'Nothing here yet.<br>Use + to add something.'}</div>`;
 }
 function ckRows(i){
   const inherit = catById(i.category), blank = inherit ? inherit.name + ' (inherited)' : 'No category';
-  return i.checklist.map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}><textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category">${catOptions(c.cat, blank)}</select><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${c.note}</div>` : ''}</div>`).join('');
+  return i.checklist.map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${c.raid ? raidBadge(c.raid) : ''}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${c.note}</div>` : ''}</div>`).join('');
 }
 
 /* ---- Actions tab: every task + every checklist/action item, in one list ---- */
 const textTime = text => (parseWhen(text || '') || {}).time || '';
 const sortTime = (time, text) => time || textTime(text) || '99:99';          // untimed things go after timed ones; a time only written in the text still counts
+const RAID_META = {risk:{one:'Risk', many:'Risks', icon:'⚠', add:'Add a risk…', blurb:'Things that might go wrong. Each has an owner and a date to revisit.', done:'Resolved'}, issue:{one:'Issue', many:'Issues', icon:'⛔', add:'Add an issue…', blurb:'Problems happening now that need fixing.', done:'Resolved'}, decision:{one:'Decision', many:'Decisions', icon:'✔', add:'Add a decision…', blurb:'Decisions made, or still needed. Tick one off once it is decided.', done:'Decided'}};
+const raidBadge = k => k && RAID_META[k] ? `<span class="rbadge t-${k}">${RAID_META[k].one}</span>` : '';
+function allRaid(){                                           // risks, issues and decisions: standalone ones, and ones tagged inside a note
+  const out = [];
+  for(const it of db.items){
+    if(it.type === 'task' && it.raid) out.push({key:it.id, kind:'task', item:it, text:it.title, due:it.due, time:it.time, repeat:null, note:it.body, cat:it.category, own:it.category, done:it.done, assignee:it.assignee || '', raid:it.raid});
+    for(const c of it.checklist) if(c.raid) out.push({key:c.id, kind:'ck', item:it, ck:c, text:c.text, due:c.due, time:c.time, repeat:null, note:c.note, cat:c.cat || it.category, own:c.cat, done:c.done, assignee:c.assignee || '', raid:c.raid});
+  }
+  return out;
+}
+const allEntries = () => allActions().concat(allRaid());
+const findEntry = key => allEntries().find(x => x.key === key) || null;
 function allActions(){
   const out = [];
   for(const it of db.items){
-    if(it.type === 'task') out.push({key:it.id, kind:'task', item:it, text:it.title, due:it.due, time:it.time, repeat:it.repeat, note:it.body, cat:it.category, own:it.category, done:it.done});
-    for(const c of it.checklist) out.push({key:c.id, kind:'ck', item:it, ck:c, text:c.text, due:c.due, time:c.time, repeat:c.repeat, note:c.note, cat:c.cat || it.category, own:c.cat, done:c.done});
+    if(it.type === 'task' && !it.raid) out.push({key:it.id, kind:'task', item:it, text:it.title, due:it.due, time:it.time, repeat:it.repeat, note:it.body, cat:it.category, own:it.category, done:it.done, assignee:it.assignee || ''});
+    for(const c of it.checklist) if(!c.raid) out.push({key:c.id, kind:'ck', item:it, ck:c, text:c.text, due:c.due, time:c.time, repeat:c.repeat, note:c.note, cat:c.cat || it.category, own:c.cat, done:c.done, assignee:c.assignee || ''});
   }
   return out;
 }
 function setAction(a, f, v){
-  if(a.kind === 'task'){ a.item[{text:'title', due:'due', time:'time', cat:'category', done:'done', note:'body'}[f]] = v; }
+  if(a.kind === 'task'){ a.item[{text:'title', due:'due', time:'time', cat:'category', done:'done', note:'body', assignee:'assignee'}[f]] = v; }
   else { a.ck[f] = v; }
   edited(a.item);
 }
@@ -1157,31 +1301,36 @@ function groupActions(list){
 function actRow(x){
   const late = !x.done && x.due && dayDiff(x.due) < 0, c = catById(x.cat), inh = x.kind === 'ck' ? catById(x.item.category) : null;
   const blank = inh ? inh.name + ' (inherited)' : 'No category';
-  const src = x.kind === 'task' ? '☐ Standalone action' : `${x.item.type === 'task' ? '☐' : isMeeting(x.item) ? '◷' : '✎'} ${esc(x.item.title || 'Untitled')}`;
+  const src = x.kind === 'task' ? (x.raid ? '☐ Standalone' : '☐ Standalone action') : `${x.item.type === 'task' ? '☐' : isMeeting(x.item) ? '◷' : '✎'} ${esc(x.item.title || 'Untitled')}`;
   return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''}" data-key="${x.key}">
     <input type="checkbox" data-ax="done" ${x.done?'checked':''}>
-    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline"><a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a></div></div>
+    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a></div></div>
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
     <input type="time" data-ax="time" value="${esc(x.time)}" title="Time">
     <select data-ax="repeat" title="Repeat">${repeatOptions(x.repeat)}</select>
     <select data-ax="cat" style="border-left:4px solid ${c ? esc(c.color) : 'transparent'}">${catOptions(x.own, blank)}</select>
+    <input type="text" class="who" list="peoplelist" data-ax="assignee" value="${esc(x.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)">
     ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${x.note}</div>` : ''}</div>`;
 }
 function renderActions(){
   let list = allActions().filter(x => x.text.trim());
   const open = list.filter(x => !x.done).length;
   if(actCat === 'none') list = list.filter(x => !x.cat); else if(actCat) list = list.filter(x => x.cat === actCat);
+  if(actPerson === 'none') list = list.filter(x => !x.assignee); else if(actPerson) list = list.filter(x => (x.assignee || '').toLowerCase() === actPerson.toLowerCase());
+  if(actNb === 'none') list = list.filter(x => !(x.kind === 'ck' && x.item.type === 'note')); else if(actNb) list = list.filter(x => x.kind === 'ck' && x.item.type === 'note' && nbKey(x.item) === actNb);
   if(!actDone) list = list.filter(x => !x.done);
   const groups = groupActions(list);
   const opt = (v, l, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`;
   $('#detail').innerHTML = `
     <div class="type">Actions</div>
     <h1 class="ptitle">Everything to do</h1>
-    <p class="psub">Every action: the standalone ones, plus the action items inside your notes and meetings. ${open} open.</p>
+    <p class="psub">Every action: the standalone ones, plus the action items inside your notes. Risks, issues and decisions have their own pages under RAID log. ${open} open.</p>
     <div class="addrow"><input type="text" id="anew" placeholder="Add an action…"><input type="date" id="adue" title="Due date"><select id="acat">${catOptions('', 'No category')}</select><button data-act="addaction">Add</button></div>
     <div class="afilters">
-      <label>Group by <select id="agroup">${opt('due','Due date',actGroup)}${opt('source','Note / meeting',actGroup)}${opt('category','Category',actGroup)}</select></label>
+      <label>Group by <select id="agroup">${opt('due','Due date',actGroup)}${opt('source','Note',actGroup)}${opt('category','Category',actGroup)}</select></label>
       <label>Category <select id="acatf">${opt('','All',actCat)}${opt('none','No category',actCat)}${db.categories.map(c => opt(esc(c.id), esc(c.name), actCat)).join('')}</select></label>
+      ${db.notebooks.length > 1 ? `<label>Notebook <select id="anb">${opt('', 'Everywhere', actNb)}${opt('none', 'Not from a note', actNb)}${db.notebooks.map(n => opt(esc(n.id), esc(n.name), actNb)).join('')}</select></label>` : ''}
+      <label>Assigned to <select id="apers">${opt('', 'Everyone', actPerson)}${opt('none', 'Unassigned', actPerson)}${db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => opt(esc(n), esc(n), actPerson)).join('')}</select></label>
       <label><input type="checkbox" id="adone" ${actDone?'checked':''}> Show completed</label>
       <label title="When an action has no date, look for things like “by Friday 3pm” or “in 3 days” in its text"><input type="checkbox" id="aauto" ${autoDates?'checked':''}> Auto-detect dates</label>
       <a data-act="scandates" style="margin-left:auto;cursor:pointer;color:var(--accent)">Find dates in my existing actions</a>
@@ -1189,6 +1338,40 @@ function renderActions(){
     ${groups.length ? groups.map(g => `<h4 class="gh ${g.k==='Past due'&&actGroup==='due'?'late':g.k==='Today'&&actGroup==='due'?'today':''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : '<div class="empty">Nothing to do here.</div>'}`;
   $('#detail').querySelectorAll('.anote').forEach(grow);
 }
+/* ---- RAID log: one page each for Risks, Issues and Decisions (Actions already has its own page) ---- */
+function renderRaid(kind){
+  const M = RAID_META[kind];
+  let list = allRaid().filter(x => x.raid === kind && x.text.trim());
+  const open = list.filter(x => !x.done).length;
+  if(actCat === 'none') list = list.filter(x => !x.cat); else if(actCat) list = list.filter(x => x.cat === actCat);
+  if(actPerson === 'none') list = list.filter(x => !x.assignee); else if(actPerson) list = list.filter(x => (x.assignee || '').toLowerCase() === actPerson.toLowerCase());
+  if(actNb === 'none') list = list.filter(x => !(x.kind === 'ck' && x.item.type === 'note')); else if(actNb) list = list.filter(x => x.kind === 'ck' && x.item.type === 'note' && nbKey(x.item) === actNb);
+  if(!actDone) list = list.filter(x => !x.done);
+  const groups = groupActions(list), opt = (v, l, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`;
+  $('#detail').innerHTML = `
+    <div class="type">RAID log</div>
+    <h1 class="ptitle">${M.many}</h1>
+    <p class="psub">${M.blurb} ${open} open. Write <b>${M.one.toUpperCase()}</b> (in capitals) at the start of a line in any note to add one from there. <a data-act="scantags" style="cursor:pointer;color:var(--accent);text-decoration:underline">Scan my notes now</a></p>
+    <div class="addrow"><input type="text" id="rnew" data-raid="${kind}" placeholder="${M.add}" autocomplete="off"><input type="date" id="rdue" title="Date to revisit"><select id="rcat">${catOptions('', 'No category')}</select><button data-act="addraid" data-raid="${kind}">Add</button></div>
+    <div class="afilters">
+      <label>Category <select id="acatf">${opt('', 'All', actCat)}${opt('none', 'No category', actCat)}${db.categories.map(c => opt(esc(c.id), esc(c.name), actCat)).join('')}</select></label>
+      ${db.notebooks.length > 1 ? `<label>Notebook <select id="anb">${opt('', 'Everywhere', actNb)}${opt('none', 'Not from a note', actNb)}${db.notebooks.map(n => opt(esc(n.id), esc(n.name), actNb)).join('')}</select></label>` : ''}
+      <label>Owner <select id="apers">${opt('', 'Everyone', actPerson)}${opt('none', 'Nobody yet', actPerson)}${db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => opt(esc(n), esc(n), actPerson)).join('')}</select></label>
+      <label><input type="checkbox" id="adone" ${actDone ? 'checked' : ''}> Show ${M.done.toLowerCase()}</label>
+    </div>
+    ${groups.length ? groups.map(g => `<h4 class="gh ${g.k === 'Past due' && actGroup === 'due' ? 'late' : g.k === 'Today' && actGroup === 'due' ? 'today' : ''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : `<div class="empty">No ${M.many.toLowerCase()} yet.</div>`}`;
+  $('#detail').querySelectorAll('.anote').forEach(grow);
+}
+function addRaid(kind){
+  const t = $('#rnew'); if(!t) return;
+  if(!t.value.trim()){ t.focus(); toast('Type it first, then press Add.'); return; }
+  const i = {id:uid(), type:'task', raid:kind, title:t.value.trim(), body:'', tags:[], category:$('#rcat').value, due:$('#rdue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
+  db.items.push(i); autoDate(i, i.title, i);
+  touch(); renderRail(); renderDetail();
+  const n = $('#rnew'); if(n) n.focus({preventScroll:true});
+  toast(`Added the ${RAID_META[kind].one.toLowerCase()} “${i.title}”.`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
+}
+
 function addAction(){
   const t = $('#anew'); if(!t) return;
   if(!t.value.trim()){                                   // nothing typed: say so instead of silently doing nothing
@@ -1217,24 +1400,65 @@ function toast(msg, undo, label = 'Undo'){
 }
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
 /* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
+/* ---- people ---- */
+const canonPerson = n => db.people.find(k => k.toLowerCase() === String(n).trim().toLowerCase()) || capFirst(String(n).trim());
+function addPerson(n){ n = String(n || '').trim(); if(!n || db.people.some(k => k.toLowerCase() === n.toLowerCase())) return false; db.people.push(n); return true; }
+const personUsed = n => db.items.some(i => [i, ...i.checklist].some(o => (o.assignee || '').toLowerCase() === n.toLowerCase()));
+const NAME_STOP = new Set(['the', 'a', 'an', 'this', 'that', 'it', 'me', 'us', 'them', 'team', 'everyone', 'someone', 'about', 'if', 'whether', 'on', 'to', 'for', 'up']);
+const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const capFirst = x => x.charAt(0).toUpperCase() + x.slice(1);
+function personNamesFor(item){                               // everyone we know: your People list, plus a meeting's attendees
+  const att = item && item.attendees ? item.attendees.split(/[,;&]|\band\b/i).map(x => x.trim()).filter(x => /^[A-Za-z][\w'’. -]{0,40}$/.test(x)) : [];
+  return [...new Set([...db.people, ...att])].sort((a, b) => b.length - a.length);
+}
+/* Who is an action for? “@Sam”, “assign to Sam”, “waiting on Sam”, “Sam to send…”, or a known name on its own (but not “call Sam”) */
+function findAssignee(text, item){
+  const t = String(text || ''); if(!t.trim()) return null;
+  const known = personNamesFor(item), canon = n => known.find(k => k.toLowerCase() === n.toLowerCase()) || n;
+  for(const k of known){ if(new RegExp("(^|[\\s(,])@" + reEsc(k) + "(?![\\w'’-])", 'i').test(t)) return {name:k, match:'@' + k}; }
+  let m = /(^|[\s(,])@([A-Za-z][\w'’-]*)/.exec(t); if(m) return {name:capFirst(m[2]), match:'@' + m[2]};
+  const strong = /\b(?:assign(?:ed)?(?:\s+this)?\s+to|give(?:\s+this)?\s+to|hand(?:ed)?(?:\s+this)?(?:\s+off)?\s+to|delegate(?:d)?(?:\s+this)?\s+to)\s+([A-Za-z][\w'’-]*)/gi;
+  const soft = /\b(?:waiting\s+(?:on|for)|follow(?:ing)?\s+up\s+with|ask)\s+([A-Za-z][\w'’-]*)/gi;
+  let x;
+  while((x = strong.exec(t))){ const w = x[1]; if(NAME_STOP.has(w.toLowerCase())) continue; if(known.some(k => k.toLowerCase() === w.toLowerCase()) || /^[A-Z]/.test(w)) return {name:canon(capFirst(w)), match:x[0]}; }
+  while((x = soft.exec(t))){ const w = x[1]; if(known.some(k => k.toLowerCase() === w.toLowerCase())) return {name:canon(w), match:x[0]}; }
+  for(const k of known){ if(new RegExp("^\\s*" + reEsc(k) + "\\s*(?::|\\bto\\b|\\bwill\\b|\\bneeds to\\b|\\bshould\\b)").test(t)) return {name:k, match:k}; }
+  const hits = known.filter(k => new RegExp("(^|[^\\w@])" + reEsc(k) + "(?![\\w'’-])").test(t));
+  if(hits.length === 1){
+    const k = hits[0], contact = new RegExp("\\b(?:call|email|e-mail|text|message|ping|meet|see|visit|thank|tell|remind|invite|send|forward|share|with|from|for|about|cc|re|to)\\s+" + reEsc(k) + "(?![\\w'’-])", 'i');
+    if(!contact.test(t)) return {name:k, match:k};
+  }
+  return null;
+}
+
+/* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
 function applyParsed(o, text, item){
-  const r = parseWhen(text); if(!r) return null;
-  const setDue = !o.due && !!r.date, setTime = !o.time && !!r.time, setRep = !o.repeat && !!r.repeat;
-  if(!setDue && !setTime && !setRep) return null;
-  const prev = {due:o.due, time:o.time, repeat:o.repeat};
+  const r = parseWhen(text), w = o.assignee ? null : findAssignee(text, item);
+  if(!r && !w) return null;
+  const setDue = !!r && !o.due && !!r.date, setTime = !!r && !o.time && !!r.time, setRep = !!r && !o.repeat && !!r.repeat, setWho = !!w;
+  if(!setDue && !setTime && !setRep && !setWho) return null;
+  const prev = {due:o.due, time:o.time, repeat:o.repeat, assignee:o.assignee || '', addedPerson:''};
   if(setDue) o.due = r.date;
   if(setTime) o.time = r.time;
   if(setRep) o.repeat = r.repeat;
+  if(setWho){ o.assignee = w.name; if(addPerson(w.name)) prev.addedPerson = w.name; }
   item.updated = now();
-  return {r, prev, setDue, setTime, setRep};
+  return {r, w, prev, setDue, setTime, setRep, setWho};
 }
-const undoParsed = (o, item, p) => { o.due = p.due; o.time = p.time; o.repeat = p.repeat; item.updated = now(); };
+const undoParsed = (o, item, p) => {
+  o.due = p.due; o.time = p.time; o.repeat = p.repeat; o.assignee = p.assignee || '';
+  if(p.addedPerson && !personUsed(p.addedPerson)) db.people = db.people.filter(k => k.toLowerCase() !== p.addedPerson.toLowerCase());
+  item.updated = now();
+};
 function autoDate(o, text, item){
   if(!autoDates) return false;
   const res = applyParsed(o, text, item); if(!res) return false;
-  const when = [o.due ? fmtDay(o.due) : '', o.time ? fmtTime(o.time) : ''].filter(Boolean).join(' ');
-  const what = res.setDue ? `Due set to ${when}` : res.setTime ? `Time set to ${when}` : 'Repeat set';
-  toast(`${what}${res.setRep ? ` — repeats ${lcFirst(describeRepeat(o.repeat))}` : ''} (found “${res.r.match}”)`, () => { undoParsed(o, item, res.prev); touch(); refreshViews(); });
+  const when = [o.due ? fmtDay(o.due) : '', o.time ? fmtTime(o.time) : ''].filter(Boolean).join(' '), bits = [];
+  if(res.setDue || res.setTime) bits.push((res.setDue ? 'Due set to ' : 'Time set to ') + when);
+  if(res.setRep) bits.push('repeats ' + lcFirst(describeRepeat(o.repeat)));
+  if(res.setWho) bits.push('assigned to ' + o.assignee);
+  const found = [res.r && res.r.match, res.w && res.w.match].filter(Boolean).join(', ');
+  toast(`${capFirst(bits.join(' — '))} (found “${found}”)`, () => { undoParsed(o, item, res.prev); touch(); refreshViews(); });
   return true;
 }
 function scanDates(){
@@ -1244,7 +1468,7 @@ function scanDates(){
     const o = a.kind === 'task' ? a.item : a.ck, res = applyParsed(o, a.text, a.item);
     if(res) changes.push({o, item:a.item, prev:res.prev});
   }
-  if(!changes.length){ toast('Nothing to fill in: no open actions are missing a date or repeat that their text mentions.'); return; }
+  if(!changes.length){ toast('Nothing to fill in: no open actions are missing a date, repeat or assignee that their text mentions.'); return; }
   touch(); refreshViews();
   toast(`Updated ${changes.length} action${changes.length > 1 ? 's' : ''} from their text.`, () => { changes.forEach(c => undoParsed(c.o, c.item, c.prev)); touch(); refreshViews(); });
 }
@@ -1434,15 +1658,25 @@ document.addEventListener('pointerup', () => {
 });
 /* dragging a suggestion onto a day */
 document.addEventListener('dragstart', e => {
-  const s = e.target.closest && e.target.closest('.tlsug'), c = e.target.closest && e.target.closest('.tldue');
-  if(s){ e.dataTransfer.setData('text/plain', 'plan:' + s.dataset.key); e.dataTransfer.effectAllowed = 'copy'; }
+  const s = e.target.closest && e.target.closest('.tlsug'), c = e.target.closest && e.target.closest('.tldue'), pg = e.target.closest && e.target.closest('.it[draggable]');
+  if(pg){ e.dataTransfer.setData('text/plain', 'nb:' + pg.dataset.id); e.dataTransfer.effectAllowed = 'move'; }
+  else if(s){ e.dataTransfer.setData('text/plain', 'plan:' + s.dataset.key); e.dataTransfer.effectAllowed = 'copy'; }
   else if(c){ e.dataTransfer.setData('text/plain', 'due:' + c.dataset.key); e.dataTransfer.effectAllowed = 'move'; }
 });
 document.addEventListener('dragover', e => {
   const d = e.target.closest && e.target.closest('.tlday');
   if(d && e.dataTransfer && [...e.dataTransfer.types].includes('text/plain')){ e.preventDefault(); document.querySelectorAll('.tlday.over').forEach(x => { if(x !== d) x.classList.remove('over'); }); d.classList.add('over'); }
 });
-document.addEventListener('dragend', () => document.querySelectorAll('.tlday.over').forEach(x => x.classList.remove('over')));
+document.addEventListener('dragend', () => document.querySelectorAll('.tlday.over, [data-nbdrop].over').forEach(x => x.classList.remove('over')));
+document.addEventListener('dragover', e => {                                      // drag a page onto a notebook in the sidebar to move it there
+  const r = e.target.closest && e.target.closest('[data-nbdrop]');
+  if(r && e.dataTransfer && [...e.dataTransfer.types].includes('text/plain')){ e.preventDefault(); document.querySelectorAll('[data-nbdrop].over').forEach(x => { if(x !== r) x.classList.remove('over'); }); r.classList.add('over'); }
+});
+document.addEventListener('drop', e => {
+  const r = e.target.closest && e.target.closest('[data-nbdrop]'); if(!r || !e.dataTransfer) return;
+  const t = e.dataTransfer.getData('text/plain'); if(!t.startsWith('nb:')) return;
+  e.preventDefault(); r.classList.remove('over'); const i = byId(t.slice(3)); if(i && i.type === 'note') moveNote(i, r.dataset.nbdrop);
+});
 document.addEventListener('drop', e => {
   const d = e.target.closest && e.target.closest('.tlday'); if(!d || !e.dataTransfer) return;
   const t = e.dataTransfer.getData('text/plain'); if(!t.startsWith('plan:') && !t.startsWith('due:')) return;
@@ -1504,7 +1738,7 @@ function skipOccurrence(){
 }
 const viewFor = i => i.type === 'task' ? 'task' : 'note';           // which list an item lives in
 function openActionByKey(key){
-  const t = allActions().find(a => a.key === key); if(!t) return;
+  const t = findEntry(key); if(!t) return;
   if($('#tldlg').open) $('#tldlg').close();
   filter = viewFor(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
   if(selCk){ const ai = document.querySelector(`#detail [data-ci="${selCk}"]`), r = ai && ai.closest('.ai'); if(r){ r.classList.add('flash'); r.scrollIntoView({block:'center'}); } }
@@ -1513,6 +1747,43 @@ function openLinkedFromBlock(){ const t = linkTarget(tlEdit.b); if(t) openAction
 document.addEventListener('click', e => { const c = filter === 'timeline' && e.target.closest && e.target.closest('.tldue'); if(c && !e.target.closest('button')) openActionByKey(c.dataset.key); });
 
 /* ---- category manager ---- */
+function renderNbDlg(){
+  const cnt = {}; db.items.forEach(i => { if(i.type === 'note') cnt[nbKey(i)] = (cnt[nbKey(i)] || 0) + 1; });
+  $('#nbrows').innerHTML = db.notebooks.map(n => `<div class="crow"><input type="color" data-nbc="${esc(n.id)}" value="${esc(n.color)}"><input type="text" data-nbn="${esc(n.id)}" value="${esc(n.name)}"><span class="pcnt">${cnt[n.id] || 0} page${(cnt[n.id] || 0) === 1 ? '' : 's'}</span><button class="x" data-act="delnb" data-id="${esc(n.id)}" title="${db.notebooks.length < 2 ? 'Keep at least one notebook' : 'Delete this notebook (its pages move to another one)'}" ${db.notebooks.length < 2 ? 'disabled style="opacity:.3;cursor:default"' : ''}>×</button></div>`).join('');
+}
+function removeNotebook(id){
+  const nb = nbById(id); if(!nb) return;
+  if(db.notebooks.length < 2){ toast('You need at least one notebook, so this one can’t be deleted. You can rename it instead.'); return; }
+  const to = db.notebooks.find(n => n.id !== id), pages = db.items.filter(i => i.type === 'note' && nbKey(i) === id), at = db.notebooks.indexOf(nb), wasFolded = nbFold.has(id);
+  pages.forEach(i => { i.notebook = to.id; i.updated = now(); });
+  db.notebooks = db.notebooks.filter(n => n.id !== id); nbFold.delete(id);
+  if(actNb === id) actNb = ''; if(lastNb === id) lastNb = '';
+  saveUi(); touch(); if($('#nbdlg').open) renderNbDlg(); renderAll();
+  toast(`Deleted the notebook “${nb.name}”${pages.length ? `. Its ${pages.length} page${pages.length === 1 ? '' : 's'} moved to “${to.name}”` : ''}.`, () => {
+    db.notebooks.splice(Math.min(at, db.notebooks.length), 0, nb); pages.forEach(i => { i.notebook = id; i.updated = now(); }); if(wasFolded) nbFold.add(id);
+    saveUi(); touch(); renderAll();
+  });
+}
+function renderPeople(){
+  const used = {}; allActions().forEach(x => { if(!x.done && x.assignee) used[x.assignee.toLowerCase()] = (used[x.assignee.toLowerCase()] || 0) + 1; });
+  $('#prows').innerHTML = db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<div class="crow"><input type="text" data-pn="${esc(n)}" value="${esc(n)}"><span class="pcnt">${used[n.toLowerCase()] || 0} open</span><button class="x" data-act="delperson" data-id="${esc(n)}" title="Remove">×</button></div>`).join('') || '<p>No one yet. Add a person, or type @name in an action.</p>';
+  $('#pme').innerHTML = `<option value="">(not set)</option>` + db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<option value="${esc(n)}" ${db.me.toLowerCase() === n.toLowerCase() ? 'selected' : ''}>${esc(n)}</option>`).join('');
+}
+function renamePerson(old, nu){
+  nu = nu.trim(); if(!nu || nu === old) return;
+  const same = n => (n || '').toLowerCase() === old.toLowerCase();
+  db.items.forEach(i => { for(const o of [i, ...i.checklist]) if(same(o.assignee)){ o.assignee = nu; i.updated = now(); } });
+  db.people = cleanPeople(db.people.map(n => same(n) ? nu : n)); if(same(db.me)) db.me = nu;
+  if(same(actPerson)){ actPerson = nu; saveUi(); }
+  touch(); renderPeople(); renderRail();
+}
+function removePerson(n){
+  const same = x => (x || '').toLowerCase() === n.toLowerCase(), used = personUsed(n);
+  if(used && !confirm(`Remove ${n}? Their actions become unassigned.`)) return;
+  db.items.forEach(i => { for(const o of [i, ...i.checklist]) if(same(o.assignee)){ o.assignee = ''; i.updated = now(); } });
+  db.people = db.people.filter(k => !same(k)); if(same(db.me)) db.me = ''; if(same(actPerson)){ actPerson = ''; saveUi(); }
+  touch(); renderPeople(); renderRail();
+}
 function renderCats(){
   $('#catrows').innerHTML = db.categories.map(c => `<div class="crow"><input type="color" data-kc="${esc(c.id)}" value="${esc(c.color)}"><input type="text" data-kn="${esc(c.id)}" value="${esc(c.name)}"><button class="x" data-act="delcat" data-id="${esc(c.id)}" title="Delete">×</button></div>`).join('') || '<p>No categories yet.</p>';
 }
@@ -1522,17 +1793,20 @@ function renderDetail(){
   if(filter === 'actions'){ renderActions(); return; }
   if(filter === 'today'){ renderToday(); return; }
   if(filter === 'trash'){ renderTrash(); return; }
+  if(['risk', 'issue', 'decision'].includes(filter)){ renderRaid(filter); return; }
   const el = $('#detail'), i = byId(selId);
-  if(!i){ el.innerHTML = `<div class="welcome"><p style="font-size:18px;margin-bottom:12px">Nothing selected</p><button data-new="task">+ Action</button><button data-new="note">+ Note</button><button data-new="meeting">+ Meeting note</button></div>`; return; }
+  if(!i){ el.innerHTML = `<div class="welcome"><p style="font-size:18px;margin-bottom:12px">Nothing selected</p><button data-new="task">+ Action</button><button data-new="note">+ Note</button></div>`; return; }
   const fld = (f, label, type = 'text', extra = '') => `<label>${label} <input type="${type}" data-f="${f}" value="${esc(i[f])}" ${extra}></label>`;
   let meta = '';
   if(i.type === 'task') meta = fld('due', 'Due', 'date') + fld('time', 'Time', 'time') + `<label>Repeat <select data-rp="item">${repeatOptions(i.repeat)}</select></label><label class="chk"><input type="checkbox" data-f="done" ${i.done?'checked':''}> Done</label>`;
-  else meta = fld('date', 'Date', 'date') + fld('time', 'Time', 'time') + `<label class="grow">With <input type="text" data-f="attendees" value="${esc(i.attendees)}" placeholder="Attendees (makes this a meeting)"></label>`;
+  else meta = fld('date', 'Date', 'date') + fld('time', 'Time', 'time') + `<label class="grow">With <input type="text" data-f="attendees" value="${esc(i.attendees)}" placeholder="Attendees (optional)"></label>`;
   meta += `<label>Category <select data-f="category">${catOptions(i.category, 'None')}</select></label>`;
+  if(i.type === 'note') meta += `<label>Notebook <select data-f="notebook">${db.notebooks.map(n => `<option value="${esc(n.id)}" ${nbKey(i) === n.id ? 'selected' : ''}>${esc(n.name)}</option>`).join('')}</select></label>`;
+  if(i.type === 'task') meta += `<label>Assigned to <input type="text" class="who" list="peoplelist" data-f="assignee" value="${esc(i.assignee || '')}" placeholder="Nobody"></label>`;
   meta += `<label class="grow">Tags <input type="text" data-f="tags" value="${esc(i.tags.join(', '))}" placeholder="acme, q4-planning"></label>`;
-  const bodyLabel = i.type === 'task' ? 'Details' : isMeeting(i) ? 'Agenda & notes' : 'Notes';
+  const bodyLabel = i.type === 'task' ? 'Details' : 'Notes';
   el.innerHTML = `
-    <div class="type">${i.type === 'task' ? 'Action' : isMeeting(i) ? 'Meeting' : 'Note'}</div>
+    <div class="type">${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'}</div>
     <textarea class="title" rows="1" data-f="title" placeholder="Untitled">${esc(i.title)}</textarea>
     <div class="meta">${meta}</div>
     <h4>${bodyLabel}</h4>
@@ -1548,7 +1822,7 @@ function grow(t){
   const min = t.classList.contains('big') ? 320 : /cknote|anote/.test(t.className) ? 70 : 150;
   t.style.height = Math.max(t.scrollHeight + 2, min) + 'px';
 }
-const FULL_PAGES = ['actions', 'timeline', 'today', 'trash'];          // pages that use the whole width instead of list + detail
+const FULL_PAGES = ['actions', 'timeline', 'today', 'trash', 'risk', 'issue', 'decision'];          // pages that use the whole width instead of list + detail
 function applyMode(){
   const app = document.querySelector('.app');
   app.classList.toggle('actions-mode', FULL_PAGES.includes(filter)); app.classList.toggle('rail-off', railOff); app.classList.toggle('list-off', listOff);
@@ -1568,25 +1842,31 @@ function parseTags(s){ return [...new Set(s.split(/[,\s]+/).map(t => t.replace(/
 function newItem(kind){                      // kind: 'task', 'note' or 'meeting' (a note that starts with today's date)
   const type = kind === 'task' ? 'task' : 'note';
   const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: kind === 'meeting' ? todayStr() : '', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  if(type === 'note'){ i.notebook = curNb(); lastNb = i.notebook; }
   db.items.push(i); selId = i.id; search = '';
-  if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter)) filter = type;
+  if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
+}
+function moveNote(i, id){
+  const nb = nbById(id); if(!nb || nbKey(i) === id) return;
+  const prev = nbKey(i); i.notebook = id; i.updated = now(); lastNb = id; nbFold.delete(id); saveUi(); touch(); fixSelection(); renderAll();
+  toast(`Moved “${i.title || 'Untitled'}” to ${nb.name}.`, () => { i.notebook = prev; i.updated = now(); touch(); renderAll(); });
 }
 function delItem(){ const i = byId(selId); if(i) deleteItemUndo(i); }
 /* ---- right-click menu on the list ---- */
 function itemAsText(i){
   const L = [i.title || 'Untitled'], meta = [];
-  if(i.type === 'task'){ if(i.due) meta.push('Due ' + fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.repeat) meta.push(describeRepeat(i.repeat)); if(i.done) meta.push('Done'); }
+  if(i.type === 'task'){ if(i.due) meta.push('Due ' + fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.repeat) meta.push(describeRepeat(i.repeat)); if(i.assignee) meta.push('Assigned to ' + i.assignee); if(i.done) meta.push('Done'); }
   else { if(i.date) meta.push(fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.attendees) meta.push('With ' + i.attendees); }
-  const c = catById(i.category); if(c) meta.push(c.name); if(i.tags.length) meta.push(i.tags.map(t => '#' + t).join(' '));
+  const c = catById(i.category); if(c) meta.push(c.name); if(i.type === 'note' && db.notebooks.length > 1) meta.push('Notebook: ' + nbById(nbKey(i)).name); if(i.tags.length) meta.push(i.tags.map(t => '#' + t).join(' '));
   if(meta.length) L.push(meta.join(' · '));
   const body = htmlToPlain(i.body); if(body) L.push('', body);
   const cks = i.checklist.filter(k => k.text.trim());
   if(cks.length) L.push('', 'Action items:', ...cks.map(k => `${k.done ? '[x]' : '[ ]'} ${k.text}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`));
   return L.join('\n');
 }
-const ckAsText = (c, i) => [c.text, [c.due && 'Due ' + fmtDay(c.due) + (c.time ? ' ' + fmtTime(c.time) : ''), c.repeat && describeRepeat(c.repeat), 'From: ' + (i.title || 'Untitled')].filter(Boolean).join(' · '), htmlToPlain(c.note)].filter(Boolean).join('\n');
+const ckAsText = (c, i) => [c.text, [c.due && 'Due ' + fmtDay(c.due) + (c.time ? ' ' + fmtTime(c.time) : ''), c.repeat && describeRepeat(c.repeat), c.assignee && 'Assigned to ' + c.assignee, 'From: ' + (i.title || 'Untitled')].filter(Boolean).join(' · '), htmlToPlain(c.note)].filter(Boolean).join('\n');
 async function copyText(t){
   try { await navigator.clipboard.writeText(t); }
   catch { const ta = Object.assign(document.createElement('textarea'), {value:t}); ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch {} ta.remove(); }
@@ -1613,6 +1893,7 @@ function deleteItemUndo(i){                               // no confirm box: it 
 }
 function deleteCkUndo(i, c){
   const at = i.checklist.indexOf(c), links = db.plan.filter(b => b.link && b.link.ck === c.id).map(b => [b, b.link]);
+  if(c.src === 'tag'){ detachTagLine(i, c.id); c.src = ''; }
   i.checklist = i.checklist.filter(x => x !== c); links.forEach(([b]) => { b.link = null; }); if(selCk === c.id) selCk = '';
   i.updated = now(); touch(); renderAll();
   toast(`Deleted the action “${c.text}”.`, () => { i.checklist.splice(Math.min(at, i.checklist.length), 0, c); links.forEach(([b, l]) => { b.link = l; }); i.updated = now(); touch(); renderAll(); });
@@ -1622,10 +1903,20 @@ function menuForObj(i, c, openFn){
   const setCat = id => { if(c) c.cat = id; else i.category = id; edited(i); refreshViews(); };
   const m = [{l: c ? 'Open in its note' : 'Open', ic: '↗', fn: openFn}];
   if(isTask) m.push({l: o.done ? 'Mark not done' : 'Mark done', ic: '✓', fn: () => { completeToggle(o, i, !o.done); edited(i); refreshViews(); }});
+  if(!c && i.type === 'note' && db.notebooks.length > 1) m.push({hd:'Notebook'}, ...db.notebooks.map(n => ({l:n.name, ic: nbKey(i) === n.id ? '✓' : '', fn: () => moveNote(i, n.id)})));
   if(!c) m.push({l: i.pinned ? 'Unpin' : 'Pin to top', ic: '📌', fn: () => { i.pinned = !i.pinned; edited(i); refreshViews(); }});
   m.push({sep:1}, {l: c ? 'Duplicate action' : 'Duplicate', ic: '⧉', fn: () => c ? dupCk(i, c) : dupItem(i)}, {l: c ? 'Copy action as text' : 'Copy as text', ic: '⎘', fn: () => copyText(c ? ckAsText(c, i) : itemAsText(i))});
   if(!c) m.push({hd:'Export'}, ...exportEntries(i));
+  if(isTask){
+    const cur2 = (c ? c.raid : i.raid) || 'action', setType = k => { const v = k === 'action' ? '' : k; if(c){ c.raid = v; c.src = ''; } else i.raid = v; edited(i); refreshViews(); };
+    m.push({sep:1}, {hd:'Type'}, ...['action', 'risk', 'issue', 'decision'].map(k => ({l: k === 'action' ? 'Action' : RAID_META[k].one, ic: cur2 === k ? '✓' : '', fn: () => setType(k)})));
+  }
   if(db.categories.length){ m.push({sep:1}, {hd:'Category'}, {l:'None', ic: !cur ? '✓' : '', fn: () => setCat('')}, ...db.categories.map(k => ({l:k.name, ic: cur === k.id ? '✓' : '', dot:k.color, fn: () => setCat(k.id)}))); }
+  if(isTask){
+    const who = o.assignee || '', setWho = n => { o.assignee = n; if(n) addPerson(n); edited(i); refreshViews(); };
+    m.push({sep:1}, {hd:'Assigned to'}, {l:'Nobody', ic: !who ? '✓' : '', fn: () => setWho('')}, ...db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => ({l:n, ic: who.toLowerCase() === n.toLowerCase() ? '✓' : '', fn: () => setWho(n)})),
+      {l:'Someone else…', ic:'＋', fn: () => { const n = prompt('Assign this to who?'); if(n && n.trim()) setWho(canonPerson(n)); }});
+  }
   m.push({sep:1}, {l: c ? 'Delete action' : 'Move to Trash', ic: '🗑', cls:'danger', fn: () => c ? deleteCkUndo(i, c) : deleteItemUndo(i)});
   return m;
 }
@@ -1667,6 +1958,16 @@ function openMenu(x, y, items, row){
   el.querySelector('button').focus();
 }
 $('#items').addEventListener('contextmenu', e => {
+  const gh = e.target.closest('.nbgh[data-nbdrop]'), nb = gh && nbById(gh.dataset.nbdrop);          // right-click a notebook heading
+  if(nb){
+    e.preventDefault();
+    openMenu(e.clientX, e.clientY, [
+      {l:'New page here', ic:'＋', fn: () => { lastNb = nb.id; nbFold.delete(nb.id); filter = 'note'; newItem('note'); }},
+      {l:'Rename…', ic:'✎', fn: () => { const nm = (prompt('Rename the notebook:', nb.name) || '').trim(); if(nm){ nb.name = nm; touch(); renderAll(); } }},
+      {hd:'Colour'}, ...NB_COLORS.map((c, k) => ({l:['Blue', 'Green', 'Amber', 'Purple', 'Orange', 'Teal'][k], ic: nb.color === c ? '✓' : '', dot:c, fn: () => { nb.color = c; touch(); renderList(); }})),
+      {sep:1}, {l:'Delete notebook…', ic:'🗑', cls:'danger', fn: () => removeNotebook(nb.id)}], gh);
+    return;
+  }
   const row = e.target.closest('.it'); if(!row) return;
   const m = menuFor(row); if(!m) return;
   e.preventDefault(); openMenu(e.clientX, e.clientY, m, row);
@@ -1676,7 +1977,7 @@ $('#detail').addEventListener('contextmenu', e => {               // the same me
   const bar = t.closest('.tlbar');
   if(bar){ const b = planById(bar.dataset.id); if(b){ e.preventDefault(); openMenu(e.clientX, e.clientY, menuForBlock(b, bar.dataset.occ), bar); } return; }
   const row = t.closest('.act[data-key], .tldue[data-key]');
-  if(row){ const a = allActions().find(x => x.key === row.dataset.key); if(a){ e.preventDefault(); openMenu(e.clientX, e.clientY, menuForObj(a.item, a.kind === 'ck' ? a.ck : null, () => openActionByKey(a.key)), row); } return; }
+  if(row){ const a = findEntry(row.dataset.key); if(a){ e.preventDefault(); openMenu(e.clientX, e.clientY, menuForObj(a.item, a.kind === 'ck' ? a.ck : null, () => openActionByKey(a.key)), row); } return; }
   const mg = t.closest('.mtgrow[data-open]');
   if(mg){ const i = byId(mg.dataset.open); if(i){ e.preventDefault(); openMenu(e.clientX, e.clientY, menuForObj(i, null, () => mg.click()), mg); } }
 });
@@ -1720,9 +2021,9 @@ function htmlToMd(h){
 }
 function itemMeta(i){
   const m = [], c = catById(i.category);
-  if(i.type === 'task'){ if(i.due) m.push(['Due', fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.repeat) m.push(['Repeats', describeRepeat(i.repeat)]); if(i.done) m.push(['Status', 'Done']); }
+  if(i.type === 'task'){ if(i.due) m.push(['Due', fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.repeat) m.push(['Repeats', describeRepeat(i.repeat)]); if(i.assignee) m.push(['Assigned to', i.assignee]); if(i.done) m.push(['Status', 'Done']); }
   else { if(i.date) m.push(['Date', fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.attendees) m.push(['With', i.attendees]); }
-  if(c) m.push(['Category', c.name]); if(i.tags.length) m.push(['Tags', i.tags.map(t => '#' + t).join(' ')]);
+  if(c) m.push(['Category', c.name]); if(i.type === 'note' && db.notebooks.length > 1) m.push(['Notebook', nbById(nbKey(i)).name]); if(i.tags.length) m.push(['Tags', i.tags.map(t => '#' + t).join(' ')]);
   return m;
 }
 function itemToMd(i){
@@ -1730,7 +2031,7 @@ function itemToMd(i){
   if(meta.length) L.push(meta.map(([k, v]) => `**${k}:** ${v}`).join('  \n'), '');
   const body = htmlToMd(i.body); if(body) L.push(body, '');
   const cks = i.checklist.filter(k => k.text.trim());
-  if(cks.length){ L.push('## Action items', ''); cks.forEach(k => L.push(`- [${k.done ? 'x' : ' '}] ${k.text}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`)); L.push(''); }
+  if(cks.length){ L.push('## Action items', ''); cks.forEach(k => L.push(`- [${k.done ? 'x' : ' '}] ${k.text}${k.assignee ? ' (@' + k.assignee + ')' : ''}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`)); L.push(''); }
   return L.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
 }
 function itemPrintHtml(i){
@@ -1768,15 +2069,15 @@ const exportEntries = i => [{l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(
 function renderTrash(){
   const rows = db.trash.map(t => {
     const i = t.item, left = Math.max(0, Math.ceil(TRASH_DAYS - (Date.now() - Date.parse(t.deleted)) / 864e5));
-    return `<div class="trow" data-id="${i.id}"><span class="ti">${i.type === 'task' ? '☐' : isMeeting(i) ? '◷' : '✎'}</span><div><b>${esc(i.title || 'Untitled')}</b><small>${i.type === 'task' ? 'Action' : isMeeting(i) ? 'Meeting' : 'Note'} · deleted ${esc(fmtDay(dstr(new Date(t.deleted))))} · ${left} day${left === 1 ? '' : 's'} left${i.checklist.length ? ' · ' + i.checklist.length + ' action item' + (i.checklist.length === 1 ? '' : 's') : ''}</small></div><span><button data-act="trestore" data-id="${i.id}">Restore</button><button class="danger" data-act="tpurge" data-id="${i.id}">Delete forever</button></span></div>`;
+    return `<div class="trow" data-id="${i.id}"><span class="ti">${i.type === 'task' ? '☐' : isMeeting(i) ? '◷' : '✎'}</span><div><b>${esc(i.title || 'Untitled')}</b><small>${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'} · deleted ${esc(fmtDay(dstr(new Date(t.deleted))))} · ${left} day${left === 1 ? '' : 's'} left${i.checklist.length ? ' · ' + i.checklist.length + ' action item' + (i.checklist.length === 1 ? '' : 's') : ''}</small></div><span><button data-act="trestore" data-id="${i.id}">Restore</button><button class="danger" data-act="tpurge" data-id="${i.id}">Delete forever</button></span></div>`;
   }).join('');
   $('#detail').innerHTML = `<div class="type">Trash</div><h1 class="ptitle">Deleted items</h1>
-    <p class="psub">Deleted actions, notes and meetings wait here for ${TRASH_DAYS} days, then go for good.${db.trash.length ? ' <a data-act="tempty">Empty the trash now</a>' : ''}</p>
+    <p class="psub">Deleted actions and notes wait here for ${TRASH_DAYS} days, then go for good.${db.trash.length ? ' <a data-act="tempty">Empty the trash now</a>' : ''}</p>
     ${rows || '<div class="empty">The trash is empty.</div>'}`;
 }
 function restoreItem(id){
   const t = db.trash.find(x => x.item.id === id); if(!t) return;
-  db.trash = db.trash.filter(x => x !== t); if(!byId(id)) db.items.push(t.item); t.item.updated = now(); touch(); renderRail(); renderDetail();
+  db.trash = db.trash.filter(x => x !== t); if(t.item.type === 'note' && !nbById(t.item.notebook)) t.item.notebook = db.notebooks[0].id; if(!byId(id)) db.items.push(t.item); t.item.updated = now(); touch(); renderRail(); renderDetail();
   toast(`Restored “${t.item.title || 'Untitled'}”.`, () => { db.items = db.items.filter(x => x !== t.item); db.trash.unshift(t); touch(); renderRail(); renderDetail(); });
 }
 function purgeItem(id){
@@ -1790,10 +2091,10 @@ function emptyTrash(){
 }
 
 /* ---- Today: what needs you right now ---- */
-const mtgRow = i => `<div class="mtgrow" data-open="${i.id}"><span class="mi">◷</span><div><b>${esc(i.title || 'Untitled')}</b><small>${esc([i.attendees, i.checklist.length ? i.checklist.filter(c => c.done).length + '/' + i.checklist.length + ' actions done' : ''].filter(Boolean).join(' · ') || 'Meeting')}</small></div><time>${esc(fmtTime(i.time))}</time></div>`;
+const mtgRow = i => `<div class="mtgrow" data-open="${i.id}"><span class="mi">◷</span><div><b>${esc(i.title || 'Untitled')}</b><small>${esc([i.attendees, i.checklist.length ? i.checklist.filter(c => c.done).length + '/' + i.checklist.length + ' actions done' : ''].filter(Boolean).join(' · ') || 'Note')}</small></div><time>${esc(fmtTime(i.time))}</time></div>`;
 function renderToday(){
   const T = todayStr(), TM = shiftStr(T, 1), tk = x => sortTime(x.time, x.text);
-  const acts = allActions().filter(x => x.text.trim() && x.due);
+  const me = (db.me || '').toLowerCase(), acts = allEntries().filter(x => x.text.trim() && x.due && (!todayMine || !me || !x.assignee || x.assignee.toLowerCase() === me));
   const overdue = acts.filter(x => !x.done && x.due < T).sort((a, b) => a.due.localeCompare(b.due) || (tk(a) < tk(b) ? -1 : tk(a) > tk(b) ? 1 : 0));
   const day = d => [...acts.filter(x => x.due === d).map(x => ({k:tk(x), done:x.done, x})), ...db.items.filter(i => i.type === 'note' && i.date === d).map(i => ({k:i.time || '99:99', done:false, m:i}))]
     .sort((a, b) => (a.done - b.done) || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));          // open things by time first, finished ones after
@@ -1804,8 +2105,9 @@ function renderToday(){
   $('#detail').innerHTML = `
     <div class="type">Today</div>
     <h1 class="ptitle">${esc(new Date().toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'}))}</h1>
-    <div class="tdsum"><span class="${overdue.length ? 'bad' : ''}">${overdue.length} past due</span><span class="${openToday ? 'warn' : ''}">${openToday} due today</span><span>${meetN} meeting${meetN === 1 ? '' : 's'}</span><span>${blocks.length} planned</span></div>
-    <div class="addrow"><input type="text" id="tqa" placeholder="Quick add: “call Sam Friday 3pm”, “note: ideas”, “meeting: kickoff Monday 10am”" autocomplete="off"><button data-act="qadd">Add</button></div>
+    <div class="tdsum"><span class="${overdue.length ? 'bad' : ''}">${overdue.length} past due</span><span class="${openToday ? 'warn' : ''}">${openToday} due today</span><span>${meetN} dated note${meetN === 1 ? '' : 's'}</span><span>${blocks.length} planned</span></div>
+    ${db.me ? `<label class="tdmine"><input type="checkbox" id="tmine" ${todayMine ? 'checked' : ''}> Only mine — assigned to ${esc(db.me)}, or to nobody</label>` : ''}
+    <div class="addrow"><input type="text" id="tqa" placeholder="Quick add: “call Sam Friday 3pm”, “note: ideas”, “risk: vendor may slip @Sam”" autocomplete="off"><button data-act="qadd">Add</button></div>
     <div class="qapv" id="tqapv"></div>
     ${overdue.length ? `<h4 class="gh late">Past due <small>${overdue.length}</small></h4>${overdue.map(actRow).join('')}` : ''}
     ${today.length ? `<h4 class="gh today">Today <small>${today.length}</small></h4>${rows(today)}` : ''}
@@ -1818,20 +2120,21 @@ function renderToday(){
 /* ---- Quick add: type it the way you'd say it ---- */
 function qaParse(raw){
   let text = String(raw).trim(), kind = 'task';
-  const m = text.match(/^(note|meeting|action|task|n|m|a|t)\s*:\s*/i);
-  if(m){ kind = {n:'note', m:'meeting', a:'task', t:'task'}[m[1][0].toLowerCase()]; text = text.slice(m[0].length).trim(); }
+  const m = text.match(/^(note|meeting|action|task|risk|issue|decision|n|m|a|t|r|i|d)\s*:\s*/i);
+  if(m){ kind = {n:'note', m:'meeting', a:'task', t:'task', r:'risk', i:'issue', d:'decision'}[m[1][0].toLowerCase()]; text = text.slice(m[0].length).trim(); }
   const p = text ? parseWhen(text) : null;
-  return {kind, title:text, date:p && p.date || '', time:p && p.time || '', repeat:p && p.repeat || null};
+  const w = (kind === 'task' || RAID_META[kind]) && text ? findAssignee(text, null) : null;
+  return {kind, title:text, date:p && p.date || '', time:p && p.time || '', repeat:p && p.repeat || null, assignee:w ? w.name : ''};
 }
 function qaSummary(q){
   if(!q.title) return 'Type something to add.';
   const date = q.date || (q.kind === 'meeting' ? todayStr() : '');
-  return [{task:'☐ Action', note:'✎ Note', meeting:'◷ Meeting'}[q.kind], [date ? fmtDay(date) : '', q.time ? fmtTime(q.time) : ''].filter(Boolean).join(' '), q.repeat ? '↻ ' + describeRepeat(q.repeat) : ''].filter(Boolean).join(' · ');
+  return [{task:'☐ Action', note:'✎ Note', meeting:'✎ Note', risk:'⚠ Risk', issue:'⛔ Issue', decision:'✔ Decision'}[q.kind], [date ? fmtDay(date) : '', q.time ? fmtTime(q.time) : ''].filter(Boolean).join(' '), q.repeat ? '↻ ' + describeRepeat(q.repeat) : '', q.assignee ? '→ ' + q.assignee : ''].filter(Boolean).join(' · ');
 }
 function quickAdd(raw){
   const q = qaParse(raw); if(!q.title) return null;
-  const i = {id:uid(), type: q.kind === 'task' ? 'task' : 'note', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
-  if(q.kind === 'task'){ i.due = q.date; i.time = q.time; i.repeat = q.repeat; } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; }
+  const i = {id:uid(), type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = curNb(); }
   db.items.push(i); touch(); refreshViews();
   toast(`Added “${q.title}” — ${qaSummary(q)}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
   return i;
@@ -1844,25 +2147,25 @@ function todayAdd(){ const el = $('#tqa'); if(!el) return; if(!el.value.trim()){
 
 /* ---- keyboard shortcuts + the cheat sheet ---- */
 const SHORTCUTS = [
-  ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['M', 'New meeting note'], ['Q', 'Quick add (type it in plain words)']]],
-  ['Go to', [['1', 'Today'], ['2', 'Actions'], ['3', 'Timeline'], ['4', 'Notes & meetings'], ['5', 'Trash'], ['/', 'Search everything']]],
+  ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['Q', 'Quick add (type it in plain words)']]],
+  ['Go to', [['1', 'Today'], ['2', 'Actions'], ['3', 'Notes'], ['4', 'Timeline'], ['5', 'Risks'], ['6', 'Issues'], ['7', 'Decisions'], ['8', 'Trash'], ['/', 'Search everything']]],
   ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P', 'Pin or unpin the selected item'], ['Ctrl + S', 'Save right now'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
-  ['In notes', [['Ctrl + B / I / U', 'Bold, italic, underline'], ['Ctrl + K', 'Add a link'], ['Tab / Shift + Tab', 'Indent / outdent (in a table: next / previous cell)'], ['- or 1. then space', 'Start a bulleted or numbered list']]],
+  ['In notes', [['Ctrl + B / I / U', 'Bold, italic, underline'], ['Ctrl + K', 'Add a link'], ['Tab / Shift + Tab', 'Indent / outdent (in a table: next / previous cell)'], ['Click a bullet', 'Fold / unfold its sub-points'], ['ACTION  RISK  ISSUE  DECISION', 'Start a line with one in CAPITALS (a colon is optional): it becomes an entry, the line is highlighted, and “by Friday 3pm” and “@Sam” fill its date and owner'], ['- or 1. then space', 'Start a bulleted or numbered list']]],
   ['Timeline', [['← →', 'Previous / next week or month'], ['T', 'Jump to today'], ['Drag across days', 'Make a block'], ['Click a block', 'Edit it and read its description']]],
-  ['Mouse tips', [['Right-click a row', 'Open, mark done, pin, duplicate, copy, export, category, trash'], ['Right-click on any page', 'Today, Actions and Timeline have the same menu'], ['Drag a due date chip', 'Timeline “Due dates” view: reschedule it']]],
-  ['Typing dates', [['“by Friday 3pm”', 'Dates, times and repeats like “in 3 days” or “every Monday” fill in on their own (with Undo)']]]
+  ['Mouse tips', [['Right-click a row', 'Open, mark done, pin, duplicate, copy, export, category, trash'], ['Right-click on any page', 'Today, Actions and Timeline have the same menu'], ['Drag a due date chip', 'Timeline “Due dates” view: reschedule it'], ['Drag a page onto a notebook', 'Moves it there (or use right-click → Notebook)']]],
+  ['Typing in an action', [['“@Sam” or “assign to Sam”', 'Assigns it to that person, and adds them to People (with Undo)'], ['“by Friday 3pm”', 'Dates, times and repeats like “in 3 days” or “every Monday” fill in on their own (with Undo)']]]
 ];
 function openShortcuts(){
   $('#kbbody').innerHTML = '<div class="kbgrid">' + SHORTCUTS.map(([h, rows]) => `<div><h4>${esc(h)}</h4>${rows.map(([k, d]) => `<div class="kr"><span>${esc(d)}</span><span>${k.split(' / ').map(x => `<kbd>${esc(x)}</kbd>`).join(' ')}</span></div>`).join('')}</div>`).join('') + '</div>';
   $('#kbdlg').showModal();
 }
-const VIEW_KEYS = ['today', 'actions', 'timeline', 'note', 'trash'];
+const VIEW_KEYS = ['today', 'actions', 'note', 'timeline', 'risk', 'issue', 'decision', 'trash'];
 function goView(v){ filter = v; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
 document.addEventListener('keydown', e => {
   const t = e.target, typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
   if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === 'Enter'){          // done / not done, from anywhere
     const act = t.closest && t.closest('.act'), ai = t.closest && t.closest('.ai');
-    if(act){ const a = allActions().find(x => x.key === act.dataset.key); if(a){ e.preventDefault(); completeToggle(a.kind === 'task' ? a.item : a.ck, a.item, !a.done); edited(a.item); refreshViews(); } return; }
+    if(act){ const a = findEntry(act.dataset.key); if(a){ e.preventDefault(); completeToggle(a.kind === 'task' ? a.item : a.ck, a.item, !a.done); edited(a.item); refreshViews(); } return; }
     const i = byId(selId); if(FULL_PAGES.includes(filter) || !i) return;
     if(ai){ const c = i.checklist.find(x => x.id === (ai.querySelector('[data-ci]') || {dataset:{}}).dataset.ci); if(c){ e.preventDefault(); completeToggle(c, i, !c.done); edited(i); renderDetail(); } return; }
     if(i.type === 'task'){ e.preventDefault(); completeToggle(i, i, !i.done); edited(i); renderDetail(); }
@@ -1871,12 +2174,128 @@ document.addEventListener('keydown', e => {
   if(typing || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]') || $('#ctxmenu')) return;
   const k = e.key;
   if(k === '?'){ e.preventDefault(); openShortcuts(); }
-  else if(k === 'n'){ e.preventDefault(); newItem('task'); } else if(k === 'N'){ e.preventDefault(); newItem('note'); } else if(k === 'm' || k === 'M'){ e.preventDefault(); newItem('meeting'); }
+  else if(k === 'n'){ e.preventDefault(); newItem('task'); } else if(k === 'N'){ e.preventDefault(); newItem('note'); }
   else if(k === 'q' || k === 'Q'){ e.preventDefault(); openQuickAdd(); }
   else if(k === '/'){ e.preventDefault(); if(FULL_PAGES.includes(filter)){ filter = 'note'; saveUi(); fixSelection(); renderAll(); } if(listOff){ listOff = false; applyMode(); } $('#q').focus(); }
-  else if(/^[1-5]$/.test(k)){ e.preventDefault(); goView(VIEW_KEYS[+k - 1]); }
+  else if(/^[1-8]$/.test(k)){ e.preventDefault(); goView(VIEW_KEYS[+k - 1]); }
   else if((k === 'p' || k === 'P') && !FULL_PAGES.includes(filter)){ const i = byId(selId); if(i){ e.preventDefault(); i.pinned = !i.pinned; edited(i); refreshViews(); toast(i.pinned ? 'Pinned to the top.' : 'Unpinned.'); } }
 });
+
+/* ---- tagged lines: "ACTION: …", "RISK: …", "ISSUE: …" or "DECISION: …" at the start of a line in a note become entries of their own ----
+   The keyword is highlighted in the note, and the line keeps a hidden id so editing the line updates its entry (and a date, time or @person you write in it fills in). */
+/* A line is tagged by "ACTION:" (any capitalisation, with a colon or dash), or by the word in CAPITALS followed by text: "ACTION send the SOW".
+   Ordinary sentences such as "Action items are great" or "Risk assessment" are left alone. */
+const TAG_SEP_RE = /^(\s*)(\[?)(ACTION|RISK|ISSUE|DECISION)(\]?)\s*[:\-–—]/i;
+const TAG_CAPS_RE = /^(\s*)(\[?)(ACTION|RISK|ISSUE|DECISION)(\]?)(?=\s+\S)/;
+const TAG_SPAN_RE = /^(\s*)(\[?)(ACTION|RISK|ISSUE|DECISION)(\]?)\s*[:\-–—]?\s*$/i;          // the keyword on its own, once it's been marked
+const matchTag = t => TAG_SEP_RE.exec(t) || TAG_CAPS_RE.exec(t);
+const BLOCK_TAGS = /^(DIV|LI|P|H1|H2|H3|BLOCKQUOTE|UL|OL|TABLE|TD|TH|TR|TBODY|HR)$/;
+function wrapRootRuns(body){                                // loose text at the top of a note becomes lines (divs), so every line can be looked at the same way
+  let run = [], changed = false;
+  const flush = () => { if(run.some(n => n.nodeType === 1 || (n.nodeValue || '').trim())){ const d = body.ownerDocument.createElement('div'); body.insertBefore(d, run[0]); run.forEach(n => d.appendChild(n)); changed = true; } run = []; };
+  for(const n of [...body.childNodes]){
+    if(n.nodeType === 1 && BLOCK_TAGS.test(n.tagName)) flush();
+    else if(n.nodeType === 1 && n.tagName === 'BR'){ flush(); n.remove(); changed = true; }
+    else run.push(n);
+  }
+  flush(); return changed;
+}
+function syncTags(i, live){
+  const html = i.body || '';
+  const flat = html.replace(/<[^>]+>/g, m => /^<\/(div|li|p|h[1-3]|blockquote|td|th)/i.test(m) || /^<br/i.test(m) ? '\n' : '');
+  const hasText = /(^|\s)\[?(ACTION|RISK|ISSUE|DECISION)\]?\s*[:\-–—]/i.test(flat) || /(^|\s)\[?(ACTION|RISK|ISSUE|DECISION)\]?\s+\S/.test(flat), hasSpan = /class="rtag/.test(html);
+  if(!hasText && !hasSpan && !i.checklist.some(c => c.src === 'tag')) return null;
+  const doc = live ? live.ownerDocument : new DOMParser().parseFromString('<!doctype html><body>' + html, 'text/html'), body = live || doc.body;
+  const sel = live ? getSelection() : null;
+  let sn = sel && sel.rangeCount && live.contains(sel.anchorNode) ? sel.anchorNode : null, so = sn ? sel.anchorOffset : 0;           // where the cursor is, so it can be put back
+  if(hasText || hasSpan) wrapRootRuns(body);
+  body.querySelectorAll('[data-raid]').forEach(el => el.removeAttribute('data-raid'));
+  const seen = new Set(), created = [], removedSet = [];
+  let updated = 0;
+  for(const b of body.querySelectorAll('div, li, p, h1, h2, h3, blockquote, td, th')){
+    const own = [...b.childNodes].filter(n => !(n.nodeType === 1 && BLOCK_TAGS.test(n.tagName)));
+    if(!own.length) continue;
+    const first = own[0]; let span = null, m;
+    if(first.nodeType === 1 && first.tagName === 'SPAN' && first.classList.contains('rtag')){
+      m = TAG_SPAN_RE.exec(first.textContent);
+      if(!m){ first.replaceWith(doc.createTextNode(first.textContent)); continue; }          // the keyword was edited away: it's a plain line again
+      span = first;
+    } else if(first.nodeType === 3 && (m = matchTag(first.nodeValue))){
+      const full = m[0], trail = /\s*$/.exec(full)[0], head = m[1], cutLen = full.length - trail.length, mark = full.slice(head.length, cutLen);
+      span = doc.createElement('span'); span.textContent = mark;
+      if(head) first.parentNode.insertBefore(doc.createTextNode(head), first);
+      first.parentNode.insertBefore(span, first);
+      first.deleteData(0, cutLen);                                  // the text node keeps the rest of the line, so a cursor inside it stays where it was
+      if(first === sn) so = Math.max(0, so - cutLen);
+      own.shift(); own.unshift(span);
+      if(first.nodeValue) own.splice(1, 0, first); else if(first !== sn) first.remove(); else own.splice(1, 0, first);
+    } else continue;
+    const kind = m[3].toLowerCase();
+    span.setAttribute('class', 'rtag t-' + kind);
+    let rid = span.getAttribute('data-rid'); if(!rid || !/^[\w-]{3,40}$/.test(rid) || seen.has(rid)){ rid = uid(); span.setAttribute('data-rid', rid); }
+    seen.add(rid); b.setAttribute('data-raid', kind);
+    const text = own.slice(own.indexOf(span) + 1).map(n => n.textContent).join('').replace(/\s+/g, ' ').trim();
+    let e = i.checklist.find(c => c.id === rid); const want = kind === 'action' ? '' : kind;
+    if(!e){ if(text){ e = {id:rid, text, done:false, due:'', time:'', cat:'', assignee:'', raid:want, src:'tag', note:'', repeat:null}; i.checklist.push(e); applyParsed(e, text, i); created.push(e); } }
+    else if(e.src === 'tag'){
+      if(e.raid !== want){ e.raid = want; updated++; }
+      if(text && e.text !== text){ e.text = text; applyParsed(e, text, i); updated++; }
+    }
+  }
+  const gone = i.checklist.filter(c => c.src === 'tag' && !seen.has(c.id));
+  if(gone.length){ i.checklist = i.checklist.filter(c => !gone.includes(c)); gone.forEach(c => db.plan.forEach(b => { if(b.link && b.link.ck === c.id) b.link = null; })); }
+  const nb = cleanHtml(body.innerHTML), bodyChanged = nb !== cleanHtml(html);
+  if(bodyChanged) i.body = nb;
+  if(sn && live.contains(sn)){ const r = doc.createRange(); r.setStart(sn, Math.min(so, sn.nodeType === 3 ? sn.nodeValue.length : sn.childNodes.length)); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
+  return {bodyChanged, created, removed:gone, updated};
+}
+function caretTextOffset(ed){
+  const s = getSelection(); if(!s.rangeCount || !ed.contains(s.anchorNode)) return null;
+  const r = document.createRange(); r.selectNodeContents(ed); r.setEnd(s.anchorNode, s.anchorOffset); return r.toString().length;
+}
+function setCaretTextOffset(ed, off){
+  const w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT); let n, left = off;
+  while((n = w.nextNode())){ if(left <= n.nodeValue.length){ const r = document.createRange(); r.setStart(n, left); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); return; } left -= n.nodeValue.length; }
+}
+function runTagSync(id, quiet){
+  const i = byId(id); if(!i) return null;
+  const res = syncTags(i, selId === id ? document.querySelector('#detail .rt[data-f=body]') : null); if(!res) return null;
+  if(!(res.bodyChanged || res.created.length || res.removed.length || res.updated)) return res;
+  i.updated = now(); touch(); renderRail(); renderList();
+  if(selId === id && $('#cklist')) $('#cklist').innerHTML = ckRows(i);
+  if(!quiet && res.created.length){
+    toast(`Created ${res.created.length === 1 ? '' : res.created.length + ' items: '}${res.created.map(c => (RAID_META[c.raid] ? RAID_META[c.raid].one : 'Action') + ' “' + c.text.slice(0, 40) + (c.text.length > 40 ? '…' : '') + '”' + (c.due ? ', due ' + fmtDay(c.due) + (c.time ? ' ' + fmtTime(c.time) : '') : '') + (c.assignee ? ', → ' + c.assignee : '')).join('; ')}.`);
+  } else if(!quiet && res.removed.length){
+    const back = res.removed;
+    toast(`Removed ${back.length} item${back.length === 1 ? '' : 's'} whose line was deleted from the note.`, () => { back.forEach(c => { c.src = ''; i.checklist.push(c); }); i.updated = now(); touch(); refreshViews(); });
+  }
+  return res;
+}
+document.addEventListener('input', e => {
+  if(e.inputType !== 'insertParagraph' && e.inputType !== 'insertLineBreak') return;
+  const ed = e.target.closest && e.target.closest('.rt'); if(!ed) return;
+  ed.querySelectorAll('[data-raid]').forEach(b => {                        // Enter copies the line's attributes onto the new line: keep them only where the line really starts with a tag
+    const f = [...b.childNodes].find(n => !(n.nodeType === 1 && BLOCK_TAGS.test(n.tagName)));
+    if(!(f && f.nodeType === 1 && f.classList && f.classList.contains('rtag'))) b.removeAttribute('data-raid');
+  });
+}, true);
+let tagTimer = null;
+const scheduleTagSync = id => { clearTimeout(tagTimer); tagTimer = setTimeout(() => runTagSync(id), 900); };
+$('#detail').addEventListener('focusout', e => { if(e.target.matches && e.target.matches('.rt[data-f=body]') && selId){ clearTimeout(tagTimer); runTagSync(selId); } });
+function detachTagLine(i, rid){                          // the item was deleted from the Actions / RAID side: turn its line in the note back into plain text
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + (i.body || ''), 'text/html');
+  const sp = [...doc.querySelectorAll('span.rtag')].find(x => x.getAttribute('data-rid') === rid); if(!sp) return;
+  const blk = sp.closest('[data-raid]'); if(blk) blk.removeAttribute('data-raid');
+  sp.replaceWith(doc.createTextNode(sp.textContent));
+  i.body = cleanHtml(doc.body.innerHTML);
+  const ed = document.querySelector('#detail .rt[data-f=body]'); if(ed && selId === i.id){ ed.innerHTML = i.body; }
+}
+function scanAllTags(){
+  let made = 0, gone = 0;
+  for(const i of db.items){ const r = syncTags(i); if(r){ made += r.created.length; gone += r.removed.length; if(r.bodyChanged || r.created.length || r.removed.length || r.updated) i.updated = now(); } }
+  touch(); renderAll();
+  toast(made || gone ? `Scanned your notes: ${made} new item${made === 1 ? '' : 's'}${gone ? ', ' + gone + ' removed' : ''}.` : 'Scanned your notes: no new ACTION / RISK / ISSUE / DECISION lines found.');
+}
 
 function addCk(){
   const i = byId(selId), inp = $('#newck'); if(!i || !inp.value.trim()) return;
@@ -1901,7 +2320,7 @@ $('#detail').addEventListener('input', e => {
   if(t.tagName === 'TEXTAREA' && t.value.includes('\n')) t.value = t.value.replace(/\s*\n\s*/g, ' ');           // pasted line breaks become spaces
   if(t.classList && t.classList.contains('rt')) t.toggleAttribute('data-empty', isBlank(cleanHtml(t.innerHTML)));
   if(t.dataset.ax){                                    // a row in the Actions tab
-    const row = t.closest('.act'), a = allActions().find(x => x.key === row.dataset.key); if(!a) return;
+    const row = t.closest('.act'), a = findEntry(row.dataset.key); if(!a) return;
     const f = t.dataset.ax, o = a.kind === 'task' ? a.item : a.ck;
     if(f === 'done'){ completeToggle(o, a.item, t.checked); edited(a.item); }
     else if(f === 'repeat'){ setRepeat(o, t.value); edited(a.item); row.querySelector('[data-ax=due]').value = o.due; t.innerHTML = repeatOptions(o.repeat); }
@@ -1913,6 +2332,7 @@ $('#detail').addEventListener('input', e => {
   const i = byId(selId); if(!i) return;
   if(t.dataset.cr){ const c = i.checklist.find(x => x.id === t.dataset.cr); if(c){ setRepeat(c, t.value); edited(i); t.closest('.ai').querySelector('[data-cd]').value = c.due; t.innerHTML = repeatOptions(c.repeat); } return; }
   if(t.dataset.rp){ setRepeat(i, t.value); edited(i); const d = $('#detail [data-f=due]'); if(d) d.value = i.due; t.innerHTML = repeatOptions(i.repeat); return; }
+  if(t.dataset.ca){ const c = i.checklist.find(x => x.id === t.dataset.ca); if(c){ c.assignee = t.value.trim(); edited(i); } return; }
   if(t.dataset.cd){ const c = i.checklist.find(x => x.id === t.dataset.cd); if(c){ c.due = t.value; edited(i); } return; }
   if(t.dataset.ct){ const c = i.checklist.find(x => x.id === t.dataset.ct); if(c){ c.time = t.value; edited(i); } return; }
   if(t.dataset.cn){ const c = i.checklist.find(x => x.id === t.dataset.cn); if(c){ c.note = val(t); t.closest('.ai').querySelector('.nb').classList.toggle('has', !isBlank(c.note)); edited(i); } return; }
@@ -1921,7 +2341,7 @@ $('#detail').addEventListener('input', e => {
     const f = t.dataset.f; let v = t.isContentEditable ? val(t) : (t.type === 'checkbox' ? t.checked : t.value);
     if(f === 'tags') v = parseTags(v);
     if(f === 'done'){ const rolled = completeToggle(i, i, v); edited(i); if(rolled) renderDetail(); return; }
-    i[f] = v; if(f === 'body') grow(t);
+    i[f] = v; if(f === 'body'){ grow(t); scheduleTagSync(i.id); }
     edited(i);
   } else if(t.dataset.ci){ const c = i.checklist.find(x => x.id === t.dataset.ci); if(c){ c.text = t.value; edited(i); } }
   else if(t.dataset.cc){ const c = i.checklist.find(x => x.id === t.dataset.cc); if(c){
@@ -1933,17 +2353,25 @@ $('#detail').addEventListener('keydown', e => {
   if(e.key === 'Enter' && e.target.id === 'newck'){ e.preventDefault(); addCk(); }
   if(e.key === 'Enter' && e.target.id === 'anew'){ e.preventDefault(); addAction(); }
   if(e.key === 'Enter' && e.target.id === 'tqa'){ e.preventDefault(); todayAdd(); }
+  if(e.key === 'Enter' && e.target.id === 'rnew'){ e.preventDefault(); addRaid(e.target.dataset.raid); }
   if(e.key === 'Enter' && e.target.matches && e.target.matches('textarea.title, textarea.tx')){ e.preventDefault(); e.target.blur(); }      // titles wrap visually but stay one line of text
 });
 $('#detail').addEventListener('change', e => {            // Actions tab controls that regroup the list
   const t = e.target;
-  if(t.id === 'agroup'){ actGroup = t.value; saveUi(); renderDetail(); }
+  if(t.id === 'apers'){ actPerson = t.value; saveUi(); renderDetail(); }
+  else if(t.id === 'anb'){ actNb = t.value; saveUi(); renderDetail(); }
+  else if(t.id === 'tmine'){ todayMine = t.checked; saveUi(); renderDetail(); }
+  else if(t.dataset.ax === 'assignee' || t.dataset.ca || t.dataset.f === 'assignee'){        // finished typing a name: keep the spelling consistent and add new people to the list
+    const v = t.value.trim(); if(v){ const k = canonPerson(v); if(k !== v){ t.value = k; t.dispatchEvent(new Event('input', {bubbles:true})); } if(addPerson(k)){ touch(); renderRail(); } }
+    if(t.dataset.ax === 'assignee' && actPerson) renderDetail();
+  }
+  else if(t.id === 'agroup'){ actGroup = t.value; saveUi(); renderDetail(); }
   else if(t.id === 'acatf'){ actCat = t.value; saveUi(); renderDetail(); }
   else if(t.id === 'adone'){ actDone = t.checked; saveUi(); renderDetail(); }
   else if(t.id === 'aauto'){ autoDates = t.checked; saveUi(); }
   else if(t.dataset.ax === 'due' || t.dataset.ax === 'cat' || t.dataset.ax === 'repeat') renderDetail();
   else if(t.dataset.ax === 'text'){                       // finished typing an action: look for a date in it
-    const row = t.closest('.act'), a = allActions().find(x => x.key === row.dataset.key);
+    const row = t.closest('.act'), a = findEntry(row.dataset.key);
     const o = a && (a.kind === 'task' ? a.item : a.ck);
     if(o && autoDate(o, a.text, a.item)){
       touch(); row.querySelector('[data-ax=due]').value = o.due; row.querySelector('[data-ax=time]').value = o.time; row.querySelector('[data-ax=repeat]').innerHTML = repeatOptions(o.repeat);
@@ -1965,6 +2393,12 @@ $('#catrows').addEventListener('input', e => {
   touch(); renderRail(); renderList();
 });
 $('#catdlg').addEventListener('close', () => renderAll());
+$('#pdlg').addEventListener('close', () => renderAll());
+$('#nbdlg').addEventListener('close', () => renderAll());
+$('#nbrows').addEventListener('input', e => { const n = nbById(e.target.dataset.nbc); if(n){ n.color = e.target.value; touch(); renderList(); } });
+$('#nbrows').addEventListener('change', e => { const n = nbById(e.target.dataset.nbn); if(n){ n.name = e.target.value.trim() || n.name; touch(); renderNbDlg(); renderRail(); } });
+$('#prows').addEventListener('change', e => { if(e.target.dataset.pn) renamePerson(e.target.dataset.pn, e.target.value); });
+$('#pme').addEventListener('change', e => { db.me = e.target.value; touch(); renderPeople(); });
 $('#tldlg').addEventListener('close', () => { tlEdit = null; });
 $('#tlrep').addEventListener('change', e => { if(e.target.value === 'custom') return; tlEdit.b.repeat = presetRule(e.target.value, $('#tls').value || todayStr()); renderTlDlg(); });
 $('#tlreptx').addEventListener('change', e => {                    // "every other Friday" typed in plain words
@@ -1990,6 +2424,8 @@ document.addEventListener('click', e => {
   const lcat = e.target.closest('[data-lcat]'); if(lcat){ listCat = listCat === lcat.dataset.lcat ? '' : lcat.dataset.lcat; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const ch = e.target.closest('[data-chip]');
   if(ch){ const v = chipView(), s = new Set(chipsOff[v]); if(s.has(ch.dataset.chip)) s.delete(ch.dataset.chip); else s.add(ch.dataset.chip); chipsOff[v] = [...s]; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
+  const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbFold.has(id)) nbFold.delete(id); else nbFold.add(id); if(nbById(id)) lastNb = id; saveUi(); renderList(); return; }
+  const pp = e.target.closest('[data-person]'); if(pp){ filter = 'actions'; actPerson = actPerson.toLowerCase() === pp.dataset.person.toLowerCase() ? '' : pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
   const f = e.target.closest('[data-filter]'); if(f){ filter = f.dataset.filter; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
   const a = e.target.closest('[data-act]');
   if(a){
@@ -2014,6 +2450,7 @@ document.addEventListener('click', e => {
     else if(act === 'quickadd'){ $('#newmenu').classList.remove('open'); openQuickAdd(); }
     else if(act === 'qasave'){ if(quickAdd($('#qai').value)) $('#qadlg').close(); else $('#qai').focus(); } else if(act === 'qacancel') $('#qadlg').close();
     else if(act === 'qadd') todayAdd();
+    else if(act === 'addraid') addRaid(a.dataset.raid); else if(act === 'scantags') scanAllTags();
     else if(act === 'gotl'){ tlAnchor = todayStr(); goView('timeline'); }
     else if(act === 'export'){ const i = byId(selId); if(i){ const r = a.getBoundingClientRect(); openMenu(r.left, r.bottom + 4, [{hd:'Export this ' + (i.type === 'task' ? 'action' : 'note')}, ...exportEntries(i)], null); } }
     else if(act === 'trestore') restoreItem(a.dataset.id); else if(act === 'tpurge') purgeItem(a.dataset.id); else if(act === 'tempty') emptyTrash();
@@ -2031,6 +2468,15 @@ document.addEventListener('click', e => {
       const k = a.dataset.key; if(openNotes.has(k)) openNotes.delete(k); else openNotes.add(k);
       renderDetail(); const ta = document.querySelector(`.act[data-key="${k}"] .anote`); if(ta) ta.focus();
     }
+    else if(act === 'editnb'){ renderNbDlg(); $('#nbdlg').showModal(); } else if(act === 'closenb') $('#nbdlg').close();
+    else if(act === 'nbnewpage'){ lastNb = a.dataset.id; nbFold.delete(a.dataset.id); filter = 'note'; newItem('note'); }
+    else if(act === 'nbfoldall'){ db.notebooks.forEach(n => nbFold.add(n.id)); saveUi(); renderList(); } else if(act === 'nbunfoldall'){ nbFold.clear(); saveUi(); renderList(); }
+    else if(act === 'newnbtab'){ const nm = (prompt('Name the new notebook:') || '').trim(); if(nm){ const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); lastNb = nb.id; nbFold.delete(nb.id); saveUi(); touch(); renderAll(); } }
+    else if(act === 'addnb'){ let nm = 'New notebook', k = 2; while(db.notebooks.some(x => x.name.toLowerCase() === nm.toLowerCase())) nm = 'New notebook ' + k++; const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); saveUi(); touch(); renderNbDlg(); const r = $('#nbrows').querySelector(`[data-nbn="${nb.id}"]`); if(r){ r.focus(); r.select(); } }
+    else if(act === 'delnb') removeNotebook(a.dataset.id);
+    else if(act === 'editpeople'){ renderPeople(); $('#pdlg').showModal(); } else if(act === 'closepeople') $('#pdlg').close();
+    else if(act === 'addperson'){ let n = 'New person', k = 2; while(db.people.some(x => x.toLowerCase() === n.toLowerCase())) n = 'New person ' + k++; db.people.push(n); touch(); renderPeople(); const r = $('#prows').querySelector(`[data-pn="${n}"]`); if(r){ r.focus(); r.select(); } }
+    else if(act === 'delperson') removePerson(a.dataset.id);
     else if(act === 'editcats'){ renderCats(); $('#catdlg').showModal(); }
     else if(act === 'closecats') $('#catdlg').close();
     else if(act === 'addcat'){ db.categories.push({id:uid(), name:'New category', color:'#8a6bbf'}); touch(); renderCats(); const r = $('#catrows').querySelectorAll('[data-kn]'); const l = r[r.length - 1]; if(l){ l.focus(); l.select(); } }
@@ -2044,7 +2490,7 @@ document.addEventListener('click', e => {
         touch(); renderCats();
       }
     }
-    else if(act === 'delck'){ const i = byId(selId); db.plan.forEach(b => { if(b.link && b.link.ck === a.dataset.id) b.link = null; }); i.checklist = i.checklist.filter(c => c.id !== a.dataset.id); $('#cklist').innerHTML = ckRows(i); edited(i); }
+    else if(act === 'delck'){ const i = byId(selId); const c0 = i.checklist.find(c => c.id === a.dataset.id); if(c0 && c0.src === 'tag'){ detachTagLine(i, c0.id); c0.src = ''; } db.plan.forEach(b => { if(b.link && b.link.ck === a.dataset.id) b.link = null; }); i.checklist = i.checklist.filter(c => c.id !== a.dataset.id); $('#cklist').innerHTML = ckRows(i); edited(i); }
     return;
   }
   if(e.target.id === 'newbtn'){ $('#newmenu').classList.toggle('open'); return; }
@@ -2052,6 +2498,7 @@ document.addEventListener('click', e => {
 });
 $('#q').addEventListener('input', e => { search = e.target.value; fixSelection(); renderList(); renderDetail(); });
 $('#datedonly').addEventListener('change', e => { datedOnly = e.target.checked; saveUi(); fixSelection(); renderList(); renderDetail(); });
+$('#qscope').addEventListener('change', e => { searchAll = e.target.checked; fixSelection(); renderList(); renderDetail(); });
 $('#hidedone').addEventListener('change', e => { hideDone = e.target.checked; saveUi(); fixSelection(); renderList(); renderDetail(); });
 document.addEventListener('keydown', e => {
   if(!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
@@ -2124,6 +2571,13 @@ function runCmd(cmd, arg){
     let url = prompt('Link address (e.g. https://example.com)'); if(!url) return;
     url = url.trim(); if(!/^(?:https?:|mailto:)/i.test(url)) url = 'https://' + url;
     document.execCommand('createLink', false, url);
+  } else if(cmd === 'hilite'){ document.execCommand('hiliteColor', false, arg);
+  } else if(cmd === 'size'){ document.execCommand('fontSize', false, arg);
+  } else if(cmd === 'tag'){ document.execCommand('insertText', false, arg + ': ');
+  } else if(cmd === 'fold' || cmd === 'unfoldall'){
+    if(cmd === 'unfoldall') ed.querySelectorAll('li[data-fold]').forEach(li => li.removeAttribute('data-fold'));
+    else { const s = getSelection(), el = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement), li = el && el.closest('li'); const mine = li && ed.contains(li) ? (li.querySelector(':scope > ul, :scope > ol') ? li : li.parentElement.closest('li')) : null;
+      if(mine && mine.querySelector(':scope > ul, :scope > ol')){ if(mine.hasAttribute('data-fold')) mine.removeAttribute('data-fold'); else mine.setAttribute('data-fold', '1'); } else toast('Put the cursor in a bullet that has sub-points, then fold it.'); }
   } else if(cmd === 'table') insertTable(ed);
   else if(cmd.startsWith('tbl-')) tableCmd(cmd.slice(4));
   else if(cmd === 'hr') document.execCommand('insertHorizontalRule');
@@ -2134,6 +2588,11 @@ function runCmd(cmd, arg){
 $('#fmtbar').addEventListener('mousedown', e => { if(e.target.closest('button')) e.preventDefault(); });        // clicking a button keeps your selection
 $('#fmtbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if(b) runCmd(b.dataset.cmd); });
 $('#fmtblock').addEventListener('change', e => runCmd('formatBlock', e.target.value));
+for(const [id, cmd] of [['fmthl', 'hilite'], ['fmtsize', 'size'], ['fmttag', 'tag']]) $('#' + id).addEventListener('change', e => { const v = e.target.value; e.target.value = ''; if(v) runCmd(cmd, v); });
+document.addEventListener('click', e => {                                           // click a bullet that has sub-points to fold / unfold it
+  const li = e.target.closest && e.target.closest('.rt li'); if(!li || !li.querySelector(':scope > ul, :scope > ol')) return;
+  if(e.clientX < li.getBoundingClientRect().left - 1){ if(li.hasAttribute('data-fold')) li.removeAttribute('data-fold'); else li.setAttribute('data-fold', '1'); li.closest('.rt').dispatchEvent(new Event('input', {bubbles:true})); }
+});
 new MutationObserver(() => { $('#fmtbar').style.display = $('#detail .rt') ? '' : 'none'; }).observe($('#detail'), {childList:true, subtree:true});
 if(!(window.CSS && CSS.supports && CSS.supports('field-sizing', 'content'))){          // older browsers can't auto-size the wrapping text boxes, so do it by hand
   const fit = t => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; };
@@ -2179,7 +2638,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261028093712';</script>
+<script>window.NB_BUILD = '20261028154019';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
