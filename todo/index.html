@@ -236,6 +236,8 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .meta select,.ai select,.addrow select,.afilters select,.act select{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 6px;font:inherit;font-size:13px;outline:none;color-scheme:inherit;max-width:100%}
 .ai input[type=date],.act input[type=date],.addrow input[type=date],.ai input[type=time],.act input[type=time]{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px;outline:none;color-scheme:inherit}
 .ai select{max-width:130px}
+.ai select[data-cs]{max-width:none;width:14em;min-width:0}
+@supports (field-sizing:content){.ai select[data-cs]{field-sizing:content;width:auto;min-width:7em;max-width:100%}}          /* sizes to the category shown, however long */
 .meta select{max-width:200px}
 .app.rail-off{--rw:46px}.app.list-off{--lw:46px}
 .app.actions-mode{grid-template-columns:var(--rw,200px) 1fr}.app.actions-mode .list{display:none}
@@ -255,6 +257,14 @@ input.who:focus{border-color:var(--accent)}
 .ai input.who{flex:0 0 100px;width:100px;border:1px solid var(--line);border-bottom:1px solid var(--line)}
 .meta input.who{width:130px}
 .pcnt{color:var(--mute);font-size:12px;white-space:nowrap}
+#abdlg{width:min(620px,94vw);max-height:90vh;overflow:auto}
+#abdlg .abv{margin:12px 0 2px;font-size:14px}#abdlg .abv b{font-family:Georgia,serif;font-size:15px}
+#abdlg .abt{color:var(--mute)}#abdlg ul{margin:2px 0 0 20px;font-size:13px}#abdlg li{margin:2px 0}
+#abdlg .tag-missing{background:var(--amberbg);color:var(--amber);font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;margin-left:6px}
+#abdlg .tag-newer{background:var(--redbg);color:var(--red);font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;margin-left:6px}
+#abdlg .tag-this{background:var(--soft);color:var(--accent);font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;margin-left:6px}
+#abdlg .okmsg{color:var(--green);font-weight:600}#abdlg .warnmsg{color:var(--amber);font-weight:600}
+.crow .mv{border:0;background:none;color:var(--mute);font-size:11px;padding:2px 5px;border-radius:5px}.crow .mv:hover{background:var(--hover);color:var(--accent)}
 .nbhead{display:flex;gap:6px;align-items:center}
 .nbbar{display:flex;gap:12px;padding:2px 16px 8px;font-size:12.5px;align-items:center}
 .nbbar a{color:var(--mute);cursor:pointer;text-decoration:none;white-space:nowrap}.nbbar a:hover{color:var(--accent);text-decoration:underline}
@@ -286,6 +296,8 @@ input.who:focus{border-color:var(--accent)}
 .rt th{background:var(--hover);text-align:left;font-weight:600}
 .rt td:focus-within,.rt th:focus-within{background:color-mix(in srgb,var(--soft) 50%,transparent)}
 #tblbar{display:none;gap:4px;align-items:center;padding-left:6px;border-left:1px solid var(--line)}
+.rt .fc-red{color:#e0514b}.rt .fc-orange{color:#e08a1e}.rt .fc-green{color:#3f9b5b}.rt .fc-blue{color:#4b8fd9}.rt .fc-purple{color:#9b6bd3}.rt .fc-gray{color:#8a8a8a}
+.rt span[style*="background-color"]:not([style*="transparent"]){color:#1d1d1b;border-radius:2px}
 .rt mark.h-green{background:#bff0c8}.rt mark.h-blue{background:#bfe0ff}.rt mark.h-pink{background:#ffc9de}.rt mark.h-orange{background:#ffd6aa}
 .rt .sz-s,.rt font[size="1"],.rt font[size="2"]{font-size:.82em}
 .rt .sz-l,.rt font[size="4"],.rt font[size="5"]{font-size:1.3em;line-height:1.3}
@@ -335,7 +347,7 @@ a.nlink:hover,a.nlink.has{color:var(--accent)}
 .gh{display:flex;gap:8px;align-items:baseline;margin:24px 0 4px}
 .gh small{font-weight:400;letter-spacing:0}
 .gh.late{color:var(--red)}
-.act{display:grid;grid-template-columns:22px 1fr 134px 100px 158px 128px 112px;gap:12px;align-items:start;padding:8px 4px;border-bottom:1px solid var(--line)}
+.act{display:grid;grid-template-columns:22px 1fr 134px 100px 158px 168px 112px;gap:12px;align-items:start;padding:8px 4px;border-bottom:1px solid var(--line)}
 .act .atext{min-width:0}
 .act .atext textarea{width:100%;border:0;border-bottom:1px solid transparent;background:none;color:var(--text);font:inherit;line-height:1.4;outline:none;padding:2px 0}
 .act .atext textarea:focus{border-color:var(--line)}
@@ -408,8 +420,9 @@ dialog p{color:var(--mute);font-size:13px}
       <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
       <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
       <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
-      <button data-cmd="highlight" title="Highlight (yellow on / off)">🖍</button>
-      <select id="fmthl" title="Highlight colour"><option value="">Colour…</option><option value="#ffe58a">Yellow</option><option value="#bff0c8">Green</option><option value="#bfe0ff">Blue</option><option value="#ffc9de">Pink</option><option value="#ffd6aa">Orange</option><option value="transparent">No highlight</option></select>
+      <button data-cmd="hilitelast" title="Highlight with your last color. Click it again on the highlighted text to take it off">🖍</button>
+      <select id="fmthl" title="Highlight color"><option value="">Highlight…</option><option value="#ffe58a" style="background:#ffe58a;color:#222">Yellow</option><option value="#bff0c8" style="background:#bff0c8;color:#222">Green</option><option value="#bfe0ff" style="background:#bfe0ff;color:#222">Blue</option><option value="#ffc9de" style="background:#ffc9de;color:#222">Pink</option><option value="#ffd6aa" style="background:#ffd6aa;color:#222">Orange</option><option value="none">Remove highlight</option></select>
+      <select id="fmtfc" title="Font color"><option value="">Font color…</option><option value="#e0514b" style="color:#e0514b">Red</option><option value="#e08a1e" style="color:#e08a1e">Orange</option><option value="#3f9b5b" style="color:#3f9b5b">Green</option><option value="#4b8fd9" style="color:#4b8fd9">Blue</option><option value="#9b6bd3" style="color:#9b6bd3">Purple</option><option value="#8a8a8a" style="color:#8a8a8a">Gray</option><option value="default">Default color</option></select>
       <select id="fmtsize" title="Text size"><option value="">Size…</option><option value="2">Small</option><option value="3">Normal</option><option value="5">Large</option><option value="6">Huge</option></select>
       <span class="sep"></span>
       <button data-cmd="insertUnorderedList" title="Bulleted list (or type “- ”)">• List</button>
@@ -430,9 +443,17 @@ dialog p{color:var(--mute);font-size:13px}
     <article class="detail" id="detail"></article>
   </div>
 </div>
+<dialog id="abdlg">
+  <h3>My Notebook <small id="abver" style="color:var(--mute);font-weight:400"></small></h3>
+  <p>Compare this copy with your live site, and see what changed in each version.</p>
+  <div style="display:flex;gap:8px;margin:10px 0 6px"><input type="text" id="liveurl" placeholder="Your live site, e.g. https://yourname.github.io/notebook/" style="flex:1;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:7px 10px;font:inherit;outline:none"><button data-act="checklive" style="border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 14px">Check</button></div>
+  <div id="ablive" style="font-size:13.5px;margin-bottom:8px"></div>
+  <div id="abchanges"></div>
+  <div class="dfoot"><span></span><button class="pri" data-act="closeabout">Close</button></div>
+</dialog>
 <dialog id="nbdlg">
   <h3>Notebooks</h3>
-  <p>Group your pages, like OneNote. Each note lives in one notebook. Actions, risks, issues and decisions still roll up everywhere, and you can filter them by notebook. Deleting a notebook moves its pages to another one.</p>
+  <p>Group your pages, like OneNote. Use ▲ ▼ (or drag a heading in the Notes list) to put the notebooks in the order you like. Each note lives in one notebook. Actions, risks, issues and decisions still roll up everywhere, and you can filter them by notebook. Deleting a notebook moves its pages to another one.</p>
   <div id="nbrows"></div>
   <div class="dfoot"><button data-act="addnb">+ Add notebook</button><button class="pri" data-act="closenb">Done</button></div>
 </dialog>
@@ -475,6 +496,133 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
+const APP_VERSION = '1.10.3';
+const CHANGELOG = /*CL*/[
+ {
+  "v": "1.10.3",
+  "title": "Category names no longer cut off",
+  "items": [
+   "The category box on action items (in notes and on the Actions page) is wide enough for names with \"(inherited)\", and hovering it shows the full text"
+  ]
+ },
+ {
+  "v": "1.10.2",
+  "title": "One toggle for folding notebooks",
+  "items": [
+   "Collapse all and Expand all are now a single button that switches between the two"
+  ]
+ },
+ {
+  "v": "1.10.1",
+  "title": "Highlight color is a dropdown",
+  "items": [
+   "Highlight colors are in a dropdown instead of a row of swatches, with a 🖍 button that reuses the last color you picked (click the same color on the text again to take it off)"
+  ]
+ },
+ {
+  "v": "1.10.0",
+  "title": "People across RAID, and better highlighting",
+  "items": [
+   "People: clicking someone in the sidebar now shows everything assigned to them on one page, with Actions, Risks, Issues and Decisions in their own sections, and the counts include RAID items",
+   "Highlighting: click a color swatch to highlight the selected text, click the same swatch on the text again to take it off (no more Clear), five colors to choose from, and highlighted text is always dark so it stays readable",
+   "Font color: the old Colour menu is now Font color (red, orange, green, blue, purple, gray), and picking the same color again removes it"
+  ]
+ },
+ {
+  "v": "1.9.0",
+  "title": "Reorder notebooks, and version tracking",
+  "items": [
+   "Reorder notebooks: drag a notebook heading onto another, use the ▲ ▼ buttons in ⚙ Manage, or right-click a heading → Move up / Move down",
+   "Version number in the sidebar footer, a What's new list, and a check that compares this copy with your live site and lists what the live site is missing"
+  ]
+ },
+ {
+  "v": "1.8.0",
+  "title": "Cleaner Notes and Today",
+  "items": [
+   "Today shows only actions, risks, issues, decisions and timeline items (notes no longer appear there)",
+   "The Notes tab no longer has Work / Personal / Admin category chips",
+   "Tag a line with ACTION, RISK, ISSUE or DECISION in CAPITALS without a colon (a colon still works in any capitalisation)",
+   "Pressing Enter after a tagged line keeps your cursor on the new line, and the new line doesn't copy the highlight",
+   "Deleting a notebook refreshes the list straight away, can be undone, and explains why the last notebook can't be deleted",
+   "If a file loses its notebooks (an older copy saved over it), they are restored from this browser's saved copy"
+  ]
+ },
+ {
+  "v": "1.7.0",
+  "title": "Notebooks",
+  "items": [
+   "Notebooks: the Notes list is split into colored, collapsible notebook sections",
+   "Drag pages between notebooks, use the Notebook dropdown on a note, or right-click a page",
+   "Rename, recolor and delete notebooks (right-click a heading, or ⚙ Manage)",
+   "Filter Actions and the RAID pages by notebook"
+  ]
+ },
+ {
+  "v": "1.6.0",
+  "title": "RAID log and richer notes",
+  "items": [
+   "Lines starting ACTION:, RISK:, ISSUE: or DECISION: in a note become their own entries, highlighted in the note, with a due date and @person picked up from the text",
+   "Risks, Issues and Decisions pages under RAID log, and a Scan my notes button for older notes",
+   "Text sizes, highlight colors and foldable bullets in notes",
+   "Sidebar order is Today, Actions, Notes, Timeline; meetings are just notes"
+  ]
+ },
+ {
+  "v": "1.5.0",
+  "title": "Assignees and one kind of action",
+  "items": [
+   "Assign actions to people: Assigned to box, People list, @name detection in the text, Only mine on Today",
+   "Tasks and action items are now both just actions, and the separate Tasks and Everything views are gone",
+   "Fixed time ordering on Today and Actions (finished items last, untimed after timed)"
+  ]
+ },
+ {
+  "v": "1.4.0",
+  "title": "Today, quick add and everyday tools",
+  "items": [
+   "Today view with past due and today highlighted",
+   "Quick add (Q): type it the way you'd say it",
+   "Pin to top, keyboard shortcuts with a cheat sheet (?), light / dark / auto theme",
+   "Export a note as Markdown, text or PDF; Trash that keeps deleted items for 30 days",
+   "Refresh button, tables in notes, right-click menus on lists, Actions, Today and the Timeline"
+  ]
+ },
+ {
+  "v": "1.3.0",
+  "title": "Timeline",
+  "items": [
+   "Timeline planning calendar: blocks that span days or weeks, month, 8-week and week views, Mon–Fri",
+   "Not planned yet tray, Due dates layer, recurring blocks, block descriptions, category filter"
+  ]
+ },
+ {
+  "v": "1.2.0",
+  "title": "Formatting, groups and the installable app",
+  "items": [
+   "Note formatting: bold, underline, bullets, numbers, indent, headings, links",
+   "Type chips and a shared filter bar; due-date groups (Past due, Today, Tomorrow, Later this week, …)",
+   "Installable as an app (PWA) via the site folder; long titles wrap"
+  ]
+ },
+ {
+  "v": "1.1.0",
+  "title": "Actions and dates",
+  "items": [
+   "Actions tab, due dates and categories",
+   "Dates, times and repeats found in the text (\"by Friday 3pm\", \"every Monday\")",
+   "Notes on action items, minimizable sidebars, meetings merged into notes"
+  ]
+ },
+ {
+  "v": "1.0.0",
+  "title": "The first version",
+  "items": [
+   "Tasks, notes and meetings saved automatically to a JSON file on your computer, with a red banner if saving stops",
+   "Search, tags, categories and backup"
+  ]
+ }
+]/*CL*/;
 /* ================= helpers ================= */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -520,11 +668,15 @@ function cleanHtml(html){
       const href = (n.getAttribute('href') || '').trim();
       return /^(?:https?:|mailto:)/i.test(href) ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : inner;
     }
-    if(tag === 'FONT'){ const z = +n.getAttribute('size'); const c = z && z <= 2 ? 'sz-s' : z >= 6 ? 'sz-xl' : z >= 4 ? 'sz-l' : ''; return c ? `<span class="${c}">${inner}</span>` : inner; }       // text size (the browser's own size command makes <font size>)
+    if(tag === 'FONT'){
+      const z = +n.getAttribute('size'), c = z && z <= 2 ? 'sz-s' : z >= 6 ? 'sz-xl' : z >= 4 ? 'sz-l' : '', fc = fcClass(n.getAttribute('color'));
+      let o = inner; if(c) o = `<span class="${c}">${o}</span>`; if(fc) o = `<span class="fc-${fc}">${o}</span>`; return o;
+    }       // text size (the browser's own size command makes <font size>)
     if(tag === 'SPAN'){
       const cl = n.getAttribute('class') || '', tg = /\bt-(action|risk|issue|decision)\b/.exec(cl), rid = n.getAttribute('data-rid') || '';
       if(/\brtag\b/.test(cl)) return tg && /^[\w-]{3,40}$/.test(rid) ? `<span class="rtag t-${tg[1]}" data-rid="${rid}">${inner}</span>` : inner;       // ACTION: / RISK: / ISSUE: / DECISION: markers
       const sz = /\bsz-(s|l|xl)\b/.exec(cl); if(sz) return `<span class="sz-${sz[1]}">${inner}</span>`;
+      const fcc = /\bfc-(red|orange|green|blue|purple|gray)\b/.exec(cl); if(fcc) return `<span class="fc-${fcc[1]}">${inner}</span>`;
     }
     if(tag === 'TABLE') return `<table>${inner}</table>`;                    // simple tables only: rows and cells (no merged cells, widths or colours)
     if(tag === 'TR') return `<tr>${inner}</tr>`;
@@ -1006,7 +1158,10 @@ async function refreshAll(){
   refreshing = false; renderFileInfo();
   if(window.NB_BUILD){
     const latest = await latestBuild();
-    if(latest && latest !== window.NB_BUILD){ toast('A newer version of the app is available.', updateApp, 'Update now'); return; }
+    if(latest && latest !== window.NB_BUILD){
+      let nv = ''; try { const j = await (await fetch('version.json?t=' + Date.now(), {cache:'reload'})).json(); nv = j && j.version ? ' (v' + j.version + ', you have v' + APP_VERSION + ')' : ''; } catch {}
+      toast('A newer version of the app is available' + nv + '.', updateApp, 'Update now'); return;
+    }
     if(latest) msg += ' The app is up to date.';
   }
   toast(msg);
@@ -1138,7 +1293,7 @@ function renderFilterBar(){
   if(showCats) cc.innerHTML = db.categories.map(c => `<button class="chip cchip ${listCat === c.id ? 'on' : ''}" data-lcat="${esc(c.id)}" aria-pressed="${listCat === c.id}" title="${listCat === c.id ? 'Show all categories again' : 'Only show ' + esc(c.name)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('');
   document.querySelectorAll('#sortseg [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === sortMode));
   const bar = $('#nbbar'); bar.style.display = filter === 'note' ? '' : 'none';
-  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><span style="flex:1"></span><a data-act="nbfoldall">Collapse all</a><a data-act="nbunfoldall">Expand all</a>`;
+  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><span style="flex:1"></span><a data-act="nbfoldtoggle">${db.notebooks.every(n => nbFold.has(n.id)) ? 'Expand all' : 'Collapse all'}</a>`;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
   $('#qscopewrap').style.display = filter.startsWith('nb:') && search.trim() ? '' : 'none'; $('#qscope').checked = searchAll;
   $('#datedonly').checked = datedOnly; $('#hidedone').checked = hideDone;
@@ -1170,7 +1325,7 @@ function renderFileInfo(){
   const el = $('#fileinfo'), ok = fileState === 'ready' && !writeError;
   el.className = 'fileinfo' + (ok || fileState === 'loading' ? '' : ' bad');
   el.innerHTML = (fileHandle ? `${ok ? 'Autosaving to' : 'Not saving to'}<br><b>${esc(fileHandle.name)}</b><br>` : '<b>No save file chosen</b><br>')
-    + `<a data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file' : 'Choose file'}</a> · <a data-act="backup">Backup</a> · <a data-act="refresh" title="Reload the file and check for a newer version of the app">↻ Refresh</a><br><a data-act="theme" title="Switch between automatic, light and dark">◐ Theme: ${{auto:'Auto', light:'Light', dark:'Dark'}[theme]}</a> · <a data-act="shortcuts" title="Keyboard shortcuts (press ?)">⌨ Shortcuts</a>`;
+    + `<a data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file' : 'Choose file'}</a> · <a data-act="backup">Backup</a> · <a data-act="refresh" title="Reload the file and check for a newer version of the app">↻ Refresh</a><br><a data-act="theme" title="Switch between automatic, light and dark">◐ Theme: ${{auto:'Auto', light:'Light', dark:'Dark'}[theme]}</a> · <a data-act="shortcuts" title="Keyboard shortcuts (press ?)">⌨ Shortcuts</a><br><a data-act="about" title="What's new, and is your live site up to date?">v${APP_VERSION} · What's new</a>`;
 }
 function renderRail(){
   const cnt = t => db.items.filter(i => i.type === t).length;
@@ -1181,8 +1336,8 @@ function renderRail(){
   $('#filters').innerHTML = F.map(([k,l,n,cls]) => `<div class="f ${filter === k || (k === 'actions' && filter === 'task') || (k === 'note' && filter.startsWith('nb:')) ? 'on' : ''}" data-filter="${k}">${l} <small class="${cls || ''}">${n}</small></div>`).join('');
   $('#trashrow').innerHTML = `<div class="f trashlink ${filter === 'trash' ? 'on' : ''}" data-filter="trash" title="Deleted items are kept for ${TRASH_DAYS} days (press 8)">🗑 Trash <small>${db.trash.length || ''}</small></div>`;
   $('#peoplelist').innerHTML = db.people.map(n => `<option value="${esc(n)}"></option>`).join('');
-  const openBy = {}; allActions().forEach(x => { if(!x.done && x.assignee && x.text.trim()) openBy[x.assignee.toLowerCase()] = (openBy[x.assignee.toLowerCase()] || 0) + 1; });
-  $('#people').innerHTML = db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<div class="tag ${filter === 'actions' && actPerson.toLowerCase() === n.toLowerCase() ? 'on' : ''}" data-person="${esc(n)}"><span class="cn">${esc(n)}</span><small>${openBy[n.toLowerCase()] || 0}</small></div>`).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>Type @name in an action</small></div>';
+  const openBy = {}; allEntries().forEach(x => { if(!x.done && x.assignee && x.text.trim()) openBy[x.assignee.toLowerCase()] = (openBy[x.assignee.toLowerCase()] || 0) + 1; });
+  $('#people').innerHTML = db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<div class="tag ${filter === 'person' && actPerson.toLowerCase() === n.toLowerCase() ? 'on' : ''}" data-person="${esc(n)}"><span class="cn">${esc(n)}</span><small>${openBy[n.toLowerCase()] || 0}</small></div>`).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>Type @name in an action</small></div>';
   const raidOpen = k => allRaid().filter(x => x.raid === k && !x.done && x.text.trim()).length;
   $('#raid').innerHTML = ['risk', 'issue', 'decision'].map(k => `<div class="f ${filter === k ? 'on' : ''}" data-filter="${k}">${RAID_META[k].icon} ${RAID_META[k].many} <small>${raidOpen(k)}</small></div>`).join('');
   const tags = {}; db.items.forEach(i => i.tags.forEach(t => tags[t] = (tags[t] || 0) + 1));
@@ -1232,7 +1387,7 @@ function renderList(){
     for(const g of groups){
       if(!g.rows.length && filtering) continue;
       const folded = nbFold.has(g.id) && !search.trim(), n = g.rows.filter(e => e.kind === 'item').length;
-      html += `<div class="nbgh ${folded ? 'folded' : ''}" data-nbfold="${esc(g.id)}" ${g.nb ? `data-nbdrop="${esc(g.id)}"` : ''} style="--nbc:${esc(g.nb ? g.nb.color : 'var(--mute)')}"><span class="nbc">${folded ? '▸' : '▾'}</span><span class="nbn">${esc(g.nb ? g.nb.name : 'Action items from other places')}</span><small>${n} ${n === 1 ? 'page' : 'pages'}</small>${g.nb ? `<button data-act="nbnewpage" data-id="${esc(g.id)}" title="New page in ${esc(g.nb.name)}">＋</button>` : ''}</div>`;
+      html += `<div class="nbgh ${folded ? 'folded' : ''}" data-nbfold="${esc(g.id)}" ${g.nb ? `data-nbdrop="${esc(g.id)}" draggable="true" title="Drag to reorder the notebooks"` : ''} style="--nbc:${esc(g.nb ? g.nb.color : 'var(--mute)')}"><span class="nbc">${folded ? '▸' : '▾'}</span><span class="nbn">${esc(g.nb ? g.nb.name : 'Action items from other places')}</span><small>${n} ${n === 1 ? 'page' : 'pages'}</small>${g.nb ? `<button data-act="nbnewpage" data-id="${esc(g.id)}" title="New page in ${esc(g.nb.name)}">＋</button>` : ''}</div>`;
       if(folded) continue;
       html += g.rows.length ? g.rows.map(entryHtml).join('') : `<div class="nbempty" data-nbdrop="${esc(g.id)}">No pages yet. Press ＋ or drag a page here.</div>`;
     }
@@ -1252,7 +1407,7 @@ function renderList(){
 }
 function ckRows(i){
   const inherit = catById(i.category), blank = inherit ? inherit.name + ' (inherited)' : 'No category';
-  return i.checklist.map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${c.raid ? raidBadge(c.raid) : ''}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${c.note}</div>` : ''}</div>`).join('');
+  return i.checklist.map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${c.raid ? raidBadge(c.raid) : ''}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
 }
 
 /* ---- Actions tab: every task + every checklist/action item, in one list ---- */
@@ -1308,9 +1463,9 @@ function actRow(x){
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
     <input type="time" data-ax="time" value="${esc(x.time)}" title="Time">
     <select data-ax="repeat" title="Repeat">${repeatOptions(x.repeat)}</select>
-    <select data-ax="cat" style="border-left:4px solid ${c ? esc(c.color) : 'transparent'}">${catOptions(x.own, blank)}</select>
+    <select data-ax="cat" title="Category: ${esc(catById(x.own) ? catById(x.own).name : blank)}" style="border-left:4px solid ${c ? esc(c.color) : 'transparent'}">${catOptions(x.own, blank)}</select>
     <input type="text" class="who" list="peoplelist" data-ax="assignee" value="${esc(x.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)">
-    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${x.note}</div>` : ''}</div>`;
+    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}</div>`;
 }
 function renderActions(){
   let list = allActions().filter(x => x.text.trim());
@@ -1360,6 +1515,24 @@ function renderRaid(kind){
       <label><input type="checkbox" id="adone" ${actDone ? 'checked' : ''}> Show ${M.done.toLowerCase()}</label>
     </div>
     ${groups.length ? groups.map(g => `<h4 class="gh ${g.k === 'Past due' && actGroup === 'due' ? 'late' : g.k === 'Today' && actGroup === 'due' ? 'today' : ''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : `<div class="empty">No ${M.many.toLowerCase()} yet.</div>`}`;
+  $('#detail').querySelectorAll('.anote').forEach(grow);
+}
+/* ---- a person's page: everything assigned to them, actions and RAID together ---- */
+function renderPerson(){
+  const name = actPerson;
+  if(!name){ $('#detail').innerHTML = `<div class="type">People</div><h1 class="ptitle">Who?</h1><p class="psub">Pick someone under People in the sidebar.</p>`; return; }
+  const mine = allEntries().filter(x => x.text.trim() && (x.assignee || '').toLowerCase() === name.toLowerCase());
+  const open = mine.filter(x => !x.done).length, list = actDone ? mine : mine.filter(x => !x.done);
+  const dk = x => (x.due || '9999') + sortTime(x.time, x.text);
+  const sec = (key, label) => { const rows = list.filter(x => (x.raid || '') === key).sort((a, b) => dk(a) < dk(b) ? -1 : dk(a) > dk(b) ? 1 : a.text.localeCompare(b.text)); return rows.length ? `<h4 class="gh ${rows.some(x => !x.done && x.due && x.due < todayStr()) ? 'late' : ''}">${label} <small>${rows.length}</small></h4>${rows.map(actRow).join('')}` : ''; };
+  const counts = [['', 'action'], ['risk', 'risk'], ['issue', 'issue'], ['decision', 'decision']].map(([k, w]) => { const n = mine.filter(x => !x.done && (x.raid || '') === k).length; return n ? `<span>${n} ${w}${n === 1 ? '' : 's'}</span>` : ''; }).join('');
+  $('#detail').innerHTML = `
+    <div class="type">People</div>
+    <h1 class="ptitle">${esc(name)}</h1>
+    <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}</div>
+    <div class="afilters" style="margin-bottom:6px"><label><input type="checkbox" id="adone" ${actDone ? 'checked' : ''}> Show completed</label></div>
+    ${sec('', 'Actions')}${sec('risk', 'Risks')}${sec('issue', 'Issues')}${sec('decision', 'Decisions')}
+    ${list.length ? '' : `<div class="empty">Nothing ${actDone ? '' : 'open '}assigned to ${esc(name)}.</div>`}`;
   $('#detail').querySelectorAll('.anote').forEach(grow);
 }
 function addRaid(kind){
@@ -1659,7 +1832,9 @@ document.addEventListener('pointerup', () => {
 /* dragging a suggestion onto a day */
 document.addEventListener('dragstart', e => {
   const s = e.target.closest && e.target.closest('.tlsug'), c = e.target.closest && e.target.closest('.tldue'), pg = e.target.closest && e.target.closest('.it[draggable]');
-  if(pg){ e.dataTransfer.setData('text/plain', 'nb:' + pg.dataset.id); e.dataTransfer.effectAllowed = 'move'; }
+  const nh = e.target.closest && e.target.closest('.nbgh[draggable]');
+  if(nh){ e.dataTransfer.setData('text/plain', 'nbo:' + nh.dataset.nbdrop); e.dataTransfer.effectAllowed = 'move'; }
+  else if(pg){ e.dataTransfer.setData('text/plain', 'nb:' + pg.dataset.id); e.dataTransfer.effectAllowed = 'move'; }
   else if(s){ e.dataTransfer.setData('text/plain', 'plan:' + s.dataset.key); e.dataTransfer.effectAllowed = 'copy'; }
   else if(c){ e.dataTransfer.setData('text/plain', 'due:' + c.dataset.key); e.dataTransfer.effectAllowed = 'move'; }
 });
@@ -1674,7 +1849,9 @@ document.addEventListener('dragover', e => {                                    
 });
 document.addEventListener('drop', e => {
   const r = e.target.closest && e.target.closest('[data-nbdrop]'); if(!r || !e.dataTransfer) return;
-  const t = e.dataTransfer.getData('text/plain'); if(!t.startsWith('nb:')) return;
+  const t = e.dataTransfer.getData('text/plain');
+  if(t.startsWith('nbo:')){ e.preventDefault(); r.classList.remove('over'); moveNotebookTo(t.slice(4), r.dataset.nbdrop); return; }
+  if(!t.startsWith('nb:')) return;
   e.preventDefault(); r.classList.remove('over'); const i = byId(t.slice(3)); if(i && i.type === 'note') moveNote(i, r.dataset.nbdrop);
 });
 document.addEventListener('drop', e => {
@@ -1749,7 +1926,7 @@ document.addEventListener('click', e => { const c = filter === 'timeline' && e.t
 /* ---- category manager ---- */
 function renderNbDlg(){
   const cnt = {}; db.items.forEach(i => { if(i.type === 'note') cnt[nbKey(i)] = (cnt[nbKey(i)] || 0) + 1; });
-  $('#nbrows').innerHTML = db.notebooks.map(n => `<div class="crow"><input type="color" data-nbc="${esc(n.id)}" value="${esc(n.color)}"><input type="text" data-nbn="${esc(n.id)}" value="${esc(n.name)}"><span class="pcnt">${cnt[n.id] || 0} page${(cnt[n.id] || 0) === 1 ? '' : 's'}</span><button class="x" data-act="delnb" data-id="${esc(n.id)}" title="${db.notebooks.length < 2 ? 'Keep at least one notebook' : 'Delete this notebook (its pages move to another one)'}" ${db.notebooks.length < 2 ? 'disabled style="opacity:.3;cursor:default"' : ''}>×</button></div>`).join('');
+  $('#nbrows').innerHTML = db.notebooks.map(n => `<div class="crow"><input type="color" data-nbc="${esc(n.id)}" value="${esc(n.color)}"><input type="text" data-nbn="${esc(n.id)}" value="${esc(n.name)}"><span class="pcnt">${cnt[n.id] || 0} page${(cnt[n.id] || 0) === 1 ? '' : 's'}</span><button class="mv" data-act="nbup" data-id="${esc(n.id)}" title="Move up">▲</button><button class="mv" data-act="nbdown" data-id="${esc(n.id)}" title="Move down">▼</button><button class="x" data-act="delnb" data-id="${esc(n.id)}" title="${db.notebooks.length < 2 ? 'Keep at least one notebook' : 'Delete this notebook (its pages move to another one)'}" ${db.notebooks.length < 2 ? 'disabled style="opacity:.3;cursor:default"' : ''}>×</button></div>`).join('');
 }
 function removeNotebook(id){
   const nb = nbById(id); if(!nb) return;
@@ -1764,6 +1941,49 @@ function removeNotebook(id){
     saveUi(); touch(); renderAll();
   });
 }
+/* ---- version and "is the live site up to date?" ---- */
+const verCmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for(let k = 0; k < 3; k++){ const d = (x[k] || 0) - (y[k] || 0); if(d) return d; } return 0; };
+let liveInfo = null, liveErr = '';
+function renderAbout(){
+  $('#abver').textContent = 'v' + APP_VERSION;
+  const box = $('#ablive'), lv = liveInfo;
+  let log = CHANGELOG.slice(), flags = {};
+  if(liveErr) box.innerHTML = `<span class="warnmsg">${esc(liveErr)}</span>`;
+  else if(!lv) box.innerHTML = `This copy is <b>v${APP_VERSION}</b>. Enter your live site's address and press Check.`;
+  else {
+    const c = verCmp(lv.version, APP_VERSION);
+    if(c === 0) box.innerHTML = `<span class="okmsg">✓ The live site is up to date (v${esc(lv.version)}).</span>`;
+    else if(c < 0){
+      const miss = CHANGELOG.filter(e => verCmp(e.v, lv.version) > 0); miss.forEach(e => flags[e.v] = 'missing');
+      box.innerHTML = `<span class="warnmsg">⚠ The live site is on v${esc(lv.version)}; this copy is v${APP_VERSION}.</span> It is missing ${miss.length} update${miss.length === 1 ? '' : 's'} (marked below). Upload the <b>site</b> folder's index.html, sw.js and version.json to update it.`;
+    } else {
+      const extra = (lv.changelog || []).filter(e => verCmp(e.v, APP_VERSION) > 0); extra.forEach(e => { flags[e.v] = 'newer'; if(!log.some(x => x.v === e.v)) log.push(e); });
+      log.sort((a, b) => verCmp(b.v, a.v));
+      box.innerHTML = `<span class="warnmsg">⚠ The live site (v${esc(lv.version)}) is newer than this copy (v${APP_VERSION}).</span> This copy is missing the ${extra.length} update${extra.length === 1 ? '' : 's'} marked below. ${location.protocol.startsWith('http') ? 'Press ↻ Refresh in the sidebar to update.' : 'Rebuild this copy from the latest files.'}`;
+    }
+  }
+  flags[APP_VERSION] = flags[APP_VERSION] || 'this';
+  $('#abchanges').innerHTML = log.map(e => `<div class="abv"><b>v${esc(e.v)}</b> <span class="abt">${esc(e.title || '')}</span>${flags[e.v] === 'missing' ? '<span class="tag-missing">not on live yet</span>' : flags[e.v] === 'newer' ? '<span class="tag-newer">missing here</span>' : flags[e.v] === 'this' && e.v === APP_VERSION ? '<span class="tag-this">this copy</span>' : ''}</div><ul>${[].concat(e.items || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul>`).join('');
+}
+async function checkLive(){
+  let u = $('#liveurl').value.trim(); liveErr = '';
+  if(!u){ liveInfo = null; liveErr = 'Enter the address of your live site first.'; renderAbout(); return; }
+  try { localStorage.setItem('notebook-live', u); } catch {}
+  $('#ablive').textContent = 'Checking…';
+  try {
+    const base = /\/[^\/]*\.[a-z0-9]+$/i.test(u) ? u.replace(/[^\/]*$/, '') : u.replace(/\/*$/, '/');
+    const r = await fetch(base + 'version.json?t=' + Date.now(), {cache:'reload'});
+    if(!r.ok) throw new Error('the site answered ' + r.status);
+    liveInfo = await r.json(); if(!liveInfo || !liveInfo.version) throw new Error('that file has no version in it');
+  } catch(e){ liveInfo = null; liveErr = `Couldn't read the live site (${(e && e.message) || e}). Check the address, and that version.json was uploaded with index.html.`; }
+  renderAbout();
+}
+function openAbout(){
+  let u = ''; try { u = localStorage.getItem('notebook-live') || ''; } catch {}
+  if(!u && location.protocol.startsWith('http') && !/^(localhost|127\.)/.test(location.hostname)) u = location.origin + location.pathname.replace(/[^\/]*$/, '');
+  $('#liveurl').value = u; liveInfo = null; liveErr = ''; renderAbout(); $('#abdlg').showModal(); if(u) checkLive();
+}
+$('#liveurl').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); checkLive(); } });
 function renderPeople(){
   const used = {}; allActions().forEach(x => { if(!x.done && x.assignee) used[x.assignee.toLowerCase()] = (used[x.assignee.toLowerCase()] || 0) + 1; });
   $('#prows').innerHTML = db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<div class="crow"><input type="text" data-pn="${esc(n)}" value="${esc(n)}"><span class="pcnt">${used[n.toLowerCase()] || 0} open</span><button class="x" data-act="delperson" data-id="${esc(n)}" title="Remove">×</button></div>`).join('') || '<p>No one yet. Add a person, or type @name in an action.</p>';
@@ -1794,6 +2014,7 @@ function renderDetail(){
   if(filter === 'today'){ renderToday(); return; }
   if(filter === 'trash'){ renderTrash(); return; }
   if(['risk', 'issue', 'decision'].includes(filter)){ renderRaid(filter); return; }
+  if(filter === 'person'){ renderPerson(); return; }
   const el = $('#detail'), i = byId(selId);
   if(!i){ el.innerHTML = `<div class="welcome"><p style="font-size:18px;margin-bottom:12px">Nothing selected</p><button data-new="task">+ Action</button><button data-new="note">+ Note</button></div>`; return; }
   const fld = (f, label, type = 'text', extra = '') => `<label>${label} <input type="${type}" data-f="${f}" value="${esc(i[f])}" ${extra}></label>`;
@@ -1810,7 +2031,7 @@ function renderDetail(){
     <textarea class="title" rows="1" data-f="title" placeholder="Untitled">${esc(i.title)}</textarea>
     <div class="meta">${meta}</div>
     <h4>${bodyLabel}</h4>
-    <div class="rt ${i.type==='note'?'big':''}" contenteditable="true" spellcheck="true" data-f="body" data-ph="Start typing…" ${isBlank(i.body)?'data-empty':''}>${i.body}</div>
+    <div class="rt ${i.type==='note'?'big':''}" contenteditable="true" spellcheck="true" data-f="body" data-ph="Start typing…" ${isBlank(i.body)?'data-empty':''}>${forEditor(i.body)}</div>
     <h4>Action items</h4>
     <div id="cklist">${ckRows(i)}</div>
     <div class="ai add"><input type="checkbox" disabled><input type="text" id="newck" placeholder="Add an item and press Enter…"></div>
@@ -1822,7 +2043,7 @@ function grow(t){
   const min = t.classList.contains('big') ? 320 : /cknote|anote/.test(t.className) ? 70 : 150;
   t.style.height = Math.max(t.scrollHeight + 2, min) + 'px';
 }
-const FULL_PAGES = ['actions', 'timeline', 'today', 'trash', 'risk', 'issue', 'decision'];          // pages that use the whole width instead of list + detail
+const FULL_PAGES = ['actions', 'timeline', 'today', 'trash', 'risk', 'issue', 'decision', 'person'];          // pages that use the whole width instead of list + detail
 function applyMode(){
   const app = document.querySelector('.app');
   app.classList.toggle('actions-mode', FULL_PAGES.includes(filter)); app.classList.toggle('rail-off', railOff); app.classList.toggle('list-off', listOff);
@@ -1847,6 +2068,15 @@ function newItem(kind){                      // kind: 'task', 'note' or 'meeting
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
+}
+function moveNotebookTo(id, targetId){                     // put a notebook where another one is (drag a heading onto it)
+  const from = db.notebooks.findIndex(n => n.id === id), to = db.notebooks.findIndex(n => n.id === targetId);
+  if(from < 0 || to < 0 || from === to) return;
+  db.notebooks.splice(to, 0, db.notebooks.splice(from, 1)[0]); touch(); if($('#nbdlg').open) renderNbDlg(); renderAll();
+}
+function moveNotebookBy(id, dir){
+  const k = db.notebooks.findIndex(n => n.id === id), t = k + dir; if(k < 0 || t < 0 || t >= db.notebooks.length) return;
+  [db.notebooks[k], db.notebooks[t]] = [db.notebooks[t], db.notebooks[k]]; touch(); if($('#nbdlg').open) renderNbDlg(); renderAll();
 }
 function moveNote(i, id){
   const nb = nbById(id); if(!nb || nbKey(i) === id) return;
@@ -1964,6 +2194,7 @@ $('#items').addEventListener('contextmenu', e => {
     openMenu(e.clientX, e.clientY, [
       {l:'New page here', ic:'＋', fn: () => { lastNb = nb.id; nbFold.delete(nb.id); filter = 'note'; newItem('note'); }},
       {l:'Rename…', ic:'✎', fn: () => { const nm = (prompt('Rename the notebook:', nb.name) || '').trim(); if(nm){ nb.name = nm; touch(); renderAll(); } }},
+      {l:'Move up', ic:'▲', fn: () => moveNotebookBy(nb.id, -1)}, {l:'Move down', ic:'▼', fn: () => moveNotebookBy(nb.id, 1)},
       {hd:'Colour'}, ...NB_COLORS.map((c, k) => ({l:['Blue', 'Green', 'Amber', 'Purple', 'Orange', 'Teal'][k], ic: nb.color === c ? '✓' : '', dot:c, fn: () => { nb.color = c; touch(); renderList(); }})),
       {sep:1}, {l:'Delete notebook…', ic:'🗑', cls:'danger', fn: () => removeNotebook(nb.id)}], gh);
     return;
@@ -2288,7 +2519,7 @@ function detachTagLine(i, rid){                          // the item was deleted
   const blk = sp.closest('[data-raid]'); if(blk) blk.removeAttribute('data-raid');
   sp.replaceWith(doc.createTextNode(sp.textContent));
   i.body = cleanHtml(doc.body.innerHTML);
-  const ed = document.querySelector('#detail .rt[data-f=body]'); if(ed && selId === i.id){ ed.innerHTML = i.body; }
+  const ed = document.querySelector('#detail .rt[data-f=body]'); if(ed && selId === i.id){ ed.innerHTML = forEditor(i.body); }
 }
 function scanAllTags(){
   let made = 0, gone = 0;
@@ -2425,7 +2656,7 @@ document.addEventListener('click', e => {
   const ch = e.target.closest('[data-chip]');
   if(ch){ const v = chipView(), s = new Set(chipsOff[v]); if(s.has(ch.dataset.chip)) s.delete(ch.dataset.chip); else s.add(ch.dataset.chip); chipsOff[v] = [...s]; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbFold.has(id)) nbFold.delete(id); else nbFold.add(id); if(nbById(id)) lastNb = id; saveUi(); renderList(); return; }
-  const pp = e.target.closest('[data-person]'); if(pp){ filter = 'actions'; actPerson = actPerson.toLowerCase() === pp.dataset.person.toLowerCase() ? '' : pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
+  const pp = e.target.closest('[data-person]'); if(pp){ filter = 'person'; actPerson = pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
   const f = e.target.closest('[data-filter]'); if(f){ filter = f.dataset.filter; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
   const a = e.target.closest('[data-act]');
   if(a){
@@ -2468,12 +2699,14 @@ document.addEventListener('click', e => {
       const k = a.dataset.key; if(openNotes.has(k)) openNotes.delete(k); else openNotes.add(k);
       renderDetail(); const ta = document.querySelector(`.act[data-key="${k}"] .anote`); if(ta) ta.focus();
     }
+    else if(act === 'about') openAbout(); else if(act === 'closeabout') $('#abdlg').close(); else if(act === 'checklive') checkLive();
     else if(act === 'editnb'){ renderNbDlg(); $('#nbdlg').showModal(); } else if(act === 'closenb') $('#nbdlg').close();
     else if(act === 'nbnewpage'){ lastNb = a.dataset.id; nbFold.delete(a.dataset.id); filter = 'note'; newItem('note'); }
-    else if(act === 'nbfoldall'){ db.notebooks.forEach(n => nbFold.add(n.id)); saveUi(); renderList(); } else if(act === 'nbunfoldall'){ nbFold.clear(); saveUi(); renderList(); }
+    else if(act === 'nbfoldtoggle'){ if(db.notebooks.every(n => nbFold.has(n.id))) nbFold.clear(); else db.notebooks.forEach(n => nbFold.add(n.id)); saveUi(); renderList(); }
     else if(act === 'newnbtab'){ const nm = (prompt('Name the new notebook:') || '').trim(); if(nm){ const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); lastNb = nb.id; nbFold.delete(nb.id); saveUi(); touch(); renderAll(); } }
     else if(act === 'addnb'){ let nm = 'New notebook', k = 2; while(db.notebooks.some(x => x.name.toLowerCase() === nm.toLowerCase())) nm = 'New notebook ' + k++; const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); saveUi(); touch(); renderNbDlg(); const r = $('#nbrows').querySelector(`[data-nbn="${nb.id}"]`); if(r){ r.focus(); r.select(); } }
     else if(act === 'delnb') removeNotebook(a.dataset.id);
+    else if(act === 'nbup') moveNotebookBy(a.dataset.id, -1); else if(act === 'nbdown') moveNotebookBy(a.dataset.id, 1);
     else if(act === 'editpeople'){ renderPeople(); $('#pdlg').showModal(); } else if(act === 'closepeople') $('#pdlg').close();
     else if(act === 'addperson'){ let n = 'New person', k = 2; while(db.people.some(x => x.toLowerCase() === n.toLowerCase())) n = 'New person ' + k++; db.people.push(n); touch(); renderPeople(); const r = $('#prows').querySelector(`[data-pn="${n}"]`); if(r){ r.focus(); r.select(); } }
     else if(act === 'delperson') removePerson(a.dataset.id);
@@ -2562,16 +2795,57 @@ function editorForCommand(){                            // the editor you're in,
   ed.focus(); if(lastRange && ed === lastEd){ const s = getSelection(); s.removeAllRanges(); s.addRange(lastRange); }
   return ed;
 }
+/* ---- highlight and font colour: click once to apply, click the same one again on the text to take it off ---- */
+const normColor = c => { const e = document.createElement('i'); e.style.color = c; return e.style.color; };
+const normBg = c => { const e = document.createElement('i'); e.style.backgroundColor = c; return e.style.backgroundColor; };
+let lastHl = '#ffe58a';                                          // the highlight color the 🖍 button uses
+const HL_HEX = {yellow:'#ffe58a', green:'#bff0c8', blue:'#bfe0ff', pink:'#ffc9de', orange:'#ffd6aa'};
+function forEditor(h){                                         // stored <mark> highlights become plain background spans while editing, so they can be switched off cleanly
+  if(!h || h.indexOf('<mark') < 0) return h || '';
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + h, 'text/html');
+  doc.body.querySelectorAll('mark').forEach(m => { const c = (/\bh-(\w+)/.exec(m.className) || [])[1] || 'yellow'; const sp = doc.createElement('span'); sp.style.backgroundColor = HL_HEX[c] || HL_HEX.yellow; while(m.firstChild) sp.appendChild(m.firstChild); m.replaceWith(sp); });
+  return doc.body.innerHTML;
+}
+function highlightAt(ed, node){                                // the highlight (background) a spot sits inside, as a css color, or ''
+  let el = node && (node.nodeType === 1 ? node : node.parentElement);
+  while(el && el !== ed){ const bg = el.style && el.style.backgroundColor; if(bg && !/transparent|rgba\(0, ?0, ?0, ?0\)/.test(bg)) return {el, bg}; el = el.parentElement; }
+  return null;
+}
+function applyHighlight(ed, color){                            // color '' removes
+  const s = getSelection(); if(!s.rangeCount) return;
+  let r = s.getRangeAt(0);
+  if(r.collapsed){                                             // just a cursor: act on the highlighted run it sits in
+    const h = highlightAt(ed, r.startContainer);
+    if(!h){ if(color) toast('Select some text first, then pick a highlight color.'); return; }
+    const nr = document.createRange(); nr.selectNodeContents(h.el); s.removeAllRanges(); s.addRange(nr); r = nr;
+  }
+  const cur = highlightAt(ed, r.startContainer), same = color && cur && normBg(cur.bg) === normBg(color);
+  document.execCommand('hiliteColor', false, !color || same ? 'transparent' : color);
+}
+const FC_RGB = {red:[224, 81, 75], orange:[224, 138, 30], green:[63, 155, 91], blue:[75, 143, 217], purple:[155, 107, 211], gray:[138, 138, 138]};
+function fcClass(col){
+  let m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(col || ''), rgb = m && [+m[1], +m[2], +m[3]];
+  if(!rgb && (m = /^#([0-9a-f]{6})$/i.exec(col || ''))){ const v = parseInt(m[1], 16); rgb = [v >> 16, (v >> 8) & 255, v & 255]; }
+  if(!rgb) return '';
+  let best = '', bd = 1e9; for(const [k, c] of Object.entries(FC_RGB)){ const d = (c[0] - rgb[0]) ** 2 + (c[1] - rgb[1]) ** 2 + (c[2] - rgb[2]) ** 2; if(d < bd){ bd = d; best = k; } }
+  return bd < 3600 ? best : '';
+}
+function applyFontColor(ed, color){
+  const s = getSelection(); if(!s.rangeCount) return;
+  const base = getComputedStyle(ed).color; let cur = ''; try { cur = String(document.queryCommandValue('foreColor') || ''); } catch {}
+  const off = color === 'default' || (cur && normColor(cur) === normColor(color));
+  document.execCommand('foreColor', false, off ? base : color);
+  if(off) ed.querySelectorAll('font[color]').forEach(f => { if(normColor(f.getAttribute('color')) === normColor(base)){ while(f.firstChild) f.parentNode.insertBefore(f.firstChild, f); f.remove(); } });
+}
 function runCmd(cmd, arg){
   const ed = editorForCommand(); if(!ed) return;
-  if(cmd === 'highlight'){
-    const cur = String(document.queryCommandValue('hiliteColor') || '');
-    document.execCommand('hiliteColor', false, cur && !/transparent|rgba\(0, 0, 0, 0\)|rgb\(255, 255, 255\)/.test(cur) ? 'transparent' : '#ffe58a');
-  } else if(cmd === 'link'){
+  if(cmd === 'link'){
     let url = prompt('Link address (e.g. https://example.com)'); if(!url) return;
     url = url.trim(); if(!/^(?:https?:|mailto:)/i.test(url)) url = 'https://' + url;
     document.execCommand('createLink', false, url);
-  } else if(cmd === 'hilite'){ document.execCommand('hiliteColor', false, arg);
+  } else if(cmd === 'hilitelast'){ applyHighlight(ed, lastHl);
+  } else if(cmd === 'hilite'){ if(arg) lastHl = arg; applyHighlight(ed, arg);
+  } else if(cmd === 'fcolor'){ applyFontColor(ed, arg);
   } else if(cmd === 'size'){ document.execCommand('fontSize', false, arg);
   } else if(cmd === 'tag'){ document.execCommand('insertText', false, arg + ': ');
   } else if(cmd === 'fold' || cmd === 'unfoldall'){
@@ -2588,7 +2862,7 @@ function runCmd(cmd, arg){
 $('#fmtbar').addEventListener('mousedown', e => { if(e.target.closest('button')) e.preventDefault(); });        // clicking a button keeps your selection
 $('#fmtbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if(b) runCmd(b.dataset.cmd); });
 $('#fmtblock').addEventListener('change', e => runCmd('formatBlock', e.target.value));
-for(const [id, cmd] of [['fmthl', 'hilite'], ['fmtsize', 'size'], ['fmttag', 'tag']]) $('#' + id).addEventListener('change', e => { const v = e.target.value; e.target.value = ''; if(v) runCmd(cmd, v); });
+for(const [id, cmd] of [['fmthl', 'hilite'], ['fmtfc', 'fcolor'], ['fmtsize', 'size'], ['fmttag', 'tag']]) $('#' + id).addEventListener('change', e => { const v = e.target.value; e.target.value = ''; if(v) runCmd(cmd, cmd === 'hilite' && v === 'none' ? '' : v); });
 document.addEventListener('click', e => {                                           // click a bullet that has sub-points to fold / unfold it
   const li = e.target.closest && e.target.closest('.rt li'); if(!li || !li.querySelector(':scope > ul, :scope > ol')) return;
   if(e.clientX < li.getBoundingClientRect().left - 1){ if(li.hasAttribute('data-fold')) li.removeAttribute('data-fold'); else li.setAttribute('data-fold', '1'); li.closest('.rt').dispatchEvent(new Event('input', {bubbles:true})); }
@@ -2628,7 +2902,7 @@ document.addEventListener('paste', e => {                                       
   const ed = e.target.closest && e.target.closest('.rt'); if(!ed || !e.clipboardData) return;
   e.preventDefault();
   const html = e.clipboardData.getData('text/html');
-  if(html) document.execCommand('insertHTML', false, cleanHtml(html)); else document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+  if(html) document.execCommand('insertHTML', false, forEditor(cleanHtml(html))); else document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
 });
 document.addEventListener('drop', e => { if(e.target.closest && e.target.closest('.rt') && e.dataTransfer && e.dataTransfer.files.length) e.preventDefault(); });
 document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('.rt a'); if(a && (e.ctrlKey || e.metaKey)){ e.preventDefault(); window.open(a.href, '_blank', 'noopener'); } });
@@ -2638,7 +2912,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261028155354';</script>
+<script>window.NB_BUILD = '20261028163335';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
