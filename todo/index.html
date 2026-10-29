@@ -262,6 +262,15 @@ input.who:focus{border-color:var(--accent)}
 .expopt input{margin-top:4px;accent-color:var(--accent)}.expopt small{display:block;color:var(--mute);font-size:12px;margin-top:1px}
 #nbimplist .improw{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--line)}#nbimplist .improw input{margin-top:4px;accent-color:var(--accent)}
 #nbimplist .improw small{display:block;color:var(--mute);font-size:12.5px}
+.pinhead{padding:10px 14px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+.opts.nblist>:not(#datewrap){display:none!important}
+.datef{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.datef select,.datef input{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px}
+#setdlg{width:min(520px,94vw)}
+#setdlg .setsec{margin:14px 0 0}#setdlg h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:0 0 6px}
+#setdlg .setline{font-size:14px;margin:4px 0;display:flex;gap:10px;align-items:center}#setdlg .setline b{word-break:break-all}#setdlg .bad{color:var(--red)}
+#setdlg .setbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#setdlg button,#setdlg select{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 14px;font:inherit}
+#setdlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .repbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--soft);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13.5px}
 .repbar button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:5px 14px;font-weight:600}
 #repdlg{width:min(740px,94vw);max-height:90vh;overflow:auto}
@@ -446,6 +455,7 @@ dialog p{color:var(--mute);font-size:13px}
       <div class="seg" id="sortseg" title="How the list is ordered"><button data-sort="updated">Recent</button><button data-sort="date">By date</button></div>
       <label><input type="checkbox" id="hidedone"> Hide completed</label>
       <label id="qscopewrap" style="display:none" title="You're searching inside one notebook. Tick this to search every notebook."><input type="checkbox" id="qscope"> All notebooks</label>
+      <span id="datewrap" class="datef" style="display:none"><select id="dfield" title="Which date to filter on"><option value="updated">Edited</option><option value="created">Created</option><option value="page">Page date</option></select><select id="dpreset" title="Show only notes from this period"><option value="">Any time</option><option value="today">Today</option><option value="week">Last 7 days</option><option value="month">Last 30 days</option><option value="thismonth">This month</option><option value="custom">Custom range…</option></select><span id="dcustom" style="display:none"><input type="date" id="dfrom" title="From"> – <input type="date" id="dto" title="To"></span></span>
       <label id="datedwrap" title="Only show items that have a due date or note date"><input type="checkbox" id="datedonly"> Dated only</label>
     </div>
     <div class="items" id="items"></div>
@@ -503,6 +513,13 @@ dialog p{color:var(--mute);font-size:13px}
     <label><input type="radio" name="nbmode" value="both"> <span><b>Keep both</b><small>Add the file's version as a copy.</small></span></label>
   </div>
   <div class="dfoot"><span></span><span><button data-act="nbimpcancel">Cancel</button> <button class="pri" data-act="nbimpgo">Import</button></span></div>
+</dialog>
+<dialog id="setdlg">
+  <h3>⚙ Settings</h3>
+  <div class="setsec"><h4>Save file</h4><div id="setfile"></div></div>
+  <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
+  <div class="setsec"><h4>Help</h4><div class="setbtns"><button data-act="shortcuts">⌨ Keyboard shortcuts</button><button data-act="about">What's new and updates</button></div></div>
+  <div class="dfoot"><span></span><button class="pri" data-act="setclose">Close</button></div>
 </dialog>
 <dialog id="repdlg">
   <h3 id="reptitle">Replies</h3>
@@ -563,8 +580,19 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.16.0';
+const APP_VERSION = '1.17.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.17.0",
+  "title": "Remembers where you were, pinned pages, date filter, Settings",
+  "items": [
+   "Notes now remembers where you left off: click away to Actions or Today and back, and you are in the same notebook, on the same page. It also survives closing the app. ‹ Notebooks takes you up to the list",
+   "Pinned pages show at the top of the Notes list and at the top of every notebook, whichever notebook they belong to. Pin and unpin from the right-click menu as before",
+   "Find notes by date: on Notes there is now a date filter (Edited, Created or Page date; Today, Last 7 days, Last 30 days, This month or a custom range). Searching also matches dates, like 2026-10-12 or Oct 12",
+   "New Settings page (⚙ in the sidebar) with your save file, backup, theme and keyboard shortcuts. The sidebar bottom is now just the version, Refresh and Settings",
+   "Fixed: every page in a notebook after the first showed the notebook name beside its date"
+  ]
+ },
  {
   "v": "1.16.0",
   "title": "Replies to shared pages",
@@ -1151,14 +1179,14 @@ const curNb = () => nbById(nbView) ? nbView : (nbById(lastNb) ? lastNb : db.note
 let selCk = '';                    // when you open an action item from the list, which one (so it can be highlighted in its note)
 let selId = null, filter = 'today', search = '', sortMode = 'updated', hideDone = false;
 let actGroup = 'due', actCat = '', actDone = false, actTimer = null, autoDates = true, railOff = false, listOff = false;
-let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
+let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '', lastNoteSel = '', dateField = 'updated', datePreset = '', dateFrom = '', dateTo = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
 const nbFold = new Set();          // notebooks folded closed in the Notes list
 let tlWork = false, tlCat = '', tlHideDone = false, tlLayer = 'blocks';        // tlLayer: 'blocks' (your plan only), 'due' (tasks and actions on their due dates), or 'both'                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
 let chipsOff = {all:[], note:[]}, listCat = '', datedOnly = false;     // list filter bar: which type chips are switched off (remembered), category, dated-only
 const openNotes = new Set();       // ids of actions whose notes box is expanded (not saved)
-try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' || String(u.filter).startsWith('nb:') ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto'; actPerson = u.actPerson || ''; todayMine = !!u.todayMine; actNb = u.actNb || ''; lastNb = u.lastNb || ''; (Array.isArray(u.nbFold) ? u.nbFold : []).forEach(x => nbFold.add(x));
+try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' || String(u.filter).startsWith('nb:') ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto'; actPerson = u.actPerson || ''; todayMine = !!u.todayMine; actNb = u.actNb || ''; lastNb = u.lastNb || ''; nbView = typeof u.nbView === 'string' ? u.nbView : ''; lastNoteSel = typeof u.lastNoteSel === 'string' ? u.lastNoteSel : ''; dateField = ['updated', 'created', 'page'].includes(u.dateField) ? u.dateField : 'updated'; datePreset = ['today', 'week', 'month', 'thismonth', 'custom'].includes(u.datePreset) ? u.datePreset : ''; dateFrom = /^\d{4}-\d\d-\d\d$/.test(u.dateFrom || '') ? u.dateFrom : ''; dateTo = /^\d{4}-\d\d-\d\d$/.test(u.dateTo || '') ? u.dateTo : ''; (Array.isArray(u.nbFold) ? u.nbFold : []).forEach(x => nbFold.add(x));
   if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['note','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
-function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer, theme, actPerson, todayMine, actNb, lastNb, nbFold:[...nbFold]})); } catch {} }
+function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer, theme, actPerson, todayMine, actNb, lastNb, nbView, lastNoteSel, dateField, datePreset, dateFrom, dateTo, nbFold:[...nbFold]})); } catch {} }
 
 function applyTheme(){ if(theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme); }
 applyTheme();
@@ -1389,8 +1417,9 @@ function filteredItems(opts = {}){
   if(catChipsShown()){ if(listCat === 'none') a = a.filter(i => !i.category); else if(listCat) a = a.filter(i => i.category === listCat); }
   if(hideDone) a = a.filter(i => !(i.type === 'task' && i.done));
   if(sortMode === 'date' && datedOnly) a = a.filter(i => !!itemDate(i));
+  if(dateActive()){ const [df, dt] = dateRange(); a = a.filter(i => { if(i.type !== 'note') return false; const d = noteDay(i); return !!d && d >= df && d <= dt; }); }
   const q = search.trim().toLowerCase();
-  if(q) a = a.filter(i => [i.title, htmlText(i.body), i.attendees, i.assignee, i.tags.join(' '), i.checklist.map(c => c.text + ' ' + htmlText(c.note)).join(' ')].join('\n').toLowerCase().includes(q));
+  if(q) a = a.filter(i => [i.title, htmlText(i.body), i.attendees, i.assignee, i.tags.join(' '), i.checklist.map(c => c.text + ' ' + htmlText(c.note)).join(' '), i.date, i.date ? fmtDay(i.date) : '', (i.updated || '').slice(0, 10)].join('\n').toLowerCase().includes(q));
   const off = chipsOff[chipView()] || [];
   if(!opts.skipChips && filter !== 'task' && off.length) a = a.filter(i => !off.includes(typeOf(i)));
   return a;
@@ -1454,12 +1483,35 @@ function renderFilterBar(){
   document.querySelectorAll('#sortseg [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === sortMode));
   const bar = $('#nbbar'); bar.style.display = filter === 'note' ? '' : 'none';
   if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add the pages from a notebook file, e.g. one exported on another computer">⤒ Import</a>`;
-  const opts = document.querySelector('.list .opts'); if(opts) opts.style.display = filter === 'note' && !nbView && !search.trim() ? 'none' : '';
+  const opts = document.querySelector('.list .opts'); if(opts) opts.classList.toggle('nblist', filter === 'note' && !nbView && !search.trim());
+  $('#datewrap').style.display = filter === 'note' ? '' : 'none'; $('#dfield').value = dateField; $('#dpreset').value = datePreset; $('#dcustom').style.display = datePreset === 'custom' ? '' : 'none'; $('#dfrom').value = dateFrom; $('#dto').value = dateTo;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
   $('#qscopewrap').style.display = filter.startsWith('nb:') && search.trim() ? '' : 'none'; $('#qscope').checked = searchAll;
   $('#datedonly').checked = datedOnly; $('#hidedone').checked = hideDone;
 }
-function fixSelection(){ const v = listEntries(); if(!v.some(e => e.item.id === selId)){ selId = v[0] ? v[0].item.id : null; selCk = ''; } }
+const dateActive = () => filter === 'note' && !!datePreset && (datePreset !== 'custom' || !!(dateFrom || dateTo));
+function dateRange(){
+  const T = todayStr();
+  switch(datePreset){
+    case 'today': return [T, T];
+    case 'week': return [dstr(addD(ymd(T), -6)), T];
+    case 'month': return [dstr(addD(ymd(T), -29)), T];
+    case 'thismonth': return [T.slice(0, 8) + '01', T.slice(0, 8) + '31'];
+  }
+  return [dateFrom || '0000-00-00', dateTo || '9999-12-31'];
+}
+const noteDay = i => { const v = dateField === 'page' ? i.date : i[dateField]; if(!v) return ''; return dateField === 'page' ? v : dstr(new Date(v)); };
+const inNotesView = e => filter !== 'note' || !nbById(nbView) || !!search.trim() || (dateActive() && !nbById(nbView)) || (e.item.type === 'note' && (nbKey(e.item) === nbView || e.item.pinned));
+function fixSelection(){
+  const v = listEntries();
+  if(!v.some(e => e.item.id === selId && inNotesView(e))){
+    const back = filter === 'note' && v.find(e => e.kind === 'item' && e.item.id === lastNoteSel && inNotesView(e)), first = v.find(inNotesView);
+    selId = back ? back.item.id : (first ? first.item.id : null); selCk = '';
+  }
+}
+function enterNotes(){                                   // going to Notes keeps the notebook you were in and the page you were on
+  if(!nbById(nbView)) nbView = '';
+}
 
 function renderBanner(){
   const b = (cls, msg, btns) => `<div class="bar ${cls}"><span>${msg}</span><div>${btns}</div></div>`;
@@ -1486,8 +1538,17 @@ function renderFileInfo(){
   const el = $('#fileinfo'), ok = fileState === 'ready' && !writeError;
   el.className = 'fileinfo' + (ok || fileState === 'loading' ? '' : ' bad');
   el.innerHTML = (fileHandle ? `${ok ? 'Autosaving to' : 'Not saving to'}<br><b>${esc(fileHandle.name)}</b><br>` : '<b>No save file chosen</b><br>')
-    + `<a data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file' : 'Choose file'}</a> · <a data-act="backup">Backup</a> · <a data-act="refresh" title="Reload the file and check for a newer version of the app">↻ Refresh</a><br><a data-act="theme" title="Switch between automatic, light and dark">◐ Theme: ${{auto:'Auto', light:'Light', dark:'Dark'}[theme]}</a> · <a data-act="shortcuts" title="Keyboard shortcuts (press ?)">⌨ Shortcuts</a><br><a data-act="about" title="What's new, and is your live site up to date?">v${APP_VERSION} · What's new</a>`;
+    + (fileHandle ? '' : `<a data-act="create">Choose file</a><br>`)
+    + `<a data-act="about" title="What's new, and is your live site up to date?">v${APP_VERSION}</a> · <a data-act="refresh" title="Reload the file and check for a newer version of the app">↻ Refresh</a> · <a data-act="settings" title="Save file, backup, theme and shortcuts">⚙ Settings</a>`;
+  if($('#setdlg').open) renderSettings();
 }
+function renderSettings(){
+  const ok = fileState === 'ready' && !writeError;
+  $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
+    + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
+  $('#settheme').value = theme;
+}
+function openSettings(){ renderSettings(); if(!$('#setdlg').open) $('#setdlg').showModal(); }
 function renderRail(){
   const cnt = t => db.items.filter(i => i.type === t).length;
   const openActions = allActions().filter(x => !x.done && x.text.trim()).length;
@@ -1544,22 +1605,25 @@ function entryHtml(e, withNb){
       <time class="${w.cls||''}">${esc(w.t)}</time></div>`;
 }
 function renderList(){
+  { const si = filter === 'note' ? byId(selId) : null; if(si && si.type === 'note' && lastNoteSel !== si.id){ lastNoteSel = si.id; saveUi(); } }
   renderFilterBar();
   const v = listEntries(), counts = {};
   let html = '', last = '';
   if(filter === 'note'){                        // Notes: your notebooks first; click one to see its pages. Searching looks through everything.
-    const searching = !!search.trim();
+    const searching = !!search.trim() || (dateActive() && !nbById(nbView));
     if(!nbById(nbView)) nbView = '';
+    const pins = v.filter(e => e.kind === 'item' && e.item.type === 'note' && e.item.pinned);
+    const pinHtml = pins.length ? `<div class="pinhead">📌 Pinned · from any notebook</div>` + pins.map(e => entryHtml(e, true)).join('') : '';
     if(searching) html = v.map(e => entryHtml(e, true)).join('');
     else if(!nbView){
-      html = db.notebooks.map(nb => {
+      html = pinHtml + (pins.length ? '<div class="pinhead">Notebooks</div>' : '') + db.notebooks.map(nb => {
         const pages = notebookPages(nb.id), last = pages.reduce((mx, pg) => (pg.updated || '') > mx ? pg.updated : mx, '');
         return `<div class="nbgh big" data-nbfold="${esc(nb.id)}" data-nbdrop="${esc(nb.id)}" data-nbmenu="${esc(nb.id)}" draggable="true" title="Click to open. Drag to reorder." style="--nbc:${esc(nb.color)}"><div class="nbtxt"><b>${esc(nb.name)}${nb.shared && nb.shared.on ? ` <span title="Shared to a folder${shareState === 'paused' ? ' (paused: the browser needs you to allow the folder again)' : ''}" style="color:var(--accent);font-weight:400">⇪${shareState === 'paused' ? ' paused' : ''}</span>` : ''}</b><small>${pages.length} page${pages.length === 1 ? '' : 's'}${last ? ' · edited ' + esc(fmtDay(dstr(new Date(last)))) : ''}</small></div><span class="nbgo">›</span></div>`;
       }).join('');
     } else {
-      const nb = nbById(nbView), rows = v.filter(e => e.item.type === 'note' && nbKey(e.item) === nbView);
-      html = `<div class="nbhead2" data-nbmenu="${esc(nb.id)}" style="--nbc:${esc(nb.color)}"><a data-act="nball" title="Back to all notebooks">‹ Notebooks</a><span class="nbn">${esc(nb.name)}</span><small>${rows.length} page${rows.length === 1 ? '' : 's'}</small><button data-act="nbnewpage" data-id="${esc(nb.id)}" title="New page in ${esc(nb.name)}">＋</button></div>`
-        + (rows.length ? rows.map(entryHtml).join('') : `<div class="nbempty">No pages yet. Press ＋ to add one.</div>`);
+      const nb = nbById(nbView), all = v.filter(e => e.item.type === 'note' && nbKey(e.item) === nbView), rows = all.filter(e => !e.item.pinned);
+      html = `<div class="nbhead2" data-nbmenu="${esc(nb.id)}" style="--nbc:${esc(nb.color)}"><a data-act="nball" title="Back to all notebooks">‹ Notebooks</a><span class="nbn">${esc(nb.name)}</span><small>${all.length} page${all.length === 1 ? '' : 's'}</small><button data-act="nbnewpage" data-id="${esc(nb.id)}" title="New page in ${esc(nb.name)}">＋</button></div>`
+        + pinHtml + (pins.length && rows.length ? '<div class="pinhead">Pages</div>' : '') + (rows.length ? rows.map(e => entryHtml(e)).join('') : (all.length ? '' : `<div class="nbempty">No pages yet. Press ＋ to add one.</div>`));
     }
   } else {
     v.forEach(e => { const b = bucketOf(e); counts[b] = (counts[b] || 0) + 1; });
@@ -2973,7 +3037,7 @@ function openShortcuts(){
   $('#kbdlg').showModal();
 }
 const VIEW_KEYS = ['today', 'actions', 'note', 'timeline', 'risk', 'issue', 'decision', 'trash'];
-function goView(v){ filter = v; if(v === 'note') nbView = ''; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
+function goView(v){ filter = v; if(v === 'note') enterNotes(); saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
 document.addEventListener('keydown', e => {
   const t = e.target, typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
   if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === 'Enter'){          // done / not done, from anywhere
@@ -3281,7 +3345,7 @@ document.addEventListener('click', e => {
   if(ch){ const v = chipView(), s = new Set(chipsOff[v]); if(s.has(ch.dataset.chip)) s.delete(ch.dataset.chip); else s.add(ch.dataset.chip); chipsOff[v] = [...s]; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbById(id)){ nbView = id; lastNb = id; saveUi(); fixSelection(); renderList(); renderDetail(); } return; }
   const pp = e.target.closest('[data-person]'); if(pp){ filter = 'person'; actPerson = pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
-  const f = e.target.closest('[data-filter]'); if(f){ filter = f.dataset.filter; if(filter === 'note') nbView = ''; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
+  const f = e.target.closest('[data-filter]'); if(f){ filter = f.dataset.filter; if(filter === 'note') enterNotes(); saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
   const a = e.target.closest('[data-act]');
   if(a){
     const act = a.dataset.act;
@@ -3300,6 +3364,7 @@ document.addEventListener('click', e => {
     else if(act === 'tlskip') skipOccurrence(); else if(act === 'tlopen') openLinkedFromBlock(); else if(act === 'tlunlink'){ tlEdit.b.link = null; renderTlDlg(); }
     else if(act === 'resetfilters'){ chipsOff[chipView()] = []; listCat = ''; datedOnly = false; hideDone = false; saveUi(); fixSelection(); renderList(); renderDetail(); }
     else if(act === 'refresh') refreshAll();
+    else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
     else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
     else if(act === 'quickadd'){ $('#newmenu').classList.remove('open'); openQuickAdd(); }
@@ -3363,6 +3428,12 @@ document.addEventListener('click', e => {
   $('#newmenu').classList.remove('open');
 });
 $('#q').addEventListener('input', e => { search = e.target.value; fixSelection(); renderList(); renderDetail(); });
+const dateChanged = () => { saveUi(); fixSelection(); renderList(); renderDetail(); };
+$('#settheme').addEventListener('change', e => { theme = e.target.value; applyTheme(); saveUi(); renderFileInfo(); });
+$('#dfield').addEventListener('change', e => { dateField = e.target.value; dateChanged(); });
+$('#dpreset').addEventListener('change', e => { datePreset = e.target.value; dateChanged(); });
+$('#dfrom').addEventListener('change', e => { dateFrom = e.target.value; dateChanged(); });
+$('#dto').addEventListener('change', e => { dateTo = e.target.value; dateChanged(); });
 $('#datedonly').addEventListener('change', e => { datedOnly = e.target.checked; saveUi(); fixSelection(); renderList(); renderDetail(); });
 $('#qscope').addEventListener('change', e => { searchAll = e.target.checked; fixSelection(); renderList(); renderDetail(); });
 $('#hidedone').addEventListener('change', e => { hideDone = e.target.checked; saveUi(); fixSelection(); renderList(); renderDetail(); });
@@ -3601,7 +3672,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261029094519';</script>
+<script>window.NB_BUILD = '20261029101220';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

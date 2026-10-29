@@ -1,4 +1,15 @@
-{"version":"1.16.0","build":"20261029094519","changelog":[
+{"version":"1.17.0","build":"20261029101220","changelog":[
+ {
+  "v": "1.17.0",
+  "title": "Remembers where you were, pinned pages, date filter, Settings",
+  "items": [
+   "Notes now remembers where you left off: click away to Actions or Today and back, and you are in the same notebook, on the same page. It also survives closing the app. ‹ Notebooks takes you up to the list",
+   "Pinned pages show at the top of the Notes list and at the top of every notebook, whichever notebook they belong to. Pin and unpin from the right-click menu as before",
+   "Find notes by date: on Notes there is now a date filter (Edited, Created or Page date; Today, Last 7 days, Last 30 days, This month or a custom range). Searching also matches dates, like 2026-10-12 or Oct 12",
+   "New Settings page (⚙ in the sidebar) with your save file, backup, theme and keyboard shortcuts. The sidebar bottom is now just the version, Refresh and Settings",
+   "Fixed: every page in a notebook after the first showed the notebook name beside its date"
+  ]
+ },
  {
   "v": "1.16.0",
   "title": "Replies to shared pages",
