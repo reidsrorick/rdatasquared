@@ -257,6 +257,11 @@ input.who:focus{border-color:var(--accent)}
 .ai input.who{flex:0 0 100px;width:100px;border:1px solid var(--line);border-bottom:1px solid var(--line)}
 .meta input.who{width:130px}
 .pcnt{color:var(--mute);font-size:12px;white-space:nowrap}
+#nbexp,#nbimp{width:min(540px,94vw)}
+.expopt label{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;cursor:pointer;border-radius:8px}.expopt label:hover{background:var(--hover2)}
+.expopt input{margin-top:4px;accent-color:var(--accent)}.expopt small{display:block;color:var(--mute);font-size:12px;margin-top:1px}
+#nbimplist .improw{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--line)}#nbimplist .improw input{margin-top:4px;accent-color:var(--accent)}
+#nbimplist .improw small{display:block;color:var(--mute);font-size:12.5px}
 #abdlg{width:min(620px,94vw);max-height:90vh;overflow:auto}
 #abdlg .abv{margin:12px 0 2px;font-size:14px}#abdlg .abv b{font-family:Georgia,serif;font-size:15px}
 #abdlg .abt{color:var(--mute)}#abdlg ul{margin:2px 0 0 20px;font-size:13px}#abdlg li{margin:2px 0}
@@ -443,6 +448,29 @@ dialog p{color:var(--mute);font-size:13px}
     <article class="detail" id="detail"></article>
   </div>
 </div>
+<input type="file" id="nbfile" accept=".json,application/json" hidden>
+<dialog id="nbexp">
+  <h3 id="nbexpt">Export</h3>
+  <p id="nbexpn"></p>
+  <div class="expopt">
+    <label><input type="radio" name="nbfmt" value="json" checked> <span><b>Notebook file (.json)</b><small>To load into another copy of the app with Import. Keeps everything: pages, formatting, action items and RAID entries.</small></span></label>
+    <label><input type="radio" name="nbfmt" value="md"> <span><b>One Markdown file (.md)</b><small>Every page in one document, to read or paste into another notes app.</small></span></label>
+    <label><input type="radio" name="nbfmt" value="pdf"> <span><b>Print / save as PDF</b><small>Clean pages, one after another.</small></span></label>
+  </div>
+  <div class="dfoot"><span></span><span><button data-act="nbexpcancel">Cancel</button> <button class="pri" data-act="nbexpgo">Download</button></span></div>
+</dialog>
+<dialog id="nbimp">
+  <h3>Import notebooks</h3>
+  <p id="nbimpfile"></p>
+  <div id="nbimplist"></div>
+  <div class="expopt" style="margin-top:10px">
+    <div style="font-size:12px;color:var(--mute);margin-bottom:4px">If a page is already here and also in the file:</div>
+    <label><input type="radio" name="nbmode" value="newer" checked> <span><b>Keep the newer one</b><small>The page with the later edit wins. Pages you've edited more recently stay as they are.</small></span></label>
+    <label><input type="radio" name="nbmode" value="mine"> <span><b>Keep mine</b><small>Only add pages you don't have yet.</small></span></label>
+    <label><input type="radio" name="nbmode" value="both"> <span><b>Keep both</b><small>Add the file's version as a copy.</small></span></label>
+  </div>
+  <div class="dfoot"><span></span><span><button data-act="nbimpcancel">Cancel</button> <button class="pri" data-act="nbimpgo">Import</button></span></div>
+</dialog>
 <dialog id="abdlg">
   <h3>My Notebook <small id="abver" style="color:var(--mute);font-weight:400"></small></h3>
   <p>Compare this copy with your live site, and see what changed in each version.</p>
@@ -455,7 +483,7 @@ dialog p{color:var(--mute);font-size:13px}
   <h3>Notebooks</h3>
   <p>Group your pages, like OneNote. Use ▲ ▼ (or drag a heading in the Notes list) to put the notebooks in the order you like. Each note lives in one notebook. Actions, risks, issues and decisions still roll up everywhere, and you can filter them by notebook. Deleting a notebook moves its pages to another one.</p>
   <div id="nbrows"></div>
-  <div class="dfoot"><button data-act="addnb">+ Add notebook</button><button class="pri" data-act="closenb">Done</button></div>
+  <div class="dfoot"><span><button data-act="addnb">+ Add notebook</button> <button data-act="nbimport" title="Add the pages from a notebook file">⤒ Import…</button> <button data-act="nbexportall" title="Every notebook, as one file">⤓ Export all…</button></span><button class="pri" data-act="closenb">Done</button></div>
 </dialog>
 <dialog id="pdlg">
   <h3>People</h3>
@@ -496,8 +524,34 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.10.3';
+const APP_VERSION = '1.13.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.13.0",
+  "title": "Share a whole notebook to a folder",
+  "items": [
+   "Share a whole notebook to a folder (right-click its heading → Share notebook to a folder…, or ⇪ in ⚙ Manage): every page gets its own file in a folder named after the notebook, plus a small _index.json listing the pages and when each was last edited",
+   "New pages in a shared notebook are shared automatically, and files for deleted or moved pages are removed",
+   "Sharing options per notebook: write now, choose a different folder, stop sharing, or stop and delete the files"
+  ]
+ },
+ {
+  "v": "1.12.0",
+  "title": "Share a page to a folder",
+  "items": [
+   "Share a single page to a folder on your computer (for example this project folder): the app keeps one file for that page up to date every time you edit it, with the page, its action items and a readable version of it, so it can be read by someone you point at the folder",
+   "A Share button on every note, a ⇪ marker in the list, a status badge (written at …, or paused if the browser needs you to allow the folder again), and options to write now, change the folder, or stop sharing (and delete the file)"
+  ]
+ },
+ {
+  "v": "1.11.0",
+  "title": "Export and import notebooks",
+  "items": [
+   "Export a single notebook (right-click its heading → Export notebook…, or from ⚙ Manage) as a notebook file, one Markdown file, or a PDF",
+   "Import a notebook file into any copy of the app (⤒ Import above the Notes list): new pages are added, newer edits update what you have, and nothing is deleted. Handy for moving a notebook between computers",
+   "You can also import a notebook out of a full backup file"
+  ]
+ },
  {
   "v": "1.10.3",
   "title": "Category names no longer cut off",
@@ -954,11 +1008,11 @@ function normalize(d){
     id: i.id || uid(), type: i.type === 'task' ? 'task' : 'note',      // older files had a separate "meeting" type: meetings are now just notes that have a date
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
-    done: !!i.done, pinned: !!i.pinned, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
+    done: !!i.done, pinned: !!i.pinned, shared: i.shared && i.shared.on ? {on:true, file:String(i.shared.file || ''), last:String(i.shared.last || '')} : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
     created: i.created || now(), updated: i.updated || now()
   });
   d.items = (d.items || []).map(item);
-  const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length]})).filter(n => { nbSeen.add(n.id); return true; });
+  const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length], shared: n.shared && n.shared.on ? {on:true, dir:String(n.shared.dir || ''), files:Array.isArray(n.shared.files) ? n.shared.files.filter(x => typeof x === 'string').slice(0, 5000) : [], last:String(n.shared.last || '')} : null})).filter(n => { nbSeen.add(n.id); return true; });
   if(!d.notebooks.length) d.notebooks = [{id:'general', name:'General', color:NB_COLORS[0]}];
   d.items.forEach(i => { if(i.type === 'note' && !d.notebooks.some(n => n.id === i.notebook)) i.notebook = d.notebooks[0].id; });          // every note lives in a notebook
   d.people = cleanPeople(d.people); d.me = typeof d.me === 'string' ? d.me.trim() : '';
@@ -1020,7 +1074,7 @@ async function idbSet(k, v){ const d = await idb(); return new Promise((res, rej
 function cacheWrite(){ try { localStorage.setItem('notebook-cache', JSON.stringify({dirty, db})); } catch {} }
 function cacheRead(){ try { const c = JSON.parse(localStorage.getItem('notebook-cache')); if(c && c.db && Array.isArray(c.db.items)) return c; } catch {} return null; }
 
-function touch(){ db.savedAt = now(); dirty = true; cacheWrite(); scheduleSave(); renderStatus(); }
+function touch(){ db.savedAt = now(); dirty = true; cacheWrite(); scheduleSave(); renderStatus(); scheduleShareWrite(); }
 function scheduleSave(){ clearTimeout(timer); timer = setTimeout(flush, 350); }
 
 async function flush(){
@@ -1293,7 +1347,7 @@ function renderFilterBar(){
   if(showCats) cc.innerHTML = db.categories.map(c => `<button class="chip cchip ${listCat === c.id ? 'on' : ''}" data-lcat="${esc(c.id)}" aria-pressed="${listCat === c.id}" title="${listCat === c.id ? 'Show all categories again' : 'Only show ' + esc(c.name)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('');
   document.querySelectorAll('#sortseg [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === sortMode));
   const bar = $('#nbbar'); bar.style.display = filter === 'note' ? '' : 'none';
-  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><span style="flex:1"></span><a data-act="nbfoldtoggle">${db.notebooks.every(n => nbFold.has(n.id)) ? 'Expand all' : 'Collapse all'}</a>`;
+  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add the pages from a notebook file, e.g. one exported on another computer">⤒ Import</a><span style="flex:1"></span><a data-act="nbfoldtoggle">${db.notebooks.every(n => nbFold.has(n.id)) ? 'Expand all' : 'Collapse all'}</a>`;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
   $('#qscopewrap').style.display = filter.startsWith('nb:') && search.trim() ? '' : 'none'; $('#qscope').checked = searchAll;
   $('#datedonly').checked = datedOnly; $('#hidedone').checked = hideDone;
@@ -1373,7 +1427,7 @@ function entryHtml(e){
   const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk)), dd = itemDate(i), openT = !(i.type === 'task' && i.done);
   return `<div ${i.type === 'note' ? `draggable="true" data-nbdrop="${esc(nbKey(i))}" ` : ''}class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
       <span class="ic">${i.type==='task' ? `<input type="checkbox" class="lc" ${i.done?'checked':''} aria-label="Done">` : isMeeting(i) ? '◷' : '✎'}</span>
-      <div><b>${i.pinned ? '📌 ' : ''}${i.raid ? raidBadge(i.raid) : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
+      <div><b>${i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${i.raid ? raidBadge(i.raid) : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
       <time class="${w.cls||''}">${esc(w.t)}</time></div>`;
 }
 function renderList(){
@@ -1387,7 +1441,7 @@ function renderList(){
     for(const g of groups){
       if(!g.rows.length && filtering) continue;
       const folded = nbFold.has(g.id) && !search.trim(), n = g.rows.filter(e => e.kind === 'item').length;
-      html += `<div class="nbgh ${folded ? 'folded' : ''}" data-nbfold="${esc(g.id)}" ${g.nb ? `data-nbdrop="${esc(g.id)}" draggable="true" title="Drag to reorder the notebooks"` : ''} style="--nbc:${esc(g.nb ? g.nb.color : 'var(--mute)')}"><span class="nbc">${folded ? '▸' : '▾'}</span><span class="nbn">${esc(g.nb ? g.nb.name : 'Action items from other places')}</span><small>${n} ${n === 1 ? 'page' : 'pages'}</small>${g.nb ? `<button data-act="nbnewpage" data-id="${esc(g.id)}" title="New page in ${esc(g.nb.name)}">＋</button>` : ''}</div>`;
+      html += `<div class="nbgh ${folded ? 'folded' : ''}" data-nbfold="${esc(g.id)}" ${g.nb ? `data-nbdrop="${esc(g.id)}" draggable="true" title="Drag to reorder the notebooks"` : ''} style="--nbc:${esc(g.nb ? g.nb.color : 'var(--mute)')}"><span class="nbc">${folded ? '▸' : '▾'}</span><span class="nbn">${esc(g.nb ? g.nb.name : 'Action items from other places')}${g.nb && g.nb.shared && g.nb.shared.on ? ` <span title="Shared to a folder${shareState === 'paused' ? ' (paused: the browser needs you to allow the folder again)' : ''}" style="color:var(--accent);font-weight:400">⇪${shareState === 'paused' ? ' paused' : ''}</span>` : ''}</span><small>${n} ${n === 1 ? 'page' : 'pages'}</small>${g.nb ? `<button data-act="nbnewpage" data-id="${esc(g.id)}" title="New page in ${esc(g.nb.name)}">＋</button>` : ''}</div>`;
       if(folded) continue;
       html += g.rows.length ? g.rows.map(entryHtml).join('') : `<div class="nbempty" data-nbdrop="${esc(g.id)}">No pages yet. Press ＋ or drag a page here.</div>`;
     }
@@ -1926,12 +1980,13 @@ document.addEventListener('click', e => { const c = filter === 'timeline' && e.t
 /* ---- category manager ---- */
 function renderNbDlg(){
   const cnt = {}; db.items.forEach(i => { if(i.type === 'note') cnt[nbKey(i)] = (cnt[nbKey(i)] || 0) + 1; });
-  $('#nbrows').innerHTML = db.notebooks.map(n => `<div class="crow"><input type="color" data-nbc="${esc(n.id)}" value="${esc(n.color)}"><input type="text" data-nbn="${esc(n.id)}" value="${esc(n.name)}"><span class="pcnt">${cnt[n.id] || 0} page${(cnt[n.id] || 0) === 1 ? '' : 's'}</span><button class="mv" data-act="nbup" data-id="${esc(n.id)}" title="Move up">▲</button><button class="mv" data-act="nbdown" data-id="${esc(n.id)}" title="Move down">▼</button><button class="x" data-act="delnb" data-id="${esc(n.id)}" title="${db.notebooks.length < 2 ? 'Keep at least one notebook' : 'Delete this notebook (its pages move to another one)'}" ${db.notebooks.length < 2 ? 'disabled style="opacity:.3;cursor:default"' : ''}>×</button></div>`).join('');
+  $('#nbrows').innerHTML = db.notebooks.map(n => `<div class="crow"><input type="color" data-nbc="${esc(n.id)}" value="${esc(n.color)}"><input type="text" data-nbn="${esc(n.id)}" value="${esc(n.name)}"><span class="pcnt">${cnt[n.id] || 0} page${(cnt[n.id] || 0) === 1 ? '' : 's'}</span><button class="mv" data-act="nbexport" data-id="${esc(n.id)}" title="Export this notebook">⤓</button><button class="mv" data-act="nbshare" data-id="${esc(n.id)}" title="${n.shared && n.shared.on ? 'Sharing options' : 'Share this notebook to a folder'}" ${n.shared && n.shared.on ? 'style="color:var(--accent)"' : ''}>⇪</button><button class="mv" data-act="nbup" data-id="${esc(n.id)}" title="Move up">▲</button><button class="mv" data-act="nbdown" data-id="${esc(n.id)}" title="Move down">▼</button><button class="x" data-act="delnb" data-id="${esc(n.id)}" title="${db.notebooks.length < 2 ? 'Keep at least one notebook' : 'Delete this notebook (its pages move to another one)'}" ${db.notebooks.length < 2 ? 'disabled style="opacity:.3;cursor:default"' : ''}>×</button></div>`).join('');
 }
 function removeNotebook(id){
   const nb = nbById(id); if(!nb) return;
   if(db.notebooks.length < 2){ toast('You need at least one notebook, so this one can’t be deleted. You can rename it instead.'); return; }
   const to = db.notebooks.find(n => n.id !== id), pages = db.items.filter(i => i.type === 'note' && nbKey(i) === id), at = db.notebooks.indexOf(nb), wasFolded = nbFold.has(id);
+  if(nb.shared && nb.shared.on) stopNbSharing(nb, true);
   pages.forEach(i => { i.notebook = to.id; i.updated = now(); });
   db.notebooks = db.notebooks.filter(n => n.id !== id); nbFold.delete(id);
   if(actNb === id) actNb = ''; if(lastNb === id) lastNb = '';
@@ -2035,7 +2090,7 @@ function renderDetail(){
     <h4>Action items</h4>
     <div id="cklist">${ckRows(i)}</div>
     <div class="ai add"><input type="checkbox" disabled><input type="text" id="newck" placeholder="Add an item and press Enter…"></div>
-    <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns"><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
+    <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns"><button class="plain" id="sharebtn" data-act="sharepage" title="${esc(shareBadge(i).tip)}">${esc(shareBadge(i).label)}</button><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
 }
 function grow(t){
   if(!t || t.isContentEditable) return;                  // rich editors size themselves
@@ -2068,6 +2123,249 @@ function newItem(kind){                      // kind: 'task', 'note' or 'meeting
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
+}
+/* ---- export / import notebooks (move a notebook between computers, or keep a copy) ---- */
+const notebookPages = id => db.items.filter(i => i.type === 'note' && nbKey(i) === id);
+function notebookPack(ids){
+  const nbs = ids.map(nbById).filter(Boolean), cats = new Set(), ppl = new Set(), out = {app:'notebook-export', format:1, exported:now(), fromVersion:APP_VERSION, notebooks:[], categories:[], people:[]};
+  for(const nb of nbs){
+    const pages = notebookPages(nb.id).map(i => Object.assign(JSON.parse(JSON.stringify(i)), {shared:null}));
+    pages.forEach(i => { if(i.category) cats.add(i.category); if(i.assignee) ppl.add(i.assignee); i.checklist.forEach(c => { if(c.cat) cats.add(c.cat); if(c.assignee) ppl.add(c.assignee); }); });
+    out.notebooks.push({id:nb.id, name:nb.name, color:nb.color, items:pages});
+  }
+  out.categories = db.categories.filter(c => cats.has(c.id)); out.people = [...ppl];
+  return out;
+}
+function notebookToMd(nb){
+  const pages = notebookPages(nb.id).sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  return `# ${nb.name}\n\n` + (pages.length ? pages.map(i => itemToMd(i).replace(/^# /, '## ').replace(/\n## Action items/, '\n### Action items')).join('\n\n---\n\n') : '_No pages yet._\n');
+}
+let expIds = [];
+function openNbExport(ids){
+  expIds = ids.filter(id => nbById(id)); if(!expIds.length) return;
+  const n = expIds.reduce((t, id) => t + notebookPages(id).length, 0);
+  $('#nbexpt').textContent = expIds.length === 1 ? `Export “${nbById(expIds[0]).name}”` : `Export all ${expIds.length} notebooks`;
+  $('#nbexpn').textContent = `${n} page${n === 1 ? '' : 's'}. Action items and RAID entries inside those pages come along with them.`;
+  if($('#nbdlg').open) $('#nbdlg').close();
+  $('#nbexp').showModal();
+}
+function runNbExport(){
+  const fmt = (document.querySelector('input[name=nbfmt]:checked') || {}).value || 'json', nbs = expIds.map(nbById).filter(Boolean); if(!nbs.length) return;
+  const slug = nbs.length === 1 ? (nbs[0].name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'notebook') : 'all-notebooks';
+  if(fmt === 'json'){ downloadFile(`${slug}.notebook.json`, JSON.stringify(notebookPack(expIds), null, 2), 'application/json'); toast(`Saved ${slug}.notebook.json. Use ⤒ Import on another copy of the app to load it.`); }
+  else if(fmt === 'md'){ downloadFile(`${slug}.md`, nbs.map(notebookToMd).join('\n\n\n'), 'text/markdown'); toast(`Saved ${slug}.md to your downloads.`); }
+  else printHtml(printDoc(nbs.length === 1 ? nbs[0].name : 'Notebooks', nbs.map(nb => `<div class="nbcover"><h1>${esc(nb.name)}</h1></div>` + notebookPages(nb.id).sort((a, b) => (a.title || '').localeCompare(b.title || '')).map(i => `<section>${itemPrintBody(i)}</section>`).join('')).join('')));
+  $('#nbexp').close();
+}
+let importPack = null;
+function parseImport(j){
+  const nbOf = (n, items) => ({id:String((n && n.id) || ''), name:String((n && n.name) || 'Imported'), color:n && n.color, items:(items || []).filter(x => x && typeof x === 'object')});
+  if(j && j.app === 'notebook-export' && Array.isArray(j.notebooks)) return {notebooks:j.notebooks.map(n => nbOf(n, n.items)), categories:j.categories || [], people:j.people || []};
+  if(j && Array.isArray(j.items) && Array.isArray(j.notebooks)) return {notebooks:j.notebooks.map(n => nbOf(n, j.items.filter(i => i && i.type === 'note' && i.notebook === n.id))), categories:j.categories || [], people:j.people || []};      // a whole backup file
+  if(j && Array.isArray(j.items)) return {notebooks:[nbOf({name:'Imported'}, j.items.filter(i => i && i.type !== 'task'))], categories:j.categories || [], people:j.people || []};                                   // an older file with no notebooks
+  return null;
+}
+const sanitizePage = i => { const d = normalize({bodyFormat:'html', items:[i]}); d.items[0].shared = null; return d.items[0]; };
+function pageStatus(norm){                              // how an imported page compares with the one here
+  const ex = byId(norm.id); if(!ex) return 'new';
+  if((norm.updated || '') === (ex.updated || '')) return 'same';
+  return (norm.updated || '') > (ex.updated || '') ? 'newer' : 'older';
+}
+function openImport(pack, fileName){
+  importPack = pack;
+  $('#nbimpfile').textContent = `From ${fileName}. Nothing here is deleted by an import.`;
+  $('#nbimplist').innerHTML = pack.notebooks.map((n, k) => {
+    const st = {new:0, newer:0, same:0, older:0}; n.items.forEach(p => st[pageStatus(sanitizePage(p))]++);
+    const here = nbById(n.id) || db.notebooks.find(x => x.name.toLowerCase() === n.name.toLowerCase());
+    const bits = [st.new && `${st.new} new`, st.newer && `${st.newer} newer than yours`, st.older && `${st.older} older than yours`, st.same && `${st.same} already here`].filter(Boolean).join(' · ') || 'no pages';
+    return `<label class="improw"><input type="checkbox" data-impnb="${k}" ${n.items.length ? 'checked' : ''}> <span><b>${esc(n.name)}</b> <span class="pcnt">${n.items.length} page${n.items.length === 1 ? '' : 's'}</span><small>${here ? `Goes into your “${esc(here.name)}” notebook` : 'Becomes a new notebook'} · ${esc(bits)}</small></span></label>`;
+  }).join('') || '<p>That file has no notebooks in it.</p>';
+  $('#nbimp').showModal();
+}
+function runImport(){
+  const pack = importPack; if(!pack) return;
+  const chosen = [...document.querySelectorAll('#nbimplist [data-impnb]')].filter(c => c.checked).map(c => pack.notebooks[+c.dataset.impnb]);
+  const mode = (document.querySelector('input[name=nbmode]:checked') || {}).value || 'newer';
+  if(!chosen.length){ toast('Tick at least one notebook to import.'); return; }
+  const undo = {items:[], replaced:[], nbs:[], cats:[], ppl:[]}, tally = {added:0, updated:0, skipped:0, copies:0};
+  for(const c of pack.categories || []) if(c && c.id && typeof c.name === 'string' && !catById(c.id)){ const cat = {id:c.id, name:c.name, color:c.color || '#888888'}; db.categories.push(cat); undo.cats.push(cat); }
+  for(const n of pack.people || []) if(addPerson(n)) undo.ppl.push(n);
+  for(const n of chosen){
+    let nb = nbById(n.id) || db.notebooks.find(x => x.name.toLowerCase() === n.name.toLowerCase());
+    if(!nb){ nb = {id: n.id && !nbById(n.id) ? n.id : uid(), name:n.name, color:/^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : nextNbColor()}; db.notebooks.push(nb); undo.nbs.push(nb); }
+    for(const p of n.items){
+      const norm = sanitizePage(p); norm.notebook = nb.id; norm.assignee = norm.assignee || '';
+      const st = pageStatus(norm), ex = byId(norm.id);
+      if(st === 'new'){ db.items.push(norm); undo.items.push(norm); tally.added++; }
+      else if(st === 'same') tally.skipped++;
+      else if(mode === 'both'){ norm.id = uid(); norm.title = (norm.title || 'Untitled') + ' (imported copy)'; norm.checklist.forEach(c => { c.id = uid(); }); norm.updated = now(); db.items.push(norm); undo.items.push(norm); tally.copies++; }
+      else if(mode === 'newer' && st === 'newer'){ const at = db.items.indexOf(ex); undo.replaced.push([at, ex]); db.items[at] = norm; tally.updated++; }
+      else tally.skipped++;
+    }
+    lastNb = nb.id; nbFold.delete(nb.id);
+  }
+  db.items.forEach(i => { for(const o of [i, ...i.checklist]) if(o.assignee) addPerson(o.assignee); });
+  importPack = null; $('#nbimp').close(); saveUi(); touch(); fixSelection(); renderAll();
+  const bits = [tally.added && `${tally.added} added`, tally.updated && `${tally.updated} updated`, tally.copies && `${tally.copies} copied`, tally.skipped && `${tally.skipped} already here`].filter(Boolean);
+  toast(`Imported: ${bits.join(', ') || 'nothing new'}.`, () => {
+    db.items = db.items.filter(x => !undo.items.includes(x)); undo.replaced.forEach(([at, old]) => { db.items[Math.min(at, db.items.length)] = old; });
+    db.notebooks = db.notebooks.filter(x => !undo.nbs.includes(x)); db.categories = db.categories.filter(x => !undo.cats.includes(x)); db.people = db.people.filter(x => !undo.ppl.includes(x));
+    touch(); fixSelection(); renderAll();
+  });
+}
+async function importFromFile(f){
+  let j = null; try { j = JSON.parse(await f.text()); } catch {}
+  const pack = j && parseImport(j);
+  if(!pack){ toast('That doesn’t look like a notebook file. Use a file made with Export notebook… (it ends in .notebook.json).'); return; }
+  if($('#nbdlg').open) $('#nbdlg').close();
+  openImport(pack, f.name);
+}
+$('#nbfile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if(f) importFromFile(f); });
+/* ---- Share a page to a folder: one file per shared page, rewritten every time the page changes ---- */
+const shareOk = () => typeof window.showDirectoryPicker === 'function';
+let shareDir = null, shareTimer = null, shareState = '', shareErr = '';
+const shareWritten = new Map();                          // page id → the version of the page last written (this session)
+const shareStamp = i => (i.updated || '') + '|' + (i.title || '') + '|' + i.checklist.length;
+const shareFileName = i => `${fileSlug(i)}.${String(i.id).slice(-5)}.json`;
+async function shareDirHandle(){
+  if(shareDir) return shareDir;
+  try { shareDir = await withTimeout(idbGet('shareDir'), 3000); } catch { shareDir = null; }
+  return shareDir || null;
+}
+async function shareReady(request){                      // the folder, if the browser lets us write to it right now
+  const d = await shareDirHandle(); if(!d) return null;
+  try {
+    let perm = await d.queryPermission({mode:'readwrite'});
+    if(perm !== 'granted' && request) perm = await d.requestPermission({mode:'readwrite'});
+    return perm === 'granted' ? d : null;
+  } catch { return null; }
+}
+async function pickShareFolder(){
+  const d = await showDirectoryPicker({mode:'readwrite', id:'notebook-share'});
+  shareDir = d; try { await withTimeout(idbSet('shareDir', d), 3000); } catch {}
+  return d;
+}
+function sharePayload(i){
+  const nb = i.type === 'note' ? nbById(nbKey(i)) : null, catName = id => (catById(id) || {}).name || '';
+  const open = i.checklist.filter(c => !c.done && c.text.trim()).length;
+  return {
+    app:'notebook-share', format:1, writtenAt:now(), appVersion:APP_VERSION,
+    about:'Written by My Notebook every time this page is saved. Read it; do not edit it (the app overwrites it).',
+    page:{
+      id:i.id, title:i.title, kind:i.type === 'task' ? 'action' : 'note', notebook:nb ? nb.name : '', category:catName(i.category), tags:i.tags, pinned:!!i.pinned,
+      date:i.date, time:i.time, attendees:i.attendees, assignedTo:i.assignee || '', created:i.created, updated:i.updated,
+      body:i.body, bodyText:htmlToPlain(i.body),
+      actionItems:i.checklist.filter(c => c.text.trim()).map(c => ({id:c.id, text:c.text, type:c.raid || 'action', done:c.done, due:c.due, time:c.time, assignedTo:c.assignee || '', category:catName(c.cat || i.category), repeats:c.repeat ? describeRepeat(c.repeat) : '', note:htmlToPlain(c.note), fromTaggedLine:c.src === 'tag'}))
+    },
+    summary:{actionItems:i.checklist.filter(c => c.text.trim()).length, open},
+    readable:itemToMd(i)
+  };
+}
+async function writePageFile(i, dir, name){
+  const fh = await dir.getFileHandle(name, {create:true}), w = await fh.createWritable();
+  await w.write(JSON.stringify(sharePayload(i), null, 2)); await w.close();
+}
+async function writeSharedPage(i, sub){
+  const name = shareFileName(i); await writePageFile(i, sub, name);
+  if(i.shared.file && i.shared.file !== name){ try { await sub.removeEntry(i.shared.file); } catch {} }          // the title changed, so the file name did too
+  i.shared.file = name; i.shared.last = now(); shareWritten.set(i.id, shareStamp(i));
+}
+const nbShareDirName = nb => { const base = (nb.name || 'notebook').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 50) || 'notebook'; return db.notebooks.some(o => o !== nb && o.shared && o.shared.on && o.shared.dir === base) ? base + '-' + String(nb.id).slice(-4) : base; };
+const shareNbWritten = new Map();                          // page id → what was last written into its notebook folder
+async function writeSharedNotebook(nb, sub, force){
+  const dirName = nbShareDirName(nb), dir = await sub.getDirectoryHandle(dirName, {create:true});
+  const pages = notebookPages(nb.id), wanted = new Set(), oldFiles = new Set(nb.shared.files || []);
+  let changed = force || nb.shared.dir !== dirName;
+  for(const i of pages){
+    const name = shareFileName(i), key = shareStamp(i) + '|' + dirName; wanted.add(name);
+    if(force || shareNbWritten.get(i.id) !== key || !oldFiles.has(name)){ await writePageFile(i, dir, name); shareNbWritten.set(i.id, key); changed = true; }
+  }
+  for(const f of oldFiles) if(!wanted.has(f)){ try { await dir.removeEntry(f); } catch {} changed = true; }            // the page was deleted, moved, or renamed
+  if(nb.shared.dir && nb.shared.dir !== dirName){ try { await sub.removeEntry(nb.shared.dir, {recursive:true}); } catch {} }      // the notebook was renamed
+  if(changed){
+    const idx = {app:'notebook-share-index', format:1, writtenAt:now(), appVersion:APP_VERSION, notebook:{id:nb.id, name:nb.name, color:nb.color},
+      about:'Index of the pages shared from this notebook. Written by My Notebook; open the page files for the details.',
+      pages:pages.slice().sort((a, b) => (b.updated || '').localeCompare(a.updated || '')).map(i => ({file:shareFileName(i), title:i.title, updated:i.updated, created:i.created, date:i.date, category:(catById(i.category) || {}).name || '', tags:i.tags, actionItems:i.checklist.filter(c => c.text.trim()).length, openActionItems:i.checklist.filter(c => c.text.trim() && !c.done).length}))};
+    const fh = await dir.getFileHandle('_index.json', {create:true}), w = await fh.createWritable(); await w.write(JSON.stringify(idx, null, 2)); await w.close();
+  }
+  nb.shared.dir = dirName; nb.shared.files = [...wanted]; nb.shared.last = now();
+}
+async function runShareWrites(force){
+  const pages = db.items.filter(i => i.shared && i.shared.on && (force || shareWritten.get(i.id) !== shareStamp(i))), nbs = db.notebooks.filter(n => n.shared && n.shared.on);
+  if(!pages.length && !nbs.length) return;
+  const d = await shareReady(false);
+  if(!d){ shareState = 'paused'; renderShareBadge(); return; }
+  try {
+    const sub = await d.getDirectoryHandle('shared', {create:true});
+    for(const i of pages) await writeSharedPage(i, sub);
+    for(const nb of nbs) await writeSharedNotebook(nb, sub, force);
+    shareState = 'ok'; shareErr = '';
+  } catch(e){ shareState = 'error'; shareErr = (e && e.message) || String(e); }
+  renderShareBadge();
+}
+function scheduleShareWrite(){ if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on)) return; clearTimeout(shareTimer); shareTimer = setTimeout(() => runShareWrites(false), 1200); }
+function shareBadge(i){
+  if(!i.shared || !i.shared.on) return {label:'Share…', tip:'Keep a file of this page, up to date, in a folder you choose'};
+  const t = i.shared.last ? new Date(i.shared.last).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+  if(shareState === 'paused') return {label:'⇪ Shared · paused, click to allow the folder', tip:'The browser needs you to allow the folder again for this session'};
+  if(shareState === 'error') return {label:'⇪ Shared · couldn’t write', tip:shareErr};
+  return {label:'⇪ Shared' + (t ? ' · written ' + t : ''), tip:'Shared to ' + (shareDir ? shareDir.name + '\\shared\\' : 'a folder') + (i.shared.file || '')};
+}
+function renderShareBadge(){
+  const b = $('#sharebtn'), i = byId(selId);
+  if(b && i){ const x = shareBadge(i); b.textContent = x.label; b.title = x.tip; }
+  renderList();
+}
+async function startSharing(i){
+  if(!shareOk()){ toast('This browser can’t write to a folder (turn on the File System Access flag in Brave, as for your save file).'); return; }
+  try {
+    let d = await shareReady(true);
+    if(!d) d = await pickShareFolder();
+    i.shared = {on:true, file:i.shared && i.shared.file || '', last:''};
+    shareState = 'ok'; touch(); await runShareWrites(true); renderAll();
+    toast(`Shared “${i.title || 'Untitled'}” to ${d.name}\\shared\\${i.shared.file}. It updates every time you edit the page.`);
+  } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t share: ' + ((e && e.message) || e)); }
+}
+async function stopSharing(i, deleteFile){
+  const file = i.shared && i.shared.file; i.shared = null; shareWritten.delete(i.id); touch();
+  if(deleteFile && file){ const d = await shareReady(false); if(d){ try { const sub = await d.getDirectoryHandle('shared'); await sub.removeEntry(file); } catch {} } }
+  renderAll(); toast(deleteFile ? 'Stopped sharing and removed the file.' : 'Stopped sharing. The last file was left in the folder.');
+}
+function sharePageAction(i, x, y){
+  if(!i.shared || !i.shared.on){ startSharing(i); return; }
+  const r = $('#sharebtn') ? $('#sharebtn').getBoundingClientRect() : {left:x || 200, bottom:y || 200};
+  openMenu(r.left, r.bottom + 4, [
+    {hd:'Shared page'},
+    {l:'Write it now', ic:'↻', fn: async () => { if(await shareReady(true)) await runShareWrites(true); else { shareState = 'paused'; } renderShareBadge(); renderAll(); }},
+    {l:'Choose a different folder…', ic:'📁', fn: async () => { try { await pickShareFolder(); await runShareWrites(true); renderAll(); toast('Now sharing to ' + shareDir.name + '\\shared\\.'); } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t pick that folder.'); } }},
+    {sep:1}, {l:'Stop sharing', ic:'⏹', fn: () => stopSharing(i, false)}, {l:'Stop sharing and delete the file', ic:'🗑', cls:'danger', fn: () => stopSharing(i, true)}
+  ], null);
+}
+async function startNbSharing(nb){
+  if(!shareOk()){ toast('This browser can’t write to a folder (turn on the File System Access flag in Brave, as for your save file).'); return; }
+  try {
+    let d = await shareReady(true);
+    if(!d) d = await pickShareFolder();
+    nb.shared = {on:true, dir:'', files:[], last:''};
+    shareState = 'ok'; touch(); await runShareWrites(true); renderAll();
+    const n = notebookPages(nb.id).length;
+    toast(`Sharing “${nb.name}” to ${d.name}\\shared\\${nb.shared.dir}\\ (${n} page${n === 1 ? '' : 's'} and an index). It updates as you edit.`);
+  } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t share: ' + ((e && e.message) || e)); }
+}
+async function stopNbSharing(nb, deleteFiles){
+  const dir = nb.shared && nb.shared.dir; nb.shared = null; touch();
+  for(const i of notebookPages(nb.id)) shareNbWritten.delete(i.id);
+  if(deleteFiles && dir){ const d = await shareReady(false); if(d){ try { const sub = await d.getDirectoryHandle('shared'); await sub.removeEntry(dir, {recursive:true}); } catch {} } }
+  renderAll(); toast(deleteFiles ? 'Stopped sharing the notebook and removed its files.' : 'Stopped sharing the notebook. The files were left in the folder.');
+}
+function nbShareAction(nb, x, y){
+  if(!nb.shared || !nb.shared.on){ startNbSharing(nb); return; }
+  openMenu(x || 200, y || 200, [
+    {hd:'Shared notebook'},
+    {l:'Write everything now', ic:'↻', fn: async () => { if(await shareReady(true)) await runShareWrites(true); else shareState = 'paused'; renderAll(); }},
+    {l:'Choose a different folder…', ic:'📁', fn: async () => { try { await pickShareFolder(); nb.shared.files = []; nb.shared.dir = ''; await runShareWrites(true); renderAll(); toast('Now sharing to ' + shareDir.name + '\\shared\\.'); } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t pick that folder.'); } }},
+    {sep:1}, {l:'Stop sharing', ic:'⏹', fn: () => stopNbSharing(nb, false)}, {l:'Stop sharing and delete the files', ic:'🗑', cls:'danger', fn: () => stopNbSharing(nb, true)}
+  ], null);
 }
 function moveNotebookTo(id, targetId){                     // put a notebook where another one is (drag a heading onto it)
   const from = db.notebooks.findIndex(n => n.id === id), to = db.notebooks.findIndex(n => n.id === targetId);
@@ -2104,7 +2402,7 @@ async function copyText(t){
 }
 function dupItem(i){
   const n = JSON.parse(JSON.stringify(i)); n.id = uid(); n.title = (i.title || 'Untitled') + ' (copy)'; n.done = false; n.created = n.updated = now();
-  n.checklist.forEach(c => { c.id = uid(); c.done = false; });
+  n.checklist.forEach(c => { c.id = uid(); c.done = false; }); n.shared = null;
   db.items.splice(db.items.indexOf(i) + 1, 0, n); selId = n.id; selCk = ''; touch(); renderAll();
   toast(`Duplicated “${i.title || 'Untitled'}”.`, () => { db.items = db.items.filter(x => x !== n); selId = i.id; touch(); renderAll(); });
 }
@@ -2136,7 +2434,7 @@ function menuForObj(i, c, openFn){
   if(!c && i.type === 'note' && db.notebooks.length > 1) m.push({hd:'Notebook'}, ...db.notebooks.map(n => ({l:n.name, ic: nbKey(i) === n.id ? '✓' : '', fn: () => moveNote(i, n.id)})));
   if(!c) m.push({l: i.pinned ? 'Unpin' : 'Pin to top', ic: '📌', fn: () => { i.pinned = !i.pinned; edited(i); refreshViews(); }});
   m.push({sep:1}, {l: c ? 'Duplicate action' : 'Duplicate', ic: '⧉', fn: () => c ? dupCk(i, c) : dupItem(i)}, {l: c ? 'Copy action as text' : 'Copy as text', ic: '⎘', fn: () => copyText(c ? ckAsText(c, i) : itemAsText(i))});
-  if(!c) m.push({hd:'Export'}, ...exportEntries(i));
+  if(!c) m.push({hd:'Export'}, ...exportEntries(i), {l: i.shared && i.shared.on ? 'Sharing options…' : 'Share to a folder…', ic:'⇪', fn: () => sharePageAction(i, innerWidth / 2, innerHeight / 3)});
   if(isTask){
     const cur2 = (c ? c.raid : i.raid) || 'action', setType = k => { const v = k === 'action' ? '' : k; if(c){ c.raid = v; c.src = ''; } else i.raid = v; edited(i); refreshViews(); };
     m.push({sep:1}, {hd:'Type'}, ...['action', 'risk', 'issue', 'decision'].map(k => ({l: k === 'action' ? 'Action' : RAID_META[k].one, ic: cur2 === k ? '✓' : '', fn: () => setType(k)})));
@@ -2195,6 +2493,8 @@ $('#items').addEventListener('contextmenu', e => {
       {l:'New page here', ic:'＋', fn: () => { lastNb = nb.id; nbFold.delete(nb.id); filter = 'note'; newItem('note'); }},
       {l:'Rename…', ic:'✎', fn: () => { const nm = (prompt('Rename the notebook:', nb.name) || '').trim(); if(nm){ nb.name = nm; touch(); renderAll(); } }},
       {l:'Move up', ic:'▲', fn: () => moveNotebookBy(nb.id, -1)}, {l:'Move down', ic:'▼', fn: () => moveNotebookBy(nb.id, 1)},
+      {l:'Export notebook…', ic:'⤓', fn: () => openNbExport([nb.id])},
+      {l: nb.shared && nb.shared.on ? 'Sharing options…' : 'Share notebook to a folder…', ic:'⇪', fn: () => nbShareAction(nb, e.clientX, e.clientY)},
       {hd:'Colour'}, ...NB_COLORS.map((c, k) => ({l:['Blue', 'Green', 'Amber', 'Purple', 'Orange', 'Teal'][k], ic: nb.color === c ? '✓' : '', dot:c, fn: () => { nb.color = c; touch(); renderList(); }})),
       {sep:1}, {l:'Delete notebook…', ic:'🗑', cls:'danger', fn: () => removeNotebook(nb.id)}], gh);
     return;
@@ -2262,22 +2562,32 @@ function itemToMd(i){
   if(meta.length) L.push(meta.map(([k, v]) => `**${k}:** ${v}`).join('  \n'), '');
   const body = htmlToMd(i.body); if(body) L.push(body, '');
   const cks = i.checklist.filter(k => k.text.trim());
-  if(cks.length){ L.push('## Action items', ''); cks.forEach(k => L.push(`- [${k.done ? 'x' : ' '}] ${k.text}${k.assignee ? ' (@' + k.assignee + ')' : ''}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`)); L.push(''); }
+  if(cks.length){ L.push('## Action items', ''); cks.forEach(k => L.push(`- [${k.done ? 'x' : ' '}] ${k.text}${k.assignee && !k.text.includes('@' + k.assignee) ? ' (@' + k.assignee + ')' : ''}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`)); L.push(''); }
   return L.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
 }
-function itemPrintHtml(i){
-  const meta = itemMeta(i), cks = i.checklist.filter(k => k.text.trim());
-  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(i.title || 'Untitled')}</title><style>
+const PRINT_CSS = `
     body{font:12pt/1.55 Georgia,serif;color:#222;max-width:42em;margin:2em auto;padding:0 1em}
     h1{font-size:22pt;margin:0 0 .2em}.meta{color:#555;font:10pt "Segoe UI",sans-serif;margin-bottom:1.2em}.meta b{color:#222}
     h2{font-size:13pt;margin:1.4em 0 .3em;border-bottom:1px solid #ccc}ul,ol{margin:.3em 0 .3em 1.5em;padding:0}blockquote{margin:0 0 0 2em}
     table{border-collapse:collapse;width:100%;margin:.6em 0}td,th{border:1px solid #999;padding:4px 8px;vertical-align:top}th{background:#eee;text-align:left}
-    mark{background:#ffe58a}a{color:#222}.ck{list-style:none;margin-left:0}.ck li::before{content:"☐ "}.ck li.d::before{content:"☑ "}.ck li.d{color:#666}
-  </style></head><body><h1>${esc(i.title || 'Untitled')}</h1>
+    mark{background:#ffe58a}mark.h-green{background:#bff0c8}mark.h-blue{background:#bfe0ff}mark.h-pink{background:#ffc9de}mark.h-orange{background:#ffd6aa}
+    .fc-red{color:#c0392b}.fc-orange{color:#c46a00}.fc-green{color:#2d7d46}.fc-blue{color:#2a6fb8}.fc-purple{color:#7b4bb5}.fc-gray{color:#777}.sz-l{font-size:1.3em}.sz-xl{font-size:1.75em}.sz-s{font-size:.82em}
+    a{color:#222}.ck{list-style:none;margin-left:0}.ck li::before{content:"☐ "}.ck li.d::before{content:"☑ "}.ck li.d{color:#666}
+    .nbcover{text-align:center;margin:30vh 0 0}.nbcover h1{font-size:34pt}section{page-break-before:always}`;
+function itemPrintBody(i){
+  const meta = itemMeta(i), cks = i.checklist.filter(k => k.text.trim());
+  return `<h1>${esc(i.title || 'Untitled')}</h1>
   ${meta.length ? `<div class="meta">${meta.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join(' &nbsp;·&nbsp; ')}</div>` : ''}
   <div>${i.body || ''}</div>
-  ${cks.length ? `<h2>Action items</h2><ul class="ck">${cks.map(k => `<li class="${k.done ? 'd' : ''}">${esc(k.text)}${k.due ? ` <small>(due ${esc(fmtDay(k.due))}${k.time ? ' ' + esc(fmtTime(k.time)) : ''})</small>` : ''}</li>`).join('')}</ul>` : ''}
-  <\/body><\/html>`;
+  ${cks.length ? `<h2>Action items</h2><ul class="ck">${cks.map(k => `<li class="${k.done ? 'd' : ''}">${esc(k.text)}${k.assignee && !k.text.includes('@' + k.assignee) ? ' → ' + esc(k.assignee) : ''}${k.due ? ` <small>(due ${esc(fmtDay(k.due))}${k.time ? ' ' + esc(fmtTime(k.time)) : ''})</small>` : ''}</li>`).join('')}</ul>` : ''}`;
+}
+const printDoc = (title, body) => `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${PRINT_CSS}</style></head><body>${body}<\/body><\/html>`;
+const itemPrintHtml = i => printDoc(i.title || 'Untitled', itemPrintBody(i));
+function printHtml(html){                                  // a hidden frame, so the browser's own print / save-as-PDF opens
+  const f = Object.assign(document.createElement('iframe'), {srcdoc: html});
+  f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch {} setTimeout(() => f.remove(), 60000); };
+  document.body.appendChild(f);
 }
 const fileSlug = i => (i.title || 'note').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'note';
 function downloadFile(name, text, type){
@@ -2287,12 +2597,7 @@ function downloadFile(name, text, type){
 function exportItem(i, fmt){
   if(fmt === 'md'){ downloadFile(fileSlug(i) + '.md', itemToMd(i), 'text/markdown'); toast(`Saved ${fileSlug(i)}.md to your downloads.`); }
   else if(fmt === 'txt'){ downloadFile(fileSlug(i) + '.txt', itemAsText(i) + '\n', 'text/plain'); toast(`Saved ${fileSlug(i)}.txt to your downloads.`); }
-  else {                                                   // print / save as PDF: a clean page in a hidden frame
-    const f = Object.assign(document.createElement('iframe'), {srcdoc: itemPrintHtml(i)});
-    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
-    f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch {} setTimeout(() => f.remove(), 60000); };
-    document.body.appendChild(f);
-  }
+  else printHtml(itemPrintHtml(i));
 }
 const exportEntries = i => [{l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}];
 
@@ -2706,6 +3011,11 @@ document.addEventListener('click', e => {
     else if(act === 'newnbtab'){ const nm = (prompt('Name the new notebook:') || '').trim(); if(nm){ const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); lastNb = nb.id; nbFold.delete(nb.id); saveUi(); touch(); renderAll(); } }
     else if(act === 'addnb'){ let nm = 'New notebook', k = 2; while(db.notebooks.some(x => x.name.toLowerCase() === nm.toLowerCase())) nm = 'New notebook ' + k++; const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); saveUi(); touch(); renderNbDlg(); const r = $('#nbrows').querySelector(`[data-nbn="${nb.id}"]`); if(r){ r.focus(); r.select(); } }
     else if(act === 'delnb') removeNotebook(a.dataset.id);
+    else if(act === 'sharepage'){ const i = byId(selId); if(i){ if(i.shared && i.shared.on && shareState === 'paused'){ shareReady(true).then(d => { shareState = d ? 'ok' : 'paused'; return d && runShareWrites(true); }).then(() => renderAll()); } else sharePageAction(i); } }
+    else if(act === 'nbshare'){ const nb = nbById(a.dataset.id); if(nb){ const r = a.getBoundingClientRect(); if($('#nbdlg').open && nb.shared && nb.shared.on){ $('#nbdlg').close(); } nbShareAction(nb, r.left, r.bottom + 4); } }
+    else if(act === 'nbexport') openNbExport([a.dataset.id]); else if(act === 'nbexportall') openNbExport(db.notebooks.map(n => n.id));
+    else if(act === 'nbexpgo') runNbExport(); else if(act === 'nbexpcancel') $('#nbexp').close();
+    else if(act === 'nbimport') $('#nbfile').click(); else if(act === 'nbimpgo') runImport(); else if(act === 'nbimpcancel'){ importPack = null; $('#nbimp').close(); }
     else if(act === 'nbup') moveNotebookBy(a.dataset.id, -1); else if(act === 'nbdown') moveNotebookBy(a.dataset.id, 1);
     else if(act === 'editpeople'){ renderPeople(); $('#pdlg').showModal(); } else if(act === 'closepeople') $('#pdlg').close();
     else if(act === 'addperson'){ let n = 'New person', k = 2; while(db.people.some(x => x.toLowerCase() === n.toLowerCase())) n = 'New person ' + k++; db.people.push(n); touch(); renderPeople(); const r = $('#prows').querySelector(`[data-pn="${n}"]`); if(r){ r.focus(); r.select(); } }
@@ -2912,7 +3222,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261028163335';</script>
+<script>window.NB_BUILD = '20261029084134';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

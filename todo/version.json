@@ -1,0 +1,152 @@
+{"version":"1.13.0","build":"20261029084134","changelog":[
+ {
+  "v": "1.13.0",
+  "title": "Share a whole notebook to a folder",
+  "items": [
+   "Share a whole notebook to a folder (right-click its heading → Share notebook to a folder…, or ⇪ in ⚙ Manage): every page gets its own file in a folder named after the notebook, plus a small _index.json listing the pages and when each was last edited",
+   "New pages in a shared notebook are shared automatically, and files for deleted or moved pages are removed",
+   "Sharing options per notebook: write now, choose a different folder, stop sharing, or stop and delete the files"
+  ]
+ },
+ {
+  "v": "1.12.0",
+  "title": "Share a page to a folder",
+  "items": [
+   "Share a single page to a folder on your computer (for example this project folder): the app keeps one file for that page up to date every time you edit it, with the page, its action items and a readable version of it, so it can be read by someone you point at the folder",
+   "A Share button on every note, a ⇪ marker in the list, a status badge (written at …, or paused if the browser needs you to allow the folder again), and options to write now, change the folder, or stop sharing (and delete the file)"
+  ]
+ },
+ {
+  "v": "1.11.0",
+  "title": "Export and import notebooks",
+  "items": [
+   "Export a single notebook (right-click its heading → Export notebook…, or from ⚙ Manage) as a notebook file, one Markdown file, or a PDF",
+   "Import a notebook file into any copy of the app (⤒ Import above the Notes list): new pages are added, newer edits update what you have, and nothing is deleted. Handy for moving a notebook between computers",
+   "You can also import a notebook out of a full backup file"
+  ]
+ },
+ {
+  "v": "1.10.3",
+  "title": "Category names no longer cut off",
+  "items": [
+   "The category box on action items (in notes and on the Actions page) is wide enough for names with \"(inherited)\", and hovering it shows the full text"
+  ]
+ },
+ {
+  "v": "1.10.2",
+  "title": "One toggle for folding notebooks",
+  "items": [
+   "Collapse all and Expand all are now a single button that switches between the two"
+  ]
+ },
+ {
+  "v": "1.10.1",
+  "title": "Highlight color is a dropdown",
+  "items": [
+   "Highlight colors are in a dropdown instead of a row of swatches, with a 🖍 button that reuses the last color you picked (click the same color on the text again to take it off)"
+  ]
+ },
+ {
+  "v": "1.10.0",
+  "title": "People across RAID, and better highlighting",
+  "items": [
+   "People: clicking someone in the sidebar now shows everything assigned to them on one page, with Actions, Risks, Issues and Decisions in their own sections, and the counts include RAID items",
+   "Highlighting: click a color swatch to highlight the selected text, click the same swatch on the text again to take it off (no more Clear), five colors to choose from, and highlighted text is always dark so it stays readable",
+   "Font color: the old Colour menu is now Font color (red, orange, green, blue, purple, gray), and picking the same color again removes it"
+  ]
+ },
+ {
+  "v": "1.9.0",
+  "title": "Reorder notebooks, and version tracking",
+  "items": [
+   "Reorder notebooks: drag a notebook heading onto another, use the ▲ ▼ buttons in ⚙ Manage, or right-click a heading → Move up / Move down",
+   "Version number in the sidebar footer, a What's new list, and a check that compares this copy with your live site and lists what the live site is missing"
+  ]
+ },
+ {
+  "v": "1.8.0",
+  "title": "Cleaner Notes and Today",
+  "items": [
+   "Today shows only actions, risks, issues, decisions and timeline items (notes no longer appear there)",
+   "The Notes tab no longer has Work / Personal / Admin category chips",
+   "Tag a line with ACTION, RISK, ISSUE or DECISION in CAPITALS without a colon (a colon still works in any capitalisation)",
+   "Pressing Enter after a tagged line keeps your cursor on the new line, and the new line doesn't copy the highlight",
+   "Deleting a notebook refreshes the list straight away, can be undone, and explains why the last notebook can't be deleted",
+   "If a file loses its notebooks (an older copy saved over it), they are restored from this browser's saved copy"
+  ]
+ },
+ {
+  "v": "1.7.0",
+  "title": "Notebooks",
+  "items": [
+   "Notebooks: the Notes list is split into colored, collapsible notebook sections",
+   "Drag pages between notebooks, use the Notebook dropdown on a note, or right-click a page",
+   "Rename, recolor and delete notebooks (right-click a heading, or ⚙ Manage)",
+   "Filter Actions and the RAID pages by notebook"
+  ]
+ },
+ {
+  "v": "1.6.0",
+  "title": "RAID log and richer notes",
+  "items": [
+   "Lines starting ACTION:, RISK:, ISSUE: or DECISION: in a note become their own entries, highlighted in the note, with a due date and @person picked up from the text",
+   "Risks, Issues and Decisions pages under RAID log, and a Scan my notes button for older notes",
+   "Text sizes, highlight colors and foldable bullets in notes",
+   "Sidebar order is Today, Actions, Notes, Timeline; meetings are just notes"
+  ]
+ },
+ {
+  "v": "1.5.0",
+  "title": "Assignees and one kind of action",
+  "items": [
+   "Assign actions to people: Assigned to box, People list, @name detection in the text, Only mine on Today",
+   "Tasks and action items are now both just actions, and the separate Tasks and Everything views are gone",
+   "Fixed time ordering on Today and Actions (finished items last, untimed after timed)"
+  ]
+ },
+ {
+  "v": "1.4.0",
+  "title": "Today, quick add and everyday tools",
+  "items": [
+   "Today view with past due and today highlighted",
+   "Quick add (Q): type it the way you'd say it",
+   "Pin to top, keyboard shortcuts with a cheat sheet (?), light / dark / auto theme",
+   "Export a note as Markdown, text or PDF; Trash that keeps deleted items for 30 days",
+   "Refresh button, tables in notes, right-click menus on lists, Actions, Today and the Timeline"
+  ]
+ },
+ {
+  "v": "1.3.0",
+  "title": "Timeline",
+  "items": [
+   "Timeline planning calendar: blocks that span days or weeks, month, 8-week and week views, Mon–Fri",
+   "Not planned yet tray, Due dates layer, recurring blocks, block descriptions, category filter"
+  ]
+ },
+ {
+  "v": "1.2.0",
+  "title": "Formatting, groups and the installable app",
+  "items": [
+   "Note formatting: bold, underline, bullets, numbers, indent, headings, links",
+   "Type chips and a shared filter bar; due-date groups (Past due, Today, Tomorrow, Later this week, …)",
+   "Installable as an app (PWA) via the site folder; long titles wrap"
+  ]
+ },
+ {
+  "v": "1.1.0",
+  "title": "Actions and dates",
+  "items": [
+   "Actions tab, due dates and categories",
+   "Dates, times and repeats found in the text (\"by Friday 3pm\", \"every Monday\")",
+   "Notes on action items, minimizable sidebars, meetings merged into notes"
+  ]
+ },
+ {
+  "v": "1.0.0",
+  "title": "The first version",
+  "items": [
+   "Tasks, notes and meetings saved automatically to a JSON file on your computer, with a red banner if saving stops",
+   "Search, tags, categories and backup"
+  ]
+ }
+]}
