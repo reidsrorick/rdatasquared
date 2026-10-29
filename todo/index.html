@@ -262,6 +262,24 @@ input.who:focus{border-color:var(--accent)}
 .expopt input{margin-top:4px;accent-color:var(--accent)}.expopt small{display:block;color:var(--mute);font-size:12px;margin-top:1px}
 #nbimplist .improw{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--line)}#nbimplist .improw input{margin-top:4px;accent-color:var(--accent)}
 #nbimplist .improw small{display:block;color:var(--mute);font-size:12.5px}
+.repbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--soft);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13.5px}
+.repbar button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:5px 14px;font-weight:600}
+#repdlg{width:min(740px,94vw);max-height:90vh;overflow:auto}
+#repdlg .rep{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0}
+#repdlg .rh{display:flex;gap:10px;align-items:baseline}#repdlg .rh small{color:var(--mute)}
+#repdlg .rmsg{white-space:pre-wrap;margin:6px 0 8px;font-size:14px}
+#repdlg .rch{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px dotted var(--line);font-size:13.5px}
+#repdlg .rch.accepted,#repdlg .rch.rejected{opacity:.75}
+#repdlg .rcd{min-width:0;overflow-wrap:anywhere}#repdlg .rwhy{color:var(--mute);font-size:12.5px;margin-top:2px}
+#repdlg .rquote{white-space:pre-wrap;border-left:3px solid var(--line);padding:2px 10px;margin:4px 0;color:var(--mute)}
+#repdlg .rca{display:flex;gap:6px;align-items:flex-start;flex:none}
+#repdlg .rca button,#repdlg .rall button{padding:4px 12px;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px}
+#repdlg button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+#repdlg .rall{display:flex;gap:8px;justify-content:flex-end;padding-top:8px;border-top:1px dotted var(--line)}
+#repdlg .rst{font-size:12px;color:var(--mute);text-align:right}#repdlg .rst.bad{color:var(--red)}
+#repdlg .del{background:var(--redbg);color:var(--red);text-decoration:line-through;padding:0 3px;border-radius:3px}
+#repdlg .ins{background:color-mix(in srgb,var(--green) 20%,transparent);padding:0 3px;border-radius:3px}
+#repdlg .rnone{color:var(--mute)}#repdlg .rhist summary{cursor:pointer;color:var(--mute);margin-top:10px}
 #abdlg{width:min(620px,94vw);max-height:90vh;overflow:auto}
 #abdlg .abv{margin:12px 0 2px;font-size:14px}#abdlg .abv b{font-family:Georgia,serif;font-size:15px}
 #abdlg .abt{color:var(--mute)}#abdlg ul{margin:2px 0 0 20px;font-size:13px}#abdlg li{margin:2px 0}
@@ -280,6 +298,14 @@ input.who:focus{border-color:var(--accent)}
 .nbgh small{color:var(--mute);font-weight:400}
 .nbgh button{border:0;background:none;color:var(--mute);font-size:16px;line-height:1;padding:0 6px;border-radius:6px;opacity:.55}
 .nbgh button:hover{opacity:1;color:var(--accent);background:var(--hover)}
+.it.noterow{grid-template-columns:22px 1fr}.it small.when{color:var(--mute)}
+.nbgh.big{padding:14px 16px;gap:12px;font-weight:400;border-bottom:1px solid var(--line)}
+.nbgh.big .nbtxt{flex:1;min-width:0}.nbgh.big b{display:block;font-size:15px;font-weight:600}.nbgh.big small{display:block;margin-top:1px}
+.nbgh.big .nbgo{font-size:22px;color:var(--mute);line-height:1}.nbgh.big:hover .nbgo{color:var(--accent)}
+.nbhead2{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:9px 14px;background:color-mix(in srgb,var(--nbc) 16%,var(--bg));border-left:4px solid var(--nbc);border-bottom:1px solid var(--line)}
+.nbhead2 a{color:var(--accent);cursor:pointer;text-decoration:none;font-size:13px;white-space:nowrap}.nbhead2 a:hover{text-decoration:underline}
+.nbhead2 .nbn{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nbhead2 small{color:var(--mute)}
+.nbhead2 button{border:0;background:none;color:var(--mute);font-size:18px;line-height:1;padding:0 6px;border-radius:6px}.nbhead2 button:hover{color:var(--accent);background:var(--hover)}
 .nbempty{padding:10px 16px 12px 30px;color:var(--mute);font-size:12.5px;border-bottom:1px solid var(--line)}
 [data-nbdrop].over{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--soft)}
 .tdmine{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mute);margin:-8px 0 14px}
@@ -317,7 +343,12 @@ input.who:focus{border-color:var(--accent)}
 .rt .rtag.t-action{background:#c2562d}.rt .rtag.t-risk{background:#b8860b}.rt .rtag.t-issue{background:#c0392b}.rt .rtag.t-decision{background:#2f7d5b}
 .rbadge{display:inline-block;font:700 10px/1 "Segoe UI",sans-serif;letter-spacing:.07em;padding:3px 6px;border-radius:4px;color:#fff;margin-right:6px;vertical-align:1px;text-transform:uppercase}
 .rbadge.t-risk{background:#b8860b}.rbadge.t-issue{background:#c0392b}.rbadge.t-decision{background:#2f7d5b}.rbadge.t-action{background:#c2562d}
-.rt hr{border:0;border-top:1px solid var(--line);margin:.8em 0}
+.rt [data-cb]{position:relative;padding-left:1.7em}
+.rt [data-cb]::before{content:"☐";position:absolute;left:0;top:0;color:var(--mute);cursor:pointer;font-size:1.15em;line-height:1.35}
+.rt [data-cb="1"]::before{content:"☑";color:var(--green)}
+.rt [data-cb="1"]{color:var(--mute);text-decoration:line-through}
+.rt [data-cb="1"][data-at]::after{content:"  ·  done " attr(data-at);font-size:.72em;text-decoration:none;display:inline-block;color:var(--mute);opacity:.85}
+.rt hr{border:0;height:3px;background:var(--accent);opacity:.55;border-radius:3px;margin:.9em 0}
 .rt code,.rt pre{font-family:Consolas,monospace;background:var(--hover);border-radius:4px;padding:0 4px}
 .rt.cknote{flex-basis:100%;width:calc(100% - 26px);margin:2px 0 6px 26px;min-height:70px;font:14px/1.5 "Segoe UI",system-ui,sans-serif;padding:10px}
 .rt.anote{grid-column:2/-1;min-height:70px;font:14px/1.5 "Segoe UI",system-ui,sans-serif;padding:10px;margin-bottom:6px}
@@ -440,6 +471,8 @@ dialog p{color:var(--mute);font-size:13px}
       <select id="fmtblock" title="Text style"><option value="div">Normal text</option><option value="h1">Heading</option><option value="h2">Subheading</option><option value="h3">Small heading</option></select>
       <button data-cmd="link" title="Add a link (Ctrl+K)">🔗</button>
       <button data-cmd="hr" title="Divider line">―</button>
+      <button data-cmd="checkbox" title="Checkbox line (or type [] at the start of a line)">☐ Checkbox</button>
+      <button data-cmd="numbering" title="Numbered lines with your own prefix and start, like EAM_5, EAM_6…">＃ Numbering…</button>
       <select id="fmttag" title="Tag a line. Tagged lines become action items and RAID entries"><option value="">＋ Tag…</option><option value="ACTION">ACTION</option><option value="RISK">RISK</option><option value="ISSUE">ISSUE</option><option value="DECISION">DECISION</option></select>
       <button data-cmd="table" title="Insert a table">▦ Table</button>
       <span id="tblbar"><button data-cmd="tbl-addrow" title="Add a row below">+ Row</button><button data-cmd="tbl-addcol" title="Add a column to the right">+ Col</button><button data-cmd="tbl-delrow" title="Delete this row">− Row</button><button data-cmd="tbl-delcol" title="Delete this column">− Col</button><button data-cmd="tbl-deltable" title="Delete the whole table" style="color:var(--red)">✕ Table</button></span>
@@ -470,6 +503,12 @@ dialog p{color:var(--mute);font-size:13px}
     <label><input type="radio" name="nbmode" value="both"> <span><b>Keep both</b><small>Add the file's version as a copy.</small></span></label>
   </div>
   <div class="dfoot"><span></span><span><button data-act="nbimpcancel">Cancel</button> <button class="pri" data-act="nbimpgo">Import</button></span></div>
+</dialog>
+<dialog id="repdlg">
+  <h3 id="reptitle">Replies</h3>
+  <p style="font-size:13px;color:var(--mute);margin:2px 0 4px">Nothing here changes your page until you accept it. Names come from the reply file and are not verified.</p>
+  <div id="repbody"></div>
+  <div class="dfoot"><span></span><span><button class="pri" data-act="repclose">Close</button></span></div>
 </dialog>
 <dialog id="abdlg">
   <h3>My Notebook <small id="abver" style="color:var(--mute);font-weight:400"></small></h3>
@@ -524,8 +563,39 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.13.0';
+const APP_VERSION = '1.16.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.16.0",
+  "title": "Replies to shared pages",
+  "items": [
+   "Shared pages can now be answered. Someone (Claude, or a coworker) writes a small reply file next to the shared page file. About every 20 seconds, and whenever you come back to the app, it looks for new ones",
+   "A reply shows as a 💬 on the page and a bar at the top of the page. Review opens it: their message, then each proposed change with Accept and Reject buttons, or Accept all. Nothing in your notes changes until you accept",
+   "A reply can propose: ticking a checkbox line or an action, adding an action, changing an action's due date or owner, adding text at the end of the page, or replacing a piece of text (you see the old and new wording)",
+   "Every reply and decision is kept in a History list with the page: who wrote it, what it said, who accepted or rejected each change, and when. The author's name comes from the file and is not verified",
+   "The shared file now lists which changes you accepted or rejected, and describes how to write a reply, so whoever reads it knows what is done",
+   "Share menus have a new Check for replies now"
+  ]
+ },
+ {
+  "v": "1.15.0",
+  "title": "Notebooks first, custom numbering, dated checkboxes",
+  "items": [
+   "Notes now opens a list of your notebooks. Click one to see only its pages, and use ‹ Notebooks to go back. Searching still looks through every notebook",
+   "Pages show the title across the full row, with the date and time on the line below it",
+   "Custom numbering: ＃ Numbering… in the toolbar starts a numbered list with any prefix and starting number (for example EAM_5). Enter continues it (EAM_6, EAM_7…), Enter on an empty one ends it, and Renumber fixes the numbers after you insert a line",
+   "Ticking a checkbox in a note records the date it was completed"
+  ]
+ },
+ {
+  "v": "1.14.0",
+  "title": "Checkboxes, a better divider, and RAID labels",
+  "items": [
+   "Checkboxes inside notes: a ☐ Checkbox button in the toolbar, or type [] at the start of a line. Click the box to tick it (the line is struck through), Enter makes the next checkbox, and Enter on an empty one ends the list",
+   "Divider: typing on the line right below it now stays below it, and the divider is thicker and in the accent color so it's easy to see",
+   "The \"Action items\" heading under a note is now \"RAID\", and plain actions get their own ACTION tag at the start, like the Risk, Issue and Decision tags"
+  ]
+ },
  {
   "v": "1.13.0",
   "title": "Share a whole notebook to a folder",
@@ -744,6 +814,8 @@ function cleanHtml(html){
     if(t && !docsWrapper){
       let at = '';
       if(t === 'div' || t === 'li'){ const rk = n.getAttribute('data-raid'); if(['action', 'risk', 'issue', 'decision'].includes(rk)) at += ` data-raid="${rk}"`; }
+      if(t === 'div' || t === 'li'){ const cb = n.getAttribute('data-cb'); if(cb === '0' || cb === '1'){ at += ` data-cb="${cb}"`; const da = n.getAttribute('data-at'); if(cb === '1' && /^\d{4}-\d\d-\d\d$/.test(da || '')) at += ` data-at="${da}"`; } }                 // a checkbox line
+      if((t === 'div' || t === 'li') && n.hasAttribute('data-seq') && /^[\w\-.]{0,24}$/.test(n.getAttribute('data-seq'))) at += ` data-seq="${esc(n.getAttribute('data-seq'))}"`;           // a numbered series (EAM_1, EAM_2…)
       if(t === 'li' && n.getAttribute('data-fold')) at += ' data-fold="1"';                       // a folded bullet (its sub-points are hidden)
       const hc = t === 'mark' ? (/\bh-(green|blue|pink|orange)\b/.exec(n.getAttribute('class') || '') || [])[1] : '';
       out = `<${t}${at}${hc ? ` class="h-${hc}"` : ''}>${inner}</${t}>`;
@@ -781,10 +853,10 @@ function htmlToPlain(h){                                 // a note as readable p
     const t = n.tagName, inner = () => Array.from(n.childNodes, c => walk(c, depth)).join('');
     if(t === 'BR') return '\n';
     if(t === 'HR') return '\n---\n';
-    if(t === 'UL' || t === 'OL'){ let k = 0; return '\n' + Array.from(n.children, li => { k++; return '  '.repeat(depth) + (t === 'OL' ? k + '. ' : '• ') + Array.from(li.childNodes, c => walk(c, depth + 1)).join('').replace(/\n+$/, ''); }).join('\n') + '\n'; }
+    if(t === 'UL' || t === 'OL'){ let k = 0; return '\n' + Array.from(n.children, li => { k++; return '  '.repeat(depth) + (t === 'OL' ? k + '. ' : '• ') + (li.hasAttribute('data-cb') ? (li.getAttribute('data-cb') === '1' ? '[x] ' : '[ ] ') : '') + Array.from(li.childNodes, c => walk(c, depth + 1)).join('').replace(/\n+$/, ''); }).join('\n') + '\n'; }
     if(t === 'TD' || t === 'TH') return inner().replace(/\s+$/, '') + '\t';
     if(t === 'TR') return inner().replace(/\t$/, '') + '\n';
-    if(['DIV', 'P', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'PRE', 'TABLE'].includes(t)) return '\n' + inner() + '\n';
+    if(['DIV', 'P', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'PRE', 'TABLE'].includes(t)) return '\n' + (n.hasAttribute && n.hasAttribute('data-cb') ? (n.getAttribute('data-cb') === '1' ? '[x] ' : '[ ] ') : '') + inner() + (n.hasAttribute && n.getAttribute('data-cb') === '1' && n.getAttribute('data-at') ? ' (done ' + n.getAttribute('data-at') + ')' : '') + '\n';
     return inner();
   };
   return Array.from(doc.body.childNodes, c => walk(c, 0)).join('').replace(/\n{3,}/g, '\n\n').trim();
@@ -1001,6 +1073,40 @@ const TRASH_DAYS = 30;
 let db = BLANK();
 const strDates = a => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x)))].sort() : [];
 const cleanPeople = a => { const seen = new Set(), out = []; for(const n of Array.isArray(a) ? a : []){ const v = typeof n === 'string' ? n.trim() : ''; if(v && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); out.push(v); } } return out; };
+/* replies to a shared page: written by someone else into <page>.reply.json, kept here with what you decided */
+const REPLY_KINDS = ['check', 'tick', 'addAction', 'setAction', 'append', 'replace'];
+const clipS = (v, n) => typeof v === 'string' ? v.replace(/\u0000/g, '').slice(0, n) : '';
+const okDate = v => typeof v === 'string' && /^\d{4}-\d\d-\d\d$/.test(v) ? v : '';
+const okTime = v => typeof v === 'string' && /^\d\d:\d\d$/.test(v) ? v : '';
+const okIso = v => typeof v === 'string' && !isNaN(Date.parse(v)) ? new Date(v).toISOString() : '';
+const okRaid = v => ['risk', 'issue', 'decision'].includes(v) ? v : '';
+function cleanChange(c, k, keep){
+  if(!c || typeof c !== 'object' || !REPLY_KINDS.includes(c.kind)) return null;
+  const o = {id: /^[\w\-.:]{1,60}$/.test(String(c.id || '')) ? String(c.id) : 'c' + (k + 1), kind:c.kind, why:clipS(c.why, 300), status:'pending', by:'', when:'', before:'', note:''};
+  switch(c.kind){
+    case 'check': o.text = clipS(c.text, 200).trim(); o.done = c.done !== false; if(!o.text) return null; break;
+    case 'tick': o.item = clipS(c.item, 80); o.text = clipS(c.text, 200).trim(); o.done = c.done !== false; if(!o.item && !o.text) return null; break;
+    case 'addAction': o.text = clipS(c.text, 300).trim(); o.due = okDate(c.due); o.time = okTime(c.time); o.assignee = clipS(c.assignee, 60).trim(); o.raid = okRaid(c.raid); if(!o.text) return null; break;
+    case 'setAction': {
+      o.item = clipS(c.item, 80); o.text = clipS(c.text, 200).trim(); if(!o.item && !o.text) return null;
+      const t = c.set && typeof c.set === 'object' ? c.set : {}; o.set = {};
+      if('due' in t) o.set.due = okDate(t.due); if('time' in t) o.set.time = okTime(t.time); if('assignee' in t) o.set.assignee = clipS(t.assignee, 60).trim();
+      if(clipS(t.text, 300).trim()) o.set.text = clipS(t.text, 300).trim(); if('raid' in t) o.set.raid = okRaid(t.raid);
+      if(!Object.keys(o.set).length) return null; break;
+    }
+    case 'append': o.heading = clipS(c.heading, 100).trim(); o.text = clipS(c.text, 4000); if(!o.text.trim() && !o.heading) return null; break;
+    case 'replace': o.find = clipS(c.find, 500); o.with = clipS(c.with, 2000); if(!o.find.trim()) return null; break;
+  }
+  if(keep){ if(['accepted', 'rejected', 'failed'].includes(c.status)) o.status = c.status; o.by = clipS(c.by, 40); o.when = okIso(c.when); o.before = clipS(c.before, 2000); o.note = clipS(c.note, 200); }
+  return o;
+}
+function cleanReply(r, keep){
+  if(!r || typeof r !== 'object' || !/^[\w\-.:]{1,80}$/.test(String(r.id || ''))) return null;
+  const o = {id:String(r.id), author:clipS(r.author, 40).trim() || 'Unknown', at:okIso(r.at) || now(), message:clipS(r.message, 4000), seen:keep ? okIso(r.seen) : '', ack:keep ? !!r.ack : false,
+    changes:(Array.isArray(r.changes) ? r.changes : []).slice(0, 50).map((c, k) => cleanChange(c, k, keep)).filter(Boolean)};
+  return o.message.trim() || o.changes.length ? o : null;
+}
+function cleanReplies(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).map(r => cleanReply(r, true)).filter(r => r && !seen.has(r.id) && seen.add(r.id)).slice(-200); }
 function normalize(d){
   const rich = d.bodyFormat === 'html', conv = s => rich ? cleanHtml(s || '') : plainToHtml(s || '');      // files from before formatting hold plain text
   d.categories = Array.isArray(d.categories) ? d.categories.map(c => ({id:c.id || uid(), name:c.name || 'Untitled', color:c.color || '#888888'})) : DEFAULT_CATS();
@@ -1009,7 +1115,7 @@ function normalize(d){
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
     done: !!i.done, pinned: !!i.pinned, shared: i.shared && i.shared.on ? {on:true, file:String(i.shared.file || ''), last:String(i.shared.last || '')} : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
-    created: i.created || now(), updated: i.updated || now()
+    replies: cleanReplies(i.replies), created: i.created || now(), updated: i.updated || now()
   });
   d.items = (d.items || []).map(item);
   const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length], shared: n.shared && n.shared.on ? {on:true, dir:String(n.shared.dir || ''), files:Array.isArray(n.shared.files) ? n.shared.files.filter(x => typeof x === 'string').slice(0, 5000) : [], last:String(n.shared.last || '')} : null})).filter(n => { nbSeen.add(n.id); return true; });
@@ -1039,13 +1145,13 @@ const NB_COLORS = ['#3b6ea5', '#4f8a5b', '#c2862d', '#8a6bbf', '#c2562d', '#2f8f
 const nbById = id => db.notebooks.find(n => n.id === id);
 const nextNbColor = () => NB_COLORS.find(c => !db.notebooks.some(n => n.color === c)) || NB_COLORS[db.notebooks.length % NB_COLORS.length];
 const nbKey = i => nbById(i.notebook) ? i.notebook : db.notebooks[0].id;          // the notebook a note really lives in
-const curNb = () => filter.startsWith('nb:') && nbById(filter.slice(3)) ? filter.slice(3) : (nbById(lastNb) ? lastNb : db.notebooks[0].id);
+const curNb = () => nbById(nbView) ? nbView : (nbById(lastNb) ? lastNb : db.notebooks[0].id);
 
 /* ================= UI state ================= */
 let selCk = '';                    // when you open an action item from the list, which one (so it can be highlighted in its note)
 let selId = null, filter = 'today', search = '', sortMode = 'updated', hideDone = false;
 let actGroup = 'due', actCat = '', actDone = false, actTimer = null, autoDates = true, railOff = false, listOff = false;
-let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '';
+let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
 const nbFold = new Set();          // notebooks folded closed in the Notes list
 let tlWork = false, tlCat = '', tlHideDone = false, tlLayer = 'blocks';        // tlLayer: 'blocks' (your plan only), 'due' (tasks and actions on their due dates), or 'both'                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
 let chipsOff = {all:[], note:[]}, listCat = '', datedOnly = false;     // list filter bar: which type chips are switched off (remembered), category, dated-only
@@ -1347,7 +1453,8 @@ function renderFilterBar(){
   if(showCats) cc.innerHTML = db.categories.map(c => `<button class="chip cchip ${listCat === c.id ? 'on' : ''}" data-lcat="${esc(c.id)}" aria-pressed="${listCat === c.id}" title="${listCat === c.id ? 'Show all categories again' : 'Only show ' + esc(c.name)}"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join('');
   document.querySelectorAll('#sortseg [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === sortMode));
   const bar = $('#nbbar'); bar.style.display = filter === 'note' ? '' : 'none';
-  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add the pages from a notebook file, e.g. one exported on another computer">⤒ Import</a><span style="flex:1"></span><a data-act="nbfoldtoggle">${db.notebooks.every(n => nbFold.has(n.id)) ? 'Expand all' : 'Collapse all'}</a>`;
+  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add the pages from a notebook file, e.g. one exported on another computer">⤒ Import</a>`;
+  const opts = document.querySelector('.list .opts'); if(opts) opts.style.display = filter === 'note' && !nbView && !search.trim() ? 'none' : '';
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
   $('#qscopewrap').style.display = filter.startsWith('nb:') && search.trim() ? '' : 'none'; $('#qscope').checked = searchAll;
   $('#datedonly').checked = datedOnly; $('#hidedone').checked = hideDone;
@@ -1414,7 +1521,7 @@ function subOf(i){
   if(line) p.push(line.trim());
   return p.join(' · ') || 'No details';
 }
-function entryHtml(e){
+function entryHtml(e, withNb){
   const i = e.item;
   if(e.kind === 'ck'){                          // an action item: tick it off here, click to jump to the note it lives in
     const c = e.ck, cat = c.cat || i.category;
@@ -1425,6 +1532,12 @@ function entryHtml(e){
       <time class="${w.cls || ''}">${esc(w.t)}</time></div>`;
   }
   const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk)), dd = itemDate(i), openT = !(i.type === 'task' && i.done);
+  if(i.type === 'note'){                                          // a page: the title across the whole row, its date and time on the line below
+    const when = i.date || i.time ? w.t : 'Edited ' + w.t;
+    return `<div draggable="true" data-nbdrop="${esc(nbKey(i))}" class="it noterow ${onRow ? 'on' : ''}" data-id="${i.id}">
+      <span class="ic">${isMeeting(i) ? '◷' : '✎'}</span>
+      <div><b>${i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${pendingOf(i) ? '💬 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small class="when">${esc(when)}${withNb && nbById(nbKey(i)) ? ' · ' + esc(nbById(nbKey(i)).name) : ''}</small><small>${esc(subOf(i))}</small></div></div>`;
+  }
   return `<div ${i.type === 'note' ? `draggable="true" data-nbdrop="${esc(nbKey(i))}" ` : ''}class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
       <span class="ic">${i.type==='task' ? `<input type="checkbox" class="lc" ${i.done?'checked':''} aria-label="Done">` : isMeeting(i) ? '◷' : '✎'}</span>
       <div><b>${i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${i.raid ? raidBadge(i.raid) : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
@@ -1434,16 +1547,19 @@ function renderList(){
   renderFilterBar();
   const v = listEntries(), counts = {};
   let html = '', last = '';
-  if(filter === 'note'){                        // Notes: one collapsible section per notebook
-    const filtering = !!search.trim(), groups = db.notebooks.map(n => ({id:n.id, nb:n, rows:[]})), other = {id:'~act', nb:null, rows:[]};
-    v.forEach(e => (e.item.type === 'note' ? groups.find(g => g.id === nbKey(e.item)) : other).rows.push(e));
-    if(other.rows.length) groups.push(other);
-    for(const g of groups){
-      if(!g.rows.length && filtering) continue;
-      const folded = nbFold.has(g.id) && !search.trim(), n = g.rows.filter(e => e.kind === 'item').length;
-      html += `<div class="nbgh ${folded ? 'folded' : ''}" data-nbfold="${esc(g.id)}" ${g.nb ? `data-nbdrop="${esc(g.id)}" draggable="true" title="Drag to reorder the notebooks"` : ''} style="--nbc:${esc(g.nb ? g.nb.color : 'var(--mute)')}"><span class="nbc">${folded ? '▸' : '▾'}</span><span class="nbn">${esc(g.nb ? g.nb.name : 'Action items from other places')}${g.nb && g.nb.shared && g.nb.shared.on ? ` <span title="Shared to a folder${shareState === 'paused' ? ' (paused: the browser needs you to allow the folder again)' : ''}" style="color:var(--accent);font-weight:400">⇪${shareState === 'paused' ? ' paused' : ''}</span>` : ''}</span><small>${n} ${n === 1 ? 'page' : 'pages'}</small>${g.nb ? `<button data-act="nbnewpage" data-id="${esc(g.id)}" title="New page in ${esc(g.nb.name)}">＋</button>` : ''}</div>`;
-      if(folded) continue;
-      html += g.rows.length ? g.rows.map(entryHtml).join('') : `<div class="nbempty" data-nbdrop="${esc(g.id)}">No pages yet. Press ＋ or drag a page here.</div>`;
+  if(filter === 'note'){                        // Notes: your notebooks first; click one to see its pages. Searching looks through everything.
+    const searching = !!search.trim();
+    if(!nbById(nbView)) nbView = '';
+    if(searching) html = v.map(e => entryHtml(e, true)).join('');
+    else if(!nbView){
+      html = db.notebooks.map(nb => {
+        const pages = notebookPages(nb.id), last = pages.reduce((mx, pg) => (pg.updated || '') > mx ? pg.updated : mx, '');
+        return `<div class="nbgh big" data-nbfold="${esc(nb.id)}" data-nbdrop="${esc(nb.id)}" data-nbmenu="${esc(nb.id)}" draggable="true" title="Click to open. Drag to reorder." style="--nbc:${esc(nb.color)}"><div class="nbtxt"><b>${esc(nb.name)}${nb.shared && nb.shared.on ? ` <span title="Shared to a folder${shareState === 'paused' ? ' (paused: the browser needs you to allow the folder again)' : ''}" style="color:var(--accent);font-weight:400">⇪${shareState === 'paused' ? ' paused' : ''}</span>` : ''}</b><small>${pages.length} page${pages.length === 1 ? '' : 's'}${last ? ' · edited ' + esc(fmtDay(dstr(new Date(last)))) : ''}</small></div><span class="nbgo">›</span></div>`;
+      }).join('');
+    } else {
+      const nb = nbById(nbView), rows = v.filter(e => e.item.type === 'note' && nbKey(e.item) === nbView);
+      html = `<div class="nbhead2" data-nbmenu="${esc(nb.id)}" style="--nbc:${esc(nb.color)}"><a data-act="nball" title="Back to all notebooks">‹ Notebooks</a><span class="nbn">${esc(nb.name)}</span><small>${rows.length} page${rows.length === 1 ? '' : 's'}</small><button data-act="nbnewpage" data-id="${esc(nb.id)}" title="New page in ${esc(nb.name)}">＋</button></div>`
+        + (rows.length ? rows.map(entryHtml).join('') : `<div class="nbempty">No pages yet. Press ＋ to add one.</div>`);
     }
   } else {
     v.forEach(e => { const b = bucketOf(e); counts[b] = (counts[b] || 0) + 1; });
@@ -1461,14 +1577,14 @@ function renderList(){
 }
 function ckRows(i){
   const inherit = catById(i.category), blank = inherit ? inherit.name + ' (inherited)' : 'No category';
-  return i.checklist.map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${c.raid ? raidBadge(c.raid) : ''}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
+  return i.checklist.map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${raidBadge(c.raid || 'action')}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
 }
 
 /* ---- Actions tab: every task + every checklist/action item, in one list ---- */
 const textTime = text => (parseWhen(text || '') || {}).time || '';
 const sortTime = (time, text) => time || textTime(text) || '99:99';          // untimed things go after timed ones; a time only written in the text still counts
 const RAID_META = {risk:{one:'Risk', many:'Risks', icon:'⚠', add:'Add a risk…', blurb:'Things that might go wrong. Each has an owner and a date to revisit.', done:'Resolved'}, issue:{one:'Issue', many:'Issues', icon:'⛔', add:'Add an issue…', blurb:'Problems happening now that need fixing.', done:'Resolved'}, decision:{one:'Decision', many:'Decisions', icon:'✔', add:'Add a decision…', blurb:'Decisions made, or still needed. Tick one off once it is decided.', done:'Decided'}};
-const raidBadge = k => k && RAID_META[k] ? `<span class="rbadge t-${k}">${RAID_META[k].one}</span>` : '';
+const raidBadge = k => k === 'action' ? '<span class="rbadge t-action">Action</span>' : k && RAID_META[k] ? `<span class="rbadge t-${k}">${RAID_META[k].one}</span>` : '';
 function allRaid(){                                           // risks, issues and decisions: standalone ones, and ones tagged inside a note
   const out = [];
   for(const it of db.items){
@@ -1971,7 +2087,7 @@ const viewFor = i => i.type === 'task' ? 'task' : 'note';           // which lis
 function openActionByKey(key){
   const t = findEntry(key); if(!t) return;
   if($('#tldlg').open) $('#tldlg').close();
-  filter = viewFor(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
+  filter = viewFor(t.item); if(filter === 'note') nbView = nbKey(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
   if(selCk){ const ai = document.querySelector(`#detail [data-ci="${selCk}"]`), r = ai && ai.closest('.ai'); if(r){ r.classList.add('flash'); r.scrollIntoView({block:'center'}); } }
 }
 function openLinkedFromBlock(){ const t = linkTarget(tlEdit.b); if(t) openActionByKey(t.key); }
@@ -2082,15 +2198,16 @@ function renderDetail(){
   meta += `<label class="grow">Tags <input type="text" data-f="tags" value="${esc(i.tags.join(', '))}" placeholder="acme, q4-planning"></label>`;
   const bodyLabel = i.type === 'task' ? 'Details' : 'Notes';
   el.innerHTML = `
+    ${replyBanner(i)}
     <div class="type">${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'}</div>
     <textarea class="title" rows="1" data-f="title" placeholder="Untitled">${esc(i.title)}</textarea>
     <div class="meta">${meta}</div>
     <h4>${bodyLabel}</h4>
     <div class="rt ${i.type==='note'?'big':''}" contenteditable="true" spellcheck="true" data-f="body" data-ph="Start typing…" ${isBlank(i.body)?'data-empty':''}>${forEditor(i.body)}</div>
-    <h4>Action items</h4>
+    <h4>${i.type === 'note' ? 'RAID' : 'Action items'}</h4>
     <div id="cklist">${ckRows(i)}</div>
     <div class="ai add"><input type="checkbox" disabled><input type="text" id="newck" placeholder="Add an item and press Enter…"></div>
-    <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns"><button class="plain" id="sharebtn" data-act="sharepage" title="${esc(shareBadge(i).tip)}">${esc(shareBadge(i).label)}</button><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
+    <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns">${(i.replies || []).length ? `<button class="plain" data-act="replies" title="Replies to this shared page, and what you decided">💬 Replies${pendingOf(i) ? ' (' + pendingOf(i) + ')' : ''}</button>` : ''}<button class="plain" id="sharebtn" data-act="sharepage" title="${esc(shareBadge(i).tip)}">${esc(shareBadge(i).label)}</button><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
 }
 function grow(t){
   if(!t || t.isContentEditable) return;                  // rich editors size themselves
@@ -2118,7 +2235,7 @@ function parseTags(s){ return [...new Set(s.split(/[,\s]+/).map(t => t.replace(/
 function newItem(kind){                      // kind: 'task', 'note' or 'meeting' (a note that starts with today's date)
   const type = kind === 'task' ? 'task' : 'note';
   const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: kind === 'meeting' ? todayStr() : '', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
-  if(type === 'note'){ i.notebook = curNb(); lastNb = i.notebook; }
+  if(type === 'note'){ i.notebook = curNb(); lastNb = i.notebook; nbView = i.notebook; }
   db.items.push(i); selId = i.id; search = '';
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
@@ -2250,7 +2367,7 @@ function sharePayload(i){
   const open = i.checklist.filter(c => !c.done && c.text.trim()).length;
   return {
     app:'notebook-share', format:1, writtenAt:now(), appVersion:APP_VERSION,
-    about:'Written by My Notebook every time this page is saved. Read it; do not edit it (the app overwrites it).',
+    about:'Written by My Notebook every time this page is saved. Read it; do not edit it (the app overwrites it). To answer, write a reply file as described under "reply".',
     page:{
       id:i.id, title:i.title, kind:i.type === 'task' ? 'action' : 'note', notebook:nb ? nb.name : '', category:catName(i.category), tags:i.tags, pinned:!!i.pinned,
       date:i.date, time:i.time, attendees:i.attendees, assignedTo:i.assignee || '', created:i.created, updated:i.updated,
@@ -2258,9 +2375,24 @@ function sharePayload(i){
       actionItems:i.checklist.filter(c => c.text.trim()).map(c => ({id:c.id, text:c.text, type:c.raid || 'action', done:c.done, due:c.due, time:c.time, assignedTo:c.assignee || '', category:catName(c.cat || i.category), repeats:c.repeat ? describeRepeat(c.repeat) : '', note:htmlToPlain(c.note), fromTaggedLine:c.src === 'tag'}))
     },
     summary:{actionItems:i.checklist.filter(c => c.text.trim()).length, open},
-    readable:itemToMd(i)
+    readable:itemToMd(i),
+    replies:(i.replies || []).map(r => ({id:r.id, author:r.author, at:r.at, changes:r.changes.map(c => ({id:c.id, kind:c.kind, status:c.status, by:c.by, when:c.when, note:c.note}))})),
+    reply:{
+      howTo:'Never edit this file. To answer, write a separate file in this same folder whose name ends in .reply.json. My Notebook looks for it every ~20 seconds and shows the owner each proposed change to accept or reject; nothing changes until they accept. Keep using the same file: add new entries to "replies" with new ids. Entries already decided are listed in "replies" above with their status.',
+      file:replyFileName(i),
+      template:{app:'notebook-reply', format:1, page:i.id, replies:[{id:'r1', author:'Claude', at:now(), message:'Plain text for the owner.', changes:[{id:'c1', kind:'check', text:'text of a checkbox line in the page', done:true, why:'optional reason'}]}]},
+      kinds:{
+        check:'{kind, text, done} tick or untick a checkbox line in the page text, matched by its text',
+        tick:'{kind, item (action id) or text, done} mark one of the page\'s action items done or not done',
+        addAction:'{kind, text, due "YYYY-MM-DD", time "HH:MM", assignee, raid "risk"|"issue"|"decision"} add an action item',
+        setAction:'{kind, item or text, set:{due, time, assignee, text, raid}} change fields of an action item',
+        append:'{kind, heading, text} add text (and an optional bold heading) at the end of the page',
+        replace:'{kind, find, with} replace one exact piece of text (with "" it is a removal); the owner sees before and after'
+      }
+    }
   };
 }
+const replyFileName = i => `${fileSlug(i)}.${String(i.id).slice(-5)}.reply.json`;
 async function writePageFile(i, dir, name){
   const fh = await dir.getFileHandle(name, {create:true}), w = await fh.createWritable();
   await w.write(JSON.stringify(sharePayload(i), null, 2)); await w.close();
@@ -2336,6 +2468,7 @@ function sharePageAction(i, x, y){
   const r = $('#sharebtn') ? $('#sharebtn').getBoundingClientRect() : {left:x || 200, bottom:y || 200};
   openMenu(r.left, r.bottom + 4, [
     {hd:'Shared page'},
+    {l:'Check for replies now', ic:'💬', fn: () => checkReplies(true)},
     {l:'Write it now', ic:'↻', fn: async () => { if(await shareReady(true)) await runShareWrites(true); else { shareState = 'paused'; } renderShareBadge(); renderAll(); }},
     {l:'Choose a different folder…', ic:'📁', fn: async () => { try { await pickShareFolder(); await runShareWrites(true); renderAll(); toast('Now sharing to ' + shareDir.name + '\\shared\\.'); } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t pick that folder.'); } }},
     {sep:1}, {l:'Stop sharing', ic:'⏹', fn: () => stopSharing(i, false)}, {l:'Stop sharing and delete the file', ic:'🗑', cls:'danger', fn: () => stopSharing(i, true)}
@@ -2362,11 +2495,154 @@ function nbShareAction(nb, x, y){
   if(!nb.shared || !nb.shared.on){ startNbSharing(nb); return; }
   openMenu(x || 200, y || 200, [
     {hd:'Shared notebook'},
+    {l:'Check for replies now', ic:'💬', fn: () => checkReplies(true)},
     {l:'Write everything now', ic:'↻', fn: async () => { if(await shareReady(true)) await runShareWrites(true); else shareState = 'paused'; renderAll(); }},
     {l:'Choose a different folder…', ic:'📁', fn: async () => { try { await pickShareFolder(); nb.shared.files = []; nb.shared.dir = ''; await runShareWrites(true); renderAll(); toast('Now sharing to ' + shareDir.name + '\\shared\\.'); } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t pick that folder.'); } }},
     {sep:1}, {l:'Stop sharing', ic:'⏹', fn: () => stopNbSharing(nb, false)}, {l:'Stop sharing and delete the files', ic:'🗑', cls:'danger', fn: () => stopNbSharing(nb, true)}
   ], null);
 }
+/* ---- replies: read, review, accept or reject ---- */
+const replyPending = r => r.changes.some(c => c.status === 'pending') || (!r.changes.length && !r.ack);
+const pendingOf = i => (i.replies || []).reduce((n, r) => n + (r.changes.length ? r.changes.filter(c => c.status === 'pending').length : (r.ack ? 0 : 1)), 0);
+const replySeen = new Map();                              // file → last modified time already read
+let replyBusy = false, repItem = '';
+function ingestReplyFile(data){
+  if(!data || data.app !== 'notebook-reply' || typeof data.page !== 'string') return null;
+  const i = byId(data.page); if(!i) return null;
+  const nb = i.type === 'note' ? nbById(nbKey(i)) : null;
+  if(!(i.shared && i.shared.on) && !(nb && nb.shared && nb.shared.on)) return null;                      // only pages you are actually sharing can receive replies
+  const list = Array.isArray(data.replies) ? data.replies : data.reply ? [data.reply] : [];
+  const added = [];
+  for(const raw of list.slice(0, 50)){
+    const r = cleanReply(raw, false); if(!r || i.replies.some(x => x.id === r.id)) continue;
+    r.seen = now(); i.replies.push(r); added.push(r);
+  }
+  if(i.replies.length > 200) i.replies = i.replies.slice(-200);
+  return added.length ? {item:i, added} : null;
+}
+async function checkReplies(manual){
+  if(replyBusy) return; replyBusy = true;
+  try {
+    if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on)){ if(manual) toast('Nothing is shared yet, so there is nothing to check.'); return; }
+    const d = await shareReady(false);
+    if(!d){ if(manual) toast('The browser needs you to allow the shared folder first. Click the Shared button on the page.'); return; }
+    let sub; try { sub = await d.getDirectoryHandle('shared'); } catch { if(manual) toast('No replies yet.'); return; }
+    const dirs = [[sub, '']];
+    for(const nb of db.notebooks) if(nb.shared && nb.shared.on && nb.shared.dir){ try { dirs.push([await sub.getDirectoryHandle(nb.shared.dir), nb.shared.dir + '/']); } catch {} }
+    const got = [];
+    for(const [dir, pre] of dirs) for await (const [name, h] of dir.entries()){
+      if(h.kind !== 'file' || !/\.reply\.json$/i.test(name)) continue;
+      let f; try { f = await h.getFile(); } catch { continue; }
+      const key = pre + name; if(!manual && replySeen.get(key) === f.lastModified) continue;
+      replySeen.set(key, f.lastModified); if(f.size > 2e6) continue;
+      let data; try { data = JSON.parse(await f.text()); } catch { continue; }
+      const x = ingestReplyFile(data); if(x) got.push(x);
+    }
+    if(got.length){
+      touch(); renderAll(); if($('#repdlg').open) renderReplies();
+      const n = got.reduce((t, x) => t + x.added.reduce((u, r) => u + Math.max(1, r.changes.length), 0), 0), first = got[0];
+      toast(`💬 ${first.added[0].author} replied on “${first.item.title || 'Untitled'}”${got.length > 1 ? ' and ' + (got.length - 1) + ' more' : ''}: ${n} item${n === 1 ? '' : 's'} to review.`, () => openReplies(first.item.id), 'Review');
+    } else if(manual) toast('No new replies.');
+  } catch(e){ if(manual) toast('Couldn’t check for replies: ' + ((e && e.message) || e)); }
+  finally { replyBusy = false; }
+}
+const normT = t => String(t || '').replace(/\s+/g, ' ').trim().toLowerCase();
+function findAction(i, ch){
+  if(ch.item){ const c = i.checklist.find(x => x.id === ch.item); if(c) return c; }
+  if(!ch.text) return null;
+  const w = normT(ch.text); let m = i.checklist.filter(x => normT(x.text) === w);
+  if(!m.length) m = i.checklist.filter(x => normT(x.text).startsWith(w));
+  return m.length === 1 ? m[0] : (m.length ? 'many' : null);
+}
+function applyChange(i, ch){                              // returns '' when it worked, otherwise why it could not be applied
+  const bodyHost = () => { const h = document.createElement('div'); h.innerHTML = i.body || ''; return h; };
+  if(ch.kind === 'check'){
+    const host = bodyHost(), w = normT(ch.text), lines = [...host.querySelectorAll('[data-cb]')];
+    let m = lines.filter(l => normT(l.textContent) === w); if(!m.length) m = lines.filter(l => normT(l.textContent).startsWith(w));
+    if(m.length !== 1) return m.length ? 'More than one checkbox line matches.' : 'No checkbox line with that text.';
+    ch.before = m[0].getAttribute('data-cb') === '1' ? 'done' : 'open';
+    m[0].setAttribute('data-cb', ch.done ? '1' : '0'); if(ch.done) m[0].setAttribute('data-at', todayStr()); else m[0].removeAttribute('data-at');
+    i.body = cleanHtml(host.innerHTML); return '';
+  }
+  if(ch.kind === 'tick' || ch.kind === 'setAction'){
+    const c = findAction(i, ch); if(!c) return 'No action item matches.'; if(c === 'many') return 'More than one action item matches.';
+    if(ch.kind === 'tick'){ ch.before = c.done ? 'done' : 'open'; completeToggle(c, i, ch.done); return ''; }
+    ch.before = Object.keys(ch.set).map(k => `${k}: ${c[k] || '(empty)'}`).join('; ');
+    Object.assign(c, ch.set); if(ch.set.assignee && !db.people.some(n => n.toLowerCase() === ch.set.assignee.toLowerCase())) db.people.push(ch.set.assignee);
+    return '';
+  }
+  if(ch.kind === 'addAction'){
+    i.checklist.push({id:uid(), text:ch.text, done:false, due:ch.due, time:ch.time, cat:'', assignee:ch.assignee, raid:ch.raid, src:'', note:'', repeat:null});
+    if(ch.assignee && !db.people.some(n => n.toLowerCase() === ch.assignee.toLowerCase())) db.people.push(ch.assignee);
+    return '';
+  }
+  if(ch.kind === 'append'){
+    const lines = ch.text.replace(/\r/g, '').split('\n');
+    const html = (ch.heading ? `<div><b>${esc(ch.heading)}</b></div>` : '') + lines.map(l => l.trim() ? `<div>${esc(l)}</div>` : '<div><br></div>').join('');
+    i.body = cleanHtml((i.body || '') + html); return '';
+  }
+  if(ch.kind === 'replace'){
+    const host = bodyHost(), w = document.createTreeWalker(host, NodeFilter.SHOW_TEXT), hits = []; let n;
+    while((n = w.nextNode())){ let at = n.nodeValue.indexOf(ch.find); while(at >= 0){ hits.push([n, at]); at = n.nodeValue.indexOf(ch.find, at + ch.find.length); } }
+    if(hits.length !== 1) return hits.length ? 'That text appears more than once.' : 'That exact text was not found (it may have been edited, or spans formatting).';
+    const [node, at] = hits[0]; node.nodeValue = node.nodeValue.slice(0, at) + ch.with + node.nodeValue.slice(at + ch.find.length);
+    ch.before = ch.find; i.body = cleanHtml(host.innerHTML); return '';
+  }
+  return 'Unknown kind of change.';
+}
+function decideChange(i, ch, accept){
+  if(ch.status !== 'pending') return;
+  if(accept){ const err = applyChange(i, ch); if(err){ ch.status = 'failed'; ch.note = err; } else { ch.status = 'accepted'; i.updated = now(); } }
+  else ch.status = 'rejected';
+  ch.by = db.me || 'You'; ch.when = now();
+}
+function describeChange(i, ch){
+  const q = t => `“${esc(t)}”`;
+  switch(ch.kind){
+    case 'check': return `${ch.done ? 'Tick' : 'Untick'} the checkbox ${q(ch.text)}`;
+    case 'tick': { const c = findAction(i, ch); return `Mark the action ${q(c && c !== 'many' ? c.text : ch.text || ch.item)} ${ch.done ? 'done' : 'not done'}`; }
+    case 'addAction': return `Add an action: ${q(ch.text)}${ch.raid ? ' (' + RAID_META[ch.raid].one + ')' : ''}${ch.due ? ' · due ' + esc(fmtDay(ch.due)) + (ch.time ? ' ' + esc(fmtTime(ch.time)) : '') : ''}${ch.assignee ? ' · for ' + esc(ch.assignee) : ''}`;
+    case 'setAction': { const c = findAction(i, ch), bits = Object.entries(ch.set).map(([k, v]) => `${esc({due:'due', time:'time', assignee:'assigned to', text:'wording', raid:'type'}[k])} → ${esc(!v ? '(none)' : k === 'due' ? fmtDay(v) : k === 'time' ? fmtTime(v) : v)}`); return `Change the action ${q(c && c !== 'many' ? c.text : ch.text || ch.item)}: ${bits.join('; ')}`; }
+    case 'append': return `Add to the end of the page:${ch.heading ? ' <b>' + esc(ch.heading) + '</b>' : ''}<div class="rquote">${esc(ch.text.length > 400 ? ch.text.slice(0, 400) + '…' : ch.text)}</div>`;
+    case 'replace': return ch.with ? `Replace <span class="del">${esc(ch.find)}</span> with <span class="ins">${esc(ch.with)}</span>` : `Remove <span class="del">${esc(ch.find)}</span>`;
+  }
+  return '';
+}
+const repWhen = iso => iso ? new Date(iso).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : '';
+function replyHtml(i, r){
+  const pend = r.changes.filter(c => c.status === 'pending').length;
+  const rows = r.changes.map(ch => `<div class="rch ${ch.status}"><div class="rcd">${describeChange(i, ch)}${ch.why ? `<div class="rwhy">${esc(ch.why)}</div>` : ''}</div><div class="rca">${
+    ch.status === 'pending' ? `<button class="ok" data-act="repacc" data-r="${esc(r.id)}" data-c="${esc(ch.id)}">Accept</button><button data-act="represj" data-r="${esc(r.id)}" data-c="${esc(ch.id)}">Reject</button>`
+    : ch.status === 'accepted' ? `<span class="rst">✓ Accepted by ${esc(ch.by)} · ${esc(repWhen(ch.when))}</span>`
+    : ch.status === 'rejected' ? `<span class="rst">✕ Rejected by ${esc(ch.by)} · ${esc(repWhen(ch.when))}</span>`
+    : `<span class="rst bad">Couldn’t apply: ${esc(ch.note)}</span>`}</div></div>`).join('');
+  return `<div class="rep"><div class="rh"><b>${esc(r.author)}</b><small>${esc(repWhen(r.at))}</small></div>${r.message ? `<div class="rmsg">${esc(r.message)}</div>` : ''}${rows}${pend > 1 ? `<div class="rall"><button class="ok" data-act="repaccall" data-r="${esc(r.id)}">Accept all ${pend}</button><button data-act="reprejall" data-r="${esc(r.id)}">Reject all</button></div>` : ''}</div>`;
+}
+function renderReplies(){
+  const i = byId(repItem), box = $('#repbody'); if(!i){ box.innerHTML = ''; return; }
+  $('#reptitle').textContent = 'Replies · ' + (i.title || 'Untitled');
+  const all = i.replies.slice().reverse(), open = all.filter(replyPending), done = all.filter(r => !replyPending(r));
+  box.innerHTML = (open.length ? open.map(r => replyHtml(i, r)).join('') : '<p class="rnone">Nothing waiting for your review.</p>')
+    + (done.length ? `<details class="rhist" ${open.length ? '' : 'open'}><summary>History · ${done.length} handled</summary>${done.map(r => replyHtml(i, r)).join('')}</details>` : '');
+}
+function openReplies(id){
+  const i = byId(id); if(!i) return;
+  repItem = id; let changed = false; i.replies.forEach(r => { if(!r.changes.length && !r.ack){ r.ack = true; changed = true; } });
+  if(changed){ touch(); renderAll(); }
+  renderReplies(); if(!$('#repdlg').open) $('#repdlg').showModal();
+}
+function finishDecision(i, msg){ touch(); renderAll(); renderReplies(); if(msg) toast(msg); }
+function replyAction(act, rid, cid){
+  const i = byId(repItem), r = i && i.replies.find(x => x.id === rid); if(!r) return;
+  const accept = act === 'repacc' || act === 'repaccall', list = (act === 'repacc' || act === 'represj') ? r.changes.filter(c => c.id === cid) : r.changes.filter(c => c.status === 'pending');
+  list.forEach(c => decideChange(i, c, accept));
+  const bad = list.filter(c => c.status === 'failed').length;
+  finishDecision(i, bad ? `${bad} change${bad === 1 ? '' : 's'} couldn’t be applied (see why in the list).` : (accept ? `Applied ${list.length} change${list.length === 1 ? '' : 's'}.` : `Rejected ${list.length}.`));
+}
+const replyBanner = i => { const n = pendingOf(i); return n ? `<div class="repbar"><span>💬 <b>${n} item${n === 1 ? '' : 's'}</b> from a reply waiting for your review</span><button data-act="replies">Review</button></div>` : ''; };
+setInterval(() => { if(!document.hidden) checkReplies(false); }, 20000);
+window.addEventListener('focus', () => checkReplies(false));
+setTimeout(() => checkReplies(false), 3000);
 function moveNotebookTo(id, targetId){                     // put a notebook where another one is (drag a heading onto it)
   const from = db.notebooks.findIndex(n => n.id === id), to = db.notebooks.findIndex(n => n.id === targetId);
   if(from < 0 || to < 0 || from === to) return;
@@ -2402,7 +2678,7 @@ async function copyText(t){
 }
 function dupItem(i){
   const n = JSON.parse(JSON.stringify(i)); n.id = uid(); n.title = (i.title || 'Untitled') + ' (copy)'; n.done = false; n.created = n.updated = now();
-  n.checklist.forEach(c => { c.id = uid(); c.done = false; }); n.shared = null;
+  n.checklist.forEach(c => { c.id = uid(); c.done = false; }); n.shared = null; n.replies = [];
   db.items.splice(db.items.indexOf(i) + 1, 0, n); selId = n.id; selCk = ''; touch(); renderAll();
   toast(`Duplicated “${i.title || 'Untitled'}”.`, () => { db.items = db.items.filter(x => x !== n); selId = i.id; touch(); renderAll(); });
 }
@@ -2486,11 +2762,11 @@ function openMenu(x, y, items, row){
   el.querySelector('button').focus();
 }
 $('#items').addEventListener('contextmenu', e => {
-  const gh = e.target.closest('.nbgh[data-nbdrop]'), nb = gh && nbById(gh.dataset.nbdrop);          // right-click a notebook heading
+  const gh = e.target.closest('[data-nbmenu]'), nb = gh && nbById(gh.dataset.nbmenu);          // right-click a notebook
   if(nb){
     e.preventDefault();
     openMenu(e.clientX, e.clientY, [
-      {l:'New page here', ic:'＋', fn: () => { lastNb = nb.id; nbFold.delete(nb.id); filter = 'note'; newItem('note'); }},
+      {l:'New page here', ic:'＋', fn: () => { lastNb = nb.id; nbView = nb.id; filter = 'note'; newItem('note'); }},
       {l:'Rename…', ic:'✎', fn: () => { const nm = (prompt('Rename the notebook:', nb.name) || '').trim(); if(nm){ nb.name = nm; touch(); renderAll(); } }},
       {l:'Move up', ic:'▲', fn: () => moveNotebookBy(nb.id, -1)}, {l:'Move down', ic:'▼', fn: () => moveNotebookBy(nb.id, 1)},
       {l:'Export notebook…', ic:'⤓', fn: () => openNbExport([nb.id])},
@@ -2537,14 +2813,14 @@ function htmlToMd(h){
       case 'H2': return '\n\n## ' + inner() + '\n\n';
       case 'H3': return '\n\n### ' + inner() + '\n\n';
       case 'BLOCKQUOTE': return '\n> ' + inner().trim().replace(/\n/g, '\n> ') + '\n';
-      case 'UL': case 'OL': { let k = 0; return '\n' + Array.from(n.children, li => { k++; return '  '.repeat(depth) + (t === 'OL' ? k + '. ' : '- ') + Array.from(li.childNodes, c => md(c, depth + 1)).join('').replace(/^\n+|\n+$/g, ''); }).join('\n') + '\n'; }
+      case 'UL': case 'OL': { let k = 0; return '\n' + Array.from(n.children, li => { k++; return '  '.repeat(depth) + (t === 'OL' ? k + '. ' : '- ') + (li.hasAttribute('data-cb') ? '[' + (li.getAttribute('data-cb') === '1' ? 'x' : ' ') + '] ' : '') + Array.from(li.childNodes, c => md(c, depth + 1)).join('').replace(/^\n+|\n+$/g, ''); }).join('\n') + '\n'; }
       case 'TABLE': {
         const rows = Array.from(n.rows, r => Array.from(r.cells, c => c.textContent.replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim()));
         if(!rows.length) return '';
         const w = Math.max(...rows.map(r => r.length)), line = r => '| ' + Array.from({length:w}, (_, k) => r[k] || '').join(' | ') + ' |';
         return '\n\n' + [line(rows[0]), '| ' + Array(w).fill('---').join(' | ') + ' |', ...rows.slice(1).map(line)].join('\n') + '\n\n';
       }
-      case 'DIV': case 'P': return '\n' + inner() + '\n';
+      case 'DIV': case 'P': return n.hasAttribute && n.hasAttribute('data-cb') ? '\n- [' + (n.getAttribute('data-cb') === '1' ? 'x' : ' ') + '] ' + inner() + (n.getAttribute('data-cb') === '1' && n.getAttribute('data-at') ? ' _(done ' + n.getAttribute('data-at') + ')_' : '') + '\n' : '\n' + inner() + '\n';
       default: return inner();
     }
   };
@@ -2573,6 +2849,7 @@ const PRINT_CSS = `
     mark{background:#ffe58a}mark.h-green{background:#bff0c8}mark.h-blue{background:#bfe0ff}mark.h-pink{background:#ffc9de}mark.h-orange{background:#ffd6aa}
     .fc-red{color:#c0392b}.fc-orange{color:#c46a00}.fc-green{color:#2d7d46}.fc-blue{color:#2a6fb8}.fc-purple{color:#7b4bb5}.fc-gray{color:#777}.sz-l{font-size:1.3em}.sz-xl{font-size:1.75em}.sz-s{font-size:.82em}
     a{color:#222}.ck{list-style:none;margin-left:0}.ck li::before{content:"☐ "}.ck li.d::before{content:"☑ "}.ck li.d{color:#666}
+    [data-cb]{position:relative;padding-left:1.5em}[data-cb]::before{content:"☐";position:absolute;left:0}[data-cb="1"]::before{content:"☑"}[data-cb="1"]{color:#666;text-decoration:line-through}[data-cb="1"][data-at]::after{content:"  (done " attr(data-at) ")";font-size:.8em}hr{border:0;height:3px;background:#999}
     .nbcover{text-align:center;margin:30vh 0 0}.nbcover h1{font-size:34pt}section{page-break-before:always}`;
 function itemPrintBody(i){
   const meta = itemMeta(i), cks = i.checklist.filter(k => k.text.trim());
@@ -2696,7 +2973,7 @@ function openShortcuts(){
   $('#kbdlg').showModal();
 }
 const VIEW_KEYS = ['today', 'actions', 'note', 'timeline', 'risk', 'issue', 'decision', 'trash'];
-function goView(v){ filter = v; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
+function goView(v){ filter = v; if(v === 'note') nbView = ''; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
 document.addEventListener('keydown', e => {
   const t = e.target, typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
   if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === 'Enter'){          // done / not done, from anywhere
@@ -2807,13 +3084,55 @@ function runTagSync(id, quiet){
   }
   return res;
 }
+function fixLooseAfterDivider(ed){                                   // text typed straight after a divider becomes a real line (the cursor stays where it was)
+  const hrs = ed.querySelectorAll(':scope > hr'); if(!hrs.length) return;
+  const sel = getSelection(), an = sel.rangeCount && ed.contains(sel.anchorNode) ? sel.anchorNode : null, ao = an ? sel.anchorOffset : 0;
+  let moved = false;
+  hrs.forEach(h => {
+    const first = h.nextSibling; if(!first || (first.nodeType === 1 && BLOCK_TAGS.test(first.tagName)) || (first.nodeType === 1 && first.tagName === 'BR')) return;
+    const d = document.createElement('div'); h.after(d);
+    let n = first; while(n && !(n.nodeType === 1 && (BLOCK_TAGS.test(n.tagName) || n.tagName === 'BR'))){ const nx = n.nextSibling; d.appendChild(n); n = nx; }
+    moved = true;
+  });
+  if(moved && an && ed.contains(an)){ const r = document.createRange(); r.setStart(an, Math.min(ao, an.nodeType === 3 ? an.nodeValue.length : an.childNodes.length)); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
+}
 document.addEventListener('input', e => {
+  const ed0 = e.target.closest && e.target.closest('.rt'); if(ed0) fixLooseAfterDivider(ed0);
   if(e.inputType !== 'insertParagraph' && e.inputType !== 'insertLineBreak') return;
   const ed = e.target.closest && e.target.closest('.rt'); if(!ed) return;
   ed.querySelectorAll('[data-raid]').forEach(b => {                        // Enter copies the line's attributes onto the new line: keep them only where the line really starts with a tag
     const f = [...b.childNodes].find(n => !(n.nodeType === 1 && BLOCK_TAGS.test(n.tagName)));
     if(!(f && f.nodeType === 1 && f.classList && f.classList.contains('rtag'))) b.removeAttribute('data-raid');
   });
+  { const sel0 = getSelection(), an0 = sel0.anchorNode, el0 = an0 && (an0.nodeType === 1 ? an0 : an0.parentElement), sq = el0 && el0.closest('[data-seq]');
+    if(sq && ed.contains(sq) && e.inputType === 'insertParagraph'){                     // Enter in a numbered series: the new line gets the next number, or the series ends
+      const pre = sq.getAttribute('data-seq'), prev = sq.previousElementSibling;
+      if(prev && prev.getAttribute('data-seq') === pre){
+        const pn = seqNumber(prev);
+        if(pn != null && prev.textContent.trim() === pre + pn){ [...prev.childNodes].forEach(c => { if(c.nodeType === 3) c.nodeValue = ''; }); if(!prev.querySelector('br')) prev.appendChild(document.createElement('br')); prev.removeAttribute('data-seq'); sq.removeAttribute('data-seq'); }
+        else if(pn != null){ const lead = document.createTextNode(pre + (pn + 1) + ' '); sq.insertBefore(lead, sq.firstChild); sq.querySelectorAll(':scope > br').forEach(b => { if(sq.textContent.trim()) b.remove(); }); const r = document.createRange(); r.setStart(lead, lead.nodeValue.length); r.collapse(true); sel0.removeAllRanges(); sel0.addRange(r); }
+      }
+    } }
+  const sel = getSelection(), an = sel.anchorNode, el = an && (an.nodeType === 1 ? an : an.parentElement), cb = el && el.closest('[data-cb]');           // Enter on a checkbox line: the new line is an unchecked checkbox; Enter on an empty one ends the list
+  if(cb && ed.contains(cb)){
+    const prev = cb.previousElementSibling;
+    if(!cb.textContent.trim() && prev && prev.hasAttribute('data-cb') && !prev.textContent.trim()){ prev.remove(); cb.removeAttribute('data-cb'); }
+    else cb.setAttribute('data-cb', '0');
+  }
+}, true);
+document.addEventListener('click', e => {                          // click the box to tick it
+  const el = e.target.closest && e.target.closest('.rt [data-cb]'); if(!el) return;
+  const r = el.getBoundingClientRect(), px = parseFloat(getComputedStyle(el).fontSize) * 1.6;
+  if(e.clientX >= r.left - 2 && e.clientX - r.left < px){ e.preventDefault(); const on = el.getAttribute('data-cb') !== '1'; el.setAttribute('data-cb', on ? '1' : '0'); if(on) el.setAttribute('data-at', todayStr()); else el.removeAttribute('data-at'); el.closest('.rt').dispatchEvent(new Event('input', {bubbles:true})); }
+});
+document.addEventListener('beforeinput', e => {                      // typing right next to a divider must start a real line, not loose text beside the <hr>
+  if(e.inputType !== 'insertText' && e.inputType !== 'insertParagraph') return;
+  const ed = e.target.closest && e.target.closest('.rt'); if(!ed) return;
+  const s = getSelection(); if(!s.rangeCount || !s.isCollapsed || s.anchorNode !== ed) return;
+  const off = s.anchorOffset, prev = ed.childNodes[off - 1], next = ed.childNodes[off];
+  if((prev && prev.nodeName === 'HR') || (next && next.nodeName === 'HR')){
+    const d = document.createElement('div'); d.innerHTML = '<br>'; ed.insertBefore(d, next || null); putCaret(d);
+  }
 }, true);
 let tagTimer = null;
 const scheduleTagSync = id => { clearTimeout(tagTimer); tagTimer = setTimeout(() => runTagSync(id), 900); };
@@ -2954,15 +3273,15 @@ document.addEventListener('keydown', e => {                       // Timeline: l
 $('#tlt').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); saveBlockDlg(); } });
 document.addEventListener('click', e => {
   const n = e.target.closest('[data-new]'); if(n){ $('#newmenu').classList.remove('open'); newItem(n.dataset.new); return; }
-  const o = e.target.closest('[data-open]'); if(o){ filter = viewFor(byId(o.dataset.open) || {}); selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
+  const o = e.target.closest('[data-open]'); if(o){ const oi = byId(o.dataset.open) || {}; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
   const tc = e.target.closest('[data-tlcat]'); if(tc && tlEdit){ tlEdit.b.cat = tlEdit.b.cat === tc.dataset.tlcat ? '' : tc.dataset.tlcat; renderTlDlg(); return; }
   const sb = e.target.closest('[data-sort]'); if(sb){ sortMode = sb.dataset.sort; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const lcat = e.target.closest('[data-lcat]'); if(lcat){ listCat = listCat === lcat.dataset.lcat ? '' : lcat.dataset.lcat; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const ch = e.target.closest('[data-chip]');
   if(ch){ const v = chipView(), s = new Set(chipsOff[v]); if(s.has(ch.dataset.chip)) s.delete(ch.dataset.chip); else s.add(ch.dataset.chip); chipsOff[v] = [...s]; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
-  const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbFold.has(id)) nbFold.delete(id); else nbFold.add(id); if(nbById(id)) lastNb = id; saveUi(); renderList(); return; }
+  const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbById(id)){ nbView = id; lastNb = id; saveUi(); fixSelection(); renderList(); renderDetail(); } return; }
   const pp = e.target.closest('[data-person]'); if(pp){ filter = 'person'; actPerson = pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
-  const f = e.target.closest('[data-filter]'); if(f){ filter = f.dataset.filter; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
+  const f = e.target.closest('[data-filter]'); if(f){ filter = f.dataset.filter; if(filter === 'note') nbView = ''; saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
   const a = e.target.closest('[data-act]');
   if(a){
     const act = a.dataset.act;
@@ -3006,11 +3325,15 @@ document.addEventListener('click', e => {
     }
     else if(act === 'about') openAbout(); else if(act === 'closeabout') $('#abdlg').close(); else if(act === 'checklive') checkLive();
     else if(act === 'editnb'){ renderNbDlg(); $('#nbdlg').showModal(); } else if(act === 'closenb') $('#nbdlg').close();
-    else if(act === 'nbnewpage'){ lastNb = a.dataset.id; nbFold.delete(a.dataset.id); filter = 'note'; newItem('note'); }
+    else if(act === 'nball'){ nbView = ''; renderList(); }
+    else if(act === 'nbnewpage'){ nbView = a.dataset.id; lastNb = a.dataset.id; nbFold.delete(a.dataset.id); filter = 'note'; newItem('note'); }
     else if(act === 'nbfoldtoggle'){ if(db.notebooks.every(n => nbFold.has(n.id))) nbFold.clear(); else db.notebooks.forEach(n => nbFold.add(n.id)); saveUi(); renderList(); }
     else if(act === 'newnbtab'){ const nm = (prompt('Name the new notebook:') || '').trim(); if(nm){ const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); lastNb = nb.id; nbFold.delete(nb.id); saveUi(); touch(); renderAll(); } }
     else if(act === 'addnb'){ let nm = 'New notebook', k = 2; while(db.notebooks.some(x => x.name.toLowerCase() === nm.toLowerCase())) nm = 'New notebook ' + k++; const nb = {id:uid(), name:nm, color:nextNbColor()}; db.notebooks.push(nb); saveUi(); touch(); renderNbDlg(); const r = $('#nbrows').querySelector(`[data-nbn="${nb.id}"]`); if(r){ r.focus(); r.select(); } }
     else if(act === 'delnb') removeNotebook(a.dataset.id);
+    else if(act === 'replies'){ const i = byId(selId); if(i) openReplies(i.id); }
+    else if(act === 'repclose') $('#repdlg').close();
+    else if(['repacc', 'represj', 'repaccall', 'reprejall'].includes(act)) replyAction(act, a.dataset.r, a.dataset.c);
     else if(act === 'sharepage'){ const i = byId(selId); if(i){ if(i.shared && i.shared.on && shareState === 'paused'){ shareReady(true).then(d => { shareState = d ? 'ok' : 'paused'; return d && runShareWrites(true); }).then(() => renderAll()); } else sharePageAction(i); } }
     else if(act === 'nbshare'){ const nb = nbById(a.dataset.id); if(nb){ const r = a.getBoundingClientRect(); if($('#nbdlg').open && nb.shared && nb.shared.on){ $('#nbdlg').close(); } nbShareAction(nb, r.left, r.bottom + 4); } }
     else if(act === 'nbexport') openNbExport([a.dataset.id]); else if(act === 'nbexportall') openNbExport(db.notebooks.map(n => n.id));
@@ -3147,12 +3470,58 @@ function applyFontColor(ed, color){
   document.execCommand('foreColor', false, off ? base : color);
   if(off) ed.querySelectorAll('font[color]').forEach(f => { if(normColor(f.getAttribute('color')) === normColor(base)){ while(f.firstChild) f.parentNode.insertBefore(f.firstChild, f); f.remove(); } });
 }
+/* ---- custom numbering: lines like "EAM_5 …", "EAM_6 …". Enter continues the series; Enter on an empty one ends it. ---- */
+const seqLabelRe = prefix => new RegExp('^\\s*' + reEsc(prefix) + '(\\d+)(?=\\s|$)');
+function seqNumber(blk){ const pre = blk.getAttribute('data-seq'); const m = seqLabelRe(pre).exec(blk.textContent); return m ? +m[1] : null; }
+function seqSetLabel(blk, n){                                  // rewrite the number at the start of the line (the label is plain text)
+  const pre = blk.getAttribute('data-seq'), re = seqLabelRe(pre), w = document.createTreeWalker(blk, NodeFilter.SHOW_TEXT); let t, done = false;
+  while((t = w.nextNode()) && !done){ if(re.test(t.nodeValue)){ t.nodeValue = t.nodeValue.replace(re, m => m.replace(/\d+$/, String(n))); done = true; } }
+  return done;
+}
+function startNumbering(ed){
+  const raw = (prompt('Start the numbering with (for example EAM_5, or Q3-1):', 'EAM_1') || '').trim(); if(!raw) return;
+  const m = /^(.*?)(\d+)$/.exec(raw); if(!m){ toast('Put a number at the end, like EAM_5.'); return; }
+  let blk = currentBlock(ed); if(!blk){ document.execCommand('formatBlock', false, 'div'); blk = currentBlock(ed); }
+  if(!blk){ toast('Click in a line first, then start the numbering.'); return; }
+  if(!/^[\w\-.]{0,24}$/.test(m[1])){ toast('Use letters, numbers, _ - or . for the prefix.'); return; }
+  blk.setAttribute('data-seq', m[1]);
+  const lead = document.createTextNode(m[1] + m[2] + ' '); blk.insertBefore(lead, blk.firstChild);
+  if(blk.querySelector('br') && !blk.textContent.replace(/\s/g, '').replace(m[1] + m[2], '')) blk.querySelectorAll('br').forEach(b => b.remove());
+  const r = document.createRange(); r.setStart(lead, lead.nodeValue.length); r.collapse(true); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  ed.dispatchEvent(new Event('input', {bubbles:true}));
+}
+function renumberSeries(ed){
+  const blk = currentBlock(ed); const sb = blk && (blk.hasAttribute('data-seq') ? blk : null);
+  if(!sb){ toast('Click inside a numbered line first.'); return; }
+  const pre = sb.getAttribute('data-seq'); let first = sb; while(first.previousElementSibling && first.previousElementSibling.getAttribute('data-seq') === pre) first = first.previousElementSibling;
+  let n = seqNumber(first); if(n == null){ toast('That line has no number to start from.'); return; }
+  let cur = first, count = 0; while(cur && cur.getAttribute('data-seq') === pre){ if(seqSetLabel(cur, n)) count++; n++; cur = cur.nextElementSibling; }
+  ed.dispatchEvent(new Event('input', {bubbles:true})); toast(`Renumbered ${count} line${count === 1 ? '' : 's'}.`);
+}
+function stopNumbering(ed){ const blk = currentBlock(ed); if(blk && blk.hasAttribute('data-seq')){ blk.removeAttribute('data-seq'); ed.dispatchEvent(new Event('input', {bubbles:true})); } }
+function numberingMenu(ed){
+  const b = $('[data-cmd=numbering]'), r = b.getBoundingClientRect();
+  openMenu(r.left, r.bottom + 4, [{l:'Start numbering…', ic:'＃', fn: () => startNumbering(editorForCommand() || ed)}, {l:'Renumber this list', ic:'↻', fn: () => renumberSeries(editorForCommand() || ed)}, {l:'Stop numbering this line', ic:'⏹', fn: () => stopNumbering(editorForCommand() || ed)}], null);
+}
+function currentBlock(ed){                                  // the line (or list item) the cursor is in
+  const s = getSelection(); let el = s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement);
+  while(el && el !== ed){ if(el.tagName === 'LI' || (el.tagName === 'DIV' && el.parentElement === ed)) return el; el = el.parentElement; }
+  return null;
+}
+function toggleCheckbox(ed){
+  let blk = currentBlock(ed);
+  if(!blk){ document.execCommand('formatBlock', false, 'div'); blk = currentBlock(ed); }
+  if(!blk){ toast('Click in a line first, then add the checkbox.'); return; }
+  if(blk.hasAttribute('data-cb')){ blk.removeAttribute('data-cb'); blk.removeAttribute('data-at'); } else blk.setAttribute('data-cb', '0');
+}
 function runCmd(cmd, arg){
   const ed = editorForCommand(); if(!ed) return;
   if(cmd === 'link'){
     let url = prompt('Link address (e.g. https://example.com)'); if(!url) return;
     url = url.trim(); if(!/^(?:https?:|mailto:)/i.test(url)) url = 'https://' + url;
     document.execCommand('createLink', false, url);
+  } else if(cmd === 'checkbox'){ toggleCheckbox(ed);
+  } else if(cmd === 'numbering'){ numberingMenu(ed);
   } else if(cmd === 'hilitelast'){ applyHighlight(ed, lastHl);
   } else if(cmd === 'hilite'){ if(arg) lastHl = arg; applyHighlight(ed, arg);
   } else if(cmd === 'fcolor'){ applyFontColor(ed, arg);
@@ -3164,7 +3533,10 @@ function runCmd(cmd, arg){
       if(mine && mine.querySelector(':scope > ul, :scope > ol')){ if(mine.hasAttribute('data-fold')) mine.removeAttribute('data-fold'); else mine.setAttribute('data-fold', '1'); } else toast('Put the cursor in a bullet that has sub-points, then fold it.'); }
   } else if(cmd === 'table') insertTable(ed);
   else if(cmd.startsWith('tbl-')) tableCmd(cmd.slice(4));
-  else if(cmd === 'hr') document.execCommand('insertHorizontalRule');
+  else if(cmd === 'hr'){                                               // the divider always comes with an empty line below it, and the cursor goes there
+    document.execCommand('insertHTML', false, '<hr data-new="1"><div><br></div>');
+    const h = ed.querySelector('hr[data-new]'); if(h){ h.removeAttribute('data-new'); const nx = h.nextElementSibling; if(nx) putCaret(nx); }
+  }
   else if(cmd === 'formatBlock') document.execCommand('formatBlock', false, '<' + arg + '>');
   else document.execCommand(cmd, false, null);
   ed.dispatchEvent(new Event('input', {bubbles:true})); fmtState();
@@ -3199,6 +3571,13 @@ document.addEventListener('keydown', e => {
   if(e.key === ' ' && !e.ctrlKey && !e.metaKey){                                   // "- " or "1. " at the start of a line starts a list
     const s = getSelection(); if(!s.isCollapsed || !s.anchorNode || s.anchorNode.nodeType !== 3 || s.anchorNode.previousSibling) return;
     const node = s.anchorNode, typed = node.nodeValue.slice(0, s.anchorOffset);
+    if(/^\[\s?\]$/.test(typed)){                                                 // "[] " at the start of a line makes it a checkbox
+      e.preventDefault(); node.nodeValue = node.nodeValue.slice(s.anchorOffset);
+      const r0 = document.createRange(); r0.setStart(node, 0); r0.collapse(true); s.removeAllRanges(); s.addRange(r0);
+      let blk = currentBlock(ed); if(!blk){ document.execCommand('formatBlock', false, 'div'); blk = currentBlock(ed); }
+      if(blk){ blk.setAttribute('data-cb', '0'); if(!blk.textContent && !blk.querySelector('br')) blk.appendChild(document.createElement('br')); }
+      ed.dispatchEvent(new Event('input', {bubbles:true})); return;
+    }
     if(!/^(?:[-*•]|\d{1,2}\.)$/.test(typed) || (node.parentElement && node.parentElement.closest('li'))) return;
     e.preventDefault();
     node.nodeValue = node.nodeValue.slice(s.anchorOffset);
@@ -3222,7 +3601,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261029084134';</script>
+<script>window.NB_BUILD = '20261029094519';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

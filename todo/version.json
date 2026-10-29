@@ -1,4 +1,35 @@
-{"version":"1.13.0","build":"20261029084134","changelog":[
+{"version":"1.16.0","build":"20261029094519","changelog":[
+ {
+  "v": "1.16.0",
+  "title": "Replies to shared pages",
+  "items": [
+   "Shared pages can now be answered. Someone (Claude, or a coworker) writes a small reply file next to the shared page file. About every 20 seconds, and whenever you come back to the app, it looks for new ones",
+   "A reply shows as a 💬 on the page and a bar at the top of the page. Review opens it: their message, then each proposed change with Accept and Reject buttons, or Accept all. Nothing in your notes changes until you accept",
+   "A reply can propose: ticking a checkbox line or an action, adding an action, changing an action's due date or owner, adding text at the end of the page, or replacing a piece of text (you see the old and new wording)",
+   "Every reply and decision is kept in a History list with the page: who wrote it, what it said, who accepted or rejected each change, and when. The author's name comes from the file and is not verified",
+   "The shared file now lists which changes you accepted or rejected, and describes how to write a reply, so whoever reads it knows what is done",
+   "Share menus have a new Check for replies now"
+  ]
+ },
+ {
+  "v": "1.15.0",
+  "title": "Notebooks first, custom numbering, dated checkboxes",
+  "items": [
+   "Notes now opens a list of your notebooks. Click one to see only its pages, and use ‹ Notebooks to go back. Searching still looks through every notebook",
+   "Pages show the title across the full row, with the date and time on the line below it",
+   "Custom numbering: ＃ Numbering… in the toolbar starts a numbered list with any prefix and starting number (for example EAM_5). Enter continues it (EAM_6, EAM_7…), Enter on an empty one ends it, and Renumber fixes the numbers after you insert a line",
+   "Ticking a checkbox in a note records the date it was completed"
+  ]
+ },
+ {
+  "v": "1.14.0",
+  "title": "Checkboxes, a better divider, and RAID labels",
+  "items": [
+   "Checkboxes inside notes: a ☐ Checkbox button in the toolbar, or type [] at the start of a line. Click the box to tick it (the line is struck through), Enter makes the next checkbox, and Enter on an empty one ends the list",
+   "Divider: typing on the line right below it now stays below it, and the divider is thicker and in the accent color so it's easy to see",
+   "The \"Action items\" heading under a note is now \"RAID\", and plain actions get their own ACTION tag at the start, like the Risk, Issue and Decision tags"
+  ]
+ },
  {
   "v": "1.13.0",
   "title": "Share a whole notebook to a folder",
