@@ -250,6 +250,11 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .app.list-off .list>:not(.top){display:none}
 .app.list-off .top{padding:12px 4px;justify-content:center}
 .app.list-off .top>:not(.sb){display:none}
+#cklist{container:ck/inline-size}
+.ai .ctl{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding-left:28px}
+@container ck (min-width:980px){.ai .ctl{display:contents}.ai .ctl>*{order:1}.ai .nb{order:2}.ai .x{order:3}}
+.metahead{margin:-6px 0 8px;font-size:12.5px}.metahead a{color:var(--mute);cursor:pointer;text-decoration:none}.metahead a:hover{color:var(--accent)}.metahead small{margin-left:8px;color:var(--mute)}
+.meta.off{display:none}
 .ai .nb{border:0;background:none;font-size:14px;opacity:.35;padding:0 4px}
 .ai .nb:hover,.ai .nb.has{opacity:1}
 input.who{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;font-size:13px;outline:none;min-width:0;width:100%}
@@ -262,6 +267,7 @@ input.who:focus{border-color:var(--accent)}
 .expopt input{margin-top:4px;accent-color:var(--accent)}.expopt small{display:block;color:var(--mute);font-size:12px;margin-top:1px}
 #nbimplist .improw{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--line)}#nbimplist .improw input{margin-top:4px;accent-color:var(--accent)}
 #nbimplist .improw small{display:block;color:var(--mute);font-size:12.5px}
+.ckhide{font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:12px;color:var(--mute);cursor:pointer}
 .pinhead{padding:10px 14px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .opts.nblist>:not(#datewrap){display:none!important}
 .datef{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.datef select,.datef input{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px}
@@ -580,8 +586,34 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.17.0';
+const APP_VERSION = '1.19.1';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.19.1",
+  "title": "Fix: copied notes sharing action items",
+  "items": [
+   "Fixed a serious problem: when a note was duplicated, or its lines were copied into another note, the two notes ended up sharing the same hidden IDs for their action items. In lists like Actions and Today, changing an action from the second note then changed the one in the first note, which looked like one note overwriting another. Note names were never the cause",
+   "Duplicating a note, importing a copy, restoring from the Trash and copying tagged lines between notes now always give the new note its own action items",
+   "When you open your file, any notes that already share action IDs are repaired automatically (the older note keeps its IDs, the newer one gets new ones). A message tells you how many were fixed. If an action in the older note was changed by mistake, its earlier text can be recovered from your OneDrive version history of the save file"
+  ]
+ },
+ {
+  "v": "1.19.0",
+  "title": "Roomier action items on small screens",
+  "items": [
+   "Action items under a note (and the RAID rows) now keep their text on its own full line, with the date, time, category, assignee and repeat on a line below it. On a wide window they stay beside the text as before",
+   "A Details line under each page title folds the date, time, category and other fields away, and shows the main ones in a short summary. It is remembered"
+  ]
+ },
+ {
+  "v": "1.18.0",
+  "title": "New-note defaults, RAID type words, hide completed",
+  "items": [
+   "A new note starts with today's date and the nearest half hour (3:43 becomes 3:30, 3:45 becomes 4:00). Those are only a starting point: the note is not treated as a meeting, and does not show a date in the list, until you change the date or time yourself. The Meeting entry in the + menu still makes a real meeting",
+   "In the RAID box under a note, start the item with Risk, Issue, Decision or Action (with or without a colon, any capitals) and it becomes that type, with the word taken off the text. Before, everything became an Action",
+   "RAID (and Action items) under a note has a Hide completed switch, remembered between visits, that tucks away the finished items and says how many are hidden"
+  ]
+ },
  {
   "v": "1.17.0",
   "title": "Remembers where you were, pinned pages, date filter, Settings",
@@ -1101,6 +1133,28 @@ const TRASH_DAYS = 30;
 let db = BLANK();
 const strDates = a => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x)))].sort() : [];
 const cleanPeople = a => { const seen = new Set(), out = []; for(const n of Array.isArray(a) ? a : []){ const v = typeof n === 'string' ? n.trim() : ''; if(v && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); out.push(v); } } return out; };
+/* Every action item (checklist entry) must have an id that no other note uses: lists such as Actions and Today find an entry by that id alone. */
+function renewChecklistIds(it){                           // give a copied note its own action items; its tagged lines are re-pointed at the new ids
+  const map = {}; it.checklist.forEach(c => { const o = c.id; c.id = uid(); map[o] = c.id; });
+  for(const o in map) it.body = (it.body || '').split('data-rid="' + o + '"').join('data-rid="' + map[o] + '"');
+}
+function healIds(d){                                      // notes that already share action ids: the first one keeps them, later ones get new ones
+  const used = new Set(), itemIds = new Set(); let fixed = 0;
+  for(const it of [...d.items, ...(d.trash || []).map(t => t.item)]){
+    if(itemIds.has(it.id)){ it.id = uid(); fixed++; }
+    itemIds.add(it.id);
+    for(const c of it.checklist){
+      if(used.has(c.id)){
+        const old = c.id, nu = uid(); c.id = nu; fixed++;
+        it.body = (it.body || '').split('data-rid="' + old + '"').join('data-rid="' + nu + '"');
+        (d.plan || []).forEach(b => { if(b.link && b.link.item === it.id && b.link.ck === old) b.link.ck = nu; });
+      }
+      used.add(c.id);
+    }
+  }
+  if(fixed) setTimeout(() => { toast(`Repaired ${fixed} action item${fixed === 1 ? '' : 's'} that shared an ID with another note, so each note's actions are separate again.`); touch(); }, 900);
+  return fixed;
+}
 /* replies to a shared page: written by someone else into <page>.reply.json, kept here with what you decided */
 const REPLY_KINDS = ['check', 'tick', 'addAction', 'setAction', 'append', 'replace'];
 const clipS = (v, n) => typeof v === 'string' ? v.replace(/\u0000/g, '').slice(0, n) : '';
@@ -1143,7 +1197,7 @@ function normalize(d){
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
     done: !!i.done, pinned: !!i.pinned, shared: i.shared && i.shared.on ? {on:true, file:String(i.shared.file || ''), last:String(i.shared.last || '')} : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
-    replies: cleanReplies(i.replies), created: i.created || now(), updated: i.updated || now()
+    replies: cleanReplies(i.replies), autoDt: i.type === 'note' && !!i.autoDt && !!(i.date || i.time), created: i.created || now(), updated: i.updated || now()
   });
   d.items = (d.items || []).map(item);
   const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length], shared: n.shared && n.shared.on ? {on:true, dir:String(n.shared.dir || ''), files:Array.isArray(n.shared.files) ? n.shared.files.filter(x => typeof x === 'string').slice(0, 5000) : [], last:String(n.shared.last || '')} : null})).filter(n => { nbSeen.add(n.id); return true; });
@@ -1156,10 +1210,12 @@ function normalize(d){
     let s = b.start, e = /^\d{4}-\d\d-\d\d$/.test(b.end || '') ? b.end : b.start; if(e < s) [s, e] = [e, s];
     return {id:b.id || uid(), title:b.title || '', desc:typeof b.desc === 'string' ? b.desc : '', start:s, end:e, cat:b.cat || '', done:!!b.done, repeat:cleanRepeat(b.repeat), until:/^\d{4}-\d\d-\d\d$/.test(b.until || '') ? b.until : '', doneOn:strDates(b.doneOn), skip:strDates(b.skip), link:b.link && b.link.item ? {item:b.link.item, ck:b.link.ck || ''} : null, created:b.created || now(), updated:b.updated || now()};
   });
+  healIds(d);
   d.version = 3; d.bodyFormat = 'html';
   return d;
 }
-const isMeeting = i => i.type === 'note' && !!(i.date || i.time || i.attendees);
+const isMeeting = i => i.type === 'note' && !!(i.attendees || ((i.date || i.time) && !i.autoDt));          // autoDt: the date and time were only filled in as a starting point
+const halfHour = (d = new Date()) => { let m = Math.round((d.getHours() * 60 + d.getMinutes()) / 30) * 30; if(m >= 1440) m = 1410; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
 const catById = id => db.categories.find(c => c.id === id);
 const catDot = id => { const c = catById(id); return c ? `<i class="cdot" style="background:${esc(c.color)}" title="${esc(c.name)}"></i>` : ''; };
 const catOptions = (sel, blank) => `<option value="">${esc(blank)}</option>` + db.categories.map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
@@ -1179,14 +1235,14 @@ const curNb = () => nbById(nbView) ? nbView : (nbById(lastNb) ? lastNb : db.note
 let selCk = '';                    // when you open an action item from the list, which one (so it can be highlighted in its note)
 let selId = null, filter = 'today', search = '', sortMode = 'updated', hideDone = false;
 let actGroup = 'due', actCat = '', actDone = false, actTimer = null, autoDates = true, railOff = false, listOff = false;
-let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '', lastNoteSel = '', dateField = 'updated', datePreset = '', dateFrom = '', dateTo = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
+let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '', lastNoteSel = '', hideCkDone = false, metaOff = false, dateField = 'updated', datePreset = '', dateFrom = '', dateTo = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
 const nbFold = new Set();          // notebooks folded closed in the Notes list
 let tlWork = false, tlCat = '', tlHideDone = false, tlLayer = 'blocks';        // tlLayer: 'blocks' (your plan only), 'due' (tasks and actions on their due dates), or 'both'                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
 let chipsOff = {all:[], note:[]}, listCat = '', datedOnly = false;     // list filter bar: which type chips are switched off (remembered), category, dated-only
 const openNotes = new Set();       // ids of actions whose notes box is expanded (not saved)
-try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' || String(u.filter).startsWith('nb:') ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto'; actPerson = u.actPerson || ''; todayMine = !!u.todayMine; actNb = u.actNb || ''; lastNb = u.lastNb || ''; nbView = typeof u.nbView === 'string' ? u.nbView : ''; lastNoteSel = typeof u.lastNoteSel === 'string' ? u.lastNoteSel : ''; dateField = ['updated', 'created', 'page'].includes(u.dateField) ? u.dateField : 'updated'; datePreset = ['today', 'week', 'month', 'thismonth', 'custom'].includes(u.datePreset) ? u.datePreset : ''; dateFrom = /^\d{4}-\d\d-\d\d$/.test(u.dateFrom || '') ? u.dateFrom : ''; dateTo = /^\d{4}-\d\d-\d\d$/.test(u.dateTo || '') ? u.dateTo : ''; (Array.isArray(u.nbFold) ? u.nbFold : []).forEach(x => nbFold.add(x));
+try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' || String(u.filter).startsWith('nb:') ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = u.sort || 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto'; actPerson = u.actPerson || ''; todayMine = !!u.todayMine; actNb = u.actNb || ''; lastNb = u.lastNb || ''; nbView = typeof u.nbView === 'string' ? u.nbView : ''; lastNoteSel = typeof u.lastNoteSel === 'string' ? u.lastNoteSel : ''; hideCkDone = !!u.hideCkDone; metaOff = !!u.metaOff; dateField = ['updated', 'created', 'page'].includes(u.dateField) ? u.dateField : 'updated'; datePreset = ['today', 'week', 'month', 'thismonth', 'custom'].includes(u.datePreset) ? u.datePreset : ''; dateFrom = /^\d{4}-\d\d-\d\d$/.test(u.dateFrom || '') ? u.dateFrom : ''; dateTo = /^\d{4}-\d\d-\d\d$/.test(u.dateTo || '') ? u.dateTo : ''; (Array.isArray(u.nbFold) ? u.nbFold : []).forEach(x => nbFold.add(x));
   if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['note','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
-function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer, theme, actPerson, todayMine, actNb, lastNb, nbView, lastNoteSel, dateField, datePreset, dateFrom, dateTo, nbFold:[...nbFold]})); } catch {} }
+function saveUi(){ try { localStorage.setItem('notebook-ui', JSON.stringify({filter, sort:sortMode, hideDone, actGroup, actCat, actDone, autoDates, railOff, listOff, chipsOff, listCat, datedOnly, tlWork, tlCat, tlHideDone, tlLayer, theme, actPerson, todayMine, actNb, lastNb, nbView, lastNoteSel, hideCkDone, metaOff, dateField, datePreset, dateFrom, dateTo, nbFold:[...nbFold]})); } catch {} }
 
 function applyTheme(){ if(theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme); }
 applyTheme();
@@ -1249,6 +1305,7 @@ function mergeDb(fileDb, local){
   fileDb.trash = [...tr.values()].filter(t => !fileDb.items.some(i => i.id === t.item.id));
   const nbm = new Map(fileDb.notebooks.map(n => [n.id, n])); for(const n of local.notebooks || []) if(!nbm.has(n.id)) nbm.set(n.id, n); fileDb.notebooks = [...nbm.values()];
   fileDb.people = cleanPeople([...fileDb.people, ...(local.people || [])]); if(!fileDb.me) fileDb.me = local.me || '';
+  healIds(fileDb);
   return fileDb;
 }
 
@@ -1384,7 +1441,7 @@ async function init(){
 /* ================= rendering ================= */
 /* ---- the list's shared filter bar: type chips, category, sort ---- */
 const typeOf = i => i.type === 'task' ? 'action' : 'note';          // chips: action / note
-const itemDate = i => i.type === 'task' ? i.due : i.date;
+const itemDate = i => i.type === 'task' ? i.due : (i.autoDt ? '' : i.date);
 /* Due-date groups, shared by the main list and the Actions tab. Weeks run Monday to Sunday. */
 const BUCKETS = ['Pinned', 'Past due', 'Today', 'Tomorrow', 'Later this week', 'Next week', 'Later', 'No date', 'Past', 'Completed'];
 function dueBucket(dateStr, done, isAction, from = new Date()){
@@ -1569,7 +1626,7 @@ function renderRail(){
 }
 function whenOf(i){
   if(i.type === 'task'){ if(i.done) return {t:'Done'}; if(!i.due) return {t:''}; return dayDiff(i.due) < 0 ? {t:'Past due', cls:'late'} : {t:[fmtDay(i.due), fmtTime(i.time)].filter(Boolean).join(' ')}; }
-  if(i.date || i.time) return {t:[fmtDay(i.date), fmtTime(i.time)].filter(Boolean).join(' ')};
+  if((i.date || i.time) && !i.autoDt) return {t:[fmtDay(i.date), fmtTime(i.time)].filter(Boolean).join(' ')};
   return {t:fmtDay(dstr(new Date(i.updated)))};
 }
 function subOf(i){
@@ -1594,7 +1651,7 @@ function entryHtml(e, withNb){
   }
   const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk)), dd = itemDate(i), openT = !(i.type === 'task' && i.done);
   if(i.type === 'note'){                                          // a page: the title across the whole row, its date and time on the line below
-    const when = i.date || i.time ? w.t : 'Edited ' + w.t;
+    const when = (i.date || i.time) && !i.autoDt ? w.t : 'Edited ' + w.t;
     return `<div draggable="true" data-nbdrop="${esc(nbKey(i))}" class="it noterow ${onRow ? 'on' : ''}" data-id="${i.id}">
       <span class="ic">${isMeeting(i) ? '◷' : '✎'}</span>
       <div><b>${i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${pendingOf(i) ? '💬 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small class="when">${esc(when)}${withNb && nbById(nbKey(i)) ? ' · ' + esc(nbById(nbKey(i)).name) : ''}</small><small>${esc(subOf(i))}</small></div></div>`;
@@ -1639,9 +1696,10 @@ function renderList(){
   if(filter === 'task') html = `<div class="gh2"><a data-filter="actions">‹ Back to all actions</a></div>` + html;
   $('#items').innerHTML = (filter === 'note' ? html : v.length ? html : '') || `<div class="empty">${search ? 'Nothing matches your search.' : filtered && db.items.length ? 'Nothing matches these filters.<br><a data-act="resetfilters">Reset filters</a>' : 'Nothing here yet.<br>Use + to add something.'}</div>`;
 }
+const ckHead = i => { const n = i.checklist.filter(c => c.done).length; return `<h4>${i.type === 'note' ? 'RAID' : 'Action items'}${n || hideCkDone ? ` <label class="ckhide"><input type="checkbox" id="ckhide" ${hideCkDone ? 'checked' : ''}> Hide completed${n ? (hideCkDone ? ` (${n} hidden)` : ` (${n})`) : ''}</label>` : ''}</h4>`; };
 function ckRows(i){
   const inherit = catById(i.category), blank = inherit ? inherit.name + ' (inherited)' : 'No category';
-  return i.checklist.map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${raidBadge(c.raid || 'action')}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
+  return (hideCkDone ? i.checklist.filter(c => !c.done) : i.checklist).map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${raidBadge(c.raid || 'action')}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button><div class="ctl"><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select></div>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
 }
 
 /* ---- Actions tab: every task + every checklist/action item, in one list ---- */
@@ -2242,6 +2300,10 @@ function removePerson(n){
 function renderCats(){
   $('#catrows').innerHTML = db.categories.map(c => `<div class="crow"><input type="color" data-kc="${esc(c.id)}" value="${esc(c.color)}"><input type="text" data-kn="${esc(c.id)}" value="${esc(c.name)}"><button class="x" data-act="delcat" data-id="${esc(c.id)}" title="Delete">×</button></div>`).join('') || '<p>No categories yet.</p>';
 }
+function metaSummary(i){
+  const c = catById(i.category), d = i.type === 'task' ? i.due : (i.autoDt ? '' : i.date), t = i.type === 'task' ? i.time : (i.autoDt ? '' : i.time);
+  return [d && fmtDay(d), t && fmtTime(t), c && c.name, i.type === 'task' && i.assignee, i.type === 'note' && i.attendees && 'with ' + i.attendees, i.tags.length && i.tags.map(x => '#' + x).join(' ')].filter(Boolean).join(' · ') || 'no date, category or tags';
+}
 function renderDetail(){
   $('#detail').classList.toggle('tl', filter === 'timeline');
   if(filter === 'timeline'){ renderTimeline(); return; }
@@ -2265,10 +2327,11 @@ function renderDetail(){
     ${replyBanner(i)}
     <div class="type">${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'}</div>
     <textarea class="title" rows="1" data-f="title" placeholder="Untitled">${esc(i.title)}</textarea>
-    <div class="meta">${meta}</div>
+    <div class="metahead"><a data-act="togglemeta" title="Show or hide date, time, category and the other fields">${metaOff ? '▸' : '▾'} Details</a>${metaOff ? `<small>${esc(metaSummary(i))}</small>` : ''}</div>
+    <div class="meta ${metaOff ? 'off' : ''}">${meta}</div>
     <h4>${bodyLabel}</h4>
     <div class="rt ${i.type==='note'?'big':''}" contenteditable="true" spellcheck="true" data-f="body" data-ph="Start typing…" ${isBlank(i.body)?'data-empty':''}>${forEditor(i.body)}</div>
-    <h4>${i.type === 'note' ? 'RAID' : 'Action items'}</h4>
+    ${ckHead(i)}
     <div id="cklist">${ckRows(i)}</div>
     <div class="ai add"><input type="checkbox" disabled><input type="text" id="newck" placeholder="Add an item and press Enter…"></div>
     <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns">${(i.replies || []).length ? `<button class="plain" data-act="replies" title="Replies to this shared page, and what you decided">💬 Replies${pendingOf(i) ? ' (' + pendingOf(i) + ')' : ''}</button>` : ''}<button class="plain" id="sharebtn" data-act="sharepage" title="${esc(shareBadge(i).tip)}">${esc(shareBadge(i).label)}</button><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
@@ -2298,7 +2361,7 @@ function edited(i){ i.updated = now(); touch(); renderList(); renderRail(); }
 function parseTags(s){ return [...new Set(s.split(/[,\s]+/).map(t => t.replace(/^#/, '').toLowerCase()).filter(Boolean))]; }
 function newItem(kind){                      // kind: 'task', 'note' or 'meeting' (a note that starts with today's date)
   const type = kind === 'task' ? 'task' : 'note';
-  const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: kind === 'meeting' ? todayStr() : '', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(type === 'note'){ i.notebook = curNb(); lastNb = i.notebook; nbView = i.notebook; }
   db.items.push(i); selId = i.id; search = '';
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
@@ -2379,12 +2442,13 @@ function runImport(){
       const st = pageStatus(norm), ex = byId(norm.id);
       if(st === 'new'){ db.items.push(norm); undo.items.push(norm); tally.added++; }
       else if(st === 'same') tally.skipped++;
-      else if(mode === 'both'){ norm.id = uid(); norm.title = (norm.title || 'Untitled') + ' (imported copy)'; norm.checklist.forEach(c => { c.id = uid(); }); norm.updated = now(); db.items.push(norm); undo.items.push(norm); tally.copies++; }
+      else if(mode === 'both'){ norm.id = uid(); norm.title = (norm.title || 'Untitled') + ' (imported copy)'; renewChecklistIds(norm); norm.updated = now(); db.items.push(norm); undo.items.push(norm); tally.copies++; }
       else if(mode === 'newer' && st === 'newer'){ const at = db.items.indexOf(ex); undo.replaced.push([at, ex]); db.items[at] = norm; tally.updated++; }
       else tally.skipped++;
     }
     lastNb = nb.id; nbFold.delete(nb.id);
   }
+  healIds(db);
   db.items.forEach(i => { for(const o of [i, ...i.checklist]) if(o.assignee) addPerson(o.assignee); });
   importPack = null; $('#nbimp').close(); saveUi(); touch(); fixSelection(); renderAll();
   const bits = [tally.added && `${tally.added} added`, tally.updated && `${tally.updated} updated`, tally.copies && `${tally.copies} copied`, tally.skipped && `${tally.skipped} already here`].filter(Boolean);
@@ -2434,7 +2498,7 @@ function sharePayload(i){
     about:'Written by My Notebook every time this page is saved. Read it; do not edit it (the app overwrites it). To answer, write a reply file as described under "reply".',
     page:{
       id:i.id, title:i.title, kind:i.type === 'task' ? 'action' : 'note', notebook:nb ? nb.name : '', category:catName(i.category), tags:i.tags, pinned:!!i.pinned,
-      date:i.date, time:i.time, attendees:i.attendees, assignedTo:i.assignee || '', created:i.created, updated:i.updated,
+      date:i.autoDt ? '' : i.date, time:i.autoDt ? '' : i.time, attendees:i.attendees, assignedTo:i.assignee || '', created:i.created, updated:i.updated,
       body:i.body, bodyText:htmlToPlain(i.body),
       actionItems:i.checklist.filter(c => c.text.trim()).map(c => ({id:c.id, text:c.text, type:c.raid || 'action', done:c.done, due:c.due, time:c.time, assignedTo:c.assignee || '', category:catName(c.cat || i.category), repeats:c.repeat ? describeRepeat(c.repeat) : '', note:htmlToPlain(c.note), fromTaggedLine:c.src === 'tag'}))
     },
@@ -2481,7 +2545,7 @@ async function writeSharedNotebook(nb, sub, force){
   if(changed){
     const idx = {app:'notebook-share-index', format:1, writtenAt:now(), appVersion:APP_VERSION, notebook:{id:nb.id, name:nb.name, color:nb.color},
       about:'Index of the pages shared from this notebook. Written by My Notebook; open the page files for the details.',
-      pages:pages.slice().sort((a, b) => (b.updated || '').localeCompare(a.updated || '')).map(i => ({file:shareFileName(i), title:i.title, updated:i.updated, created:i.created, date:i.date, category:(catById(i.category) || {}).name || '', tags:i.tags, actionItems:i.checklist.filter(c => c.text.trim()).length, openActionItems:i.checklist.filter(c => c.text.trim() && !c.done).length}))};
+      pages:pages.slice().sort((a, b) => (b.updated || '').localeCompare(a.updated || '')).map(i => ({file:shareFileName(i), title:i.title, updated:i.updated, created:i.created, date:i.autoDt ? '' : i.date, category:(catById(i.category) || {}).name || '', tags:i.tags, actionItems:i.checklist.filter(c => c.text.trim()).length, openActionItems:i.checklist.filter(c => c.text.trim() && !c.done).length}))};
     const fh = await dir.getFileHandle('_index.json', {create:true}), w = await fh.createWritable(); await w.write(JSON.stringify(idx, null, 2)); await w.close();
   }
   nb.shared.dir = dirName; nb.shared.files = [...wanted]; nb.shared.last = now();
@@ -2726,7 +2790,7 @@ function delItem(){ const i = byId(selId); if(i) deleteItemUndo(i); }
 function itemAsText(i){
   const L = [i.title || 'Untitled'], meta = [];
   if(i.type === 'task'){ if(i.due) meta.push('Due ' + fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.repeat) meta.push(describeRepeat(i.repeat)); if(i.assignee) meta.push('Assigned to ' + i.assignee); if(i.done) meta.push('Done'); }
-  else { if(i.date) meta.push(fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.attendees) meta.push('With ' + i.attendees); }
+  else { if(i.date && !i.autoDt) meta.push(fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')); if(i.attendees) meta.push('With ' + i.attendees); }
   const c = catById(i.category); if(c) meta.push(c.name); if(i.type === 'note' && db.notebooks.length > 1) meta.push('Notebook: ' + nbById(nbKey(i)).name); if(i.tags.length) meta.push(i.tags.map(t => '#' + t).join(' '));
   if(meta.length) L.push(meta.join(' · '));
   const body = htmlToPlain(i.body); if(body) L.push('', body);
@@ -2742,7 +2806,7 @@ async function copyText(t){
 }
 function dupItem(i){
   const n = JSON.parse(JSON.stringify(i)); n.id = uid(); n.title = (i.title || 'Untitled') + ' (copy)'; n.done = false; n.created = n.updated = now();
-  n.checklist.forEach(c => { c.id = uid(); c.done = false; }); n.shared = null; n.replies = [];
+  renewChecklistIds(n); n.checklist.forEach(c => { c.done = false; }); n.shared = null; n.replies = [];
   db.items.splice(db.items.indexOf(i) + 1, 0, n); selId = n.id; selCk = ''; touch(); renderAll();
   toast(`Duplicated “${i.title || 'Untitled'}”.`, () => { db.items = db.items.filter(x => x !== n); selId = i.id; touch(); renderAll(); });
 }
@@ -2893,7 +2957,7 @@ function htmlToMd(h){
 function itemMeta(i){
   const m = [], c = catById(i.category);
   if(i.type === 'task'){ if(i.due) m.push(['Due', fmtDay(i.due) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.repeat) m.push(['Repeats', describeRepeat(i.repeat)]); if(i.assignee) m.push(['Assigned to', i.assignee]); if(i.done) m.push(['Status', 'Done']); }
-  else { if(i.date) m.push(['Date', fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.attendees) m.push(['With', i.attendees]); }
+  else { if(i.date && !i.autoDt) m.push(['Date', fmtDay(i.date) + (i.time ? ' ' + fmtTime(i.time) : '')]); if(i.attendees) m.push(['With', i.attendees]); }
   if(c) m.push(['Category', c.name]); if(i.type === 'note' && db.notebooks.length > 1) m.push(['Notebook', nbById(nbKey(i)).name]); if(i.tags.length) m.push(['Tags', i.tags.map(t => '#' + t).join(' ')]);
   return m;
 }
@@ -2954,7 +3018,7 @@ function renderTrash(){
 }
 function restoreItem(id){
   const t = db.trash.find(x => x.item.id === id); if(!t) return;
-  db.trash = db.trash.filter(x => x !== t); if(t.item.type === 'note' && !nbById(t.item.notebook)) t.item.notebook = db.notebooks[0].id; if(!byId(id)) db.items.push(t.item); t.item.updated = now(); touch(); renderRail(); renderDetail();
+  db.trash = db.trash.filter(x => x !== t); if(t.item.type === 'note' && !nbById(t.item.notebook)) t.item.notebook = db.notebooks[0].id; if(!byId(id)) db.items.push(t.item); healIds(db); t.item.updated = now(); touch(); renderRail(); renderDetail();
   toast(`Restored “${t.item.title || 'Untitled'}”.`, () => { db.items = db.items.filter(x => x !== t.item); db.trash.unshift(t); touch(); renderRail(); renderDetail(); });
 }
 function purgeItem(id){
@@ -3087,7 +3151,8 @@ function syncTags(i, live){
   let sn = sel && sel.rangeCount && live.contains(sel.anchorNode) ? sel.anchorNode : null, so = sn ? sel.anchorOffset : 0;           // where the cursor is, so it can be put back
   if(hasText || hasSpan) wrapRootRuns(body);
   body.querySelectorAll('[data-raid]').forEach(el => el.removeAttribute('data-raid'));
-  const seen = new Set(), created = [], removedSet = [];
+  const seen = new Set(), created = [], removedSet = [], foreign = new Set();
+  for(const x of db.items) if(x !== i) for(const c of x.checklist) foreign.add(c.id);
   let updated = 0;
   for(const b of body.querySelectorAll('div, li, p, h1, h2, h3, blockquote, td, th')){
     const own = [...b.childNodes].filter(n => !(n.nodeType === 1 && BLOCK_TAGS.test(n.tagName)));
@@ -3109,7 +3174,7 @@ function syncTags(i, live){
     } else continue;
     const kind = m[3].toLowerCase();
     span.setAttribute('class', 'rtag t-' + kind);
-    let rid = span.getAttribute('data-rid'); if(!rid || !/^[\w-]{3,40}$/.test(rid) || seen.has(rid)){ rid = uid(); span.setAttribute('data-rid', rid); }
+    let rid = span.getAttribute('data-rid'); if(!rid || !/^[\w-]{3,40}$/.test(rid) || seen.has(rid) || (foreign.has(rid) && !i.checklist.some(c => c.id === rid))){ rid = uid(); span.setAttribute('data-rid', rid); }
     seen.add(rid); b.setAttribute('data-raid', kind);
     const text = own.slice(own.indexOf(span) + 1).map(n => n.textContent).join('').replace(/\s+/g, ' ').trim();
     let e = i.checklist.find(c => c.id === rid); const want = kind === 'action' ? '' : kind;
@@ -3218,7 +3283,10 @@ function scanAllTags(){
 
 function addCk(){
   const i = byId(selId), inp = $('#newck'); if(!i || !inp.value.trim()) return;
-  const c = {id:uid(), text:inp.value.trim(), done:false, due:'', time:'', cat:'', note:'', repeat:null};
+  let text = inp.value.trim(), raid = '';
+  const tm = /^\[?(action|risk|issue|decision)\]?(?:\s*[:–—]\s*|\s+-\s+|\s+)(\S[\s\S]*)$/i.exec(text);          // "Decision: ship Friday", "RISK vendor late", "[Issue] login fails"
+  if(tm){ raid = tm[1].toLowerCase() === 'action' ? '' : tm[1].toLowerCase(); text = tm[2].trim(); }
+  const c = {id:uid(), text, done:false, due:'', time:'', cat:'', assignee:'', raid, src:'', note:'', repeat:null};
   i.checklist.push(c); autoDate(c, c.text, i);
   $('#cklist').innerHTML = ckRows(i); inp.value = ''; inp.focus(); edited(i);
 }
@@ -3260,7 +3328,8 @@ $('#detail').addEventListener('input', e => {
     const f = t.dataset.f; let v = t.isContentEditable ? val(t) : (t.type === 'checkbox' ? t.checked : t.value);
     if(f === 'tags') v = parseTags(v);
     if(f === 'done'){ const rolled = completeToggle(i, i, v); edited(i); if(rolled) renderDetail(); return; }
-    i[f] = v; if(f === 'body'){ grow(t); scheduleTagSync(i.id); }
+    i[f] = v; if(f === 'date' || f === 'time') i.autoDt = false;          // you set it yourself, so it counts now
+    if(f === 'body'){ grow(t); scheduleTagSync(i.id); }
     edited(i);
   } else if(t.dataset.ci){ const c = i.checklist.find(x => x.id === t.dataset.ci); if(c){ c.text = t.value; edited(i); } }
   else if(t.dataset.cc){ const c = i.checklist.find(x => x.id === t.dataset.cc); if(c){
@@ -3280,6 +3349,7 @@ $('#detail').addEventListener('change', e => {            // Actions tab control
   if(t.id === 'apers'){ actPerson = t.value; saveUi(); renderDetail(); }
   else if(t.id === 'anb'){ actNb = t.value; saveUi(); renderDetail(); }
   else if(t.id === 'tmine'){ todayMine = t.checked; saveUi(); renderDetail(); }
+  else if(t.id === 'ckhide'){ hideCkDone = t.checked; saveUi(); renderDetail(); }
   else if(t.dataset.ax === 'assignee' || t.dataset.ca || t.dataset.f === 'assignee'){        // finished typing a name: keep the spelling consistent and add new people to the list
     const v = t.value.trim(); if(v){ const k = canonPerson(v); if(k !== v){ t.value = k; t.dispatchEvent(new Event('input', {bubbles:true})); } if(addPerson(k)){ touch(); renderRail(); } }
     if(t.dataset.ax === 'assignee' && actPerson) renderDetail();
@@ -3364,6 +3434,7 @@ document.addEventListener('click', e => {
     else if(act === 'tlskip') skipOccurrence(); else if(act === 'tlopen') openLinkedFromBlock(); else if(act === 'tlunlink'){ tlEdit.b.link = null; renderTlDlg(); }
     else if(act === 'resetfilters'){ chipsOff[chipView()] = []; listCat = ''; datedOnly = false; hideDone = false; saveUi(); fixSelection(); renderList(); renderDetail(); }
     else if(act === 'refresh') refreshAll();
+    else if(act === 'togglemeta'){ metaOff = !metaOff; saveUi(); renderDetail(); }
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
     else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
@@ -3672,7 +3743,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261029101220';</script>
+<script>window.NB_BUILD = '20261102082553';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
