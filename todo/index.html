@@ -268,6 +268,9 @@ input.who:focus{border-color:var(--accent)}
 #nbimplist .improw{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--line)}#nbimplist .improw input{margin-top:4px;accent-color:var(--accent)}
 #nbimplist .improw small{display:block;color:var(--mute);font-size:12.5px}
 .ckhide{font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:12px;color:var(--mute);cursor:pointer}
+.addnote{display:block;width:100%;box-sizing:border-box;margin:6px 0 0;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit;font-size:14px;resize:vertical}.addnote[hidden]{display:none}
+.addrow [data-act=addnotetoggle].on{border-color:var(--accent);color:var(--accent)}
+.clearf{cursor:pointer;color:var(--accent);font-weight:600}.warnmsg{color:var(--amber)}
 .pinhead{padding:10px 14px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .opts.nblist>:not(#datewrap){display:none!important}
 .datef{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.datef select,.datef input{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px}
@@ -603,8 +606,21 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.19.2';
+const APP_VERSION = '1.20.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.20.0",
+  "title": "Quick add anywhere, Inbox notebook, cleaner Actions and Today",
+  "items": [
+   "Ctrl + Q opens Quick add from anywhere, including while you are typing in a note. The action it makes is on its own, not linked to the note you are in",
+   "New notes made when you are not inside a notebook now land in an Inbox notebook (created for you) instead of whichever notebook you used last, so they cannot get lost. Inside a notebook, new notes still go in that notebook",
+   "A new note or action that you leave without typing anything is no longer kept: empty untitled ones disappear when you move on (and the empty ones already in your file are cleared when it opens)",
+   "Actions page: the add box now has a Note button, so you can write a note on the action while creating it",
+   "Actions page: a Clear all filters link appears whenever any filter is on. A newly added action also clears a person or notebook filter that would have hidden it",
+   "Actions page: typing @Sam (or “assign to Sam”) now always assigns, even with Auto-detect dates switched off. A line under the add box shows what it will pick up, and tells you when dates are being ignored because Auto-detect dates is off, with a button to turn it on",
+   "Today: On your timeline now comes first, above Past due, and is sorted by start date"
+  ]
+ },
  {
   "v": "1.19.2",
   "title": "Fix: a note could be overwritten by the one you just left, and earlier versions",
@@ -1240,6 +1256,7 @@ function restoreSnapItem(k, id){
 }
 function downloadSnap(k){ const sn = snaps && snaps[k]; if(sn) downloadFile('notebook-version-' + sn.at.slice(0, 16).replace(/[:T]/g, '-') + '.json', sn.text, 'application/json'); }
 document.addEventListener('visibilitychange', () => { if(document.hidden) takeSnapshot('left the app'); });
+setTimeout(() => { if(dropEmptyNew()){ touch(); renderAll(); } }, 2500);          // empty untitled notes and actions left in the file
 setTimeout(() => takeSnapshot('opened the app', true), 8000);
 /* replies to a shared page: written by someone else into <page>.reply.json, kept here with what you decided */
 const REPLY_KINDS = ['check', 'tick', 'addAction', 'setAction', 'append', 'replace'];
@@ -1858,7 +1875,9 @@ function renderActions(){
     <div class="type">Actions</div>
     <h1 class="ptitle">Everything to do</h1>
     <p class="psub">Every action: the standalone ones, plus the action items inside your notes. Risks, issues and decisions have their own pages under RAID log. ${open} open.</p>
-    <div class="addrow"><input type="text" id="anew" placeholder="Add an action…"><input type="date" id="adue" title="Due date"><select id="acat">${catOptions('', 'No category')}</select><button data-act="addaction">Add</button></div>
+    <div class="addrow"><input type="text" id="anew" placeholder="Add an action…"><input type="date" id="adue" title="Due date"><select id="acat">${catOptions('', 'No category')}</select><button class="plain" data-act="addnotetoggle" title="Write a note on this action while you create it">📝 Note</button><button data-act="addaction">Add</button></div>
+    <textarea id="anotefld" class="addnote" rows="3" hidden placeholder="Note for this action (optional)…"></textarea>
+    <div class="qapv" id="apv"></div>
     <div class="afilters">
       <label>Group by <select id="agroup">${opt('due','Due date',actGroup)}${opt('source','Note',actGroup)}${opt('category','Category',actGroup)}</select></label>
       <label>Category <select id="acatf">${opt('','All',actCat)}${opt('none','No category',actCat)}${db.categories.map(c => opt(esc(c.id), esc(c.name), actCat)).join('')}</select></label>
@@ -1866,6 +1885,7 @@ function renderActions(){
       <label>Assigned to <select id="apers">${opt('', 'Everyone', actPerson)}${opt('none', 'Unassigned', actPerson)}${db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => opt(esc(n), esc(n), actPerson)).join('')}</select></label>
       <label><input type="checkbox" id="adone" ${actDone?'checked':''}> Show completed</label>
       <label title="When an action has no date, look for things like “by Friday 3pm” or “in 3 days” in its text"><input type="checkbox" id="aauto" ${autoDates?'checked':''}> Auto-detect dates</label>
+      ${(actCat || actPerson || actNb || actDone) ? '<a data-act="clearafilters" class="clearf" title="Show everything again">✕ Clear all filters</a>' : ''}
       <a data-act="scandates" style="margin-left:auto;cursor:pointer;color:var(--accent)">Find dates in my existing actions</a>
     </div>
     ${groups.length ? groups.map(g => `<h4 class="gh ${g.k==='Past due'&&actGroup==='due'?'late':g.k==='Today'&&actGroup==='due'?'today':''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : '<div class="empty">Nothing to do here.</div>'}`;
@@ -1929,13 +1949,17 @@ function addAction(){
     t.focus(); t.classList.add('shake'); setTimeout(() => t.classList.remove('shake'), 700);
     toast('Type what needs doing first, then press Add.'); return;
   }
-  const i = {id:uid(), type:'task', title:t.value.trim(), body:'', tags:[], category:$('#acat').value, due:$('#adue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  const nt = $('#anotefld'), noteText = nt ? nt.value.trim() : '';
+  const i = {id:uid(), type:'task', title:t.value.trim(), body:noteText ? plainToHtml(noteText) : '', tags:[], category:$('#acat').value, due:$('#adue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
   db.items.push(i); autoDate(i, i.title, i);
-  const hidden = actCat === 'none' ? !!i.category : actCat ? i.category !== actCat : false;
-  if(hidden){ actCat = ''; saveUi(); }                    // don't let the Category filter hide what was just added
+  const hid = [];                                         // don't let a filter hide what was just added
+  if(actCat === 'none' ? !!i.category : actCat ? i.category !== actCat : false){ actCat = ''; hid.push('category'); }
+  if(actPerson === 'none' ? !!i.assignee : actPerson ? (i.assignee || '').toLowerCase() !== actPerson.toLowerCase() : false){ actPerson = ''; hid.push('person'); }
+  if(actNb && actNb !== 'none'){ actNb = ''; hid.push('notebook'); }
+  const hidden = hid.length > 0; if(hidden) saveUi();
   touch(); renderRail(); renderDetail();
   const when = [i.due ? fmtDay(i.due) : '', i.time ? fmtTime(i.time) : ''].filter(Boolean).join(' ');
-  toast(`Added “${i.title}”${when ? ' — due ' + when : ''}${i.repeat ? ', repeats ' + lcFirst(describeRepeat(i.repeat)) : ''}${hidden ? ' (category filter cleared)' : ''}`,
+  toast(`Added “${i.title}”${i.assignee ? ' → ' + i.assignee : ''}${when ? ' — due ' + when : ''}${i.repeat ? ', repeats ' + lcFirst(describeRepeat(i.repeat)) : ''}${hidden ? ' (' + hid.join(' and ') + ' filter cleared)' : ''}`,
     () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
   const row = document.querySelector(`.act[data-key="${i.id}"]`);
   if(row){ row.classList.add('flash'); const b = row.getBoundingClientRect(); if(b.bottom > innerHeight - 70 || b.top < 0) row.scrollIntoView({block:'center', behavior:'smooth'}); }   // highlight it, and bring it into view if it's below the fold
@@ -1983,8 +2007,8 @@ function findAssignee(text, item){
 }
 
 /* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
-function applyParsed(o, text, item){
-  const r = parseWhen(text), w = o.assignee ? null : findAssignee(text, item);
+function applyParsed(o, text, item, datesOn = true){
+  const r = datesOn ? parseWhen(text) : null, w = o.assignee ? null : findAssignee(text, item);
   if(!r && !w) return null;
   const setDue = !!r && !o.due && !!r.date, setTime = !!r && !o.time && !!r.time, setRep = !!r && !o.repeat && !!r.repeat, setWho = !!w;
   if(!setDue && !setTime && !setRep && !setWho) return null;
@@ -2002,8 +2026,7 @@ const undoParsed = (o, item, p) => {
   item.updated = now();
 };
 function autoDate(o, text, item){
-  if(!autoDates) return false;
-  const res = applyParsed(o, text, item); if(!res) return false;
+  const res = applyParsed(o, text, item, autoDates); if(!res) return false;          // an @name always assigns; dates only when Auto-detect dates is on
   const when = [o.due ? fmtDay(o.due) : '', o.time ? fmtTime(o.time) : ''].filter(Boolean).join(' '), bits = [];
   if(res.setDue || res.setTime) bits.push((res.setDue ? 'Due set to ' : 'Time set to ') + when);
   if(res.setRep) bits.push('repeats ' + lcFirst(describeRepeat(o.repeat)));
@@ -2391,6 +2414,7 @@ function metaSummary(i){
   return [d && fmtDay(d), t && fmtTime(t), c && c.name, i.type === 'task' && i.assignee, i.type === 'note' && i.attendees && 'with ' + i.attendees, i.tags.length && i.tags.map(x => '#' + x).join(' ')].filter(Boolean).join(' · ') || 'no date, category or tags';
 }
 function renderDetail(){
+  if(dropEmptyNew()) touch();                              // an empty note you moved away from
   $('#detail').dataset.item = '';                         // while it is being redrawn, nothing in it belongs to any note
   $('#detail').classList.toggle('tl', filter === 'timeline');
   if(filter === 'timeline'){ renderTimeline(); return; }
@@ -2447,14 +2471,29 @@ function renderAll(){
 /* ================= actions ================= */
 function edited(i){ i.updated = now(); touch(); renderList(); renderRail(); }
 function parseTags(s){ return [...new Set(s.split(/[,\s]+/).map(t => t.replace(/^#/, '').toLowerCase()).filter(Boolean))]; }
+const isEmptyItem = i => !i.title.trim() && isBlank(i.body) && !i.checklist.some(c => c.text.trim() || !isBlank(c.note)) && !i.tags.length && !i.attendees && !i.assignee
+  && !(i.type === 'task' ? (i.due || i.time) : (!i.autoDt && (i.date || i.time))) && !(i.replies || []).length && !(i.shared && i.shared.on) && !i.pinned;
+function dropEmptyNew(){                                  // a new note or action you left without typing anything is not kept
+  const gone = db.items.filter(i => i.id !== selId && isEmptyItem(i));
+  if(!gone.length) return false;
+  db.items = db.items.filter(i => !gone.includes(i)); return true;
+}
+function inboxId(){                                       // where a note goes when you are not inside a notebook
+  let nb = db.notebooks.find(n => n.id === 'inbox' || n.name.trim().toLowerCase() === 'inbox');
+  if(!nb){ nb = {id:'inbox', name:'Inbox', color:'#8a857a'}; db.notebooks.unshift(nb); }
+  return nb.id;
+}
+const insideNotebook = () => filter === 'note' && !!nbById(nbView);
 function newItem(kind){                      // kind: 'task', 'note' or 'meeting' (a note that starts with today's date)
   const type = kind === 'task' ? 'task' : 'note';
   const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
-  if(type === 'note'){ i.notebook = curNb(); lastNb = i.notebook; nbView = i.notebook; }
+  let toInbox = false;
+  if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; }
   db.items.push(i); selId = i.id; search = '';
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
+  if(toInbox) toast('New note is in your Inbox. Use the Notebook box to move it when you know where it belongs.');
 }
 /* ---- export / import notebooks (move a notebook between computers, or keep a copy) ---- */
 const notebookPages = id => db.items.filter(i => i.type === 'note' && nbKey(i) === id);
@@ -3130,7 +3169,7 @@ function renderToday(){
   const day = d => acts.filter(x => x.due === d).map(x => ({k:tk(x), done:x.done, x}))          // Today is for actions, risks, issues, decisions and timeline items: notes live on the Notes tab
     .sort((a, b) => (a.done - b.done) || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));          // open things by time first, finished ones after
   const today = day(T), tomorrow = day(TM), rows = list => list.map(e => actRow(e.x)).join('');
-  const blocks = tlExpand(db.plan, T).filter(b => b.start <= T && b.end >= T && !blockDone(b));
+  const blocks = tlExpand(db.plan, T).filter(b => b.start <= T && b.end >= T && !blockDone(b)).sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || (a.title || '').localeCompare(b.title || ''));
   const openToday = today.filter(e => !e.x.done).length;
   const none = !overdue.length && !today.length && !blocks.length;
   $('#detail').innerHTML = `
@@ -3140,9 +3179,9 @@ function renderToday(){
     ${db.me ? `<label class="tdmine"><input type="checkbox" id="tmine" ${todayMine ? 'checked' : ''}> Only mine — assigned to ${esc(db.me)}, or to nobody</label>` : ''}
     <div class="addrow"><input type="text" id="tqa" placeholder="Quick add: “call Sam Friday 3pm”, “note: ideas”, “risk: vendor may slip @Sam”" autocomplete="off"><button data-act="qadd">Add</button></div>
     <div class="qapv" id="tqapv"></div>
+    ${blocks.length ? `<h4 class="gh">On your timeline <small>${blocks.length}</small></h4><div>${blocks.map(b => `<span class="tdblock" data-act="gotl" title="Open the Timeline"><i class="cdot" style="background:${esc(blockColor(b))};margin:0"></i>${b.repeat ? '↻ ' : ''}${esc(b.title || 'Untitled')}${b.start !== b.end ? ` <small style="color:var(--mute)">${esc(rangeLabel(b))}</small>` : ''}</span>`).join('')}</div>` : ''}
     ${overdue.length ? `<h4 class="gh late">Past due <small>${overdue.length}</small></h4>${overdue.map(actRow).join('')}` : ''}
     ${today.length ? `<h4 class="gh today">Today <small>${today.length}</small></h4>${rows(today)}` : ''}
-    ${blocks.length ? `<h4 class="gh">On your timeline <small>${blocks.length}</small></h4><div>${blocks.map(b => `<span class="tdblock" data-act="gotl" title="Open the Timeline"><i class="cdot" style="background:${esc(blockColor(b))};margin:0"></i>${b.repeat ? '↻ ' : ''}${esc(b.title || 'Untitled')}${b.start !== b.end ? ` <small style="color:var(--mute)">${esc(rangeLabel(b))}</small>` : ''}</span>`).join('')}</div>` : ''}
     ${none ? '<div class="empty">Nothing due or planned for today. 🎉</div>' : ''}
     ${tomorrow.length ? `<h4 class="gh">Tomorrow <small>${tomorrow.length}</small></h4>${rows(tomorrow)}` : ''}`;
   $('#detail').querySelectorAll('.anote').forEach(grow);
@@ -3165,7 +3204,7 @@ function qaSummary(q){
 function quickAdd(raw){
   const q = qaParse(raw); if(!q.title) return null;
   const i = {id:uid(), type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
-  if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = curNb(); }
+  if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = insideNotebook() ? nbView : inboxId(); }
   db.items.push(i); touch(); refreshViews();
   toast(`Added “${q.title}” — ${qaSummary(q)}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
   return i;
@@ -3174,11 +3213,23 @@ function openQuickAdd(){ $('#qai').value = ''; $('#qapv2').textContent = qaSumma
 $('#qai').addEventListener('input', e => { $('#qapv2').textContent = qaSummary(qaParse(e.target.value)); });
 $('#qai').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(quickAdd(e.target.value)) $('#qadlg').close(); } });
 $('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) : ''; });
+function addPreview(text){                                // what the Actions add box will pick up from the words
+  const t = text.trim(); if(!t) return '';
+  const w = findAssignee(t, {assignee:'', checklist:[], attendees:'', type:'task'}), r = parseWhen(t), bits = [];
+  if(w) bits.push('assigned to <b>' + esc(w.name) + '</b>');
+  if(r && (r.date || r.time)){
+    if(autoDates) bits.push('due <b>' + esc([r.date ? fmtDay(r.date) : '', r.time ? fmtTime(r.time) : ''].filter(Boolean).join(' ')) + '</b>');
+    else bits.push('<span class="warnmsg">a date in the words is being ignored because Auto-detect dates is off</span> <a data-act="autoon">Turn it on</a>');
+  }
+  if(r && r.repeat && autoDates) bits.push('repeating');
+  return bits.length ? 'Will be ' + bits.join(', ') : '';
+}
+$('#detail').addEventListener('input', e => { if(e.target.id === 'anew' && $('#apv')) $('#apv').innerHTML = addPreview(e.target.value); });
 function todayAdd(){ const el = $('#tqa'); if(!el) return; if(!el.value.trim()){ el.focus(); toast('Type what needs doing first.'); return; } quickAdd(el.value); const n = $('#tqa'); if(n) n.focus(); }
 
 /* ---- keyboard shortcuts + the cheat sheet ---- */
 const SHORTCUTS = [
-  ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['Q', 'Quick add (type it in plain words)']]],
+  ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['Q / Ctrl + Q', 'Quick add (type it in plain words). Ctrl + Q also works while typing in a note']]],
   ['Go to', [['1', 'Today'], ['2', 'Actions'], ['3', 'Notes'], ['4', 'Timeline'], ['5', 'Risks'], ['6', 'Issues'], ['7', 'Decisions'], ['8', 'Trash'], ['/', 'Search everything']]],
   ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P', 'Pin or unpin the selected item'], ['Ctrl + S', 'Save right now'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
   ['In notes', [['Ctrl + B / I / U', 'Bold, italic, underline'], ['Ctrl + K', 'Add a link'], ['Tab / Shift + Tab', 'Indent / outdent (in a table: next / previous cell)'], ['Click a bullet', 'Fold / unfold its sub-points'], ['ACTION  RISK  ISSUE  DECISION', 'Start a line with one in CAPITALS (a colon is optional): it becomes an entry, the line is highlighted, and “by Friday 3pm” and “@Sam” fill its date and owner'], ['- or 1. then space', 'Start a bulleted or numbered list']]],
@@ -3200,6 +3251,10 @@ document.addEventListener('keydown', e => {
     const i = byId(selId); if(FULL_PAGES.includes(filter) || !i) return;
     if(ai){ const c = i.checklist.find(x => x.id === (ai.querySelector('[data-ci]') || {dataset:{}}).dataset.ci); if(c){ e.preventDefault(); completeToggle(c, i, !c.done); edited(i); renderDetail(); } return; }
     if(i.type === 'task'){ e.preventDefault(); completeToggle(i, i, !i.done); edited(i); renderDetail(); }
+    return;
+  }
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'q' || e.key === 'Q')){          // quick add, even while typing in a note; the action is its own, not tied to the note
+    if(!document.querySelector('dialog[open]')){ e.preventDefault(); openQuickAdd(); }
     return;
   }
   if(typing || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]') || $('#ctxmenu')) return;
@@ -3529,6 +3584,9 @@ document.addEventListener('click', e => {
     else if(act === 'snaps') openSnaps(); else if(act === 'snapclose') $('#snapdlg').close();
     else if(act === 'snappick'){ snapSel = +a.dataset.i; renderSnaps(); }
     else if(act === 'snaprestore') restoreSnapItem(+a.dataset.i, a.dataset.id); else if(act === 'snapdl') downloadSnap(+a.dataset.i);
+    else if(act === 'clearafilters'){ actCat = ''; actPerson = ''; actNb = ''; actDone = false; saveUi(); renderDetail(); }
+    else if(act === 'addnotetoggle'){ const nf = $('#anotefld'); if(nf){ nf.hidden = !nf.hidden; a.classList.toggle('on', !nf.hidden); if(!nf.hidden) nf.focus(); } }
+    else if(act === 'autoon'){ autoDates = true; saveUi(); const an = $('#anew'); renderDetail(); const n2 = $('#anew'); if(n2 && an){ n2.value = an.value; n2.dispatchEvent(new Event('input', {bubbles:true})); n2.focus(); } }
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
     else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
@@ -3837,7 +3895,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261103101111';</script>
+<script>window.NB_BUILD = '20261103103536';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

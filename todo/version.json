@@ -1,4 +1,17 @@
-{"version":"1.19.2","build":"20261103101111","changelog":[
+{"version":"1.20.0","build":"20261103103536","changelog":[
+ {
+  "v": "1.20.0",
+  "title": "Quick add anywhere, Inbox notebook, cleaner Actions and Today",
+  "items": [
+   "Ctrl + Q opens Quick add from anywhere, including while you are typing in a note. The action it makes is on its own, not linked to the note you are in",
+   "New notes made when you are not inside a notebook now land in an Inbox notebook (created for you) instead of whichever notebook you used last, so they cannot get lost. Inside a notebook, new notes still go in that notebook",
+   "A new note or action that you leave without typing anything is no longer kept: empty untitled ones disappear when you move on (and the empty ones already in your file are cleared when it opens)",
+   "Actions page: the add box now has a Note button, so you can write a note on the action while creating it",
+   "Actions page: a Clear all filters link appears whenever any filter is on. A newly added action also clears a person or notebook filter that would have hidden it",
+   "Actions page: typing @Sam (or “assign to Sam”) now always assigns, even with Auto-detect dates switched off. A line under the add box shows what it will pick up, and tells you when dates are being ignored because Auto-detect dates is off, with a button to turn it on",
+   "Today: On your timeline now comes first, above Past due, and is sorted by start date"
+  ]
+ },
  {
   "v": "1.19.2",
   "title": "Fix: a note could be overwritten by the one you just left, and earlier versions",
