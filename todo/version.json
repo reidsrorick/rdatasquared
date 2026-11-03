@@ -1,4 +1,12 @@
-{"version":"1.19.1","build":"20261102082553","changelog":[
+{"version":"1.19.2","build":"20261103101111","changelog":[
+ {
+  "v": "1.19.2",
+  "title": "Fix: a note could be overwritten by the one you just left, and earlier versions",
+  "items": [
+   "Fixed the cause of a note being replaced by the text and actions of the note you had just been typing in. When the page moved to another note while the old note's editor still had the cursor in it, the old note's text was written into the new one. Edits and the action-sync now only ever go to the note the editor on screen belongs to",
+   "New: the app keeps a snapshot of all your notes in this browser every few minutes, plus one before an import or before you accept a reply. Settings > Earlier versions shows them. Pick a time, see which pages differ from now, and restore any page as a copy (or download that whole version). Nothing is ever overwritten by a restore"
+  ]
+ },
  {
   "v": "1.19.1",
   "title": "Fix: copied notes sharing action items",

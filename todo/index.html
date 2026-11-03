@@ -271,6 +271,16 @@ input.who:focus{border-color:var(--accent)}
 .pinhead{padding:10px 14px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .opts.nblist>:not(#datewrap){display:none!important}
 .datef{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.datef select,.datef input{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px}
+#snapdlg{width:min(860px,95vw);max-height:90vh;overflow:auto}
+#snapdlg .sncols{display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr);gap:14px}
+#snapdlg .snrow{padding:7px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}#snapdlg .snrow:hover{background:var(--hover2)}#snapdlg .snrow.on{background:var(--soft);border-color:var(--accent)}
+#snapdlg .snrow b{display:block;font-size:13.5px}#snapdlg small{display:block;color:var(--mute);font-size:12px}
+#snapdlg .snhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:600}
+#snapdlg .snit{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-top:1px dotted var(--line)}#snapdlg .snit.same{opacity:.55}
+#snapdlg .snit .diff{color:var(--red);font-weight:600}
+#snapdlg button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 10px;font:inherit;font-size:13px}
+#snapdlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+@media(max-width:700px){#snapdlg .sncols{grid-template-columns:1fr}}
 #setdlg{width:min(520px,94vw)}
 #setdlg .setsec{margin:14px 0 0}#setdlg h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:0 0 6px}
 #setdlg .setline{font-size:14px;margin:4px 0;display:flex;gap:10px;align-items:center}#setdlg .setline b{word-break:break-all}#setdlg .bad{color:var(--red)}
@@ -520,10 +530,17 @@ dialog p{color:var(--mute);font-size:13px}
   </div>
   <div class="dfoot"><span></span><span><button data-act="nbimpcancel">Cancel</button> <button class="pri" data-act="nbimpgo">Import</button></span></div>
 </dialog>
+<dialog id="snapdlg">
+  <h3>Earlier versions</h3>
+  <p style="font-size:13px;color:var(--mute);margin:2px 0 6px">Snapshots of all your notes, kept in this browser. Restoring a page adds it back as a copy; nothing is overwritten.</p>
+  <div id="snapbody"></div>
+  <div class="dfoot"><span></span><button class="pri" data-act="snapclose">Close</button></div>
+</dialog>
 <dialog id="setdlg">
   <h3>⚙ Settings</h3>
   <div class="setsec"><h4>Save file</h4><div id="setfile"></div></div>
   <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
+  <div class="setsec"><h4>Earlier versions</h4><div class="setline">The app keeps a snapshot of your notes every few minutes.</div><div class="setbtns"><button data-act="snaps">Browse earlier versions…</button></div></div>
   <div class="setsec"><h4>Help</h4><div class="setbtns"><button data-act="shortcuts">⌨ Keyboard shortcuts</button><button data-act="about">What's new and updates</button></div></div>
   <div class="dfoot"><span></span><button class="pri" data-act="setclose">Close</button></div>
 </dialog>
@@ -586,8 +603,16 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.19.1';
+const APP_VERSION = '1.19.2';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.19.2",
+  "title": "Fix: a note could be overwritten by the one you just left, and earlier versions",
+  "items": [
+   "Fixed the cause of a note being replaced by the text and actions of the note you had just been typing in. When the page moved to another note while the old note's editor still had the cursor in it, the old note's text was written into the new one. Edits and the action-sync now only ever go to the note the editor on screen belongs to",
+   "New: the app keeps a snapshot of all your notes in this browser every few minutes, plus one before an import or before you accept a reply. Settings > Earlier versions shows them. Pick a time, see which pages differ from now, and restore any page as a copy (or download that whole version). Nothing is ever overwritten by a restore"
+  ]
+ },
  {
   "v": "1.19.1",
   "title": "Fix: copied notes sharing action items",
@@ -1155,6 +1180,67 @@ function healIds(d){                                      // notes that already 
   if(fixed) setTimeout(() => { toast(`Repaired ${fixed} action item${fixed === 1 ? '' : 's'} that shared an ID with another note, so each note's actions are separate again.`); touch(); }, 900);
   return fixed;
 }
+/* ---- snapshots: the app keeps earlier states of everything in this browser, so a bad change can always be looked back on ---- */
+const SNAP_GAP = 3 * 60e3, SNAP_RECENT = 36, SNAP_DAYS = 14;
+let snaps = null, snapTimer = null, snapBusy = false, snapSel = -1;
+async function loadSnaps(){
+  if(snaps) return snaps;
+  try { snaps = await withTimeout(idbGet('snapshots'), 4000); } catch { snaps = null; }
+  if(!Array.isArray(snaps)) snaps = [];
+  return snaps;
+}
+function pruneSnaps(list){                                // the newest few are all kept; older ones keep the last of each day
+  const out = list.slice(0, SNAP_RECENT), seen = new Set();
+  for(const sn of list.slice(SNAP_RECENT)){ const day = sn.at.slice(0, 10); if(!seen.has(day) && seen.size < SNAP_DAYS){ seen.add(day); out.push(sn); } }
+  return out;
+}
+async function takeSnapshot(reason, force){
+  if(snapBusy) return; snapBusy = true;
+  try {
+    const list = await loadSnaps(), text = JSON.stringify(db);
+    if(list.length && list[0].text === text) return;
+    if(!force && list.length && Date.now() - Date.parse(list[0].at) < SNAP_GAP) return;
+    list.unshift({at:new Date().toISOString(), reason:reason || '', text});
+    snaps = pruneSnaps(list);
+    await withTimeout(idbSet('snapshots', snaps), 8000);
+  } catch {} finally { snapBusy = false; }
+}
+function scheduleSnap(){ if(!snapTimer) snapTimer = setTimeout(() => { snapTimer = null; takeSnapshot(''); }, SNAP_GAP); }
+const snapCounts = text => { try { const d = JSON.parse(text); return {notes:d.items.filter(i => i.type === 'note').length, acts:d.items.filter(i => i.type === 'task').length, cks:d.items.reduce((n, i) => n + (i.checklist || []).length, 0)}; } catch { return {notes:0, acts:0, cks:0}; } };
+const snapWhen = iso => new Date(iso).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+function renderSnaps(){
+  const list = snaps || [];
+  const left = list.length ? list.map((sn, k) => { const c = snapCounts(sn.text); return `<div class="snrow ${k === snapSel ? 'on' : ''}" data-act="snappick" data-i="${k}"><b>${esc(snapWhen(sn.at))}</b><small>${c.notes} notes · ${c.acts} actions · ${c.cks} action items${sn.reason ? ' · ' + esc(sn.reason) : ''}</small></div>`; }).join('') : '<p class="rnone">No snapshots yet. The first one is taken a few minutes after you edit something.</p>';
+  let right = '<p class="rnone">Pick a time on the left to see what your notes looked like then. Pages that are different from now are marked.</p>';
+  if(snapSel >= 0 && list[snapSel]){
+    let d = null; try { d = JSON.parse(list[snapSel].text); } catch {}
+    if(!d) right = '<p class="rnone">That snapshot could not be read.</p>';
+    else {
+      const nbName = id => (d.notebooks || []).find(n => n.id === id) ? (d.notebooks.find(n => n.id === id)).name : '';
+      const rows = (d.items || []).slice().sort((a, b) => (b.updated || '').localeCompare(a.updated || '')).slice(0, 300).map(it => {
+        const cur = byId(it.id), st = !cur ? 'not in your notes now' : (cur.body !== it.body || (cur.checklist || []).length !== (it.checklist || []).length || cur.title !== it.title ? 'different from now' : 'same as now');
+        return `<div class="snit ${st === 'same as now' ? 'same' : ''}"><div><b>${esc(it.title || 'Untitled')}</b><small>${it.type === 'task' ? 'Action' : 'Note' + (nbName(it.notebook) ? ' · ' + esc(nbName(it.notebook)) : '')} · edited ${esc(snapWhen(it.updated || ''))} · ${(it.checklist || []).length} action items · <span class="${st === 'different from now' || st === 'not in your notes now' ? 'diff' : ''}">${st}</span></small></div><button data-act="snaprestore" data-i="${snapSel}" data-id="${esc(it.id)}">Restore as a copy</button></div>`;
+      }).join('');
+      right = `<div class="snhead"><span>${esc(snapWhen(list[snapSel].at))}</span><button data-act="snapdl" data-i="${snapSel}">Download this whole version</button></div>` + (rows || '<p class="rnone">Nothing in this snapshot.</p>');
+    }
+  }
+  $('#snapbody').innerHTML = `<div class="sncols"><div class="snlist">${left}</div><div class="snright">${right}</div></div>`;
+}
+async function openSnaps(){ await loadSnaps(); snapSel = -1; renderSnaps(); if(!$('#snapdlg').open) $('#snapdlg').showModal(); }
+function restoreSnapItem(k, id){
+  const sn = snaps && snaps[k]; if(!sn) return;
+  let raw = null; try { raw = (JSON.parse(sn.text).items || []).find(x => x.id === id); } catch {}
+  if(!raw){ toast('That page could not be read from the snapshot.'); return; }
+  const it = sanitizePage(JSON.parse(JSON.stringify(raw)));
+  it.id = uid(); it.title = (it.title || 'Untitled') + ' (restored from ' + snapWhen(sn.at) + ')'; renewChecklistIds(it); it.shared = null; it.replies = []; it.updated = now();
+  if(it.type === 'note') it.notebook = nbById(raw.notebook) ? raw.notebook : curNb();
+  db.items.push(it); selId = it.id; filter = it.type === 'note' ? 'note' : 'actions'; if(it.type === 'note'){ nbView = it.notebook; lastNb = it.notebook; }
+  saveUi(); touch(); $('#snapdlg').close(); $('#setdlg').close(); renderAll();
+  toast(`Restored “${it.title}” as a new page. Nothing was overwritten.`);
+}
+function downloadSnap(k){ const sn = snaps && snaps[k]; if(sn) downloadFile('notebook-version-' + sn.at.slice(0, 16).replace(/[:T]/g, '-') + '.json', sn.text, 'application/json'); }
+document.addEventListener('visibilitychange', () => { if(document.hidden) takeSnapshot('left the app'); });
+setTimeout(() => takeSnapshot('opened the app', true), 8000);
 /* replies to a shared page: written by someone else into <page>.reply.json, kept here with what you decided */
 const REPLY_KINDS = ['check', 'tick', 'addAction', 'setAction', 'append', 'replace'];
 const clipS = (v, n) => typeof v === 'string' ? v.replace(/\u0000/g, '').slice(0, n) : '';
@@ -1264,7 +1350,7 @@ async function idbSet(k, v){ const d = await idb(); return new Promise((res, rej
 function cacheWrite(){ try { localStorage.setItem('notebook-cache', JSON.stringify({dirty, db})); } catch {} }
 function cacheRead(){ try { const c = JSON.parse(localStorage.getItem('notebook-cache')); if(c && c.db && Array.isArray(c.db.items)) return c; } catch {} return null; }
 
-function touch(){ db.savedAt = now(); dirty = true; cacheWrite(); scheduleSave(); renderStatus(); scheduleShareWrite(); }
+function touch(){ db.savedAt = now(); dirty = true; cacheWrite(); scheduleSave(); renderStatus(); scheduleShareWrite(); scheduleSnap(); }
 function scheduleSave(){ clearTimeout(timer); timer = setTimeout(flush, 350); }
 
 async function flush(){
@@ -2305,6 +2391,7 @@ function metaSummary(i){
   return [d && fmtDay(d), t && fmtTime(t), c && c.name, i.type === 'task' && i.assignee, i.type === 'note' && i.attendees && 'with ' + i.attendees, i.tags.length && i.tags.map(x => '#' + x).join(' ')].filter(Boolean).join(' · ') || 'no date, category or tags';
 }
 function renderDetail(){
+  $('#detail').dataset.item = '';                         // while it is being redrawn, nothing in it belongs to any note
   $('#detail').classList.toggle('tl', filter === 'timeline');
   if(filter === 'timeline'){ renderTimeline(); return; }
   if(filter === 'actions'){ renderActions(); return; }
@@ -2335,6 +2422,7 @@ function renderDetail(){
     <div id="cklist">${ckRows(i)}</div>
     <div class="ai add"><input type="checkbox" disabled><input type="text" id="newck" placeholder="Add an item and press Enter…"></div>
     <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns">${(i.replies || []).length ? `<button class="plain" data-act="replies" title="Replies to this shared page, and what you decided">💬 Replies${pendingOf(i) ? ' (' + pendingOf(i) + ')' : ''}</button>` : ''}<button class="plain" id="sharebtn" data-act="sharepage" title="${esc(shareBadge(i).tip)}">${esc(shareBadge(i).label)}</button><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
+  el.dataset.item = i.id;                                  // the editor now on screen belongs to this note
 }
 function grow(t){
   if(!t || t.isContentEditable) return;                  // rich editors size themselves
@@ -2427,6 +2515,7 @@ function openImport(pack, fileName){
   $('#nbimp').showModal();
 }
 function runImport(){
+  takeSnapshot('before an import', true);
   const pack = importPack; if(!pack) return;
   const chosen = [...document.querySelectorAll('#nbimplist [data-impnb]')].filter(c => c.checked).map(c => pack.notebooks[+c.dataset.impnb]);
   const mode = (document.querySelector('input[name=nbmode]:checked') || {}).value || 'newer';
@@ -2761,6 +2850,7 @@ function openReplies(id){
 }
 function finishDecision(i, msg){ touch(); renderAll(); renderReplies(); if(msg) toast(msg); }
 function replyAction(act, rid, cid){
+  takeSnapshot('before accepting a reply', true);
   const i = byId(repItem), r = i && i.replies.find(x => x.id === rid); if(!r) return;
   const accept = act === 'repacc' || act === 'repaccall', list = (act === 'repacc' || act === 'represj') ? r.changes.filter(c => c.id === cid) : r.changes.filter(c => c.status === 'pending');
   list.forEach(c => decideChange(i, c, accept));
@@ -3142,6 +3232,7 @@ function wrapRootRuns(body){                                // loose text at the
   flush(); return changed;
 }
 function syncTags(i, live){
+  if(live && !(live.closest('#detail') && live.closest('#detail').dataset.item === i.id)) live = null;          // never read another note's editor
   const html = i.body || '';
   const flat = html.replace(/<[^>]+>/g, m => /^<\/(div|li|p|h[1-3]|blockquote|td|th)/i.test(m) || /^<br/i.test(m) ? '\n' : '');
   const hasText = /(^|\s)\[?(ACTION|RISK|ISSUE|DECISION)\]?\s*[:\-–—]/i.test(flat) || /(^|\s)\[?(ACTION|RISK|ISSUE|DECISION)\]?\s+\S/.test(flat), hasSpan = /class="rtag/.test(html);
@@ -3201,7 +3292,7 @@ function setCaretTextOffset(ed, off){
 }
 function runTagSync(id, quiet){
   const i = byId(id); if(!i) return null;
-  const res = syncTags(i, selId === id ? document.querySelector('#detail .rt[data-f=body]') : null); if(!res) return null;
+  const res = syncTags(i, selId === id && $('#detail').dataset.item === id ? document.querySelector('#detail .rt[data-f=body]') : null); if(!res) return null;
   if(!(res.bodyChanged || res.created.length || res.removed.length || res.updated)) return res;
   i.updated = now(); touch(); renderRail(); renderList();
   if(selId === id && $('#cklist')) $('#cklist').innerHTML = ckRows(i);
@@ -3265,7 +3356,7 @@ document.addEventListener('beforeinput', e => {                      // typing r
 }, true);
 let tagTimer = null;
 const scheduleTagSync = id => { clearTimeout(tagTimer); tagTimer = setTimeout(() => runTagSync(id), 900); };
-$('#detail').addEventListener('focusout', e => { if(e.target.matches && e.target.matches('.rt[data-f=body]') && selId){ clearTimeout(tagTimer); runTagSync(selId); } });
+$('#detail').addEventListener('focusout', e => { const own = $('#detail').dataset.item; if(own && e.target.matches && e.target.matches('.rt[data-f=body]')){ clearTimeout(tagTimer); runTagSync(own); } });
 function detachTagLine(i, rid){                          // the item was deleted from the Actions / RAID side: turn its line in the note back into plain text
   const doc = new DOMParser().parseFromString('<!doctype html><body>' + (i.body || ''), 'text/html');
   const sp = [...doc.querySelectorAll('span.rtag')].find(x => x.getAttribute('data-rid') === rid); if(!sp) return;
@@ -3282,7 +3373,7 @@ function scanAllTags(){
 }
 
 function addCk(){
-  const i = byId(selId), inp = $('#newck'); if(!i || !inp.value.trim()) return;
+  const i = byId($('#detail').dataset.item || selId), inp = $('#newck'); if(!i || !inp.value.trim()) return;
   let text = inp.value.trim(), raid = '';
   const tm = /^\[?(action|risk|issue|decision)\]?(?:\s*[:–—]\s*|\s+-\s+|\s+)(\S[\s\S]*)$/i.exec(text);          // "Decision: ship Friday", "RISK vendor late", "[Issue] login fails"
   if(tm){ raid = tm[1].toLowerCase() === 'action' ? '' : tm[1].toLowerCase(); text = tm[2].trim(); }
@@ -3316,7 +3407,7 @@ $('#detail').addEventListener('input', e => {
     if(f === 'done'){ row.classList.toggle('done', t.checked); clearTimeout(actTimer); actTimer = setTimeout(() => { if(filter === 'actions' || filter === 'today') renderDetail(); }, 700); }
     return;
   }
-  const i = byId(selId); if(!i) return;
+  const i = byId($('#detail').dataset.item || selId); if(!i) return;          // the note the field on screen belongs to
   if(t.dataset.cr){ const c = i.checklist.find(x => x.id === t.dataset.cr); if(c){ setRepeat(c, t.value); edited(i); t.closest('.ai').querySelector('[data-cd]').value = c.due; t.innerHTML = repeatOptions(c.repeat); } return; }
   if(t.dataset.rp){ setRepeat(i, t.value); edited(i); const d = $('#detail [data-f=due]'); if(d) d.value = i.due; t.innerHTML = repeatOptions(i.repeat); return; }
   if(t.dataset.ca){ const c = i.checklist.find(x => x.id === t.dataset.ca); if(c){ c.assignee = t.value.trim(); edited(i); } return; }
@@ -3435,6 +3526,9 @@ document.addEventListener('click', e => {
     else if(act === 'resetfilters'){ chipsOff[chipView()] = []; listCat = ''; datedOnly = false; hideDone = false; saveUi(); fixSelection(); renderList(); renderDetail(); }
     else if(act === 'refresh') refreshAll();
     else if(act === 'togglemeta'){ metaOff = !metaOff; saveUi(); renderDetail(); }
+    else if(act === 'snaps') openSnaps(); else if(act === 'snapclose') $('#snapdlg').close();
+    else if(act === 'snappick'){ snapSel = +a.dataset.i; renderSnaps(); }
+    else if(act === 'snaprestore') restoreSnapItem(+a.dataset.i, a.dataset.id); else if(act === 'snapdl') downloadSnap(+a.dataset.i);
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
     else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
@@ -3743,7 +3837,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261102082553';</script>
+<script>window.NB_BUILD = '20261103101111';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
