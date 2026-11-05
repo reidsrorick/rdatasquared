@@ -294,7 +294,8 @@ input.who:focus{border-color:var(--accent)}
 .atpick[hidden]{display:none}.atpick .atit{padding:6px 10px;border-radius:7px;cursor:pointer}.atpick .atit.sel,.atpick .atit:hover{background:var(--soft)}.atpick small{color:var(--mute);margin-left:6px}.atpick .atfoot{padding:4px 10px 2px;font-size:11.5px;color:var(--mute)}
 #namedlg{width:min(460px,94vw)}#namedlg .namechoices{display:flex;flex-direction:column;gap:8px;align-items:flex-start}#namedlg button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:7px 14px;font:inherit}#namedlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}#namedlg .nameother{font-size:13px;color:var(--mute);margin-top:4px}#namedlg select{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit}
 .sharepeople{display:flex;flex-direction:column;gap:4px;margin:4px 0 8px}.swrow{display:flex;gap:8px;align-items:center;font-size:14px;padding:3px 0}.swrow small{color:var(--mute)}.shareall{border-top:1px solid var(--line);padding-top:10px;margin-top:6px}
-#sharedlg{width:min(440px,94vw)}#sharedlg button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 14px;font:inherit}#sharedlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.swrow{justify-content:space-between}.swdir{font-size:12.5px;color:var(--mute);display:flex;gap:8px;align-items:center}.swdir button,#setdlg .feedp button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:2px 9px;font:inherit;font-size:12px}
+#sharedlg{width:min(480px,94vw)}#sharedlg button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 14px;font:inherit}#sharedlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .inrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}.inrow.done .intext b{text-decoration:line-through;color:var(--mute)}.inrow .intext{flex:1 1 260px;min-width:0}.inrow .intext small{display:block;color:var(--mute)}.inrow .indet{font-size:13px;color:var(--mute);margin-top:3px;white-space:pre-wrap}
 .inrow .inform{flex:0 0 100%;display:flex;gap:8px}.inrow .inform[hidden]{display:none}.inrow .inform input,.inform2 input,.insugg2 textarea{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px}.inrow .inform input{flex:1}
 .inrow button,.inform2 button,.insugg2 button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:5px 12px;font:inherit;font-size:13px}.inrow button.ok,.inform2 button.ok,.insugg2 button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
@@ -578,8 +579,8 @@ dialog p{color:var(--mute);font-size:13px}
   <h3>⚙ Settings</h3>
   <div class="setsec"><h4>Save file</h4><div id="setfile"></div></div>
   <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
-  <div class="setsec"><h4>Team and assigned-action feeds</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Your team is the list of people you can assign to. A feed is a file in the shared folder listing the actions assigned to one person, so they can see them and answer “done?”. You always confirm. It holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
-  <div class="setsec"><h4>From the team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">If someone shared a folder with you (named for-your-name), connect it here. Then you see what is assigned to you and the pages shared with you, and can send “done?” requests and suggestions back.</div><div id="setinbox"></div></div>
+  <div class="setsec"><h4>Team and assigned-action feeds</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Your team is the list of people you can assign to. A feed is a file in a folder you choose for that person (share that folder with them) listing the actions assigned to them, so they can see them and answer “done?”. You always confirm. It holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
+  <div class="setsec"><h4>From the team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">If someone shared a folder with you, connect it here. Then you see what is assigned to you and the pages shared with you, and can send “done?” requests and suggestions back.</div><div id="setinbox"></div></div>
   <div class="setsec"><h4>Earlier versions</h4><div class="setline">The app keeps a snapshot of your notes every few minutes.</div><div class="setbtns"><button data-act="snaps">Browse earlier versions…</button></div></div>
   <div class="setsec"><h4>Help</h4><div class="setbtns"><button data-act="shortcuts">⌨ Keyboard shortcuts</button><button data-act="about">What's new and updates</button></div></div>
   <div class="dfoot"><span></span><button class="pri" data-act="setclose">Close</button></div>
@@ -643,8 +644,17 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.25.0';
+const APP_VERSION = '1.26.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.26.0",
+  "title": "Choose where each person's folder goes",
+  "items": [
+   "Each person now has their own folder, and you choose it. Tick Keep a feed for Sam (Settings > Team) and the app asks where Sam's feed should go: pick any folder, on any drive or sync service, that you share with Sam. Her feed, the pages shared with her and her replies all live in that one folder. The folder is remembered, and each row shows which folder it is, with Change folder… and Allow buttons",
+   "Share this page shows each person's folder too, with Choose folder… next to anyone who has none yet. You cannot pick the same folder for two people, so nobody sees someone else's files",
+   "You no longer need one shared folder for everything. It is only needed for the older “everyone with the folder” sharing and notebook sharing. Feeds that already lived in shared/for-name keep working"
+  ]
+ },
  {
   "v": "1.25.0",
   "title": "Share a page with chosen people; teammates' side; suggested actions",
@@ -1299,7 +1309,7 @@ function cleanProposed(p){
   if(!p || typeof p !== 'object' || !/^[\w\-.:]{1,80}$/.test(String(p.id || '')) || !['done', 'note'].includes(p.kind)) return null;
   return {id:String(p.id), kind:p.kind, by:clipS(p.by, 40).trim(), at:okIso(p.at) || now(), note:clipS(p.note, 500)};
 }
-function cleanFeeds(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(f => f && typeof f.person === 'string' && f.person.trim() && !seen.has(f.person.trim().toLowerCase()) && seen.add(f.person.trim().toLowerCase())).map(f => ({person:clipS(f.person, 40).trim(), on:!!f.on, titles:!!f.titles})).slice(0, 50); }
+function cleanFeeds(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(f => f && typeof f.person === 'string' && f.person.trim() && !seen.has(f.person.trim().toLowerCase()) && seen.add(f.person.trim().toLowerCase())).map(f => ({person:clipS(f.person, 40).trim(), on:!!f.on, titles:!!f.titles, folder:clipS(f.folder, 80)})).slice(0, 50); }
 function cleanProposalLog(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(x => x && /^[\w\-.:]{1,80}$/.test(String(x.id || '')) && !seen.has(x.id) && seen.add(x.id)).map(x => ({id:String(x.id), item:clipS(x.item, 80), text:clipS(x.text, 160), by:clipS(x.by, 40), kind:x.kind === 'note' ? 'note' : x.kind === 'new' ? 'new' : 'done', due:okDate(x.due), note:clipS(x.note, 500), at:okIso(x.at) || now(), status:['pending', 'confirmed', 'declined', 'dismissed', 'ignored'].includes(x.status) ? x.status : 'pending', decidedAt:okIso(x.decidedAt), decidedBy:clipS(x.decidedBy, 40), why:clipS(x.why, 120)})).slice(0, 300); }
 /* Every action item (checklist entry) must have an id that no other note uses: lists such as Actions and Today find an entry by that id alone. */
 function renewChecklistIds(it){                           // give a copied note its own action items; its tagged lines are re-pointed at the new ids
@@ -1851,18 +1861,26 @@ function renderSettings(){
   const names = [...new Set(['Claude', ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
   $('#setfeeds').innerHTML = names.map(n => { const f = (db.feeds || []).find(x => x.person.toLowerCase() === n.toLowerCase()), openN = feedItems({person:n, titles:false}).filter(x => !x.done).length;
     const sim = db.people.includes(n) ? nearNames(n).filter(m => db.people.includes(m))[0] : '';
-    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b> <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}</small></label>${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><small class="feedp">shared\\${esc(feedDirName(n))}\\assigned.json</small>` : ''}</div>`; }).join('')
+    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b> <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}</small></label>${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><span class="feedp">${folderLine(n)}</span>` : ''}</div>`; }).join('')
     + guestRowsHtml() + `<div class="feedrow teamadd"><input type="text" id="teamadd" placeholder="Add a team member…" autocomplete="off"><button data-act="teamadd">Add</button></div><label class="feedrow"><input type="checkbox" id="teamstrict" ${db.strict ? 'checked' : ''}> Only assign to people on the team (ask me before adding a new name)</label>`;
+}
+function folderLine(n){
+  const k = personKey(n), h = personDirs.get(k), st = personState.get(k);
+  return h ? `Folder: <b>${esc(h.name)}</b>${st === 'needs-ok' ? ' <span class="bad">needs your OK</span> <button data-act="feedallow">Allow</button>' : ''} <button data-act="feeddir" data-p="${esc(n)}">Change folder…</button>`
+    : `Folder: <i>${(db.feeds || []).some(f => f.on && personKey(f.person) === k) ? 'the old shared/' + esc(feedDirName(n)) : 'not chosen'}</i> <button data-act="feeddir" data-p="${esc(n)}">Choose folder…</button>`;
 }
 async function setFeed(person, on){
   let f = (db.feeds || []).find(x => x.person.toLowerCase() === person.toLowerCase());
-  if(!f){ f = {person, on:false, titles:false}; db.feeds.push(f); }
+  if(!f){ f = {person, on:false, titles:false, folder:''}; db.feeds.push(f); }
   if(on){
-    if(!shareOk()){ toast('This browser can’t write to a folder (turn on the File System Access flag in Brave).'); renderSettings(); return; }
     addPerson(person);
-    try { let d = await shareReady(true); if(!d) d = await pickShareFolder(); f.on = true; shareState = 'ok'; touch(); await runShareWrites(true); toast(`Keeping a feed for ${person} in ${d.name}\\shared\\${feedDirName(person)}\\assigned.json.`); }
-    catch(e){ f.on = false; if(e && e.name !== 'AbortError') toast('Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
-  } else { f.on = false; touch(); toast(`Stopped the feed for ${person}. The last file was left in the folder.`); }
+    try {
+      if(!(await hasFolder(person))) await pickPersonDir(person);                    // where should this person's files go?
+      const h = personDirs.get(personKey(person)); if(h) f.folder = h.name;
+      f.on = true; touch(); await runShareWrites(true);
+      toast(shareState === 'error' ? 'The feed is on, but writing failed: ' + shareErr : `Keeping a feed for ${person} in “${h ? h.name : 'the shared folder'}”.`);
+    } catch(e){ f.on = false; if(e && e.name !== 'AbortError') toast('Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
+  } else { f.on = false; touch(); toast(`Stopped the feed for ${person}. The last file was left in their folder.`); }
   renderSettings(); renderAll();
 }
 $('#namedlg').addEventListener('close', () => { if(nameCtx && !nameCtx.done){ const c = nameCtx; c.done = true; c.apply(undefined); } });
@@ -1874,7 +1892,7 @@ $('#setfeeds').addEventListener('change', e => {
   else if(t.dataset.feed) setFeed(t.dataset.feed, t.checked);
   else if(t.dataset.feedt){ const f = (db.feeds || []).find(x => x.person.toLowerCase() === t.dataset.feedt.toLowerCase()); if(f){ f.titles = t.checked; touch(); runShareWrites(true); } }
 });
-function openSettings(){ renderSettings(); if(!$('#setdlg').open) $('#setdlg').showModal(); }
+function openSettings(){ renderSettings(); refreshPersonStates(false); if(!$('#setdlg').open) $('#setdlg').showModal(); }
 function renderRail(){
   const cnt = t => db.items.filter(i => i.type === t).length;
   const openActions = allActions().filter(x => !x.done && x.text.trim()).length;
@@ -2958,8 +2976,40 @@ function feedPayload(f){
     suggestions:db.proposals.filter(x => x.kind === 'new' && x.by.toLowerCase() === f.person.toLowerCase()).slice(0, 20).map(x => ({id:x.id, text:x.text, status:x.status, at:x.at})),
     items};
 }
+/* ---- where each person's files go: a folder you choose for them (kept in this browser) ---- */
+const personDirs = new Map(), personState = new Map();
+const personKey = n => String(n || '').trim().toLowerCase();
+async function loadPersonDirs(){ try { const l = await withTimeout(idbGet('personDirs'), 3000); (Array.isArray(l) ? l : []).forEach(x => { if(x && x.person && x.handle) personDirs.set(personKey(x.person), x.handle); }); } catch {} }
+const personDirsReady = loadPersonDirs();
+async function savePersonDirs(){ try { await withTimeout(idbSet('personDirs', [...personDirs].map(([person, handle]) => ({person, handle}))), 4000); } catch {} }
+async function personPerm(person, request){
+  const h = personDirs.get(personKey(person)); if(!h) return '';
+  try { let pm = await h.queryPermission({mode:'readwrite'}); if(pm !== 'granted' && request) pm = await h.requestPermission({mode:'readwrite'}); return pm === 'granted' ? 'ok' : 'needs-ok'; } catch { return 'needs-ok'; }
+}
+async function refreshPersonStates(request){
+  await personDirsReady; let changed = false;
+  for(const [k] of personDirs){ const st = await personPerm(k, request); if(personState.get(k) !== st){ personState.set(k, st); changed = true; } }
+  if(changed && $('#setdlg').open) renderSettings();
+}
+async function personRoot(person, sub){                    // that person's folder: the one you chose, or the old shared/for-name
+  await personDirsReady; const h = personDirs.get(personKey(person));
+  if(h){ if(await personPerm(person, false) !== 'ok') throw new Error(person + ': the browser needs your OK to use their folder (Settings > Team > Allow)'); return h; }
+  if(!sub) throw new Error(person + ' has no folder yet. Choose one in Settings > Team.');
+  try { return await sub.getDirectoryHandle(feedDirName(person)); } catch { throw new Error(person + ' has no folder yet. Choose one in Settings > Team.'); }
+}
+async function personDirReady(person, sub){ try { return await personRoot(person, sub); } catch { return null; } }
+async function legacyDirExists(person){ const d = await shareReady(false); if(!d) return false; try { const sub = await d.getDirectoryHandle('shared'); await sub.getDirectoryHandle(feedDirName(person)); return true; } catch { return false; } }
+async function hasFolder(person){ await personDirsReady; return personDirs.has(personKey(person)) || await legacyDirExists(person); }
+async function pickPersonDir(person){
+  if(!shareOk()) throw new Error('This browser can’t open folders (turn on the File System Access flag in Brave).');
+  const h = await showDirectoryPicker({mode:'readwrite', id:'nb-' + feedSlug(person)});
+  for(const [k, o] of personDirs) if(k !== personKey(person)){ let same = false; try { same = await o.isSameEntry(h); } catch {} if(same) throw new Error(`That folder is already used for ${k}. Pick a different one, so each person only sees their own files.`); }
+  personDirs.set(personKey(person), h); personState.set(personKey(person), 'ok'); await savePersonDirs();
+  const f = (db.feeds || []).find(x => personKey(x.person) === personKey(person)); if(f) f.folder = h.name;
+  touch(); return h;
+}
 async function writeFeed(f, sub, force){
-  const dir = await sub.getDirectoryHandle(feedDirName(f.person), {create:true}), text = JSON.stringify(feedPayload(f), null, 2), key = text.replace(/"writtenAt": "[^"]*"/, '');
+  const dir = await personRoot(f.person, sub), text = JSON.stringify(feedPayload(f), null, 2), key = text.replace(/"writtenAt": "[^"]*"/, '');
   if(!force && feedWritten.get(f.person) === key) return;
   const fh = await dir.getFileHandle('assigned.json', {create:true}), w = await fh.createWritable(); await w.write(text); await w.close();
   feedWritten.set(f.person, key);
@@ -2999,7 +3049,7 @@ async function writePageFile(i, dir, name){
   const fh = await dir.getFileHandle(name, {create:true}), w = await fh.createWritable();
   await w.write(JSON.stringify(sharePayload(i), null, 2)); await w.close();
 }
-const pagesDir = async (sub, person, create = true) => { const f = await sub.getDirectoryHandle(feedDirName(person), {create}); return f.getDirectoryHandle('pages', {create}); };
+const pagesDir = async (sub, person, create = true) => (await personRoot(person, sub)).getDirectoryHandle('pages', {create});
 async function writeSharedPage(i, sub){
   const name = shareFileName(i), sh = i.shared, w = sh.with || [], old = sh.file;
   if(sh.global){ await writePageFile(i, sub, name); if(old && old !== name){ try { await sub.removeEntry(old); } catch {} } sh.root = true; }          // everyone with the folder
@@ -3031,15 +3081,19 @@ async function writeSharedNotebook(nb, sub, force){
 async function runShareWrites(force){
   const pages = db.items.filter(i => i.shared && i.shared.on && (force || shareWritten.get(i.id) !== shareStamp(i))), nbs = db.notebooks.filter(n => n.shared && n.shared.on), feeds = (db.feeds || []).filter(f => f.on);
   if(!pages.length && !nbs.length && !feeds.length) return;
-  const d = await shareReady(false);
-  if(!d){ shareState = 'paused'; renderShareBadge(); return; }
-  try {
-    const sub = await d.getDirectoryHandle('shared', {create:true});
-    for(const i of pages) await writeSharedPage(i, sub);
-    for(const nb of nbs) await writeSharedNotebook(nb, sub, force);
-    for(const f of feeds) await writeFeed(f, sub, force);
-    shareState = 'ok'; shareErr = '';
-  } catch(e){ shareState = 'error'; shareErr = (e && e.message) || String(e); }
+  await personDirsReady;
+  const needGlobal = nbs.length > 0 || pages.some(i => i.shared.global || i.shared.root || (i.shared.with || []).some(w => !personDirs.has(personKey(w)))) || feeds.some(f => !personDirs.has(personKey(f.person)));
+  let sub = null;
+  if(needGlobal){
+    const d = await shareReady(false);
+    if(!d){ shareState = 'paused'; renderShareBadge(); return; }
+    try { sub = await d.getDirectoryHandle('shared', {create:true}); } catch(e){ shareState = 'error'; shareErr = (e && e.message) || String(e); renderShareBadge(); return; }
+  }
+  const errs = [], run = async fn => { try { await fn(); } catch(e){ errs.push((e && e.message) || String(e)); } };
+  for(const i of pages) await run(() => writeSharedPage(i, sub));
+  for(const nb of nbs) await run(() => writeSharedNotebook(nb, sub, force));
+  for(const f of feeds) await run(() => writeFeed(f, sub, force));
+  shareState = errs.length ? 'error' : 'ok'; shareErr = errs.join(' · ');
   renderShareBadge();
 }
 function scheduleShareWrite(){ if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on) && !(db.feeds || []).some(f => f.on)) return; clearTimeout(shareTimer); shareTimer = setTimeout(() => runShareWrites(false), 1200); }
@@ -3058,10 +3112,16 @@ function renderShareBadge(){
 }
 let shareDlgItem = '';
 function startSharing(i){ openShareDlg(i); }
+function renderShareRows(checked){
+  const has = new Set(checked.map(personKey));
+  $('#sharepeople').innerHTML = db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => { const h = personDirs.get(personKey(n));
+    return `<div class="swrow"><label><input type="checkbox" data-sw="${esc(n)}" ${has.has(personKey(n)) ? 'checked' : ''}> ${esc(n)}</label><span class="swdir">${h ? esc(h.name) : '<i>no folder yet</i>'} <button data-act="feeddir" data-p="${esc(n)}">${h ? 'Change…' : 'Choose folder…'}</button></span></div>`; }).join('') : '<p class="rnone">Your team list is empty. Add people in Settings first.</p>';
+}
+function refreshShareRows(){ renderShareRows([...document.querySelectorAll('#sharepeople [data-sw]:checked')].map(c => c.dataset.sw)); }
 function openShareDlg(i){
   shareDlgItem = i.id; const sh = i.shared && i.shared.on ? i.shared : null;
-  $('#sharesub').textContent = `“${i.title || 'Untitled'}” is written into each chosen person’s own folder (shared/for-name/pages/), read-only for them. Nothing else of yours is shared.`;
-  $('#sharepeople').innerHTML = db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<label class="swrow"><input type="checkbox" data-sw="${esc(n)}" ${sh && (sh.with || []).some(w => w.toLowerCase() === n.toLowerCase()) ? 'checked' : ''}> ${esc(n)}</label>`).join('') : '<p class="rnone">Your team list is empty. Add people in Settings first.</p>';
+  $('#sharesub').textContent = `“${i.title || 'Untitled'}” is written into a pages folder inside each chosen person’s own folder, read-only for them. Nothing else of yours is shared.`;
+  renderShareRows(sh ? (sh.with || []) : []);
   $('#shareall').checked = !!(sh && sh.global && !(sh.with || []).length);
   $('#sharestop').style.display = sh ? '' : 'none';
   if(!$('#sharedlg').open) $('#sharedlg').showModal();
@@ -3070,9 +3130,10 @@ async function applyShare(){
   const i = byId(shareDlgItem); if(!i) return;
   const names = [...document.querySelectorAll('#sharepeople [data-sw]:checked')].map(c => c.dataset.sw), all = $('#shareall').checked;
   if(!names.length && !all){ toast('Pick at least one person, or tick Everyone with the shared folder.'); return; }
+  for(const nm of names){ if(!(await hasFolder(nm))){ toast(`Choose a folder for ${nm} first (the Choose folder… button beside their name).`); return; } }
   if(!shareOk()){ toast('This browser can’t write to a folder (turn on the File System Access flag in Brave, as for your save file).'); return; }
   try {
-    let d = await shareReady(true); if(!d) d = await pickShareFolder();
+    if(all){ const d = await shareReady(true); if(!d) await pickShareFolder(); }
     const prev = i.shared && i.shared.on ? i.shared : null;
     i.shared = {on:true, file:prev ? prev.file : '', last:'', with:names, sent:prev ? prev.sent || [] : [], global:all, root:prev ? !!prev.root : false};
     $('#sharedlg').close(); shareState = 'ok'; touch(); await runShareWrites(true); renderAll();
@@ -3176,12 +3237,13 @@ async function checkReplies(manual){
   if(replyBusy) return; replyBusy = true;
   try {
     if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on) && !(db.feeds || []).some(f => f.on)){ if(manual) toast('Nothing is shared yet, so there is nothing to check.'); return; }
-    const d = await shareReady(false);
-    if(!d){ if(manual) toast('The browser needs you to allow the shared folder first. Click the Shared button on the page.'); return; }
-    let sub; try { sub = await d.getDirectoryHandle('shared'); } catch { if(manual) toast('No replies yet.'); return; }
-    const dirs = [[sub, '', null]];
-    for(const nb of db.notebooks) if(nb.shared && nb.shared.on && nb.shared.dir){ try { dirs.push([await sub.getDirectoryHandle(nb.shared.dir), nb.shared.dir + '/', null]); } catch {} }
-    for(const person of peopleFolders()){ const fd = (db.feeds || []).find(f => f.on && f.person.toLowerCase() === person.toLowerCase()) || null; try { dirs.push([await sub.getDirectoryHandle(feedDirName(person)), feedDirName(person) + '/', fd, feedSlug(person)]); } catch {} }
+    await personDirsReady;
+    const d = await shareReady(false); let sub = null;
+    if(d){ try { sub = await d.getDirectoryHandle('shared'); } catch {} }
+    const dirs = [];
+    if(sub){ dirs.push([sub, '', null]); for(const nb of db.notebooks) if(nb.shared && nb.shared.on && nb.shared.dir){ try { dirs.push([await sub.getDirectoryHandle(nb.shared.dir), nb.shared.dir + '/', null]); } catch {} } }
+    for(const person of peopleFolders()){ const fd = (db.feeds || []).find(f => f.on && f.person.toLowerCase() === person.toLowerCase()) || null, dir = await personDirReady(person, sub); if(dir) dirs.push([dir, feedDirName(person) + '/', fd, feedSlug(person)]); }
+    if(!dirs.length){ if(manual) toast('Nothing to check yet: the browser needs your OK for the folders (Settings > Team > Allow), or no folder has been chosen.'); return; }
     const got = []; let proposed = 0;
     for(const [dir, pre, feed, fslug] of dirs) for await (const [name, h] of dir.entries()){
       const isProp = !!feed && /(^|\.)proposals\.json$/i.test(name);
@@ -3738,7 +3800,7 @@ async function connectInbox(){
     const h = await showDirectoryPicker({mode:'readwrite', id:'notebook-inbox'}); let ok = false;
     try { await h.getFileHandle('assigned.json'); ok = true; } catch {}
     if(!ok){ try { await h.getDirectoryHandle('pages'); ok = true; } catch {} }
-    if(!ok){ toast('That folder has no assigned.json or pages folder. Pick the folder named for-your-name that was shared with you.'); return; }
+    if(!ok){ toast('That folder has no assigned.json or pages folder. Pick the folder that was shared with you (it has an assigned.json or a pages folder in it).'); return; }
     if(inboxes.some(x => x.label === h.name)){ toast('That folder is already connected.'); return; }
     inboxes.push({id:uid(), label:h.name, handle:h, state:'?', assigned:null, pages:[], mine:[], aMod:0}); await saveInboxList(); await refreshInboxes(true);
     toast(`Connected ${h.name}. Your sidebar now has Assigned to me and Shared with me.`);
@@ -4192,6 +4254,8 @@ document.addEventListener('click', e => {
     else if(act === 'inback'){ sharedView = null; renderDetail(); }
     else if(act === 'inreply'){ const ib = inboxes.find(x => x.id === a.dataset.id), box = a.closest('.insugg2'); if(ib && box){ const msg = box.querySelector('.sgmsg').value.trim(); if(!msg){ toast('Write your suggestion first.'); return; } inboxReply(ib, a.dataset.file, msg, box.querySelector('.sgappend').checked).then(() => { toast(`Sent to ${inboxOwner(ib)}.`); box.querySelector('.sgmsg').value = ''; }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
     else if(act === 'sugyes' || act === 'sugno') decideSuggestion(a.dataset.id, act === 'sugyes');
+    else if(act === 'feeddir'){ (async () => { const pn = a.dataset.p; try { await pickPersonDir(pn); toast(`${pn}’s files will go to “${personDirs.get(personKey(pn)).name}”.`); await runShareWrites(true); } catch(e){ if(!(e && e.name === 'AbortError')) toast((e && e.message) || String(e)); } renderSettings(); if($('#sharedlg').open) refreshShareRows(); })(); }
+    else if(act === 'feedallow'){ refreshPersonStates(true).then(() => { renderSettings(); runShareWrites(true); }); }
     else if(act === 'sharego') applyShare(); else if(act === 'shareclose') $('#sharedlg').close();
     else if(act === 'sharestop'){ const si = byId(shareDlgItem); $('#sharedlg').close(); if(si) stopSharing(si, false); }
     else if(act === 'nameuse') nameChosen(a.dataset.n);
@@ -4511,7 +4575,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261105113909';</script>
+<script>window.NB_BUILD = '20261105164125';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

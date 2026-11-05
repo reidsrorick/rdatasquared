@@ -1,4 +1,13 @@
-{"version":"1.25.0","build":"20261105113909","changelog":[
+{"version":"1.26.0","build":"20261105164125","changelog":[
+ {
+  "v": "1.26.0",
+  "title": "Choose where each person's folder goes",
+  "items": [
+   "Each person now has their own folder, and you choose it. Tick Keep a feed for Sam (Settings > Team) and the app asks where Sam's feed should go: pick any folder, on any drive or sync service, that you share with Sam. Her feed, the pages shared with her and her replies all live in that one folder. The folder is remembered, and each row shows which folder it is, with Change folder… and Allow buttons",
+   "Share this page shows each person's folder too, with Choose folder… next to anyone who has none yet. You cannot pick the same folder for two people, so nobody sees someone else's files",
+   "You no longer need one shared folder for everything. It is only needed for the older “everyone with the folder” sharing and notebook sharing. Feeds that already lived in shared/for-name keep working"
+  ]
+ },
  {
   "v": "1.25.0",
   "title": "Share a page with chosen people; teammates' side; suggested actions",
