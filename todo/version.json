@@ -1,4 +1,64 @@
-{"version":"1.20.0","build":"20261103103536","changelog":[
+{"version":"1.25.0","build":"20261105113909","changelog":[
+ {
+  "v": "1.25.0",
+  "title": "Share a page with chosen people; teammates' side; suggested actions",
+  "items": [
+   "Share a page with chosen people: Share… now asks who. Each person gets the page in their own folder (shared/for-name/pages/), read-only, and nobody else does. “Everyone with the shared folder” is still there as an option. Your notebooks and other pages are never exposed",
+   "An assigned action now links to its page: if the page the action is in is also shared with that person, their list shows “Open the page”. If it is not shared, they see only the action",
+   "Teammates: Settings > From the team connects a folder shared with you. Your sidebar then gets Assigned to me (the actions assigned to you, with Mark done… to propose it) and Shared with me (pages shared with you, read-only, with a box to send a suggestion back)",
+   "Teammates can also suggest a new action to you. It appears under Waiting for your OK as “Sam suggests…”, with Add it and No thanks. Adding it creates an action in your list (unassigned, noted as suggested by Sam)",
+   "Replies from a person's folder are only accepted when the author is that person"
+  ]
+ },
+ {
+  "v": "1.24.1",
+  "title": "Assign to someone who is not on the team (guests)",
+  "items": [
+   "When a name is not on your team you can now choose “Assign it anyway, as a guest”. The name goes into the assigned field and is remembered as a guest, so the next time you use it nothing is asked. Guests are not team members and have no feed",
+   "Guests show under the team in the sidebar, in the Assigned-to filters and in the @-name list (marked guest). In Settings > Team you can move a guest onto the team, merge a look-alike (Rei into Reid), or remove them",
+   "Names that arrive in a reply from someone else are saved as guests rather than joining the team"
+  ]
+ },
+ {
+  "v": "1.24.0",
+  "title": "Team list and @-name picker",
+  "items": [
+   "Your People list is now your team. Type @ in an action box (the Actions add box, RAID, Quick add, an action's text, a tagged line in a note) and a list of your team's names opens as you type. Use the arrow keys with Tab or Enter, or click, to fill the name in. The Assign boxes use the same list",
+   "A name that is not on the team is no longer added quietly. You are asked: “Rei” is not on your team. Did you mean Reid? Use Reid, add Rei to the team, or cancel. So @Rei can never become a second person by accident",
+   "If you assign an action to someone who has no assigned-action feed (when you use feeds), a message tells you they will not see it, with a button to turn their feed on",
+   "Settings > Team: add team members, switch the “only assign to people on the team” check on or off, and see names that look like duplicates (for example Rei and Reid) with a Merge button that moves their actions across"
+  ]
+ },
+ {
+  "v": "1.23.0",
+  "title": "Assigned-action feeds and “done?” proposals",
+  "items": [
+   "Settings > Assigned-action feeds: choose a person (for example Claude) and the app keeps a file in the shared folder (shared\\for-Name\\assigned.json) listing the actions assigned to them: standalone actions, and action items inside any of your notes, shared or not. It holds the action text, date, notes and status only, never the notes themselves. Note titles are included only if you tick that option",
+   "That person can answer by writing proposals.json in the same folder. A proposal never changes anything: it puts an amber “Claude: done?” badge beside the checkbox, with their note and Confirm / Not yet buttons right there on the action. You always make the final call",
+   "It shows wherever the action shows: Actions, Today, Risks, Issues, Decisions, People, the RAID section under a note, and a standalone action's own page. The sidebar gets Waiting for your OK with a count, listing everything to confirm, grouped by person",
+   "A proposal is only accepted from the person the action is assigned to, and drops away if you reassign the action. Ticking the action yourself also settles it. Confirmed and declined proposals are kept in a log, and the feed tells the person what you decided",
+   "On a shared page, a tick from the person an action is assigned to now appears the same way, on the action itself, instead of waiting in the Replies list"
+  ]
+ },
+ {
+  "v": "1.22.0",
+  "title": "Date filter next to the page search",
+  "items": [
+   "Next to the search box on Actions, Risks, Issues, Decisions and People there is now a date filter: Overdue, Today, Tomorrow, This week, Next 7 days, No due date, A specific day, or a date range. Pick a day and only that day's items show, whatever the grouping",
+   "Clear all filters on the Actions page also clears the search and the date filter"
+  ]
+ },
+ {
+  "v": "1.21.0",
+  "title": "Done lines crossed out, page search, two kinds of pin, notebook categories",
+  "items": [
+   "In a note, a tagged line (ACTION, RISK, ISSUE, DECISION) is now crossed out and greyed when its action is marked done, wherever you tick it (the note, the Actions page, a reply). Un-tick it and the line comes back",
+   "A search box on Actions, Today, Risks, Issues, Decisions, People and Trash narrows the rows as you type. It looks at the text, the person, the category, the date and the note an action came from",
+   "Pinning now has two kinds. Pin (the P key, or right-click) keeps a page at the top of its own notebook. Pin everywhere (Shift + P, or right-click) shows it at the top of every notebook and of the notebook list. Pages you had pinned before are now pinned to their own notebook; promote the ones you want everywhere",
+   "The page list on the left shows just the title, with the date and time below it. The description line and the “0/3 done” counts are gone",
+   "Notebooks can have a category (Manage notebooks). New pages made in the notebook, or moved into it, get that category, so the actions in them can be filtered by it. When you set it, the app asks whether to apply it to the pages already there that have no category"
+  ]
+ },
  {
   "v": "1.20.0",
   "title": "Quick add anywhere, Inbox notebook, cleaner Actions and Today",

@@ -255,6 +255,11 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 @container ck (min-width:980px){.ai .ctl{display:contents}.ai .ctl>*{order:1}.ai .nb{order:2}.ai .x{order:3}}
 .metahead{margin:-6px 0 8px;font-size:12.5px}.metahead a{color:var(--mute);cursor:pointer;text-decoration:none}.metahead a:hover{color:var(--accent)}.metahead small{margin-left:8px;color:var(--mute)}
 .meta.off{display:none}
+.prop{background:#f3c969;color:#4a3300;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;white-space:nowrap;align-self:center}
+.act.hasprop{box-shadow:inset 3px 0 0 #e0a82e}.pcb{outline:2px solid #e0a82e;outline-offset:1px;border-radius:3px}
+.propln{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 2px;padding:5px 8px;border-radius:8px;background:color-mix(in srgb,#e0a82e 16%,transparent);font-size:13px}.propln .pn{flex:1 1 180px;min-width:0}.propln small{color:var(--mute)}
+.propln.info{background:var(--hover2)}.ai>.propln{flex:0 0 100%;box-sizing:border-box;margin-left:28px;width:calc(100% - 28px)}
+.propln button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font:inherit;font-size:12.5px}.propln button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .ai .nb{border:0;background:none;font-size:14px;opacity:.35;padding:0 4px}
 .ai .nb:hover,.ai .nb.has{opacity:1}
 input.who{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;font-size:13px;outline:none;min-width:0;width:100%}
@@ -271,6 +276,7 @@ input.who:focus{border-color:var(--accent)}
 .addnote{display:block;width:100%;box-sizing:border-box;margin:6px 0 0;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit;font-size:14px;resize:vertical}.addnote[hidden]{display:none}
 .addrow [data-act=addnotetoggle].on{border-color:var(--accent);color:var(--accent)}
 .clearf{cursor:pointer;color:var(--accent);font-weight:600}.warnmsg{color:var(--amber)}
+.psearch{margin:0 0 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.psearch input[type=search]{flex:1 1 240px;min-width:180px;box-sizing:border-box}.psearch input,.psearch select{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;outline:none}.psearch input:focus,.psearch select:focus{border-color:var(--accent)}.psearch input[type=date]{padding:7px 8px}.pdr{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;color:var(--mute)}
 .pinhead{padding:10px 14px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .opts.nblist>:not(#datewrap){display:none!important}
 .datef{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.datef select,.datef input{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font:inherit;font-size:12.5px}
@@ -284,7 +290,22 @@ input.who:focus{border-color:var(--accent)}
 #snapdlg button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 10px;font:inherit;font-size:13px}
 #snapdlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 @media(max-width:700px){#snapdlg .sncols{grid-template-columns:1fr}}
-#setdlg{width:min(520px,94vw)}
+.atpick{position:fixed;z-index:2147483000;min-width:190px;max-width:260px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.28);padding:4px;font-size:14px}
+.atpick[hidden]{display:none}.atpick .atit{padding:6px 10px;border-radius:7px;cursor:pointer}.atpick .atit.sel,.atpick .atit:hover{background:var(--soft)}.atpick small{color:var(--mute);margin-left:6px}.atpick .atfoot{padding:4px 10px 2px;font-size:11.5px;color:var(--mute)}
+#namedlg{width:min(460px,94vw)}#namedlg .namechoices{display:flex;flex-direction:column;gap:8px;align-items:flex-start}#namedlg button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:7px 14px;font:inherit}#namedlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}#namedlg .nameother{font-size:13px;color:var(--mute);margin-top:4px}#namedlg select{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit}
+.sharepeople{display:flex;flex-direction:column;gap:4px;margin:4px 0 8px}.swrow{display:flex;gap:8px;align-items:center;font-size:14px;padding:3px 0}.swrow small{color:var(--mute)}.shareall{border-top:1px solid var(--line);padding-top:10px;margin-top:6px}
+#sharedlg{width:min(440px,94vw)}#sharedlg button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 14px;font:inherit}#sharedlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.inrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}.inrow.done .intext b{text-decoration:line-through;color:var(--mute)}.inrow .intext{flex:1 1 260px;min-width:0}.inrow .intext small{display:block;color:var(--mute)}.inrow .indet{font-size:13px;color:var(--mute);margin-top:3px;white-space:pre-wrap}
+.inrow .inform{flex:0 0 100%;display:flex;gap:8px}.inrow .inform[hidden]{display:none}.inrow .inform input,.inform2 input,.insugg2 textarea{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px}.inrow .inform input{flex:1}
+.inrow button,.inform2 button,.insugg2 button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:5px 12px;font:inherit;font-size:13px}.inrow button.ok,.inform2 button.ok,.insugg2 button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.inlink{display:inline-block;margin-top:4px;color:var(--accent);cursor:pointer;font-size:13px}.inpagerow{cursor:pointer}.inpagerow:hover{background:var(--hover2)}.insugg{margin:6px 0 10px}.insugg summary{cursor:pointer;color:var(--accent);font-size:14px}.inform2{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.inform2 .sgtext{flex:1 1 260px}.inform2 .sgnote{flex:1 1 200px}
+.sgmine{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}.sgchip{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--hover2);color:var(--mute)}.sgchip.confirmed{background:var(--bg-success,#e3f2e5)}.sgchip.declined{background:var(--redbg);color:var(--red)}
+.insugg2{display:flex;flex-direction:column;gap:8px;align-items:flex-start}.insugg2 textarea{width:100%;box-sizing:border-box}.sgapp{font-size:13px;color:var(--mute)}.sharedbody{border:1px solid var(--line);border-radius:10px;padding:14px;min-height:80px;pointer-events:auto}
+.sugrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}.sugtext{flex:1 1 260px}.sugtext small{display:block;color:var(--mute)}.sugrow button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:5px 12px;font:inherit;font-size:13px}.sugrow button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+#setdlg{width:min(520px,94vw)}#setdlg .feedrow{margin:8px 0;font-size:14px}#setdlg .feedrow small{color:var(--mute)}#setdlg .feedmerge{display:inline-flex;gap:6px;align-items:center;margin-left:8px}#setdlg .feedmerge button,#setdlg .teamadd button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font:inherit;font-size:12.5px}#setdlg .teamadd{display:flex;gap:8px}#setdlg .teamadd input{flex:1;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:5px 9px;font:inherit;font-size:13.5px}
+#setdlg .guestrow{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}#setdlg .guesthd{margin-top:12px}#setdlg .guestrow button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font:inherit;font-size:12.5px}
+.guestlbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);padding:8px 10px 2px}
+#setdlg .feedt{display:block;margin:3px 0 0 22px;font-size:12.5px;color:var(--mute)}#setdlg .feedp{display:block;margin-left:22px}
 #setdlg .setsec{margin:14px 0 0}#setdlg h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:0 0 6px}
 #setdlg .setline{font-size:14px;margin:4px 0;display:flex;gap:10px;align-items:center}#setdlg .setline b{word-break:break-all}#setdlg .bad{color:var(--red)}
 #setdlg .setbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
@@ -375,6 +396,7 @@ input.who:focus{border-color:var(--accent)}
 .rt [data-cb]::before{content:"☐";position:absolute;left:0;top:0;color:var(--mute);cursor:pointer;font-size:1.15em;line-height:1.35}
 .rt [data-cb="1"]::before{content:"☑";color:var(--green)}
 .rt [data-cb="1"]{color:var(--mute);text-decoration:line-through}
+.rt [data-done="1"]{color:var(--mute);text-decoration:line-through}
 .rt [data-cb="1"][data-at]::after{content:"  ·  done " attr(data-at);font-size:.72em;text-decoration:none;display:inline-block;color:var(--mute);opacity:.85}
 .rt hr{border:0;height:3px;background:var(--accent);opacity:.55;border-radius:3px;margin:.9em 0}
 .rt code,.rt pre{font-family:Consolas,monospace;background:var(--hover);border-radius:4px;padding:0 4px}
@@ -539,10 +561,25 @@ dialog p{color:var(--mute);font-size:13px}
   <div id="snapbody"></div>
   <div class="dfoot"><span></span><button class="pri" data-act="snapclose">Close</button></div>
 </dialog>
+<dialog id="sharedlg">
+  <h3>Share this page</h3>
+  <p id="sharesub" style="font-size:13px;color:var(--mute);margin:2px 0 8px"></p>
+  <div id="sharepeople" class="sharepeople"></div>
+  <label class="swrow shareall"><input type="checkbox" id="shareall"> Everyone with the shared folder <small>(not recommended: they all see it)</small></label>
+  <div class="dfoot"><span><button id="sharestop" data-act="sharestop">Stop sharing</button></span><span><button data-act="shareclose">Cancel</button> <button class="pri" data-act="sharego">Share</button></span></div>
+</dialog>
+<dialog id="namedlg">
+  <h3 id="nametitle">Who is that?</h3>
+  <p id="namesub" style="font-size:13px;color:var(--mute);margin:2px 0 8px"></p>
+  <div id="namechoices" class="namechoices"></div>
+  <div class="dfoot"><span></span><button data-act="nameclose">Cancel</button></div>
+</dialog>
 <dialog id="setdlg">
   <h3>⚙ Settings</h3>
   <div class="setsec"><h4>Save file</h4><div id="setfile"></div></div>
   <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
+  <div class="setsec"><h4>Team and assigned-action feeds</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Your team is the list of people you can assign to. A feed is a file in the shared folder listing the actions assigned to one person, so they can see them and answer “done?”. You always confirm. It holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
+  <div class="setsec"><h4>From the team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">If someone shared a folder with you (named for-your-name), connect it here. Then you see what is assigned to you and the pages shared with you, and can send “done?” requests and suggestions back.</div><div id="setinbox"></div></div>
   <div class="setsec"><h4>Earlier versions</h4><div class="setline">The app keeps a snapshot of your notes every few minutes.</div><div class="setbtns"><button data-act="snaps">Browse earlier versions…</button></div></div>
   <div class="setsec"><h4>Help</h4><div class="setbtns"><button data-act="shortcuts">⌨ Keyboard shortcuts</button><button data-act="about">What's new and updates</button></div></div>
   <div class="dfoot"><span></span><button class="pri" data-act="setclose">Close</button></div>
@@ -606,8 +643,68 @@ dialog p{color:var(--mute);font-size:13px}
 
 <script>
 'use strict';
-const APP_VERSION = '1.20.0';
+const APP_VERSION = '1.25.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.25.0",
+  "title": "Share a page with chosen people; teammates' side; suggested actions",
+  "items": [
+   "Share a page with chosen people: Share… now asks who. Each person gets the page in their own folder (shared/for-name/pages/), read-only, and nobody else does. “Everyone with the shared folder” is still there as an option. Your notebooks and other pages are never exposed",
+   "An assigned action now links to its page: if the page the action is in is also shared with that person, their list shows “Open the page”. If it is not shared, they see only the action",
+   "Teammates: Settings > From the team connects a folder shared with you. Your sidebar then gets Assigned to me (the actions assigned to you, with Mark done… to propose it) and Shared with me (pages shared with you, read-only, with a box to send a suggestion back)",
+   "Teammates can also suggest a new action to you. It appears under Waiting for your OK as “Sam suggests…”, with Add it and No thanks. Adding it creates an action in your list (unassigned, noted as suggested by Sam)",
+   "Replies from a person's folder are only accepted when the author is that person"
+  ]
+ },
+ {
+  "v": "1.24.1",
+  "title": "Assign to someone who is not on the team (guests)",
+  "items": [
+   "When a name is not on your team you can now choose “Assign it anyway, as a guest”. The name goes into the assigned field and is remembered as a guest, so the next time you use it nothing is asked. Guests are not team members and have no feed",
+   "Guests show under the team in the sidebar, in the Assigned-to filters and in the @-name list (marked guest). In Settings > Team you can move a guest onto the team, merge a look-alike (Rei into Reid), or remove them",
+   "Names that arrive in a reply from someone else are saved as guests rather than joining the team"
+  ]
+ },
+ {
+  "v": "1.24.0",
+  "title": "Team list and @-name picker",
+  "items": [
+   "Your People list is now your team. Type @ in an action box (the Actions add box, RAID, Quick add, an action's text, a tagged line in a note) and a list of your team's names opens as you type. Use the arrow keys with Tab or Enter, or click, to fill the name in. The Assign boxes use the same list",
+   "A name that is not on the team is no longer added quietly. You are asked: “Rei” is not on your team. Did you mean Reid? Use Reid, add Rei to the team, or cancel. So @Rei can never become a second person by accident",
+   "If you assign an action to someone who has no assigned-action feed (when you use feeds), a message tells you they will not see it, with a button to turn their feed on",
+   "Settings > Team: add team members, switch the “only assign to people on the team” check on or off, and see names that look like duplicates (for example Rei and Reid) with a Merge button that moves their actions across"
+  ]
+ },
+ {
+  "v": "1.23.0",
+  "title": "Assigned-action feeds and “done?” proposals",
+  "items": [
+   "Settings > Assigned-action feeds: choose a person (for example Claude) and the app keeps a file in the shared folder (shared\\for-Name\\assigned.json) listing the actions assigned to them: standalone actions, and action items inside any of your notes, shared or not. It holds the action text, date, notes and status only, never the notes themselves. Note titles are included only if you tick that option",
+   "That person can answer by writing proposals.json in the same folder. A proposal never changes anything: it puts an amber “Claude: done?” badge beside the checkbox, with their note and Confirm / Not yet buttons right there on the action. You always make the final call",
+   "It shows wherever the action shows: Actions, Today, Risks, Issues, Decisions, People, the RAID section under a note, and a standalone action's own page. The sidebar gets Waiting for your OK with a count, listing everything to confirm, grouped by person",
+   "A proposal is only accepted from the person the action is assigned to, and drops away if you reassign the action. Ticking the action yourself also settles it. Confirmed and declined proposals are kept in a log, and the feed tells the person what you decided",
+   "On a shared page, a tick from the person an action is assigned to now appears the same way, on the action itself, instead of waiting in the Replies list"
+  ]
+ },
+ {
+  "v": "1.22.0",
+  "title": "Date filter next to the page search",
+  "items": [
+   "Next to the search box on Actions, Risks, Issues, Decisions and People there is now a date filter: Overdue, Today, Tomorrow, This week, Next 7 days, No due date, A specific day, or a date range. Pick a day and only that day's items show, whatever the grouping",
+   "Clear all filters on the Actions page also clears the search and the date filter"
+  ]
+ },
+ {
+  "v": "1.21.0",
+  "title": "Done lines crossed out, page search, two kinds of pin, notebook categories",
+  "items": [
+   "In a note, a tagged line (ACTION, RISK, ISSUE, DECISION) is now crossed out and greyed when its action is marked done, wherever you tick it (the note, the Actions page, a reply). Un-tick it and the line comes back",
+   "A search box on Actions, Today, Risks, Issues, Decisions, People and Trash narrows the rows as you type. It looks at the text, the person, the category, the date and the note an action came from",
+   "Pinning now has two kinds. Pin (the P key, or right-click) keeps a page at the top of its own notebook. Pin everywhere (Shift + P, or right-click) shows it at the top of every notebook and of the notebook list. Pages you had pinned before are now pinned to their own notebook; promote the ones you want everywhere",
+   "The page list on the left shows just the title, with the date and time below it. The description line and the “0/3 done” counts are gone",
+   "Notebooks can have a category (Manage notebooks). New pages made in the notebook, or moved into it, get that category, so the actions in them can be filtered by it. When you set it, the app asks whether to apply it to the pages already there that have no category"
+  ]
+ },
  {
   "v": "1.20.0",
   "title": "Quick add anywhere, Inbox notebook, cleaner Actions and Today",
@@ -914,6 +1011,7 @@ function cleanHtml(html){
     const docsWrapper = t === 'b' && /^(?:normal|[1-4]00)$/.test(st.fontWeight || '');          // Google Docs wraps pastes in <b style="font-weight:normal">
     if(t && !docsWrapper){
       let at = '';
+      if((t === 'div' || t === 'li') && n.getAttribute('data-done') === '1') at += ' data-done="1"';          // the action on this tagged line is finished
       if(t === 'div' || t === 'li'){ const rk = n.getAttribute('data-raid'); if(['action', 'risk', 'issue', 'decision'].includes(rk)) at += ` data-raid="${rk}"`; }
       if(t === 'div' || t === 'li'){ const cb = n.getAttribute('data-cb'); if(cb === '0' || cb === '1'){ at += ` data-cb="${cb}"`; const da = n.getAttribute('data-at'); if(cb === '1' && /^\d{4}-\d\d-\d\d$/.test(da || '')) at += ` data-at="${da}"`; } }                 // a checkbox line
       if((t === 'div' || t === 'li') && n.hasAttribute('data-seq') && /^[\w\-.]{0,24}$/.test(n.getAttribute('data-seq'))) at += ` data-seq="${esc(n.getAttribute('data-seq'))}"`;           // a numbered series (EAM_1, EAM_2…)
@@ -1156,6 +1254,9 @@ function setRepeat(o, key){
     monthly: mk('monthly', {dom:d.getDate()}), yearly: mk('yearly', {month:d.getMonth(), dom:d.getDate()})}[key];
 }
 /* tick/untick. A recurring action doesn't stay done: it rolls to its next date (with Undo). Returns true if it rolled. */
+const proposalOf = o => o && o.proposed && o.proposed.by && (o.assignee || '').toLowerCase() === o.proposed.by.toLowerCase() && !(o.proposed.kind === 'done' && o.done) ? o.proposed : null;
+function logProposal(entry){ db.proposals = db.proposals.filter(x => x.id !== entry.id); db.proposals.unshift(entry); if(db.proposals.length > 300) db.proposals.length = 300; }
+function settleProposal(id, status){ const e = db.proposals.find(x => x.id === id); if(e){ e.status = status; e.decidedAt = now(); e.decidedBy = db.me || 'You'; } }
 function completeToggle(o, item, checked){
   item.updated = now();
   if(checked && o.repeat){
@@ -1164,16 +1265,42 @@ function completeToggle(o, item, checked){
     toast(`Done ✓ — next due ${fmtDay(nd)}${o.time ? ' ' + fmtTime(o.time) : ''} (${lcFirst(describeRepeat(o.repeat))})`, () => { o.due = prev; o.done = false; item.updated = now(); touch(); refreshViews(); });
     return true;
   }
-  o.done = checked; return false;
+  o.done = checked; if(item.checklist && item.checklist.includes(o)) markDoneLines(item);
+  if(checked && o.proposed && o.proposed.kind === 'done'){ settleProposal(o.proposed.id, 'confirmed'); o.proposed = null; }          // ticking it yourself settles the proposal
+  return false;
+}
+function markDoneLines(item){                             // cross out (or restore) the tagged lines in the note to match the done state of their actions
+  if(!item.body || !/data-rid=/.test(item.body)) return;
+  const live = $('#detail').dataset.item === item.id ? document.querySelector('#detail .rt[data-f=body]') : null;
+  const apply = root => {
+    let ch = false;
+    root.querySelectorAll('span.rtag[data-rid]').forEach(sp => {
+      const c = item.checklist.find(x => x.id === sp.getAttribute('data-rid')), line = sp.closest('div, li, p, h1, h2, h3, blockquote, td, th');
+      if(!c || !line) return;
+      if(c.done !== (line.getAttribute('data-done') === '1')){ if(c.done) line.setAttribute('data-done', '1'); else line.removeAttribute('data-done'); ch = true; }
+    });
+    return ch;
+  };
+  const doc = new DOMParser().parseFromString('<!doctype html><body>' + item.body, 'text/html');
+  if(apply(doc.body)) item.body = cleanHtml(doc.body.innerHTML);
+  if(live) apply(live);
 }
 
 /* ================= data ================= */
 const DEFAULT_CATS = () => [{id:'work', name:'Work', color:'#3b6ea5'}, {id:'personal', name:'Personal', color:'#4f8a5b'}, {id:'admin', name:'Admin', color:'#c2862d'}];
-const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[], trash:[], people:[], me:'', notebooks:[{id:'general', name:'General', color:'#3b6ea5'}]});
+const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[], trash:[], people:[], me:'', feeds:[], proposals:[], strict:true, guests:[], notebooks:[{id:'general', name:'General', color:'#3b6ea5'}]});
 const TRASH_DAYS = 30;
 let db = BLANK();
 const strDates = a => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x)))].sort() : [];
 const cleanPeople = a => { const seen = new Set(), out = []; for(const n of Array.isArray(a) ? a : []){ const v = typeof n === 'string' ? n.trim() : ''; if(v && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); out.push(v); } } return out; };
+/* ---- "done?" proposals: the person an action is assigned to can say it is done; the owner confirms ---- */
+function cleanShared(sh){ const w = cleanPeople(sh.with).slice(0, 30); return {on:true, file:String(sh.file || ''), last:String(sh.last || ''), with:w, sent:cleanPeople(sh.sent).slice(0, 30), global: !!sh.global || !w.length, root: sh.root !== undefined ? !!sh.root : !!sh.file}; }
+function cleanProposed(p){
+  if(!p || typeof p !== 'object' || !/^[\w\-.:]{1,80}$/.test(String(p.id || '')) || !['done', 'note'].includes(p.kind)) return null;
+  return {id:String(p.id), kind:p.kind, by:clipS(p.by, 40).trim(), at:okIso(p.at) || now(), note:clipS(p.note, 500)};
+}
+function cleanFeeds(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(f => f && typeof f.person === 'string' && f.person.trim() && !seen.has(f.person.trim().toLowerCase()) && seen.add(f.person.trim().toLowerCase())).map(f => ({person:clipS(f.person, 40).trim(), on:!!f.on, titles:!!f.titles})).slice(0, 50); }
+function cleanProposalLog(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(x => x && /^[\w\-.:]{1,80}$/.test(String(x.id || '')) && !seen.has(x.id) && seen.add(x.id)).map(x => ({id:String(x.id), item:clipS(x.item, 80), text:clipS(x.text, 160), by:clipS(x.by, 40), kind:x.kind === 'note' ? 'note' : x.kind === 'new' ? 'new' : 'done', due:okDate(x.due), note:clipS(x.note, 500), at:okIso(x.at) || now(), status:['pending', 'confirmed', 'declined', 'dismissed', 'ignored'].includes(x.status) ? x.status : 'pending', decidedAt:okIso(x.decidedAt), decidedBy:clipS(x.decidedBy, 40), why:clipS(x.why, 120)})).slice(0, 300); }
 /* Every action item (checklist entry) must have an id that no other note uses: lists such as Actions and Today find an entry by that id alone. */
 function renewChecklistIds(it){                           // give a copied note its own action items; its tagged lines are re-pointed at the new ids
   const map = {}; it.checklist.forEach(c => { const o = c.id; c.id = uid(); map[o] = c.id; });
@@ -1282,7 +1409,7 @@ function cleanChange(c, k, keep){
     case 'append': o.heading = clipS(c.heading, 100).trim(); o.text = clipS(c.text, 4000); if(!o.text.trim() && !o.heading) return null; break;
     case 'replace': o.find = clipS(c.find, 500); o.with = clipS(c.with, 2000); if(!o.find.trim()) return null; break;
   }
-  if(keep){ if(['accepted', 'rejected', 'failed'].includes(c.status)) o.status = c.status; o.by = clipS(c.by, 40); o.when = okIso(c.when); o.before = clipS(c.before, 2000); o.note = clipS(c.note, 200); }
+  if(keep){ if(['accepted', 'rejected', 'failed', 'proposed'].includes(c.status)) o.status = c.status; o.by = clipS(c.by, 40); o.when = okIso(c.when); o.before = clipS(c.before, 2000); o.note = clipS(c.note, 200); }
   return o;
 }
 function cleanReply(r, keep){
@@ -1299,20 +1426,24 @@ function normalize(d){
     id: i.id || uid(), type: i.type === 'task' ? 'task' : 'note',      // older files had a separate "meeting" type: meetings are now just notes that have a date
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
-    done: !!i.done, pinned: !!i.pinned, shared: i.shared && i.shared.on ? {on:true, file:String(i.shared.file || ''), last:String(i.shared.last || '')} : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat)})) : [],
+    done: !!i.done, pinned: !!i.pinned, pinAll: !!i.pinned && !!i.pinAll, proposed: cleanProposed(i.proposed), shared: i.shared && i.shared.on ? cleanShared(i.shared) : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat), proposed:cleanProposed(c.proposed)})) : [],
     replies: cleanReplies(i.replies), autoDt: i.type === 'note' && !!i.autoDt && !!(i.date || i.time), created: i.created || now(), updated: i.updated || now()
   });
   d.items = (d.items || []).map(item);
-  const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length], shared: n.shared && n.shared.on ? {on:true, dir:String(n.shared.dir || ''), files:Array.isArray(n.shared.files) ? n.shared.files.filter(x => typeof x === 'string').slice(0, 5000) : [], last:String(n.shared.last || '')} : null})).filter(n => { nbSeen.add(n.id); return true; });
+  const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', category: typeof n.category === 'string' ? n.category : '', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length], shared: n.shared && n.shared.on ? {on:true, dir:String(n.shared.dir || ''), files:Array.isArray(n.shared.files) ? n.shared.files.filter(x => typeof x === 'string').slice(0, 5000) : [], last:String(n.shared.last || '')} : null})).filter(n => { nbSeen.add(n.id); return true; });
+  d.notebooks.forEach(n => { if(n.category && !d.categories.some(c => c.id === n.category)) n.category = ''; });
   if(!d.notebooks.length) d.notebooks = [{id:'general', name:'General', color:NB_COLORS[0]}];
   d.items.forEach(i => { if(i.type === 'note' && !d.notebooks.some(n => n.id === i.notebook)) i.notebook = d.notebooks[0].id; });          // every note lives in a notebook
   d.people = cleanPeople(d.people); d.me = typeof d.me === 'string' ? d.me.trim() : '';
-  d.items.forEach(i => { for(const o of [i, ...i.checklist]) if(o.assignee && !d.people.some(n => n.toLowerCase() === o.assignee.toLowerCase())) d.people.push(o.assignee); });
+  const guestKeys = cleanPeople(d.guests).map(x => x.toLowerCase());          // guests stay guests
+  d.items.forEach(i => { for(const o of [i, ...i.checklist]) if(o.assignee && !guestKeys.includes(o.assignee.toLowerCase()) && !d.people.some(n => n.toLowerCase() === o.assignee.toLowerCase())) d.people.push(o.assignee); });
   d.trash = (Array.isArray(d.trash) ? d.trash : []).filter(t => t && t.item && Date.now() - Date.parse(t.deleted) < TRASH_DAYS * 864e5).map(t => ({item:item(t.item), deleted:t.deleted}));      // deleted items wait here for 30 days
   d.plan = (Array.isArray(d.plan) ? d.plan : []).filter(b => b && /^\d{4}-\d\d-\d\d$/.test(b.start || '')).map(b => {      // Timeline blocks: when YOU plan something to happen (separate from due dates)
     let s = b.start, e = /^\d{4}-\d\d-\d\d$/.test(b.end || '') ? b.end : b.start; if(e < s) [s, e] = [e, s];
     return {id:b.id || uid(), title:b.title || '', desc:typeof b.desc === 'string' ? b.desc : '', start:s, end:e, cat:b.cat || '', done:!!b.done, repeat:cleanRepeat(b.repeat), until:/^\d{4}-\d\d-\d\d$/.test(b.until || '') ? b.until : '', doneOn:strDates(b.doneOn), skip:strDates(b.skip), link:b.link && b.link.item ? {item:b.link.item, ck:b.link.ck || ''} : null, created:b.created || now(), updated:b.updated || now()};
   });
+  d.feeds = cleanFeeds(d.feeds); d.proposals = cleanProposalLog(d.proposals); d.strict = d.strict !== false;
+  d.guests = cleanPeople(d.guests).filter(g => !d.people.some(p => p.toLowerCase() === g.toLowerCase()));
   healIds(d);
   d.version = 3; d.bodyFormat = 'html';
   return d;
@@ -1408,6 +1539,9 @@ function mergeDb(fileDb, local){
   fileDb.trash = [...tr.values()].filter(t => !fileDb.items.some(i => i.id === t.item.id));
   const nbm = new Map(fileDb.notebooks.map(n => [n.id, n])); for(const n of local.notebooks || []) if(!nbm.has(n.id)) nbm.set(n.id, n); fileDb.notebooks = [...nbm.values()];
   fileDb.people = cleanPeople([...fileDb.people, ...(local.people || [])]); if(!fileDb.me) fileDb.me = local.me || '';
+  const fm = new Map((fileDb.feeds || []).map(f => [f.person.toLowerCase(), f])); for(const f of local.feeds || []) if(!fm.has(f.person.toLowerCase())) fm.set(f.person.toLowerCase(), f); fileDb.feeds = [...fm.values()];
+  const pm = new Map((fileDb.proposals || []).map(x => [x.id, x])); for(const x of local.proposals || []) if(!pm.has(x.id)) pm.set(x.id, x); fileDb.proposals = [...pm.values()].slice(0, 300);
+  fileDb.guests = cleanPeople([...(fileDb.guests || []), ...(local.guests || [])]).filter(g => !(fileDb.people || []).some(p => p.toLowerCase() === g.toLowerCase()));
   healIds(fileDb);
   return fileDb;
 }
@@ -1661,7 +1795,7 @@ function dateRange(){
   return [dateFrom || '0000-00-00', dateTo || '9999-12-31'];
 }
 const noteDay = i => { const v = dateField === 'page' ? i.date : i[dateField]; if(!v) return ''; return dateField === 'page' ? v : dstr(new Date(v)); };
-const inNotesView = e => filter !== 'note' || !nbById(nbView) || !!search.trim() || (dateActive() && !nbById(nbView)) || (e.item.type === 'note' && (nbKey(e.item) === nbView || e.item.pinned));
+const inNotesView = e => filter !== 'note' || !nbById(nbView) || !!search.trim() || (dateActive() && !nbById(nbView)) || (e.item.type === 'note' && (nbKey(e.item) === nbView || e.item.pinAll));
 function fixSelection(){
   const v = listEntries();
   if(!v.some(e => e.item.id === selId && inNotesView(e))){
@@ -1702,12 +1836,44 @@ function renderFileInfo(){
     + `<a data-act="about" title="What's new, and is your live site up to date?">v${APP_VERSION}</a> · <a data-act="refresh" title="Reload the file and check for a newer version of the app">↻ Refresh</a> · <a data-act="settings" title="Save file, backup, theme and shortcuts">⚙ Settings</a>`;
   if($('#setdlg').open) renderSettings();
 }
+function guestRowsHtml(){
+  const g = db.guests || []; if(!g.length) return '';
+  return '<div class="feedrow guesthd"><b>Guests</b> <small>assigned by name; not on the team; no feed</small></div>' + g.slice().sort((a, b) => a.localeCompare(b)).map(n => {
+    const sim = nearNames(n)[0], openN = allEntries().filter(x => !x.done && (x.assignee || '').toLowerCase() === n.toLowerCase()).length;
+    return `<div class="feedrow guestrow"><span>${esc(n)} <small>${openN} open</small></span><span class="feedmerge"><button data-act="guestteam" data-n="${esc(n)}">Add to team</button>${sim ? `<button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button>` : ''}<button data-act="guestremove" data-n="${esc(n)}">Remove</button></span></div>`;
+  }).join('');
+}
 function renderSettings(){
   const ok = fileState === 'ready' && !writeError;
   $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
-  $('#settheme').value = theme;
+  $('#settheme').value = theme; renderInboxSettings();
+  const names = [...new Set(['Claude', ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
+  $('#setfeeds').innerHTML = names.map(n => { const f = (db.feeds || []).find(x => x.person.toLowerCase() === n.toLowerCase()), openN = feedItems({person:n, titles:false}).filter(x => !x.done).length;
+    const sim = db.people.includes(n) ? nearNames(n).filter(m => db.people.includes(m))[0] : '';
+    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b> <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}</small></label>${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><small class="feedp">shared\\${esc(feedDirName(n))}\\assigned.json</small>` : ''}</div>`; }).join('')
+    + guestRowsHtml() + `<div class="feedrow teamadd"><input type="text" id="teamadd" placeholder="Add a team member…" autocomplete="off"><button data-act="teamadd">Add</button></div><label class="feedrow"><input type="checkbox" id="teamstrict" ${db.strict ? 'checked' : ''}> Only assign to people on the team (ask me before adding a new name)</label>`;
 }
+async function setFeed(person, on){
+  let f = (db.feeds || []).find(x => x.person.toLowerCase() === person.toLowerCase());
+  if(!f){ f = {person, on:false, titles:false}; db.feeds.push(f); }
+  if(on){
+    if(!shareOk()){ toast('This browser can’t write to a folder (turn on the File System Access flag in Brave).'); renderSettings(); return; }
+    addPerson(person);
+    try { let d = await shareReady(true); if(!d) d = await pickShareFolder(); f.on = true; shareState = 'ok'; touch(); await runShareWrites(true); toast(`Keeping a feed for ${person} in ${d.name}\\shared\\${feedDirName(person)}\\assigned.json.`); }
+    catch(e){ f.on = false; if(e && e.name !== 'AbortError') toast('Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
+  } else { f.on = false; touch(); toast(`Stopped the feed for ${person}. The last file was left in the folder.`); }
+  renderSettings(); renderAll();
+}
+$('#namedlg').addEventListener('close', () => { if(nameCtx && !nameCtx.done){ const c = nameCtx; c.done = true; c.apply(undefined); } });
+$('#namechoices').addEventListener('change', e => { if(e.target.id === 'nameother' && e.target.value) nameChosen(e.target.value); });
+$('#setfeeds').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.id === 'teamadd'){ e.preventDefault(); const b = $('#setfeeds [data-act=teamadd]'); if(b) b.click(); } });
+$('#setfeeds').addEventListener('change', e => {
+  const t = e.target;
+  if(t.id === 'teamstrict'){ db.strict = t.checked; touch(); }
+  else if(t.dataset.feed) setFeed(t.dataset.feed, t.checked);
+  else if(t.dataset.feedt){ const f = (db.feeds || []).find(x => x.person.toLowerCase() === t.dataset.feedt.toLowerCase()); if(f){ f.titles = t.checked; touch(); runShareWrites(true); } }
+});
 function openSettings(){ renderSettings(); if(!$('#setdlg').open) $('#setdlg').showModal(); }
 function renderRail(){
   const cnt = t => db.items.filter(i => i.type === t).length;
@@ -1715,11 +1881,13 @@ function renderRail(){
   const planned = db.plan.filter(b => b.repeat ? !b.until || b.until >= todayStr() : !b.done && b.end >= todayStr()).length;
   const T0 = todayStr(), dueNow = allEntries().filter(x => !x.done && x.text.trim() && x.due && x.due <= T0), overdueN = dueNow.filter(x => x.due < T0).length;
   const F = [['today','☀ Today',dueNow.length,overdueN ? 'hot' : ''],['actions','⚑ Actions',openActions],['note','✎ Notes',cnt('note')],['timeline','▦ Timeline',planned]];
-  $('#filters').innerHTML = F.map(([k,l,n,cls]) => `<div class="f ${filter === k || (k === 'actions' && filter === 'task') || (k === 'note' && filter.startsWith('nb:')) ? 'on' : ''}" data-filter="${k}">${l} <small class="${cls || ''}">${n}</small></div>`).join('');
+  $('#filters').innerHTML = F.map(([k,l,n,cls]) => `<div class="f ${filter === k || (k === 'actions' && filter === 'task') || (k === 'note' && filter.startsWith('nb:')) ? 'on' : ''}" data-filter="${k}">${l} <small class="${cls || ''}">${n}</small></div>`).join('') + waitingRailHtml() + inboxRailHtml();
   $('#trashrow').innerHTML = `<div class="f trashlink ${filter === 'trash' ? 'on' : ''}" data-filter="trash" title="Deleted items are kept for ${TRASH_DAYS} days (press 8)">🗑 Trash <small>${db.trash.length || ''}</small></div>`;
-  $('#peoplelist').innerHTML = db.people.map(n => `<option value="${esc(n)}"></option>`).join('');
+  $('#peoplelist').innerHTML = everyone().map(n => `<option value="${esc(n)}"></option>`).join('');
   const openBy = {}; allEntries().forEach(x => { if(!x.done && x.assignee && x.text.trim()) openBy[x.assignee.toLowerCase()] = (openBy[x.assignee.toLowerCase()] || 0) + 1; });
-  $('#people').innerHTML = db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<div class="tag ${filter === 'person' && actPerson.toLowerCase() === n.toLowerCase() ? 'on' : ''}" data-person="${esc(n)}"><span class="cn">${esc(n)}</span><small>${openBy[n.toLowerCase()] || 0}</small></div>`).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>Type @name in an action</small></div>';
+  const personTag = n => `<div class="tag ${filter === 'person' && actPerson.toLowerCase() === n.toLowerCase() ? 'on' : ''}" data-person="${esc(n)}"><span class="cn">${esc(n)}</span><small>${openBy[n.toLowerCase()] || 0}</small></div>`;
+  $('#people').innerHTML = (db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(personTag).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>Type @name in an action</small></div>')
+    + ((db.guests || []).length ? '<div class="guestlbl">Guests</div>' + db.guests.slice().sort((a, b) => a.localeCompare(b)).map(personTag).join('') : '');
   const raidOpen = k => allRaid().filter(x => x.raid === k && !x.done && x.text.trim()).length;
   $('#raid').innerHTML = ['risk', 'issue', 'decision'].map(k => `<div class="f ${filter === k ? 'on' : ''}" data-filter="${k}">${RAID_META[k].icon} ${RAID_META[k].many} <small>${raidOpen(k)}</small></div>`).join('');
   const tags = {}; db.items.forEach(i => i.tags.forEach(t => tags[t] = (tags[t] || 0) + 1));
@@ -1757,11 +1925,11 @@ function entryHtml(e, withNb){
     const when = (i.date || i.time) && !i.autoDt ? w.t : 'Edited ' + w.t;
     return `<div draggable="true" data-nbdrop="${esc(nbKey(i))}" class="it noterow ${onRow ? 'on' : ''}" data-id="${i.id}">
       <span class="ic">${isMeeting(i) ? '◷' : '✎'}</span>
-      <div><b>${i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${pendingOf(i) ? '💬 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small class="when">${esc(when)}${withNb && nbById(nbKey(i)) ? ' · ' + esc(nbById(nbKey(i)).name) : ''}</small><small>${esc(subOf(i))}</small></div></div>`;
+      <div><b>${i.pinAll ? '📍 ' : i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${pendingOf(i) ? '💬 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small class="when">${esc(when)}${withNb && nbById(nbKey(i)) ? ' · ' + esc(nbById(nbKey(i)).name) : ''}</small></div></div>`;
   }
   return `<div ${i.type === 'note' ? `draggable="true" data-nbdrop="${esc(nbKey(i))}" ` : ''}class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
       <span class="ic">${i.type==='task' ? `<input type="checkbox" class="lc" ${i.done?'checked':''} aria-label="Done">` : isMeeting(i) ? '◷' : '✎'}</span>
-      <div><b>${i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${i.raid ? raidBadge(i.raid) : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
+      <div><b>${i.pinAll ? '📍 ' : i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${i.raid ? raidBadge(i.raid) : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small>${esc(subOf(i))}</small></div>
       <time class="${w.cls||''}">${esc(w.t)}</time></div>`;
 }
 function renderList(){
@@ -1772,8 +1940,9 @@ function renderList(){
   if(filter === 'note'){                        // Notes: your notebooks first; click one to see its pages. Searching looks through everything.
     const searching = !!search.trim() || (dateActive() && !nbById(nbView));
     if(!nbById(nbView)) nbView = '';
-    const pins = v.filter(e => e.kind === 'item' && e.item.type === 'note' && e.item.pinned);
-    const pinHtml = pins.length ? `<div class="pinhead">📌 Pinned · from any notebook</div>` + pins.map(e => entryHtml(e, true)).join('') : '';
+    const atRoot = !nbById(nbView);
+    const pins = v.filter(e => e.kind === 'item' && e.item.type === 'note' && (e.item.pinAll || (!atRoot && e.item.pinned && nbKey(e.item) === nbView)));
+    const pinHtml = pins.length ? `<div class="pinhead">📌 Pinned${atRoot ? ' everywhere' : ''}</div>` + pins.map(e => entryHtml(e, true)).join('') : '';
     if(searching) html = v.map(e => entryHtml(e, true)).join('');
     else if(!nbView){
       html = pinHtml + (pins.length ? '<div class="pinhead">Notebooks</div>' : '') + db.notebooks.map(nb => {
@@ -1781,7 +1950,7 @@ function renderList(){
         return `<div class="nbgh big" data-nbfold="${esc(nb.id)}" data-nbdrop="${esc(nb.id)}" data-nbmenu="${esc(nb.id)}" draggable="true" title="Click to open. Drag to reorder." style="--nbc:${esc(nb.color)}"><div class="nbtxt"><b>${esc(nb.name)}${nb.shared && nb.shared.on ? ` <span title="Shared to a folder${shareState === 'paused' ? ' (paused: the browser needs you to allow the folder again)' : ''}" style="color:var(--accent);font-weight:400">⇪${shareState === 'paused' ? ' paused' : ''}</span>` : ''}</b><small>${pages.length} page${pages.length === 1 ? '' : 's'}${last ? ' · edited ' + esc(fmtDay(dstr(new Date(last)))) : ''}</small></div><span class="nbgo">›</span></div>`;
       }).join('');
     } else {
-      const nb = nbById(nbView), all = v.filter(e => e.item.type === 'note' && nbKey(e.item) === nbView), rows = all.filter(e => !e.item.pinned);
+      const nb = nbById(nbView), all = v.filter(e => e.item.type === 'note' && nbKey(e.item) === nbView), rows = all.filter(e => !pins.includes(e));
       html = `<div class="nbhead2" data-nbmenu="${esc(nb.id)}" style="--nbc:${esc(nb.color)}"><a data-act="nball" title="Back to all notebooks">‹ Notebooks</a><span class="nbn">${esc(nb.name)}</span><small>${all.length} page${all.length === 1 ? '' : 's'}</small><button data-act="nbnewpage" data-id="${esc(nb.id)}" title="New page in ${esc(nb.name)}">＋</button></div>`
         + pinHtml + (pins.length && rows.length ? '<div class="pinhead">Pages</div>' : '') + (rows.length ? rows.map(e => entryHtml(e)).join('') : (all.length ? '' : `<div class="nbempty">No pages yet. Press ＋ to add one.</div>`));
     }
@@ -1802,7 +1971,7 @@ function renderList(){
 const ckHead = i => { const n = i.checklist.filter(c => c.done).length; return `<h4>${i.type === 'note' ? 'RAID' : 'Action items'}${n || hideCkDone ? ` <label class="ckhide"><input type="checkbox" id="ckhide" ${hideCkDone ? 'checked' : ''}> Hide completed${n ? (hideCkDone ? ` (${n} hidden)` : ` (${n})`) : ''}</label>` : ''}</h4>`; };
 function ckRows(i){
   const inherit = catById(i.category), blank = inherit ? inherit.name + ' (inherited)' : 'No category';
-  return (hideCkDone ? i.checklist.filter(c => !c.done) : i.checklist).map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" ${c.done?'checked':''}>${raidBadge(c.raid || 'action')}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button><div class="ctl"><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" list="peoplelist" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select></div>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
+  return (hideCkDone ? i.checklist.filter(c => !c.done) : i.checklist).map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" class="${proposalOf(c) && proposalOf(c).kind === 'done' ? 'pcb' : ''}" ${c.done?'checked':''}>${propPill(c)}${raidBadge(c.raid || 'action')}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${propLine(c, c.id)}<div class="ctl"><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" autocomplete="off" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select></div>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
 }
 
 /* ---- Actions tab: every task + every checklist/action item, in one list ---- */
@@ -1848,18 +2017,54 @@ function groupActions(list){
   groups.forEach(g => g.rows.sort((p, q) => dk(p) < dk(q) ? -1 : dk(p) > dk(q) ? 1 : p.text.localeCompare(q.text)));
   return groups;
 }
+const propPill = o => { const p = proposalOf(o); return p && p.kind === 'done' ? `<span class="prop" title="${esc(p.by)} says this is done. You decide.">${esc(p.by)}: done?</span>` : ''; };
+const propLine = (o, key) => {
+  const p = proposalOf(o); if(!p) return '';
+  const when = p.at ? new Date(p.at).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : '';
+  return p.kind === 'done'
+    ? `<div class="propln"><span class="pn"><b>${esc(p.by)}</b> says this is done${p.note ? ': ' + esc(p.note) : ''} <small>${esc(when)}</small></span><button class="ok" data-act="propok" data-key="${esc(key)}">✓ Confirm</button><button data-act="propno" data-key="${esc(key)}">✕ Not yet</button></div>`
+    : `<div class="propln info"><span class="pn"><b>${esc(p.by)}</b>: ${esc(p.note)} <small>${esc(when)}</small></span><button data-act="propno" data-key="${esc(key)}">Dismiss</button></div>`;
+};
+function decideProposal(key, ok){
+  const ent = findEntry(key); if(!ent) return;
+  const o = ent.kind === 'task' ? ent.item : ent.ck, p = proposalOf(o); if(!p) return;
+  if(ok && p.kind === 'done'){ completeToggle(o, ent.item, true); if(o.proposed){ settleProposal(p.id, 'confirmed'); o.proposed = null; } }
+  else { settleProposal(p.id, p.kind === 'note' ? 'dismissed' : 'declined'); o.proposed = null; }
+  ent.item.updated = now(); touch(); refreshViews(); renderRail();
+  toast(ok && p.kind === 'done' ? 'Confirmed: marked done.' : p.kind === 'note' ? 'Dismissed.' : 'Not yet: ' + p.by + ' will see that it was declined.');
+}
+const waitingSuggestions = () => db.proposals.filter(x => x.kind === 'new' && x.status === 'pending');
+function decideSuggestion(id, ok){
+  const sg = db.proposals.find(x => x.id === id && x.kind === 'new' && x.status === 'pending'); if(!sg) return;
+  if(ok){
+    const t = {id:uid(), type:'task', title:sg.text, body:plainToHtml('Suggested by ' + sg.by + (sg.note ? ': ' + sg.note : '')), tags:[], category:'', due:sg.due || '', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
+    db.items.push(t); settleProposal(id, 'confirmed'); toast(`Added “${sg.text}” to your actions (suggested by ${sg.by}).`);
+  } else { settleProposal(id, 'declined'); toast('No thanks: ' + sg.by + ' will see that it was declined.'); }
+  touch(); renderAll();
+}
+function waitingEntries(){ return allEntries().filter(x => x.text.trim() && proposalOf(x.kind === 'task' ? x.item : x.ck)); }
+const waitingRailHtml = () => { const n = waitingEntries().filter(x => proposalOf(x.kind === 'task' ? x.item : x.ck).kind === 'done').length + waitingSuggestions().length; return n ? `<div class="f ${filter === 'waiting' ? 'on' : ''}" data-filter="waiting" title="Actions that someone says are done, for you to confirm">✓ Waiting for your OK <small class="hot">${n}</small></div>` : ''; };
+function renderWaiting(){
+  const all = waitingEntries(), groups = {};
+  all.forEach(x => { const p = proposalOf(x.kind === 'task' ? x.item : x.ck); (groups[p.by] = groups[p.by] || []).push(x); });
+  $('#detail').innerHTML = `<div class="type">Waiting</div><h1 class="ptitle">Waiting for your OK</h1>
+    <p class="psub">Actions that the person they are assigned to says are done, and notes from them. Nothing changes until you confirm.</p>
+    ${waitingSuggestions().length ? `<h4 class="gh">Suggested actions <small>${waitingSuggestions().length}</small></h4>${waitingSuggestions().map(sg => `<div class="sugrow"><div class="sugtext"><b>${esc(sg.by)} suggests: ${esc(sg.text)}</b><small>${sg.due ? 'due ' + esc(fmtDay(sg.due)) + ' · ' : ''}${esc(sg.note)}</small></div><button class="ok" data-act="sugyes" data-id="${esc(sg.id)}">✓ Add it</button><button data-act="sugno" data-id="${esc(sg.id)}">✕ No thanks</button></div>`).join('')}` : ''}
+    ${Object.keys(groups).sort((a, b) => a.localeCompare(b)).map(by => `<h4 class="gh">${esc(by)} <small>${groups[by].length}</small></h4>${groups[by].map(actRow).join('')}`).join('') || (waitingSuggestions().length ? '' : '<div class="empty">Nothing is waiting for you. 🎉</div>')}`;
+}
 function actRow(x){
   const late = !x.done && x.due && dayDiff(x.due) < 0, c = catById(x.cat), inh = x.kind === 'ck' ? catById(x.item.category) : null;
   const blank = inh ? inh.name + ' (inherited)' : 'No category';
   const src = x.kind === 'task' ? (x.raid ? '☐ Standalone' : '☐ Standalone action') : `${x.item.type === 'task' ? '☐' : isMeeting(x.item) ? '◷' : '✎'} ${esc(x.item.title || 'Untitled')}`;
-  return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''}" data-key="${x.key}">
-    <input type="checkbox" data-ax="done" ${x.done?'checked':''}>
-    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a></div></div>
+  const po = x.kind === 'task' ? x.item : x.ck, pp = proposalOf(po);
+  return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''} ${pp && pp.kind === 'done' ? 'hasprop' : ''}" data-key="${x.key}">
+    <input type="checkbox" data-ax="done" class="${pp && pp.kind === 'done' ? 'pcb' : ''}" ${x.done?'checked':''}>
+    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea>${propLine(po, x.key)}<div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a></div></div>
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
     <input type="time" data-ax="time" value="${esc(x.time)}" title="Time">
     <select data-ax="repeat" title="Repeat">${repeatOptions(x.repeat)}</select>
     <select data-ax="cat" title="Category: ${esc(catById(x.own) ? catById(x.own).name : blank)}" style="border-left:4px solid ${c ? esc(c.color) : 'transparent'}">${catOptions(x.own, blank)}</select>
-    <input type="text" class="who" list="peoplelist" data-ax="assignee" value="${esc(x.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)">
+    <input type="text" class="who" autocomplete="off" data-ax="assignee" value="${esc(x.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)">
     ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}</div>`;
 }
 function renderActions(){
@@ -1869,12 +2074,14 @@ function renderActions(){
   if(actPerson === 'none') list = list.filter(x => !x.assignee); else if(actPerson) list = list.filter(x => (x.assignee || '').toLowerCase() === actPerson.toLowerCase());
   if(actNb === 'none') list = list.filter(x => !(x.kind === 'ck' && x.item.type === 'note')); else if(actNb) list = list.filter(x => x.kind === 'ck' && x.item.type === 'note' && nbKey(x.item) === actNb);
   if(!actDone) list = list.filter(x => !x.done);
+  list = list.filter(matchQ).filter(matchD);
   const groups = groupActions(list);
   const opt = (v, l, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`;
   $('#detail').innerHTML = `
     <div class="type">Actions</div>
     <h1 class="ptitle">Everything to do</h1>
     <p class="psub">Every action: the standalone ones, plus the action items inside your notes. Risks, issues and decisions have their own pages under RAID log. ${open} open.</p>
+    ${pageSearchBox('Filter actions by text, person, category or note…', true)}
     <div class="addrow"><input type="text" id="anew" placeholder="Add an action…"><input type="date" id="adue" title="Due date"><select id="acat">${catOptions('', 'No category')}</select><button class="plain" data-act="addnotetoggle" title="Write a note on this action while you create it">📝 Note</button><button data-act="addaction">Add</button></div>
     <textarea id="anotefld" class="addnote" rows="3" hidden placeholder="Note for this action (optional)…"></textarea>
     <div class="qapv" id="apv"></div>
@@ -1882,10 +2089,10 @@ function renderActions(){
       <label>Group by <select id="agroup">${opt('due','Due date',actGroup)}${opt('source','Note',actGroup)}${opt('category','Category',actGroup)}</select></label>
       <label>Category <select id="acatf">${opt('','All',actCat)}${opt('none','No category',actCat)}${db.categories.map(c => opt(esc(c.id), esc(c.name), actCat)).join('')}</select></label>
       ${db.notebooks.length > 1 ? `<label>Notebook <select id="anb">${opt('', 'Everywhere', actNb)}${opt('none', 'Not from a note', actNb)}${db.notebooks.map(n => opt(esc(n.id), esc(n.name), actNb)).join('')}</select></label>` : ''}
-      <label>Assigned to <select id="apers">${opt('', 'Everyone', actPerson)}${opt('none', 'Unassigned', actPerson)}${db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => opt(esc(n), esc(n), actPerson)).join('')}</select></label>
+      <label>Assigned to <select id="apers">${opt('', 'Everyone', actPerson)}${opt('none', 'Unassigned', actPerson)}${everyone().sort((a, b) => a.localeCompare(b)).map(n => opt(esc(n), esc(n), actPerson)).join('')}</select></label>
       <label><input type="checkbox" id="adone" ${actDone?'checked':''}> Show completed</label>
       <label title="When an action has no date, look for things like “by Friday 3pm” or “in 3 days” in its text"><input type="checkbox" id="aauto" ${autoDates?'checked':''}> Auto-detect dates</label>
-      ${(actCat || actPerson || actNb || actDone) ? '<a data-act="clearafilters" class="clearf" title="Show everything again">✕ Clear all filters</a>' : ''}
+      ${(actCat || actPerson || actNb || actDone || pageQ.trim() || pageDate) ? '<a data-act="clearafilters" class="clearf" title="Show everything again">✕ Clear all filters</a>' : ''}
       <a data-act="scandates" style="margin-left:auto;cursor:pointer;color:var(--accent)">Find dates in my existing actions</a>
     </div>
     ${groups.length ? groups.map(g => `<h4 class="gh ${g.k==='Past due'&&actGroup==='due'?'late':g.k==='Today'&&actGroup==='due'?'today':''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : '<div class="empty">Nothing to do here.</div>'}`;
@@ -1900,16 +2107,18 @@ function renderRaid(kind){
   if(actPerson === 'none') list = list.filter(x => !x.assignee); else if(actPerson) list = list.filter(x => (x.assignee || '').toLowerCase() === actPerson.toLowerCase());
   if(actNb === 'none') list = list.filter(x => !(x.kind === 'ck' && x.item.type === 'note')); else if(actNb) list = list.filter(x => x.kind === 'ck' && x.item.type === 'note' && nbKey(x.item) === actNb);
   if(!actDone) list = list.filter(x => !x.done);
+  list = list.filter(matchQ).filter(matchD);
   const groups = groupActions(list), opt = (v, l, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`;
   $('#detail').innerHTML = `
     <div class="type">RAID log</div>
     <h1 class="ptitle">${M.many}</h1>
     <p class="psub">${M.blurb} ${open} open. Write <b>${M.one.toUpperCase()}</b> (in capitals) at the start of a line in any note to add one from there. <a data-act="scantags" style="cursor:pointer;color:var(--accent);text-decoration:underline">Scan my notes now</a></p>
+    ${pageSearchBox('Filter by text, owner, category or note…', true)}
     <div class="addrow"><input type="text" id="rnew" data-raid="${kind}" placeholder="${M.add}" autocomplete="off"><input type="date" id="rdue" title="Date to revisit"><select id="rcat">${catOptions('', 'No category')}</select><button data-act="addraid" data-raid="${kind}">Add</button></div>
     <div class="afilters">
       <label>Category <select id="acatf">${opt('', 'All', actCat)}${opt('none', 'No category', actCat)}${db.categories.map(c => opt(esc(c.id), esc(c.name), actCat)).join('')}</select></label>
       ${db.notebooks.length > 1 ? `<label>Notebook <select id="anb">${opt('', 'Everywhere', actNb)}${opt('none', 'Not from a note', actNb)}${db.notebooks.map(n => opt(esc(n.id), esc(n.name), actNb)).join('')}</select></label>` : ''}
-      <label>Owner <select id="apers">${opt('', 'Everyone', actPerson)}${opt('none', 'Nobody yet', actPerson)}${db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => opt(esc(n), esc(n), actPerson)).join('')}</select></label>
+      <label>Owner <select id="apers">${opt('', 'Everyone', actPerson)}${opt('none', 'Nobody yet', actPerson)}${everyone().sort((a, b) => a.localeCompare(b)).map(n => opt(esc(n), esc(n), actPerson)).join('')}</select></label>
       <label><input type="checkbox" id="adone" ${actDone ? 'checked' : ''}> Show ${M.done.toLowerCase()}</label>
     </div>
     ${groups.length ? groups.map(g => `<h4 class="gh ${g.k === 'Past due' && actGroup === 'due' ? 'late' : g.k === 'Today' && actGroup === 'due' ? 'today' : ''}">${esc(g.l)} <small>${g.rows.length}</small></h4>${g.rows.map(actRow).join('')}`).join('') : `<div class="empty">No ${M.many.toLowerCase()} yet.</div>`}`;
@@ -1920,7 +2129,7 @@ function renderPerson(){
   const name = actPerson;
   if(!name){ $('#detail').innerHTML = `<div class="type">People</div><h1 class="ptitle">Who?</h1><p class="psub">Pick someone under People in the sidebar.</p>`; return; }
   const mine = allEntries().filter(x => x.text.trim() && (x.assignee || '').toLowerCase() === name.toLowerCase());
-  const open = mine.filter(x => !x.done).length, list = actDone ? mine : mine.filter(x => !x.done);
+  const open = mine.filter(x => !x.done).length, list = (actDone ? mine : mine.filter(x => !x.done)).filter(matchQ).filter(matchD);
   const dk = x => (x.due || '9999') + sortTime(x.time, x.text);
   const sec = (key, label) => { const rows = list.filter(x => (x.raid || '') === key).sort((a, b) => dk(a) < dk(b) ? -1 : dk(a) > dk(b) ? 1 : a.text.localeCompare(b.text)); return rows.length ? `<h4 class="gh ${rows.some(x => !x.done && x.due && x.due < todayStr()) ? 'late' : ''}">${label} <small>${rows.length}</small></h4>${rows.map(actRow).join('')}` : ''; };
   const counts = [['', 'action'], ['risk', 'risk'], ['issue', 'issue'], ['decision', 'decision']].map(([k, w]) => { const n = mine.filter(x => !x.done && (x.raid || '') === k).length; return n ? `<span>${n} ${w}${n === 1 ? '' : 's'}</span>` : ''; }).join('');
@@ -1928,6 +2137,7 @@ function renderPerson(){
     <div class="type">People</div>
     <h1 class="ptitle">${esc(name)}</h1>
     <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}</div>
+    ${pageSearchBox('Filter this person’s items…', true)}
     <div class="afilters" style="margin-bottom:6px"><label><input type="checkbox" id="adone" ${actDone ? 'checked' : ''}> Show completed</label></div>
     ${sec('', 'Actions')}${sec('risk', 'Risks')}${sec('issue', 'Issues')}${sec('decision', 'Decisions')}
     ${list.length ? '' : `<div class="empty">Nothing ${actDone ? '' : 'open '}assigned to ${esc(name)}.</div>`}`;
@@ -1976,6 +2186,66 @@ function toast(msg, undo, label = 'Undo'){
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
 /* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
 /* ---- people ---- */
+const teamName = v => { const x = String(v || '').trim().toLowerCase(); return x ? db.people.find(k => k.toLowerCase() === x) || '' : ''; };
+const guestName = v => { const x = String(v || '').trim().toLowerCase(); return x ? (db.guests || []).find(k => k.toLowerCase() === x) || '' : ''; };
+const knownName = v => teamName(v) || guestName(v);
+const everyone = () => [...db.people, ...(db.guests || [])];
+function addGuest(n){ n = String(n || '').trim(); if(!n || knownName(n)) return false; (db.guests = db.guests || []).push(n); return true; }
+function rememberName(n){ if(!n || knownName(n)) return; if(db.strict) addGuest(n); else addPerson(n); }
+function lev(a, b){ const m = a.length, n = b.length; let prev = Array.from({length:n + 1}, (_, j) => j); for(let i = 1; i <= m; i++){ const cur = [i]; for(let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; } return prev[n]; }
+function nearNames(v){                                    // team names that this one could be a slip of: Rei / Reid, Ried / Reid
+  const x = String(v || '').trim().toLowerCase(); if(!x) return [];
+  return db.people.filter(n => n.toLowerCase() !== x).map(n => { const l = n.toLowerCase(); return {n, d:(l.startsWith(x) || x.startsWith(l)) && Math.min(l.length, x.length) >= 2 ? 0 : lev(l, x)}; })
+    .filter(o => o.d <= (x.length <= 3 ? 1 : 2)).sort((a, b) => a.d - b.d || a.n.localeCompare(b.n)).map(o => o.n).slice(0, 4);
+}
+let nameCtx = null;
+function resolveAssignee(raw, apply){                     // apply(name) assigns; apply('') clears; apply(undefined) means leave things as they were
+  raw = String(raw || '').trim(); if(!raw){ apply(''); return; }
+  const t = knownName(raw); if(t){ apply(t); return; }
+  if(!db.strict){ const k = canonPerson(raw); addPerson(k); touch(); renderRail(); apply(k); return; }
+  askName(raw, apply);
+}
+function askName(raw, apply){
+  const near = nearNames(raw), others = db.people.filter(n => !near.includes(n)).sort((a, b) => a.localeCompare(b));
+  nameCtx = {apply, done:false, raw};
+  $('#nametitle').textContent = `“${raw}” isn’t on your team`;
+  $('#namesub').textContent = near.length ? 'Did you mean one of these? Picking a team name keeps the action in the right person’s workload.' : 'Pick someone from your team, or add this name to it.';
+  $('#namechoices').innerHTML = near.map(n => `<button class="pri" data-act="nameuse" data-n="${esc(n)}">Use ${esc(n)}</button>`).join('')
+    + `<button data-act="nameadd">Add “${esc(capFirst(raw))}” to the team</button>`
+    + `<button data-act="nameguest" title="Saved with the action and remembered, but not a team member and with no feed">Assign it anyway, as a guest</button>`
+    + (others.length ? `<div class="nameother"><label>Or someone else on the team <select id="nameother"><option value="">Choose…</option>${others.map(n => `<option>${esc(n)}</option>`).join('')}</select></label></div>` : '');
+  if(!$('#namedlg').open) $('#namedlg').showModal();
+}
+function nameChosen(name){ if(!nameCtx) return; const c = nameCtx; c.done = true; $('#namedlg').close(); c.apply(name); }
+const noFeedWarned = new Set();
+function afterAssign(name){                               // someone without a feed will not see what you just gave them
+  if(!name || guestName(name) || !(db.feeds || []).some(f => f.on) || noFeedWarned.has(name.toLowerCase()) || name.toLowerCase() === (db.me || '').toLowerCase()) return;
+  if((db.feeds || []).some(f => f.on && f.person.toLowerCase() === name.toLowerCase())) return;
+  noFeedWarned.add(name.toLowerCase());
+  setTimeout(() => toast(`${name} has no assigned-action feed, so they won’t see this.`, () => setFeed(name, true), 'Turn on feed'), 1600);
+}
+function commitAssignee(t){                               // an Assign box was finished: check the name against the team before it counts
+  const raw = t.value.trim(), host = () => byId($('#detail').dataset.item || selId);
+  const cur = () => {
+    if(t.dataset.ax === 'assignee'){ const e = findEntry((t.closest('.act') || {dataset:{}}).dataset.key); return e ? (e.kind === 'task' ? e.item : e.ck).assignee || '' : ''; }
+    const i = host(); if(!i) return '';
+    if(t.dataset.ca){ const c = i.checklist.find(x => x.id === t.dataset.ca); return c ? c.assignee || '' : ''; }
+    return i.assignee || '';
+  };
+  if(raw === cur()) return;
+  resolveAssignee(raw, name => {
+    if(name === undefined){ t.value = cur(); return; }
+    t.value = name;
+    if(t.dataset.ax === 'assignee'){ const e = findEntry((t.closest('.act') || {dataset:{}}).dataset.key); if(e){ setAction(e, 'assignee', name); edited(e.item); } }
+    else { const i = host(); if(i){ if(t.dataset.ca){ const c = i.checklist.find(x => x.id === t.dataset.ca); if(c) c.assignee = name; } else i.assignee = name; edited(i); } }
+    renderRail(); if(t.dataset.ax === 'assignee' && actPerson) renderDetail(); afterAssign(name);
+  });
+}
+function mergePerson(from, to){
+  db.guests = (db.guests || []).filter(g => g.toLowerCase() !== from.toLowerCase());
+  const f = (db.feeds || []).find(x => x.person.toLowerCase() === from.toLowerCase()); if(f) db.feeds = db.feeds.filter(x => x !== f);
+  renamePerson(from, to); toast(`Merged ${from} into ${to}.`);
+}
 const canonPerson = n => db.people.find(k => k.toLowerCase() === String(n).trim().toLowerCase()) || capFirst(String(n).trim());
 function addPerson(n){ n = String(n || '').trim(); if(!n || db.people.some(k => k.toLowerCase() === n.toLowerCase())) return false; db.people.push(n); return true; }
 const personUsed = n => db.items.some(i => [i, ...i.checklist].some(o => (o.assignee || '').toLowerCase() === n.toLowerCase()));
@@ -1984,7 +2254,7 @@ const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const capFirst = x => x.charAt(0).toUpperCase() + x.slice(1);
 function personNamesFor(item){                               // everyone we know: your People list, plus a meeting's attendees
   const att = item && item.attendees ? item.attendees.split(/[,;&]|\band\b/i).map(x => x.trim()).filter(x => /^[A-Za-z][\w'’. -]{0,40}$/.test(x)) : [];
-  return [...new Set([...db.people, ...att])].sort((a, b) => b.length - a.length);
+  return [...new Set([...db.people, ...(db.guests || []), ...att])].sort((a, b) => b.length - a.length);
 }
 /* Who is an action for? “@Sam”, “assign to Sam”, “waiting on Sam”, “Sam to send…”, or a known name on its own (but not “call Sam”) */
 function findAssignee(text, item){
@@ -2008,7 +2278,8 @@ function findAssignee(text, item){
 
 /* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
 function applyParsed(o, text, item, datesOn = true){
-  const r = datesOn ? parseWhen(text) : null, w = o.assignee ? null : findAssignee(text, item);
+  const r = datesOn ? parseWhen(text) : null; let w = o.assignee ? null : findAssignee(text, item);
+  if(w && db.strict && !knownName(w.name)) w = null;          // a name that is neither on the team nor a guest is never assigned silently
   if(!r && !w) return null;
   const setDue = !!r && !o.due && !!r.date, setTime = !!r && !o.time && !!r.time, setRep = !!r && !o.repeat && !!r.repeat, setWho = !!w;
   if(!setDue && !setTime && !setRep && !setWho) return null;
@@ -2016,7 +2287,7 @@ function applyParsed(o, text, item, datesOn = true){
   if(setDue) o.due = r.date;
   if(setTime) o.time = r.time;
   if(setRep) o.repeat = r.repeat;
-  if(setWho){ o.assignee = w.name; if(addPerson(w.name)) prev.addedPerson = w.name; }
+  if(setWho){ o.assignee = w.name; if(!knownName(w.name) && addPerson(w.name)) prev.addedPerson = w.name; }
   item.updated = now();
   return {r, w, prev, setDue, setTime, setRep, setWho};
 }
@@ -2026,6 +2297,8 @@ const undoParsed = (o, item, p) => {
   item.updated = now();
 };
 function autoDate(o, text, item){
+  const w0 = !o.assignee ? findAssignee(text, item) : null;
+  if(w0 && db.strict && !knownName(w0.name)) setTimeout(() => resolveAssignee(w0.name, nm => { if(nm){ o.assignee = nm; item.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 350);
   const res = applyParsed(o, text, item, autoDates); if(!res) return false;          // an @name always assigns; dates only when Auto-detect dates is on
   const when = [o.due ? fmtDay(o.due) : '', o.time ? fmtTime(o.time) : ''].filter(Boolean).join(' '), bits = [];
   if(res.setDue || res.setTime) bits.push((res.setDue ? 'Due set to ' : 'Time set to ') + when);
@@ -2327,7 +2600,15 @@ document.addEventListener('click', e => { const c = filter === 'timeline' && e.t
 /* ---- category manager ---- */
 function renderNbDlg(){
   const cnt = {}; db.items.forEach(i => { if(i.type === 'note') cnt[nbKey(i)] = (cnt[nbKey(i)] || 0) + 1; });
-  $('#nbrows').innerHTML = db.notebooks.map(n => `<div class="crow"><input type="color" data-nbc="${esc(n.id)}" value="${esc(n.color)}"><input type="text" data-nbn="${esc(n.id)}" value="${esc(n.name)}"><span class="pcnt">${cnt[n.id] || 0} page${(cnt[n.id] || 0) === 1 ? '' : 's'}</span><button class="mv" data-act="nbexport" data-id="${esc(n.id)}" title="Export this notebook">⤓</button><button class="mv" data-act="nbshare" data-id="${esc(n.id)}" title="${n.shared && n.shared.on ? 'Sharing options' : 'Share this notebook to a folder'}" ${n.shared && n.shared.on ? 'style="color:var(--accent)"' : ''}>⇪</button><button class="mv" data-act="nbup" data-id="${esc(n.id)}" title="Move up">▲</button><button class="mv" data-act="nbdown" data-id="${esc(n.id)}" title="Move down">▼</button><button class="x" data-act="delnb" data-id="${esc(n.id)}" title="${db.notebooks.length < 2 ? 'Keep at least one notebook' : 'Delete this notebook (its pages move to another one)'}" ${db.notebooks.length < 2 ? 'disabled style="opacity:.3;cursor:default"' : ''}>×</button></div>`).join('');
+  $('#nbrows').innerHTML = db.notebooks.map(n => `<div class="crow"><input type="color" data-nbc="${esc(n.id)}" value="${esc(n.color)}"><input type="text" data-nbn="${esc(n.id)}" value="${esc(n.name)}"><select class="nbcat" data-nbcat="${esc(n.id)}" title="Category for pages in this notebook, and for the actions in them">${catOptions(n.category || '', 'No category')}</select><span class="pcnt">${cnt[n.id] || 0} page${(cnt[n.id] || 0) === 1 ? '' : 's'}</span><button class="mv" data-act="nbexport" data-id="${esc(n.id)}" title="Export this notebook">⤓</button><button class="mv" data-act="nbshare" data-id="${esc(n.id)}" title="${n.shared && n.shared.on ? 'Sharing options' : 'Share this notebook to a folder'}" ${n.shared && n.shared.on ? 'style="color:var(--accent)"' : ''}>⇪</button><button class="mv" data-act="nbup" data-id="${esc(n.id)}" title="Move up">▲</button><button class="mv" data-act="nbdown" data-id="${esc(n.id)}" title="Move down">▼</button><button class="x" data-act="delnb" data-id="${esc(n.id)}" title="${db.notebooks.length < 2 ? 'Keep at least one notebook' : 'Delete this notebook (its pages move to another one)'}" ${db.notebooks.length < 2 ? 'disabled style="opacity:.3;cursor:default"' : ''}>×</button></div>`).join('');
+}
+function setNotebookCategory(nb, catId){
+  nb.category = catById(catId) ? catId : '';
+  const c = catById(nb.category), bare = notebookPages(nb.id).filter(i => !i.category);
+  if(c && bare.length && confirm(`Apply “${c.name}” to the ${bare.length} page${bare.length === 1 ? '' : 's'} in “${nb.name}” that ${bare.length === 1 ? 'has' : 'have'} no category? The action items in them will use it too.`)){
+    bare.forEach(i => { i.category = c.id; });
+  }
+  touch(); renderNbDlg(); renderAll();
 }
 function removeNotebook(id){
   const nb = nbById(id); if(!nb) return;
@@ -2413,14 +2694,43 @@ function metaSummary(i){
   const c = catById(i.category), d = i.type === 'task' ? i.due : (i.autoDt ? '' : i.date), t = i.type === 'task' ? i.time : (i.autoDt ? '' : i.time);
   return [d && fmtDay(d), t && fmtTime(t), c && c.name, i.type === 'task' && i.assignee, i.type === 'note' && i.attendees && 'with ' + i.attendees, i.tags.length && i.tags.map(x => '#' + x).join(' ')].filter(Boolean).join(' · ') || 'no date, category or tags';
 }
+let pageQ = '', pageQView = '', pageQTimer = null, pageDate = '', pageDF = '', pageDT = '';
+function pageQFor(){ const k = filter + ':' + (filter === 'person' ? actPerson : ''); if(k !== pageQView){ pageQView = k; pageQ = ''; pageDate = ''; pageDF = ''; pageDT = ''; } }
+const PAGE_DATES = [['', 'Any date'], ['overdue', 'Overdue'], ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'This week'], ['next7', 'Next 7 days'], ['none', 'No due date'], ['day', 'A specific day…'], ['range', 'A date range…']];
+const pageSearchBox = (ph, withDate) => `<div class="psearch"><input type="search" id="psearch" placeholder="${esc(ph)}" value="${esc(pageQ)}" autocomplete="off">${withDate ? `<select id="pdate" title="Only show items due on…">${PAGE_DATES.map(([v, l]) => `<option value="${v}" ${v === pageDate ? 'selected' : ''}>${l}</option>`).join('')}</select>${pageDate === 'day' || pageDate === 'range' ? `<span class="pdr"><input type="date" id="pdfrom" value="${esc(pageDF)}" title="${pageDate === 'day' ? 'The day' : 'From'}">${pageDate === 'range' ? `<span>–</span><input type="date" id="pdto" value="${esc(pageDT)}" title="To">` : ''}</span>` : ''}` : ''}</div>`;
+function dateWindow(){
+  const T = todayStr();
+  if(pageDate === 'overdue') return ['0000-00-00', shiftStr(T, -1)];
+  if(pageDate === 'today') return [T, T];
+  if(pageDate === 'tomorrow') return [shiftStr(T, 1), shiftStr(T, 1)];
+  if(pageDate === 'next7') return [T, shiftStr(T, 6)];
+  if(pageDate === 'week'){ const dow = (ymd(T).getDay() + 6) % 7; return [shiftStr(T, -dow), shiftStr(T, 6 - dow)]; }
+  if(pageDate === 'day') return [pageDF || '0000-00-00', pageDF || '9999-12-31'];
+  return [pageDF || '0000-00-00', pageDT || '9999-12-31'];
+}
+const matchD = x => {
+  if(!pageDate) return true;
+  if(pageDate === 'none') return !x.due;
+  if((pageDate === 'day' && !pageDF) || (pageDate === 'range' && !pageDF && !pageDT)) return true;       // nothing picked yet
+  if(pageDate === 'overdue' && x.done) return false;
+  const w = dateWindow(); return !!x.due && x.due >= w[0] && x.due <= w[1];
+};
+const matchQ = x => {
+  const q = pageQ.trim().toLowerCase(); if(!q) return true;
+  return [x.text, x.assignee, (catById(x.cat) || {}).name, x.item && x.item.title, x.due, x.due ? fmtDay(x.due) : '', RAID_META[x.raid] ? RAID_META[x.raid].one : '', htmlText(x.note || '')].join('\n').toLowerCase().includes(q);
+};
 function renderDetail(){
   if(dropEmptyNew()) touch();                              // an empty note you moved away from
   $('#detail').dataset.item = '';                         // while it is being redrawn, nothing in it belongs to any note
+  if(FULL_PAGES.includes(filter)) pageQFor();
   $('#detail').classList.toggle('tl', filter === 'timeline');
   if(filter === 'timeline'){ renderTimeline(); return; }
   if(filter === 'actions'){ renderActions(); return; }
   if(filter === 'today'){ renderToday(); return; }
   if(filter === 'trash'){ renderTrash(); return; }
+  if(filter === 'waiting'){ renderWaiting(); return; }
+  if(filter === 'inbox'){ renderInbox(); return; }
+  if(filter === 'sharedwith'){ renderSharedWith(); return; }
   if(['risk', 'issue', 'decision'].includes(filter)){ renderRaid(filter); return; }
   if(filter === 'person'){ renderPerson(); return; }
   const el = $('#detail'), i = byId(selId);
@@ -2431,10 +2741,11 @@ function renderDetail(){
   else meta = fld('date', 'Date', 'date') + fld('time', 'Time', 'time') + `<label class="grow">With <input type="text" data-f="attendees" value="${esc(i.attendees)}" placeholder="Attendees (optional)"></label>`;
   meta += `<label>Category <select data-f="category">${catOptions(i.category, 'None')}</select></label>`;
   if(i.type === 'note') meta += `<label>Notebook <select data-f="notebook">${db.notebooks.map(n => `<option value="${esc(n.id)}" ${nbKey(i) === n.id ? 'selected' : ''}>${esc(n.name)}</option>`).join('')}</select></label>`;
-  if(i.type === 'task') meta += `<label>Assigned to <input type="text" class="who" list="peoplelist" data-f="assignee" value="${esc(i.assignee || '')}" placeholder="Nobody"></label>`;
+  if(i.type === 'task') meta += `<label>Assigned to <input type="text" class="who" autocomplete="off" data-f="assignee" value="${esc(i.assignee || '')}" placeholder="Nobody"></label>`;
   meta += `<label class="grow">Tags <input type="text" data-f="tags" value="${esc(i.tags.join(', '))}" placeholder="acme, q4-planning"></label>`;
   const bodyLabel = i.type === 'task' ? 'Details' : 'Notes';
   el.innerHTML = `
+    ${i.type === 'task' && proposalOf(i) ? propLine(i, i.id) : ''}
     ${replyBanner(i)}
     <div class="type">${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'}</div>
     <textarea class="title" rows="1" data-f="title" placeholder="Untitled">${esc(i.title)}</textarea>
@@ -2454,7 +2765,7 @@ function grow(t){
   const min = t.classList.contains('big') ? 320 : /cknote|anote/.test(t.className) ? 70 : 150;
   t.style.height = Math.max(t.scrollHeight + 2, min) + 'px';
 }
-const FULL_PAGES = ['actions', 'timeline', 'today', 'trash', 'risk', 'issue', 'decision', 'person'];          // pages that use the whole width instead of list + detail
+const FULL_PAGES = ['actions', 'timeline', 'today', 'trash', 'risk', 'issue', 'decision', 'person', 'waiting', 'inbox', 'sharedwith'];          // pages that use the whole width instead of list + detail
 function applyMode(){
   const app = document.querySelector('.app');
   app.classList.toggle('actions-mode', FULL_PAGES.includes(filter)); app.classList.toggle('rail-off', railOff); app.classList.toggle('list-off', listOff);
@@ -2488,7 +2799,7 @@ function newItem(kind){                      // kind: 'task', 'note' or 'meeting
   const type = kind === 'task' ? 'task' : 'note';
   const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   let toInbox = false;
-  if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; }
+  if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; const nbc = nbById(i.notebook); if(nbc && catById(nbc.category) && !i.category) i.category = nbc.category; }
   db.items.push(i); selId = i.id; search = '';
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
@@ -2598,7 +2909,7 @@ $('#nbfile').addEventListener('change', e => { const f = e.target.files && e.tar
 const shareOk = () => typeof window.showDirectoryPicker === 'function';
 let shareDir = null, shareTimer = null, shareState = '', shareErr = '';
 const shareWritten = new Map();                          // page id → the version of the page last written (this session)
-const shareStamp = i => (i.updated || '') + '|' + (i.title || '') + '|' + i.checklist.length;
+const shareStamp = i => (i.updated || '') + '|' + (i.title || '') + '|' + i.checklist.length + '|' + (i.shared ? (i.shared.with || []).join(',') + (i.shared.global ? 'G' : '') : '');
 const shareFileName = i => `${fileSlug(i)}.${String(i.id).slice(-5)}.json`;
 async function shareDirHandle(){
   if(shareDir) return shareDir;
@@ -2618,14 +2929,49 @@ async function pickShareFolder(){
   shareDir = d; try { await withTimeout(idbSet('shareDir', d), 3000); } catch {}
   return d;
 }
+/* ---- assigned-action feeds: one file per person with the actions assigned to them, and their proposals read back ---- */
+const feedSlug = n => String(n || '').trim().replace(/[^\w\-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase().slice(0, 40) || 'person';
+const feedDirName = person => 'for-' + feedSlug(person);
+const feedWritten = new Map();
+function lastProposalFor(id){ const e = db.proposals.filter(x => x.item === id).sort((a, b) => b.at.localeCompare(a.at))[0]; return e ? {id:e.id, status:e.status, at:e.at, decidedAt:e.decidedAt || ''} : null; }
+function feedItems(f){
+  const want = f.person.toLowerCase(), cutoff = Date.now() - 14 * 864e5, out = [];
+  const entry = (o, it, isCk) => ({id:isCk ? o.id : it.id, type:(isCk ? o.raid : it.raid) || 'action', text:isCk ? o.text : it.title, done:!!o.done, due:o.due || '', time:o.time || '', details:htmlToPlain(isCk ? o.note : it.body).slice(0, 600), inNote:isCk,
+    ...(isCk && f.titles ? {noteTitle:it.title} : {}), ...(isCk && it.shared && it.shared.on && (it.shared.with || []).some(w => w.toLowerCase() === want) ? {page:{id:it.id, title:it.title, file:shareFileName(it)}} : {}), proposal:lastProposalFor(isCk ? o.id : it.id)});
+  for(const it of db.items){
+    if(it.type === 'task' && (it.assignee || '').toLowerCase() === want && it.title.trim() && (!it.done || Date.parse(it.updated) > cutoff)) out.push(entry(it, it, false));
+    for(const c of it.checklist) if((c.assignee || '').toLowerCase() === want && c.text.trim() && (!c.done || Date.parse(it.updated) > cutoff)) out.push(entry(c, it, true));
+  }
+  return out;
+}
+function feedPayload(f){
+  const items = feedItems(f);
+  return {app:'notebook-assigned', format:1, writtenAt:now(), appVersion:APP_VERSION, person:f.person, owner:db.me || '',
+    about:'Written by My Notebook: the actions assigned to ' + f.person + '. Read it; do not edit it (the app overwrites it).',
+    summary:{open:items.filter(x => !x.done).length, total:items.length},
+    howToPropose:{
+      file:'proposals.json (in this same folder). It is written only by ' + f.person + '. The owner decides: a proposal never changes anything until they press Confirm.',
+      template:{app:'notebook-proposals', format:1, from:f.person, proposals:[{id:'unique-id', item:'<id of an item above>', kind:'done', note:'short plain-text note', at:now()}]},
+      kinds:{new:'a suggested new action for the owner: {kind:"new", text, due, note}; it appears for them to Add or decline', done:'says the action is done; shows “done?” beside its checkbox for the owner to confirm', note:'a short progress note shown on the action (the owner can dismiss it)'},
+      rules:'Only items assigned to ' + f.person + ' are accepted. Reuse the same file: add new proposals with new ids. Each item above shows its latest proposal and what the owner decided.'
+    },
+    suggestions:db.proposals.filter(x => x.kind === 'new' && x.by.toLowerCase() === f.person.toLowerCase()).slice(0, 20).map(x => ({id:x.id, text:x.text, status:x.status, at:x.at})),
+    items};
+}
+async function writeFeed(f, sub, force){
+  const dir = await sub.getDirectoryHandle(feedDirName(f.person), {create:true}), text = JSON.stringify(feedPayload(f), null, 2), key = text.replace(/"writtenAt": "[^"]*"/, '');
+  if(!force && feedWritten.get(f.person) === key) return;
+  const fh = await dir.getFileHandle('assigned.json', {create:true}), w = await fh.createWritable(); await w.write(text); await w.close();
+  feedWritten.set(f.person, key);
+}
 function sharePayload(i){
   const nb = i.type === 'note' ? nbById(nbKey(i)) : null, catName = id => (catById(id) || {}).name || '';
   const open = i.checklist.filter(c => !c.done && c.text.trim()).length;
   return {
-    app:'notebook-share', format:1, writtenAt:now(), appVersion:APP_VERSION,
+    app:'notebook-share', format:1, writtenAt:now(), appVersion:APP_VERSION, owner:db.me || '',
     about:'Written by My Notebook every time this page is saved. Read it; do not edit it (the app overwrites it). To answer, write a reply file as described under "reply".',
     page:{
-      id:i.id, title:i.title, kind:i.type === 'task' ? 'action' : 'note', notebook:nb ? nb.name : '', category:catName(i.category), tags:i.tags, pinned:!!i.pinned,
+      id:i.id, title:i.title, kind:i.type === 'task' ? 'action' : 'note', notebook:nb ? nb.name : '', category:catName(i.category), tags:i.tags, pinned:!!i.pinned, pinnedEverywhere:!!i.pinAll,
       date:i.autoDt ? '' : i.date, time:i.autoDt ? '' : i.time, attendees:i.attendees, assignedTo:i.assignee || '', created:i.created, updated:i.updated,
       body:i.body, bodyText:htmlToPlain(i.body),
       actionItems:i.checklist.filter(c => c.text.trim()).map(c => ({id:c.id, text:c.text, type:c.raid || 'action', done:c.done, due:c.due, time:c.time, assignedTo:c.assignee || '', category:catName(c.cat || i.category), repeats:c.repeat ? describeRepeat(c.repeat) : '', note:htmlToPlain(c.note), fromTaggedLine:c.src === 'tag'}))
@@ -2653,10 +2999,14 @@ async function writePageFile(i, dir, name){
   const fh = await dir.getFileHandle(name, {create:true}), w = await fh.createWritable();
   await w.write(JSON.stringify(sharePayload(i), null, 2)); await w.close();
 }
+const pagesDir = async (sub, person, create = true) => { const f = await sub.getDirectoryHandle(feedDirName(person), {create}); return f.getDirectoryHandle('pages', {create}); };
 async function writeSharedPage(i, sub){
-  const name = shareFileName(i); await writePageFile(i, sub, name);
-  if(i.shared.file && i.shared.file !== name){ try { await sub.removeEntry(i.shared.file); } catch {} }          // the title changed, so the file name did too
-  i.shared.file = name; i.shared.last = now(); shareWritten.set(i.id, shareStamp(i));
+  const name = shareFileName(i), sh = i.shared, w = sh.with || [], old = sh.file;
+  if(sh.global){ await writePageFile(i, sub, name); if(old && old !== name){ try { await sub.removeEntry(old); } catch {} } sh.root = true; }          // everyone with the folder
+  else if(sh.root && old){ try { await sub.removeEntry(old); } catch {} sh.root = false; }
+  for(const person of w){ const dir = await pagesDir(sub, person); await writePageFile(i, dir, name); if(old && old !== name){ try { await dir.removeEntry(old); } catch {} } }          // each chosen person's own folder
+  for(const gone of (sh.sent || []).filter(x => !w.some(y => y.toLowerCase() === x.toLowerCase()))){ try { const dir = await pagesDir(sub, gone, false); await dir.removeEntry(old || name); } catch {} }
+  sh.sent = [...w]; sh.file = name; sh.last = now(); shareWritten.set(i.id, shareStamp(i));
 }
 const nbShareDirName = nb => { const base = (nb.name || 'notebook').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 50) || 'notebook'; return db.notebooks.some(o => o !== nb && o.shared && o.shared.on && o.shared.dir === base) ? base + '-' + String(nb.id).slice(-4) : base; };
 const shareNbWritten = new Map();                          // page id → what was last written into its notebook folder
@@ -2679,51 +3029,67 @@ async function writeSharedNotebook(nb, sub, force){
   nb.shared.dir = dirName; nb.shared.files = [...wanted]; nb.shared.last = now();
 }
 async function runShareWrites(force){
-  const pages = db.items.filter(i => i.shared && i.shared.on && (force || shareWritten.get(i.id) !== shareStamp(i))), nbs = db.notebooks.filter(n => n.shared && n.shared.on);
-  if(!pages.length && !nbs.length) return;
+  const pages = db.items.filter(i => i.shared && i.shared.on && (force || shareWritten.get(i.id) !== shareStamp(i))), nbs = db.notebooks.filter(n => n.shared && n.shared.on), feeds = (db.feeds || []).filter(f => f.on);
+  if(!pages.length && !nbs.length && !feeds.length) return;
   const d = await shareReady(false);
   if(!d){ shareState = 'paused'; renderShareBadge(); return; }
   try {
     const sub = await d.getDirectoryHandle('shared', {create:true});
     for(const i of pages) await writeSharedPage(i, sub);
     for(const nb of nbs) await writeSharedNotebook(nb, sub, force);
+    for(const f of feeds) await writeFeed(f, sub, force);
     shareState = 'ok'; shareErr = '';
   } catch(e){ shareState = 'error'; shareErr = (e && e.message) || String(e); }
   renderShareBadge();
 }
-function scheduleShareWrite(){ if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on)) return; clearTimeout(shareTimer); shareTimer = setTimeout(() => runShareWrites(false), 1200); }
+function scheduleShareWrite(){ if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on) && !(db.feeds || []).some(f => f.on)) return; clearTimeout(shareTimer); shareTimer = setTimeout(() => runShareWrites(false), 1200); }
 function shareBadge(i){
   if(!i.shared || !i.shared.on) return {label:'Share…', tip:'Keep a file of this page, up to date, in a folder you choose'};
   const t = i.shared.last ? new Date(i.shared.last).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
   if(shareState === 'paused') return {label:'⇪ Shared · paused, click to allow the folder', tip:'The browser needs you to allow the folder again for this session'};
   if(shareState === 'error') return {label:'⇪ Shared · couldn’t write', tip:shareErr};
-  return {label:'⇪ Shared' + (t ? ' · written ' + t : ''), tip:'Shared to ' + (shareDir ? shareDir.name + '\\shared\\' : 'a folder') + (i.shared.file || '')};
+  const wl = (i.shared.with || []).length ? 'with ' + i.shared.with.join(', ') + (i.shared.global ? ' + everyone' : '') : 'with everyone';
+  return {label:'⇪ Shared ' + wl + (t ? ' · written ' + t : ''), tip:'Who can see this page: ' + wl + '. Click to change.'};
 }
 function renderShareBadge(){
   const b = $('#sharebtn'), i = byId(selId);
   if(b && i){ const x = shareBadge(i); b.textContent = x.label; b.title = x.tip; }
   renderList();
 }
-async function startSharing(i){
+let shareDlgItem = '';
+function startSharing(i){ openShareDlg(i); }
+function openShareDlg(i){
+  shareDlgItem = i.id; const sh = i.shared && i.shared.on ? i.shared : null;
+  $('#sharesub').textContent = `“${i.title || 'Untitled'}” is written into each chosen person’s own folder (shared/for-name/pages/), read-only for them. Nothing else of yours is shared.`;
+  $('#sharepeople').innerHTML = db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<label class="swrow"><input type="checkbox" data-sw="${esc(n)}" ${sh && (sh.with || []).some(w => w.toLowerCase() === n.toLowerCase()) ? 'checked' : ''}> ${esc(n)}</label>`).join('') : '<p class="rnone">Your team list is empty. Add people in Settings first.</p>';
+  $('#shareall').checked = !!(sh && sh.global && !(sh.with || []).length);
+  $('#sharestop').style.display = sh ? '' : 'none';
+  if(!$('#sharedlg').open) $('#sharedlg').showModal();
+}
+async function applyShare(){
+  const i = byId(shareDlgItem); if(!i) return;
+  const names = [...document.querySelectorAll('#sharepeople [data-sw]:checked')].map(c => c.dataset.sw), all = $('#shareall').checked;
+  if(!names.length && !all){ toast('Pick at least one person, or tick Everyone with the shared folder.'); return; }
   if(!shareOk()){ toast('This browser can’t write to a folder (turn on the File System Access flag in Brave, as for your save file).'); return; }
   try {
-    let d = await shareReady(true);
-    if(!d) d = await pickShareFolder();
-    i.shared = {on:true, file:i.shared && i.shared.file || '', last:''};
-    shareState = 'ok'; touch(); await runShareWrites(true); renderAll();
-    toast(`Shared “${i.title || 'Untitled'}” to ${d.name}\\shared\\${i.shared.file}. It updates every time you edit the page.`);
+    let d = await shareReady(true); if(!d) d = await pickShareFolder();
+    const prev = i.shared && i.shared.on ? i.shared : null;
+    i.shared = {on:true, file:prev ? prev.file : '', last:'', with:names, sent:prev ? prev.sent || [] : [], global:all, root:prev ? !!prev.root : false};
+    $('#sharedlg').close(); shareState = 'ok'; touch(); await runShareWrites(true); renderAll();
+    toast(`Shared “${i.title || 'Untitled'}” with ${[...names, ...(all ? ['everyone with the folder'] : [])].join(', ')}. It updates every time you edit the page.`);
   } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t share: ' + ((e && e.message) || e)); }
 }
 async function stopSharing(i, deleteFile){
-  const file = i.shared && i.shared.file; i.shared = null; shareWritten.delete(i.id); touch();
-  if(deleteFile && file){ const d = await shareReady(false); if(d){ try { const sub = await d.getDirectoryHandle('shared'); await sub.removeEntry(file); } catch {} } }
-  renderAll(); toast(deleteFile ? 'Stopped sharing and removed the file.' : 'Stopped sharing. The last file was left in the folder.');
+  const sh = i.shared, file = sh && sh.file, sent = sh ? sh.sent || [] : [], root = !!(sh && sh.root); i.shared = null; shareWritten.delete(i.id); touch();
+  if(deleteFile && file){ const d = await shareReady(false); if(d){ try { const sub = await d.getDirectoryHandle('shared'); if(root){ try { await sub.removeEntry(file); } catch {} } for(const pn of sent){ try { const pd = await pagesDir(sub, pn, false); await pd.removeEntry(file); } catch {} } } catch {} } }
+  renderAll(); toast(deleteFile ? 'Stopped sharing and removed the files.' : 'Stopped sharing. The last files were left in the folders.');
 }
 function sharePageAction(i, x, y){
   if(!i.shared || !i.shared.on){ startSharing(i); return; }
   const r = $('#sharebtn') ? $('#sharebtn').getBoundingClientRect() : {left:x || 200, bottom:y || 200};
   openMenu(r.left, r.bottom + 4, [
     {hd:'Shared page'},
+    {l:'Who can see this…', ic:'👥', fn: () => openShareDlg(i)},
     {l:'Check for replies now', ic:'💬', fn: () => checkReplies(true)},
     {l:'Write it now', ic:'↻', fn: async () => { if(await shareReady(true)) await runShareWrites(true); else { shareState = 'paused'; } renderShareBadge(); renderAll(); }},
     {l:'Choose a different folder…', ic:'📁', fn: async () => { try { await pickShareFolder(); await runShareWrites(true); renderAll(); toast('Now sharing to ' + shareDir.name + '\\shared\\.'); } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t pick that folder.'); } }},
@@ -2762,7 +3128,30 @@ const replyPending = r => r.changes.some(c => c.status === 'pending') || (!r.cha
 const pendingOf = i => (i.replies || []).reduce((n, r) => n + (r.changes.length ? r.changes.filter(c => c.status === 'pending').length : (r.ack ? 0 : 1)), 0);
 const replySeen = new Map();                              // file → last modified time already read
 let replyBusy = false, repItem = '';
-function ingestReplyFile(data){
+function ingestProposalFile(data, folderSlug){
+  if(!data || data.app !== 'notebook-proposals' || typeof data.from !== 'string') return 0;
+  const from = clipS(data.from, 40).trim(); if(!from || feedSlug(from) !== folderSlug) return 0;          // the folder says who it is
+  const feed = (db.feeds || []).find(f => f.on && f.person.toLowerCase() === from.toLowerCase()); if(!feed) return 0;
+  let n = 0;
+  for(const raw of (Array.isArray(data.proposals) ? data.proposals : []).slice(0, 200)){
+    const id = raw && /^[\w\-.:]{1,80}$/.test(String(raw.id || '')) ? String(raw.id) : '', kind = raw && (raw.kind === 'done' || raw.kind === 'note' || raw.kind === 'new') ? raw.kind : '';
+    if(!id || !kind || db.proposals.some(x => x.id === id)) continue;
+    if(kind === 'new'){                                        // a suggested new action: the owner adds it or not
+      const text = clipS(raw.text, 200).trim(); if(!text) continue;
+      logProposal({id, item:'', text, by:from, kind:'new', due:okDate(raw.due), note:clipS(raw.note, 500), at:okIso(raw.at) || now(), status:'pending', decidedAt:'', decidedBy:'', why:''}); n++; continue;
+    }
+    const itemId = clipS(raw.item, 80), ent = findEntry(itemId), note = clipS(raw.note, 500), at = okIso(raw.at) || now();
+    const entry = {id, item:itemId, text:ent ? ent.text.slice(0, 160) : '', by:from, kind, note, at, status:'pending', decidedAt:'', decidedBy:'', why:''};
+    const o = ent ? (ent.kind === 'task' ? ent.item : ent.ck) : null;
+    if(!o){ entry.status = 'ignored'; entry.why = 'no such action'; }
+    else if((o.assignee || '').toLowerCase() !== from.toLowerCase()){ entry.status = 'ignored'; entry.why = 'not assigned to ' + from; }
+    else if(kind === 'done' && o.done){ entry.status = 'ignored'; entry.why = 'already done'; }
+    else { o.proposed = {id, kind, by:from, at, note}; ent.item.updated = ent.item.updated; n++; }
+    logProposal(entry);
+  }
+  return n;
+}
+function ingestReplyFile(data, folderSlug){
   if(!data || data.app !== 'notebook-reply' || typeof data.page !== 'string') return null;
   const i = byId(data.page); if(!i) return null;
   const nb = i.type === 'note' ? nbById(nbKey(i)) : null;
@@ -2770,35 +3159,46 @@ function ingestReplyFile(data){
   const list = Array.isArray(data.replies) ? data.replies : data.reply ? [data.reply] : [];
   const added = [];
   for(const raw of list.slice(0, 50)){
-    const r = cleanReply(raw, false); if(!r || i.replies.some(x => x.id === r.id)) continue;
+    const r = cleanReply(raw, false); if(!r || i.replies.some(x => x.id === r.id) || (folderSlug && feedSlug(r.author) !== folderSlug)) continue;          // in a person's folder, only that person can be the author
+    r.changes.forEach(ch => {                                  // a tick from the person the action is assigned to becomes a “done?” on the action itself
+      if(ch.kind !== 'tick' || !ch.done) return;
+      const c = findAction(i, ch); if(!c || c === 'many' || c.done || (c.assignee || '').toLowerCase() !== r.author.toLowerCase()) return;
+      const pid = 'rp:' + r.id + ':' + ch.id; c.proposed = {id:pid, kind:'done', by:r.author, at:r.at, note:ch.why || ''};
+      logProposal({id:pid, item:c.id, text:c.text.slice(0, 160), by:r.author, kind:'done', note:ch.why || '', at:r.at, status:'pending', decidedAt:'', decidedBy:'', why:''}); ch.status = 'proposed';
+    });
     r.seen = now(); i.replies.push(r); added.push(r);
   }
   if(i.replies.length > 200) i.replies = i.replies.slice(-200);
   return added.length ? {item:i, added} : null;
 }
+const peopleFolders = () => [...new Set([...(db.feeds || []).filter(f => f.on).map(f => f.person), ...db.items.flatMap(i => i.shared && i.shared.on ? [...(i.shared.with || []), ...(i.shared.sent || [])] : [])])];
 async function checkReplies(manual){
   if(replyBusy) return; replyBusy = true;
   try {
-    if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on)){ if(manual) toast('Nothing is shared yet, so there is nothing to check.'); return; }
+    if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on) && !(db.feeds || []).some(f => f.on)){ if(manual) toast('Nothing is shared yet, so there is nothing to check.'); return; }
     const d = await shareReady(false);
     if(!d){ if(manual) toast('The browser needs you to allow the shared folder first. Click the Shared button on the page.'); return; }
     let sub; try { sub = await d.getDirectoryHandle('shared'); } catch { if(manual) toast('No replies yet.'); return; }
-    const dirs = [[sub, '']];
-    for(const nb of db.notebooks) if(nb.shared && nb.shared.on && nb.shared.dir){ try { dirs.push([await sub.getDirectoryHandle(nb.shared.dir), nb.shared.dir + '/']); } catch {} }
-    const got = [];
-    for(const [dir, pre] of dirs) for await (const [name, h] of dir.entries()){
-      if(h.kind !== 'file' || !/\.reply\.json$/i.test(name)) continue;
+    const dirs = [[sub, '', null]];
+    for(const nb of db.notebooks) if(nb.shared && nb.shared.on && nb.shared.dir){ try { dirs.push([await sub.getDirectoryHandle(nb.shared.dir), nb.shared.dir + '/', null]); } catch {} }
+    for(const person of peopleFolders()){ const fd = (db.feeds || []).find(f => f.on && f.person.toLowerCase() === person.toLowerCase()) || null; try { dirs.push([await sub.getDirectoryHandle(feedDirName(person)), feedDirName(person) + '/', fd, feedSlug(person)]); } catch {} }
+    const got = []; let proposed = 0;
+    for(const [dir, pre, feed, fslug] of dirs) for await (const [name, h] of dir.entries()){
+      const isProp = !!feed && /(^|\.)proposals\.json$/i.test(name);
+      if(h.kind !== 'file' || !(isProp || /\.reply\.json$/i.test(name))) continue;
       let f; try { f = await h.getFile(); } catch { continue; }
       const key = pre + name; if(!manual && replySeen.get(key) === f.lastModified) continue;
       replySeen.set(key, f.lastModified); if(f.size > 2e6) continue;
       let data; try { data = JSON.parse(await f.text()); } catch { continue; }
-      const x = ingestReplyFile(data); if(x) got.push(x);
+      if(isProp){ proposed += ingestProposalFile(data, feedSlug(feed.person)); continue; }
+      const x = ingestReplyFile(data, fslug); if(x) got.push(x);
     }
+    if(proposed){ touch(); renderAll(); toast(`✓ ${proposed} action${proposed === 1 ? '' : 's'} marked “done?” for you to confirm.`, () => goView('waiting'), 'Review'); }
     if(got.length){
       touch(); renderAll(); if($('#repdlg').open) renderReplies();
       const n = got.reduce((t, x) => t + x.added.reduce((u, r) => u + Math.max(1, r.changes.length), 0), 0), first = got[0];
       toast(`💬 ${first.added[0].author} replied on “${first.item.title || 'Untitled'}”${got.length > 1 ? ' and ' + (got.length - 1) + ' more' : ''}: ${n} item${n === 1 ? '' : 's'} to review.`, () => openReplies(first.item.id), 'Review');
-    } else if(manual) toast('No new replies.');
+    } else if(manual && !proposed) toast('No new replies.');
   } catch(e){ if(manual) toast('Couldn’t check for replies: ' + ((e && e.message) || e)); }
   finally { replyBusy = false; }
 }
@@ -2824,12 +3224,12 @@ function applyChange(i, ch){                              // returns '' when it 
     const c = findAction(i, ch); if(!c) return 'No action item matches.'; if(c === 'many') return 'More than one action item matches.';
     if(ch.kind === 'tick'){ ch.before = c.done ? 'done' : 'open'; completeToggle(c, i, ch.done); return ''; }
     ch.before = Object.keys(ch.set).map(k => `${k}: ${c[k] || '(empty)'}`).join('; ');
-    Object.assign(c, ch.set); if(ch.set.assignee && !db.people.some(n => n.toLowerCase() === ch.set.assignee.toLowerCase())) db.people.push(ch.set.assignee);
+    Object.assign(c, ch.set); if(ch.set.assignee) rememberName(ch.set.assignee);
     return '';
   }
   if(ch.kind === 'addAction'){
     i.checklist.push({id:uid(), text:ch.text, done:false, due:ch.due, time:ch.time, cat:'', assignee:ch.assignee, raid:ch.raid, src:'', note:'', repeat:null});
-    if(ch.assignee && !db.people.some(n => n.toLowerCase() === ch.assignee.toLowerCase())) db.people.push(ch.assignee);
+    if(ch.assignee) rememberName(ch.assignee);
     return '';
   }
   if(ch.kind === 'append'){
@@ -2871,6 +3271,7 @@ function replyHtml(i, r){
     ch.status === 'pending' ? `<button class="ok" data-act="repacc" data-r="${esc(r.id)}" data-c="${esc(ch.id)}">Accept</button><button data-act="represj" data-r="${esc(r.id)}" data-c="${esc(ch.id)}">Reject</button>`
     : ch.status === 'accepted' ? `<span class="rst">✓ Accepted by ${esc(ch.by)} · ${esc(repWhen(ch.when))}</span>`
     : ch.status === 'rejected' ? `<span class="rst">✕ Rejected by ${esc(ch.by)} · ${esc(repWhen(ch.when))}</span>`
+    : ch.status === 'proposed' ? `<span class="rst">Shown on the action for your OK</span>`
     : `<span class="rst bad">Couldn’t apply: ${esc(ch.note)}</span>`}</div></div>`).join('');
   return `<div class="rep"><div class="rh"><b>${esc(r.author)}</b><small>${esc(repWhen(r.at))}</small></div>${r.message ? `<div class="rmsg">${esc(r.message)}</div>` : ''}${rows}${pend > 1 ? `<div class="rall"><button class="ok" data-act="repaccall" data-r="${esc(r.id)}">Accept all ${pend}</button><button data-act="reprejall" data-r="${esc(r.id)}">Reject all</button></div>` : ''}</div>`;
 }
@@ -2911,8 +3312,8 @@ function moveNotebookBy(id, dir){
 }
 function moveNote(i, id){
   const nb = nbById(id); if(!nb || nbKey(i) === id) return;
-  const prev = nbKey(i); i.notebook = id; i.updated = now(); lastNb = id; nbFold.delete(id); saveUi(); touch(); fixSelection(); renderAll();
-  toast(`Moved “${i.title || 'Untitled'}” to ${nb.name}.`, () => { i.notebook = prev; i.updated = now(); touch(); renderAll(); });
+  const prev = nbKey(i), prevCat = i.category; i.notebook = id; if(!i.category && catById(nb.category)) i.category = nb.category; i.updated = now(); lastNb = id; nbFold.delete(id); saveUi(); touch(); fixSelection(); renderAll();
+  toast(`Moved “${i.title || 'Untitled'}” to ${nb.name}.`, () => { i.notebook = prev; i.category = prevCat; i.updated = now(); touch(); renderAll(); });
 }
 function delItem(){ const i = byId(selId); if(i) deleteItemUndo(i); }
 /* ---- right-click menu on the list ---- */
@@ -2965,7 +3366,11 @@ function menuForObj(i, c, openFn){
   const m = [{l: c ? 'Open in its note' : 'Open', ic: '↗', fn: openFn}];
   if(isTask) m.push({l: o.done ? 'Mark not done' : 'Mark done', ic: '✓', fn: () => { completeToggle(o, i, !o.done); edited(i); refreshViews(); }});
   if(!c && i.type === 'note' && db.notebooks.length > 1) m.push({hd:'Notebook'}, ...db.notebooks.map(n => ({l:n.name, ic: nbKey(i) === n.id ? '✓' : '', fn: () => moveNote(i, n.id)})));
-  if(!c) m.push({l: i.pinned ? 'Unpin' : 'Pin to top', ic: '📌', fn: () => { i.pinned = !i.pinned; edited(i); refreshViews(); }});
+  if(!c){
+    if(i.pinned) m.push({l:'Unpin', ic:'📌', fn: () => setPin(i, 'off')});
+    if(!i.pinned || i.pinAll) m.push({l: i.type === 'note' ? (i.pinAll ? 'Pin to the top of its notebook only' : 'Pin to the top of this notebook') : 'Pin to top', ic:'📌', fn: () => setPin(i, 'nb')});
+    if(i.type === 'note' && !i.pinAll) m.push({l:'Pin everywhere', ic:'📍', fn: () => setPin(i, 'all')});
+  }
   m.push({sep:1}, {l: c ? 'Duplicate action' : 'Duplicate', ic: '⧉', fn: () => c ? dupCk(i, c) : dupItem(i)}, {l: c ? 'Copy action as text' : 'Copy as text', ic: '⎘', fn: () => copyText(c ? ckAsText(c, i) : itemAsText(i))});
   if(!c) m.push({hd:'Export'}, ...exportEntries(i), {l: i.shared && i.shared.on ? 'Sharing options…' : 'Share to a folder…', ic:'⇪', fn: () => sharePageAction(i, innerWidth / 2, innerHeight / 3)});
   if(isTask){
@@ -2975,7 +3380,7 @@ function menuForObj(i, c, openFn){
   if(db.categories.length){ m.push({sep:1}, {hd:'Category'}, {l:'None', ic: !cur ? '✓' : '', fn: () => setCat('')}, ...db.categories.map(k => ({l:k.name, ic: cur === k.id ? '✓' : '', dot:k.color, fn: () => setCat(k.id)}))); }
   if(isTask){
     const who = o.assignee || '', setWho = n => { o.assignee = n; if(n) addPerson(n); edited(i); refreshViews(); };
-    m.push({sep:1}, {hd:'Assigned to'}, {l:'Nobody', ic: !who ? '✓' : '', fn: () => setWho('')}, ...db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => ({l:n, ic: who.toLowerCase() === n.toLowerCase() ? '✓' : '', fn: () => setWho(n)})),
+    m.push({sep:1}, {hd:'Assigned to'}, {l:'Nobody', ic: !who ? '✓' : '', fn: () => setWho('')}, ...everyone().sort((a, b) => a.localeCompare(b)).map(n => ({l:n, ic: who.toLowerCase() === n.toLowerCase() ? '✓' : '', fn: () => setWho(n)})),
       {l:'Someone else…', ic:'＋', fn: () => { const n = prompt('Assign this to who?'); if(n && n.trim()) setWho(canonPerson(n)); }});
   }
   m.push({sep:1}, {l: c ? 'Delete action' : 'Move to Trash', ic: '🗑', cls:'danger', fn: () => c ? deleteCkUndo(i, c) : deleteItemUndo(i)});
@@ -3106,7 +3511,7 @@ const PRINT_CSS = `
     mark{background:#ffe58a}mark.h-green{background:#bff0c8}mark.h-blue{background:#bfe0ff}mark.h-pink{background:#ffc9de}mark.h-orange{background:#ffd6aa}
     .fc-red{color:#c0392b}.fc-orange{color:#c46a00}.fc-green{color:#2d7d46}.fc-blue{color:#2a6fb8}.fc-purple{color:#7b4bb5}.fc-gray{color:#777}.sz-l{font-size:1.3em}.sz-xl{font-size:1.75em}.sz-s{font-size:.82em}
     a{color:#222}.ck{list-style:none;margin-left:0}.ck li::before{content:"☐ "}.ck li.d::before{content:"☑ "}.ck li.d{color:#666}
-    [data-cb]{position:relative;padding-left:1.5em}[data-cb]::before{content:"☐";position:absolute;left:0}[data-cb="1"]::before{content:"☑"}[data-cb="1"]{color:#666;text-decoration:line-through}[data-cb="1"][data-at]::after{content:"  (done " attr(data-at) ")";font-size:.8em}hr{border:0;height:3px;background:#999}
+    [data-cb]{position:relative;padding-left:1.5em}[data-cb]::before{content:"☐";position:absolute;left:0}[data-cb="1"]::before{content:"☑"}[data-done="1"]{color:#666;text-decoration:line-through}[data-cb="1"]{color:#666;text-decoration:line-through}[data-cb="1"][data-at]::after{content:"  (done " attr(data-at) ")";font-size:.8em}hr{border:0;height:3px;background:#999}
     .nbcover{text-align:center;margin:30vh 0 0}.nbcover h1{font-size:34pt}section{page-break-before:always}`;
 function itemPrintBody(i){
   const meta = itemMeta(i), cks = i.checklist.filter(k => k.text.trim());
@@ -3136,14 +3541,20 @@ function exportItem(i, fmt){
 const exportEntries = i => [{l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}];
 
 /* ---- Trash ---- */
+function setPin(i, mode){                                  // 'off', 'nb' (top of its own notebook) or 'all' (top of every notebook)
+  i.pinned = mode !== 'off'; i.pinAll = mode === 'all'; edited(i); refreshViews();
+  toast(mode === 'off' ? 'Unpinned.' : mode === 'all' ? 'Pinned everywhere.' : i.type === 'note' ? 'Pinned to the top of its notebook.' : 'Pinned to the top.');
+}
 function renderTrash(){
-  const rows = db.trash.map(t => {
+  const tq = pageQ.trim().toLowerCase();
+  const rows = db.trash.filter(t => !tq || ((t.item.title || '') + ' ' + htmlText(t.item.body)).toLowerCase().includes(tq)).map(t => {
     const i = t.item, left = Math.max(0, Math.ceil(TRASH_DAYS - (Date.now() - Date.parse(t.deleted)) / 864e5));
     return `<div class="trow" data-id="${i.id}"><span class="ti">${i.type === 'task' ? '☐' : isMeeting(i) ? '◷' : '✎'}</span><div><b>${esc(i.title || 'Untitled')}</b><small>${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'} · deleted ${esc(fmtDay(dstr(new Date(t.deleted))))} · ${left} day${left === 1 ? '' : 's'} left${i.checklist.length ? ' · ' + i.checklist.length + ' action item' + (i.checklist.length === 1 ? '' : 's') : ''}</small></div><span><button data-act="trestore" data-id="${i.id}">Restore</button><button class="danger" data-act="tpurge" data-id="${i.id}">Delete forever</button></span></div>`;
   }).join('');
   $('#detail').innerHTML = `<div class="type">Trash</div><h1 class="ptitle">Deleted items</h1>
     <p class="psub">Deleted actions and notes wait here for ${TRASH_DAYS} days, then go for good.${db.trash.length ? ' <a data-act="tempty">Empty the trash now</a>' : ''}</p>
-    ${rows || '<div class="empty">The trash is empty.</div>'}`;
+    ${db.trash.length ? pageSearchBox('Filter deleted items…') : ''}
+    ${rows || `<div class="empty">${tq ? 'Nothing in the trash matches.' : 'The trash is empty.'}</div>`}`;
 }
 function restoreItem(id){
   const t = db.trash.find(x => x.item.id === id); if(!t) return;
@@ -3164,18 +3575,19 @@ function emptyTrash(){
 const mtgRow = i => `<div class="mtgrow" data-open="${i.id}"><span class="mi">◷</span><div><b>${esc(i.title || 'Untitled')}</b><small>${esc([i.attendees, i.checklist.length ? i.checklist.filter(c => c.done).length + '/' + i.checklist.length + ' actions done' : ''].filter(Boolean).join(' · ') || 'Note')}</small></div><time>${esc(fmtTime(i.time))}</time></div>`;
 function renderToday(){
   const T = todayStr(), TM = shiftStr(T, 1), tk = x => sortTime(x.time, x.text);
-  const me = (db.me || '').toLowerCase(), acts = allEntries().filter(x => x.text.trim() && x.due && (!todayMine || !me || !x.assignee || x.assignee.toLowerCase() === me));
+  const me = (db.me || '').toLowerCase(), acts = allEntries().filter(x => x.text.trim() && x.due && (!todayMine || !me || !x.assignee || x.assignee.toLowerCase() === me)).filter(matchQ);
   const overdue = acts.filter(x => !x.done && x.due < T).sort((a, b) => a.due.localeCompare(b.due) || (tk(a) < tk(b) ? -1 : tk(a) > tk(b) ? 1 : 0));
   const day = d => acts.filter(x => x.due === d).map(x => ({k:tk(x), done:x.done, x}))          // Today is for actions, risks, issues, decisions and timeline items: notes live on the Notes tab
     .sort((a, b) => (a.done - b.done) || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));          // open things by time first, finished ones after
   const today = day(T), tomorrow = day(TM), rows = list => list.map(e => actRow(e.x)).join('');
-  const blocks = tlExpand(db.plan, T).filter(b => b.start <= T && b.end >= T && !blockDone(b)).sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || (a.title || '').localeCompare(b.title || ''));
+  const blocks = tlExpand(db.plan, T).filter(b => b.start <= T && b.end >= T && !blockDone(b)).filter(b => !pageQ.trim() || ((b.title || '') + ' ' + (b.desc || '')).toLowerCase().includes(pageQ.trim().toLowerCase())).sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || (a.title || '').localeCompare(b.title || ''));
   const openToday = today.filter(e => !e.x.done).length;
   const none = !overdue.length && !today.length && !blocks.length;
   $('#detail').innerHTML = `
     <div class="type">Today</div>
     <h1 class="ptitle">${esc(new Date().toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'}))}</h1>
     <div class="tdsum"><span class="${overdue.length ? 'bad' : ''}">${overdue.length} past due</span><span class="${openToday ? 'warn' : ''}">${openToday} due today</span><span>${blocks.length} planned</span></div>
+    ${pageSearchBox('Filter today’s items…')}
     ${db.me ? `<label class="tdmine"><input type="checkbox" id="tmine" ${todayMine ? 'checked' : ''}> Only mine — assigned to ${esc(db.me)}, or to nobody</label>` : ''}
     <div class="addrow"><input type="text" id="tqa" placeholder="Quick add: “call Sam Friday 3pm”, “note: ideas”, “risk: vendor may slip @Sam”" autocomplete="off"><button data-act="qadd">Add</button></div>
     <div class="qapv" id="tqapv"></div>
@@ -3203,9 +3615,11 @@ function qaSummary(q){
 }
 function quickAdd(raw){
   const q = qaParse(raw); if(!q.title) return null;
+  let unknownWho = '';
   const i = {id:uid(), type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
-  if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = insideNotebook() ? nbView : inboxId(); }
+  if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ const tn = knownName(q.assignee); if(tn) i.assignee = tn; else if(!db.strict){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } else unknownWho = q.assignee; } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = insideNotebook() ? nbView : inboxId(); const qnb = nbById(i.notebook); if(qnb && catById(qnb.category)) i.category = qnb.category; }
   db.items.push(i); touch(); refreshViews();
+  if(unknownWho) setTimeout(() => resolveAssignee(unknownWho, nm => { if(nm){ i.assignee = nm; i.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 400); else if(i.assignee) afterAssign(i.assignee);
   toast(`Added “${q.title}” — ${qaSummary(q)}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
   return i;
 }
@@ -3225,13 +3639,189 @@ function addPreview(text){                                // what the Actions ad
   return bits.length ? 'Will be ' + bits.join(', ') : '';
 }
 $('#detail').addEventListener('input', e => { if(e.target.id === 'anew' && $('#apv')) $('#apv').innerHTML = addPreview(e.target.value); });
+$('#detail').addEventListener('input', e => {
+  if(e.target.id !== 'psearch') return;
+  pageQ = e.target.value; clearTimeout(pageQTimer);
+  pageQTimer = setTimeout(() => { const pos = e.target.selectionStart; renderDetail(); const n = $('#psearch'); if(n){ n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } }, 160);
+});
+$('#detail').addEventListener('change', e => {
+  const t = e.target;
+  if(t.id === 'pdate'){ pageDate = t.value; if(pageDate !== 'range') pageDT = ''; renderDetail(); const f = $('#pdfrom'); if(f && !f.value) f.focus(); }
+  else if(t.id === 'pdfrom'){ pageDF = t.value; renderDetail(); }
+  else if(t.id === 'pdto'){ pageDT = t.value; renderDetail(); }
+});
+$('#detail').addEventListener('keydown', e => { if(e.key === 'Escape' && e.target.id === 'psearch' && e.target.value){ e.target.value = ''; e.target.dispatchEvent(new Event('input', {bubbles:true})); } });
+/* ---- the @-name picker: your team's names, as you type ---- */
+const PICK_TEXT = '#anew, #rnew, #newck, #qai, #tqa, textarea.tx, .rt[data-f=body], .rt.cknote, .rt.anote', PICK_WHO = 'input.who';
+const atpick = document.createElement('div'); atpick.id = 'atpick'; atpick.className = 'atpick'; atpick.hidden = true;
+let pk = null;
+function pickerToken(el){
+  if(el.matches(PICK_WHO)) return {query:el.value.trim(), who:true};
+  const re = /(^|[\s(,])@([A-Za-z][\w'’-]*)?$/;
+  if(el.isContentEditable){
+    const sel = getSelection(); if(!sel.rangeCount || !sel.isCollapsed) return null;
+    const n = sel.anchorNode; if(!n || n.nodeType !== 3 || !el.contains(n)) return null;
+    const before = n.nodeValue.slice(0, sel.anchorOffset), m = re.exec(before); if(!m) return null;
+    const qy = m[2] || ''; return {query:qy, node:n, start:before.length - qy.length - 1, end:sel.anchorOffset};
+  }
+  const pos = el.selectionStart, before = el.value.slice(0, pos), m = re.exec(before); if(!m) return null;
+  const qy = m[2] || ''; return {query:qy, start:pos - qy.length - 1, end:pos};
+}
+function pickerChoices(qy){
+  const ql = qy.toLowerCase(), names = [...db.people].sort((a, b) => a.localeCompare(b)).concat([...(db.guests || [])].sort((a, b) => a.localeCompare(b)));
+  let list = names.filter(n => n.toLowerCase().startsWith(ql)).map(n => ({name:n, guest:!db.people.includes(n)}));
+  if(!list.length && ql.length >= 2) list = nearNames(qy).map(n => ({name:n, similar:true}));
+  const anyFeed = (db.feeds || []).some(f => f.on);
+  list.forEach(o => { o.nofeed = anyFeed && !o.guest && !(db.feeds || []).some(f => f.on && f.person.toLowerCase() === o.name.toLowerCase()); });
+  return list.slice(0, 8);
+}
+function hidePicker(){ atpick.hidden = true; pk = null; }
+function updatePicker(el){
+  const tok = pickerToken(el); if(!tok){ hidePicker(); return; }
+  const items = pickerChoices(tok.query);
+  if(!items.length || (items.length === 1 && items[0].name.toLowerCase() === tok.query.toLowerCase())){ hidePicker(); return; }
+  const host = el.closest('dialog') || document.body; if(atpick.parentNode !== host) host.appendChild(atpick);
+  let r = el.getBoundingClientRect();
+  if(el.isContentEditable && tok.node){ const rg = document.createRange(); rg.setStart(tok.node, tok.start); rg.setEnd(tok.node, tok.end); const rr = rg.getBoundingClientRect(); if(rr.width || rr.height) r = rr; }
+  pk = {el, tok, items, sel:0};
+  atpick.innerHTML = items.map((o, k) => `<div class="atit ${k === 0 ? 'sel' : ''}" data-k="${k}">${esc(o.name)}${o.guest ? ' <small>guest</small>' : ''}${o.similar ? ' <small>similar</small>' : ''}${o.nofeed ? ' <small>no feed</small>' : ''}</div>`).join('') + '<div class="atfoot">Tab or Enter to fill · Esc to close</div>';
+  atpick.style.left = Math.max(8, Math.min(r.left, innerWidth - 230)) + 'px'; atpick.style.top = Math.min(r.bottom + 2, innerHeight - 20) + 'px'; atpick.hidden = false;
+}
+function acceptPicker(k){
+  if(!pk) return; const {el, tok, items} = pk, name = items[k == null ? pk.sel : k].name; hidePicker();
+  if(tok.who){ el.value = name; el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); return; }
+  if(el.isContentEditable){
+    el.focus(); const sel = getSelection(), rg = document.createRange(); rg.setStart(tok.node, tok.start); rg.setEnd(tok.node, tok.end); sel.removeAllRanges(); sel.addRange(rg);
+    document.execCommand('insertText', false, '@' + name + ' '); return;
+  }
+  el.setRangeText('@' + name + ' ', tok.start, tok.end, 'end'); el.dispatchEvent(new Event('input', {bubbles:true})); el.focus();
+}
+document.addEventListener('input', e => { const el = e.target; if(el && el.matches && (el.matches(PICK_TEXT) || el.matches(PICK_WHO))) updatePicker(el); }, true);
+document.addEventListener('keydown', e => {
+  if(!pk || atpick.hidden) return;
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); e.stopPropagation(); pk.sel = (pk.sel + (e.key === 'ArrowDown' ? 1 : pk.items.length - 1)) % pk.items.length; [...atpick.querySelectorAll('.atit')].forEach((x, k) => x.classList.toggle('sel', k === pk.sel)); }
+  else if(e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); e.stopPropagation(); acceptPicker(); }
+  else if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); hidePicker(); }
+}, true);
+atpick.addEventListener('mousedown', e => e.preventDefault());
+atpick.addEventListener('click', e => { const it = e.target.closest('.atit'); if(it) acceptPicker(+it.dataset.k); });
+document.addEventListener('focusout', e => { if(pk && e.target === pk.el) setTimeout(() => { if(pk && document.activeElement !== pk.el) hidePicker(); }, 120); });
+window.addEventListener('scroll', hidePicker, true);
+/* ---- the teammate's side: folders other people shared with you ---- */
+let inboxes = [], inboxBusy = false, inboxSig = '', sharedView = null;
+async function loadInboxList(){
+  try { const l = await withTimeout(idbGet('inboxes'), 3000); inboxes = Array.isArray(l) ? l.filter(x => x && x.handle).map(x => ({id:x.id, label:x.label, handle:x.handle, state:'?', assigned:null, pages:[], mine:[], aMod:0})) : []; } catch { inboxes = []; }
+}
+async function saveInboxList(){ try { await withTimeout(idbSet('inboxes', inboxes.map(x => ({id:x.id, label:x.label, handle:x.handle}))), 4000); } catch {} }
+async function refreshInboxes(force){
+  if(inboxBusy || !inboxes.length) return; inboxBusy = true;
+  try {
+    for(const ib of inboxes){
+      let perm = 'denied'; try { perm = await ib.handle.queryPermission({mode:'readwrite'}); } catch {}
+      if(perm !== 'granted'){ ib.state = 'needs-permission'; continue; }
+      ib.state = 'ok';
+      try { const f = await (await ib.handle.getFileHandle('assigned.json')).getFile(); if(force || f.lastModified !== ib.aMod){ const j = JSON.parse(await f.text()); if(j && j.app === 'notebook-assigned') ib.assigned = j; ib.aMod = f.lastModified; } } catch {}
+      try { const j = JSON.parse(await (await (await ib.handle.getFileHandle('proposals.json')).getFile()).text()); ib.mine = Array.isArray(j.proposals) ? j.proposals : []; } catch { ib.mine = ib.mine || []; }
+      try {
+        const pd = await ib.handle.getDirectoryHandle('pages'), list = [];
+        for await (const [name, h] of pd.entries()){ if(h.kind !== 'file' || !/\.json$/i.test(name)) continue; try { const j = JSON.parse(await (await h.getFile()).text()); if(j && j.app === 'notebook-share' && j.page) list.push({name, data:j}); } catch {} }
+        ib.pages = list.sort((a, b) => (b.data.page.updated || '').localeCompare(a.data.page.updated || ''));
+      } catch { ib.pages = []; }
+    }
+  } finally { inboxBusy = false; }
+  const sig = inboxes.map(ib => ib.state + ib.aMod + (ib.mine || []).length + ib.pages.map(p => p.name + (p.data.writtenAt || '')).join(',')).join('|');
+  if(sig !== inboxSig || force){ inboxSig = sig; renderRail(); if(['inbox', 'sharedwith'].includes(filter) && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('.inform, .insugg'))) renderDetail(); if($('#setdlg').open) renderSettings(); }
+}
+async function connectInbox(){
+  if(!shareOk()){ toast('This browser can’t open folders (turn on the File System Access flag in Brave).'); return; }
+  try {
+    const h = await showDirectoryPicker({mode:'readwrite', id:'notebook-inbox'}); let ok = false;
+    try { await h.getFileHandle('assigned.json'); ok = true; } catch {}
+    if(!ok){ try { await h.getDirectoryHandle('pages'); ok = true; } catch {} }
+    if(!ok){ toast('That folder has no assigned.json or pages folder. Pick the folder named for-your-name that was shared with you.'); return; }
+    if(inboxes.some(x => x.label === h.name)){ toast('That folder is already connected.'); return; }
+    inboxes.push({id:uid(), label:h.name, handle:h, state:'?', assigned:null, pages:[], mine:[], aMod:0}); await saveInboxList(); await refreshInboxes(true);
+    toast(`Connected ${h.name}. Your sidebar now has Assigned to me and Shared with me.`);
+  } catch(e){ if(e && e.name !== 'AbortError') toast('Couldn’t connect: ' + ((e && e.message) || e)); }
+}
+const inboxPerson = ib => (ib.assigned && ib.assigned.person) || ib.label.replace(/^for-/, '');
+const inboxOwner = ib => (ib.assigned && ib.assigned.owner) || (ib.pages[0] && ib.pages[0].data.owner) || 'the owner';
+async function inboxAppend(ib, file, base, push){          // add to a file that only this person writes
+  const fh = await ib.handle.getFileHandle(file, {create:true}); let cur = base;
+  try { const j = JSON.parse(await (await fh.getFile()).text()); if(j && j.app === base.app) cur = j; } catch {}
+  push(cur); const w = await fh.createWritable(); await w.write(JSON.stringify(cur, null, 2)); await w.close(); return cur;
+}
+async function inboxPropose(ib, p){
+  const cur = await inboxAppend(ib, 'proposals.json', {app:'notebook-proposals', format:1, from:inboxPerson(ib), proposals:[]}, c => { c.from = inboxPerson(ib); c.proposals.push(Object.assign({id:uid(), at:now()}, p)); if(c.proposals.length > 300) c.proposals = c.proposals.slice(-300); });
+  ib.mine = cur.proposals;
+}
+function inboxItemState(ib, it){
+  const mine = (ib.mine || []).filter(x => x.item === it.id && x.kind === 'done').sort((a, b) => (b.at || '').localeCompare(a.at || ''))[0], lp = it.proposal;
+  if(it.done) return {k:'done', t:'✓ Done'};
+  if(mine && (!lp || (lp.id !== mine.id && (mine.at || '') > (lp.at || '')))) return {k:'sent', t:'Sent: waiting for ' + inboxOwner(ib) + ' to confirm'};
+  if(lp && lp.status === 'pending') return {k:'sent', t:'Sent: waiting for ' + inboxOwner(ib) + ' to confirm'};
+  if(lp && lp.status === 'declined') return {k:'declined', t:'Not yet: ' + inboxOwner(ib) + ' did not confirm it'};
+  return {k:'open', t:''};
+}
+const inboxRailHtml = () => {
+  if(!inboxes.length) return '';
+  const n = inboxes.reduce((t, ib) => t + ((ib.assigned && ib.assigned.items) || []).filter(x => !x.done).length, 0), m = inboxes.reduce((t, ib) => t + ib.pages.length, 0);
+  return `<div class="guestlbl">From the team</div><div class="f ${filter === 'inbox' ? 'on' : ''}" data-filter="inbox">☰ Assigned to me <small>${n}</small></div><div class="f ${filter === 'sharedwith' ? 'on' : ''}" data-filter="sharedwith">⇩ Shared with me <small>${m}</small></div>`;
+};
+function renderInbox(){
+  const blocks = inboxes.map(ib => {
+    const head = `<h4 class="gh">${esc(inboxOwner(ib) === 'the owner' ? ib.label : 'From ' + inboxOwner(ib))} <small>${esc(ib.label)}</small></h4>`;
+    if(ib.state === 'needs-permission') return head + `<div class="empty">The browser needs your OK to open this folder again. <button data-act="inboxallow">Allow</button></div>`;
+    const a = ib.assigned; if(!a) return head + '<div class="empty">Nothing has been assigned to you here yet.</div>';
+    const items = (a.items || []).slice().sort((x, y) => (x.done - y.done) || (x.due || '9999').localeCompare(y.due || '9999') || x.text.localeCompare(y.text));
+    const sugg = (a.suggestions || []).filter(x => x.status !== 'pending' || true).slice(0, 5);
+    return head
+      + `<details class="insugg"><summary>Suggest an action to ${esc(inboxOwner(ib))}</summary><div class="inform2"><input class="sgtext" placeholder="What should be done?" autocomplete="off"><input class="sgdue" type="date" title="Due (optional)"><input class="sgnote" placeholder="Note (optional)" autocomplete="off"><button class="ok" data-act="insuggest" data-id="${esc(ib.id)}">Send suggestion</button></div></details>`
+      + (sugg.length ? `<div class="sgmine">${sugg.map(x => `<span class="sgchip ${esc(x.status)}">${esc(x.text.slice(0, 40))}: ${x.status === 'pending' ? 'waiting' : x.status === 'confirmed' ? 'added' : 'declined'}</span>`).join('')}</div>` : '')
+      + (items.map(it => {
+        const st = inboxItemState(ib, it), pg = it.page && ib.pages.find(p => p.data.page.id === it.page.id);
+        return `<div class="inrow ${st.k}" data-ib="${esc(ib.id)}" data-item="${esc(it.id)}"><div class="intext"><b>${esc(it.text)}</b><small>${esc(({action:'Action', risk:'Risk', issue:'Issue', decision:'Decision'})[it.type] || 'Action')}${it.due ? ' · due ' + esc(fmtDay(it.due)) + (it.time ? ' ' + esc(fmtTime(it.time)) : '') : ''}${it.noteTitle ? ' · in “' + esc(it.noteTitle) + '”' : ''}</small>${it.details ? `<div class="indet">${esc(it.details)}</div>` : ''}${pg ? `<a class="inlink" data-act="inpage" data-id="${esc(ib.id)}" data-file="${esc(pg.name)}">Open the page “${esc(pg.data.page.title || 'Untitled')}”</a>` : ''}</div>
+          <div class="inact">${st.k === 'done' ? '<span class="rst">✓ Done</span>' : st.k === 'sent' ? `<span class="rst">${esc(st.t)}</span>` : `${st.k === 'declined' ? `<span class="rst bad">${esc(st.t)}</span>` : ''}<button data-act="inprop">Mark done…</button>`}</div>
+          <div class="inform" hidden><input class="innote" placeholder="Short note for ${esc(inboxOwner(ib))} (optional)" autocomplete="off"><button class="ok" data-act="insend">Send</button></div></div>`;
+      }).join('') || '<div class="empty">Nothing is assigned to you right now.</div>');
+  }).join('');
+  $('#detail').innerHTML = `<div class="type">From the team</div><h1 class="ptitle">Assigned to me</h1><p class="psub">Actions other people have assigned to you. Marking one done sends them a request: they make the final call.</p>${blocks || '<div class="empty">Connect a folder in Settings to see what has been assigned to you.</div>'}`;
+}
+function renderSharedWith(){
+  if(sharedView){
+    const ib = inboxes.find(x => x.id === sharedView.id), pg = ib && ib.pages.find(p => p.name === sharedView.file);
+    if(pg){
+      const d = pg.data, pgd = d.page, acts = pgd.actionItems || [];
+      $('#detail').innerHTML = `<div class="type"><a data-act="inback" style="cursor:pointer;color:var(--accent)">‹ Shared with me</a></div><h1 class="ptitle">${esc(pgd.title || 'Untitled')}</h1><p class="psub">Shared by ${esc(inboxOwner(ib))}${pgd.updated ? ' · updated ' + esc(new Date(pgd.updated).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})) : ''}. Read-only: send a suggestion below.</p>
+        <div class="rt big sharedbody" contenteditable="false">${cleanHtml(pgd.body || '')}</div>
+        ${acts.length ? `<h4>Action items</h4>${acts.map(a => `<div class="inrow ${a.done ? 'done' : ''}"><div class="intext"><b>${esc(a.text)}</b><small>${esc(a.type)}${a.assignedTo ? ' · for ' + esc(a.assignedTo) : ''}${a.due ? ' · due ' + esc(fmtDay(a.due)) : ''}${a.done ? ' · done' : ''}</small></div></div>`).join('')}` : ''}
+        <h4>Send a suggestion</h4><div class="insugg2"><textarea class="sgmsg" rows="3" placeholder="Your comment or suggested change for ${esc(inboxOwner(ib))}…"></textarea><label class="sgapp"><input type="checkbox" class="sgappend"> also propose adding this text at the end of the page</label><button class="ok" data-act="inreply" data-id="${esc(ib.id)}" data-file="${esc(pg.name)}">Send</button></div>`;
+      return;
+    }
+    sharedView = null;
+  }
+  const rows = inboxes.flatMap(ib => ib.pages.map(p => ({ib, p}))).map(({ib, p}) => `<div class="inrow inpagerow" data-act="inpage" data-id="${esc(ib.id)}" data-file="${esc(p.name)}"><div class="intext"><b>${esc(p.data.page.title || 'Untitled')}</b><small>from ${esc(inboxOwner(ib))}${p.data.page.updated ? ' · updated ' + esc(new Date(p.data.page.updated).toLocaleDateString([], {month:'short', day:'numeric'})) : ''}</small></div><span class="nbgo">›</span></div>`).join('');
+  $('#detail').innerHTML = `<div class="type">From the team</div><h1 class="ptitle">Shared with me</h1><p class="psub">Pages other people chose to share with you. They are read-only.</p>${rows || '<div class="empty">Nothing has been shared with you yet.</div>'}`;
+}
+async function inboxReply(ib, file, message, append){
+  const pg = ib.pages.find(p => p.name === file); if(!pg) return;
+  const pid = pg.data.page.id, rname = (pg.data.reply && pg.data.reply.file) || file.replace(/\.json$/i, '') + '.reply.json';
+  await inboxAppend(ib, rname, {app:'notebook-reply', format:1, page:pid, replies:[]}, c => { c.page = pid; c.replies.push({id:uid(), author:inboxPerson(ib), at:now(), message, changes:append ? [{id:'c1', kind:'append', text:message, why:'Suggested by ' + inboxPerson(ib)}] : []}); });
+}
+function renderInboxSettings(){
+  $('#setinbox').innerHTML = (inboxes.length ? inboxes.map(ib => `<div class="feedrow guestrow"><span><b>${esc(ib.label)}</b> <small>${ib.state === 'ok' ? ((ib.assigned ? (ib.assigned.items || []).length + ' assigned' : 'no assignments yet') + ' · ' + ib.pages.length + ' page' + (ib.pages.length === 1 ? '' : 's')) : 'needs your OK to open'}</small></span><span class="feedmerge">${ib.state !== 'ok' ? `<button data-act="inboxallow">Allow</button>` : ''}<button data-act="inboxremove" data-id="${esc(ib.id)}">Disconnect</button></span></div>`).join('') : '<div class="setline" style="font-size:13px;color:var(--mute);display:block">Nothing connected.</div>')
+    + `<div class="setbtns"><button data-act="inboxconnect">Connect a folder shared with me…</button></div>`;
+}
+setInterval(() => { if(!document.hidden) refreshInboxes(); }, 25000);
+window.addEventListener('focus', () => refreshInboxes());
+setTimeout(() => loadInboxList().then(() => refreshInboxes(true)), 1500);
 function todayAdd(){ const el = $('#tqa'); if(!el) return; if(!el.value.trim()){ el.focus(); toast('Type what needs doing first.'); return; } quickAdd(el.value); const n = $('#tqa'); if(n) n.focus(); }
 
 /* ---- keyboard shortcuts + the cheat sheet ---- */
 const SHORTCUTS = [
   ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['Q / Ctrl + Q', 'Quick add (type it in plain words). Ctrl + Q also works while typing in a note']]],
   ['Go to', [['1', 'Today'], ['2', 'Actions'], ['3', 'Notes'], ['4', 'Timeline'], ['5', 'Risks'], ['6', 'Issues'], ['7', 'Decisions'], ['8', 'Trash'], ['/', 'Search everything']]],
-  ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P', 'Pin or unpin the selected item'], ['Ctrl + S', 'Save right now'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
+  ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P / Shift + P', 'Pin to the top of its notebook / pin everywhere (press again to unpin)'], ['Ctrl + S', 'Save right now'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
   ['In notes', [['Ctrl + B / I / U', 'Bold, italic, underline'], ['Ctrl + K', 'Add a link'], ['Tab / Shift + Tab', 'Indent / outdent (in a table: next / previous cell)'], ['Click a bullet', 'Fold / unfold its sub-points'], ['ACTION  RISK  ISSUE  DECISION', 'Start a line with one in CAPITALS (a colon is optional): it becomes an entry, the line is highlighted, and “by Friday 3pm” and “@Sam” fill its date and owner'], ['- or 1. then space', 'Start a bulleted or numbered list']]],
   ['Timeline', [['← →', 'Previous / next week or month'], ['T', 'Jump to today'], ['Drag across days', 'Make a block'], ['Click a block', 'Edit it and read its description']]],
   ['Mouse tips', [['Right-click a row', 'Open, mark done, pin, duplicate, copy, export, category, trash'], ['Right-click on any page', 'Today, Actions and Timeline have the same menu'], ['Drag a due date chip', 'Timeline “Due dates” view: reschedule it'], ['Drag a page onto a notebook', 'Moves it there (or use right-click → Notebook)']]],
@@ -3264,7 +3854,7 @@ document.addEventListener('keydown', e => {
   else if(k === 'q' || k === 'Q'){ e.preventDefault(); openQuickAdd(); }
   else if(k === '/'){ e.preventDefault(); if(FULL_PAGES.includes(filter)){ filter = 'note'; saveUi(); fixSelection(); renderAll(); } if(listOff){ listOff = false; applyMode(); } $('#q').focus(); }
   else if(/^[1-8]$/.test(k)){ e.preventDefault(); goView(VIEW_KEYS[+k - 1]); }
-  else if((k === 'p' || k === 'P') && !FULL_PAGES.includes(filter)){ const i = byId(selId); if(i){ e.preventDefault(); i.pinned = !i.pinned; edited(i); refreshViews(); toast(i.pinned ? 'Pinned to the top.' : 'Unpinned.'); } }
+  else if((k === 'p' || k === 'P') && !FULL_PAGES.includes(filter)){ const i = byId(selId); if(i){ e.preventDefault(); if(k === 'P' && i.type === 'note') setPin(i, i.pinAll ? 'off' : 'all'); else setPin(i, i.pinned ? 'off' : 'nb'); } }
 });
 
 /* ---- tagged lines: "ACTION: …", "RISK: …", "ISSUE: …" or "DECISION: …" at the start of a line in a note become entries of their own ----
@@ -3297,6 +3887,7 @@ function syncTags(i, live){
   let sn = sel && sel.rangeCount && live.contains(sel.anchorNode) ? sel.anchorNode : null, so = sn ? sel.anchorOffset : 0;           // where the cursor is, so it can be put back
   if(hasText || hasSpan) wrapRootRuns(body);
   body.querySelectorAll('[data-raid]').forEach(el => el.removeAttribute('data-raid'));
+  body.querySelectorAll('[data-done]').forEach(el => el.removeAttribute('data-done'));
   const seen = new Set(), created = [], removedSet = [], foreign = new Set();
   for(const x of db.items) if(x !== i) for(const c of x.checklist) foreign.add(c.id);
   let updated = 0;
@@ -3329,6 +3920,7 @@ function syncTags(i, live){
       if(e.raid !== want){ e.raid = want; updated++; }
       if(text && e.text !== text){ e.text = text; applyParsed(e, text, i); updated++; }
     }
+    if(e && e.done) b.setAttribute('data-done', '1');
   }
   const gone = i.checklist.filter(c => c.src === 'tag' && !seen.has(c.id));
   if(gone.length){ i.checklist = i.checklist.filter(c => !gone.includes(c)); gone.forEach(c => db.plan.forEach(b => { if(b.link && b.link.ck === c.id) b.link = null; })); }
@@ -3348,6 +3940,7 @@ function setCaretTextOffset(ed, off){
 function runTagSync(id, quiet){
   const i = byId(id); if(!i) return null;
   const res = syncTags(i, selId === id && $('#detail').dataset.item === id ? document.querySelector('#detail .rt[data-f=body]') : null); if(!res) return null;
+  (res.created || []).forEach(c => { const w = !c.assignee ? findAssignee(c.text, i) : null; if(w && db.strict && !knownName(w.name)) setTimeout(() => resolveAssignee(w.name, nm => { if(nm){ c.assignee = nm; i.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 450); });
   if(!(res.bodyChanged || res.created.length || res.removed.length || res.updated)) return res;
   i.updated = now(); touch(); renderRail(); renderList();
   if(selId === id && $('#cklist')) $('#cklist').innerHTML = ckRows(i);
@@ -3457,6 +4050,7 @@ $('#detail').addEventListener('input', e => {
     const f = t.dataset.ax, o = a.kind === 'task' ? a.item : a.ck;
     if(f === 'done'){ completeToggle(o, a.item, t.checked); edited(a.item); }
     else if(f === 'repeat'){ setRepeat(o, t.value); edited(a.item); row.querySelector('[data-ax=due]').value = o.due; t.innerHTML = repeatOptions(o.repeat); }
+    else if(f === 'assignee'){ /* committed on change, after the team check */ }
     else setAction(a, f, val(t));
     if(f === 'note'){ const has = !isBlank(o.note !== undefined ? o.note : val(t)), nl = row.querySelector('.nlink'); if(nl){ nl.classList.toggle('has', has); nl.textContent = '📝 ' + (has ? 'Notes' : 'Add note'); } }
     if(f === 'done'){ row.classList.toggle('done', t.checked); clearTimeout(actTimer); actTimer = setTimeout(() => { if(filter === 'actions' || filter === 'today') renderDetail(); }, 700); }
@@ -3465,7 +4059,7 @@ $('#detail').addEventListener('input', e => {
   const i = byId($('#detail').dataset.item || selId); if(!i) return;          // the note the field on screen belongs to
   if(t.dataset.cr){ const c = i.checklist.find(x => x.id === t.dataset.cr); if(c){ setRepeat(c, t.value); edited(i); t.closest('.ai').querySelector('[data-cd]').value = c.due; t.innerHTML = repeatOptions(c.repeat); } return; }
   if(t.dataset.rp){ setRepeat(i, t.value); edited(i); const d = $('#detail [data-f=due]'); if(d) d.value = i.due; t.innerHTML = repeatOptions(i.repeat); return; }
-  if(t.dataset.ca){ const c = i.checklist.find(x => x.id === t.dataset.ca); if(c){ c.assignee = t.value.trim(); edited(i); } return; }
+  if(t.dataset.ca) return;                                  // an Assign box commits when you finish, after the team check
   if(t.dataset.cd){ const c = i.checklist.find(x => x.id === t.dataset.cd); if(c){ c.due = t.value; edited(i); } return; }
   if(t.dataset.ct){ const c = i.checklist.find(x => x.id === t.dataset.ct); if(c){ c.time = t.value; edited(i); } return; }
   if(t.dataset.cn){ const c = i.checklist.find(x => x.id === t.dataset.cn); if(c){ c.note = val(t); t.closest('.ai').querySelector('.nb').classList.toggle('has', !isBlank(c.note)); edited(i); } return; }
@@ -3474,6 +4068,7 @@ $('#detail').addEventListener('input', e => {
     const f = t.dataset.f; let v = t.isContentEditable ? val(t) : (t.type === 'checkbox' ? t.checked : t.value);
     if(f === 'tags') v = parseTags(v);
     if(f === 'done'){ const rolled = completeToggle(i, i, v); edited(i); if(rolled) renderDetail(); return; }
+    if(f === 'assignee') return;
     i[f] = v; if(f === 'date' || f === 'time') i.autoDt = false;          // you set it yourself, so it counts now
     if(f === 'body'){ grow(t); scheduleTagSync(i.id); }
     edited(i);
@@ -3497,8 +4092,7 @@ $('#detail').addEventListener('change', e => {            // Actions tab control
   else if(t.id === 'tmine'){ todayMine = t.checked; saveUi(); renderDetail(); }
   else if(t.id === 'ckhide'){ hideCkDone = t.checked; saveUi(); renderDetail(); }
   else if(t.dataset.ax === 'assignee' || t.dataset.ca || t.dataset.f === 'assignee'){        // finished typing a name: keep the spelling consistent and add new people to the list
-    const v = t.value.trim(); if(v){ const k = canonPerson(v); if(k !== v){ t.value = k; t.dispatchEvent(new Event('input', {bubbles:true})); } if(addPerson(k)){ touch(); renderRail(); } }
-    if(t.dataset.ax === 'assignee' && actPerson) renderDetail();
+    commitAssignee(t);
   }
   else if(t.id === 'agroup'){ actGroup = t.value; saveUi(); renderDetail(); }
   else if(t.id === 'acatf'){ actCat = t.value; saveUi(); renderDetail(); }
@@ -3531,7 +4125,7 @@ $('#catdlg').addEventListener('close', () => renderAll());
 $('#pdlg').addEventListener('close', () => renderAll());
 $('#nbdlg').addEventListener('close', () => renderAll());
 $('#nbrows').addEventListener('input', e => { const n = nbById(e.target.dataset.nbc); if(n){ n.color = e.target.value; touch(); renderList(); } });
-$('#nbrows').addEventListener('change', e => { const n = nbById(e.target.dataset.nbn); if(n){ n.name = e.target.value.trim() || n.name; touch(); renderNbDlg(); renderRail(); } });
+$('#nbrows').addEventListener('change', e => { const nc = nbById(e.target.dataset.nbcat); if(nc){ setNotebookCategory(nc, e.target.value); return; } const n = nbById(e.target.dataset.nbn); if(n){ n.name = e.target.value.trim() || n.name; touch(); renderNbDlg(); renderRail(); } });
 $('#prows').addEventListener('change', e => { if(e.target.dataset.pn) renamePerson(e.target.dataset.pn, e.target.value); });
 $('#pme').addEventListener('change', e => { db.me = e.target.value; touch(); renderPeople(); });
 $('#tldlg').addEventListener('close', () => { tlEdit = null; });
@@ -3584,9 +4178,31 @@ document.addEventListener('click', e => {
     else if(act === 'snaps') openSnaps(); else if(act === 'snapclose') $('#snapdlg').close();
     else if(act === 'snappick'){ snapSel = +a.dataset.i; renderSnaps(); }
     else if(act === 'snaprestore') restoreSnapItem(+a.dataset.i, a.dataset.id); else if(act === 'snapdl') downloadSnap(+a.dataset.i);
-    else if(act === 'clearafilters'){ actCat = ''; actPerson = ''; actNb = ''; actDone = false; saveUi(); renderDetail(); }
+    else if(act === 'clearafilters'){ actCat = ''; actPerson = ''; actNb = ''; actDone = false; pageQ = ''; pageDate = ''; pageDF = ''; pageDT = ''; saveUi(); renderDetail(); }
     else if(act === 'addnotetoggle'){ const nf = $('#anotefld'); if(nf){ nf.hidden = !nf.hidden; a.classList.toggle('on', !nf.hidden); if(!nf.hidden) nf.focus(); } }
     else if(act === 'autoon'){ autoDates = true; saveUi(); const an = $('#anew'); renderDetail(); const n2 = $('#anew'); if(n2 && an){ n2.value = an.value; n2.dispatchEvent(new Event('input', {bubbles:true})); n2.focus(); } }
+    else if(act === 'propok' || act === 'propno') decideProposal(a.dataset.key, act === 'propok');
+    else if(act === 'inboxconnect') connectInbox();
+    else if(act === 'inboxallow'){ (async () => { for(const ib of inboxes){ try { await ib.handle.requestPermission({mode:'readwrite'}); } catch {} } refreshInboxes(true); })(); }
+    else if(act === 'inboxremove'){ inboxes = inboxes.filter(x => x.id !== a.dataset.id); saveInboxList(); inboxSig = ''; renderRail(); renderSettings(); if(['inbox', 'sharedwith'].includes(filter)) renderDetail(); }
+    else if(act === 'inprop'){ const row = a.closest('.inrow'), f = row && row.querySelector('.inform'); if(f){ f.hidden = !f.hidden; const n = f.querySelector('.innote'); if(!f.hidden && n) n.focus(); } }
+    else if(act === 'insend'){ const row = a.closest('.inrow'), ib = row && inboxes.find(x => x.id === row.dataset.ib); if(ib){ const note = row.querySelector('.innote').value.trim(); inboxPropose(ib, {item:row.dataset.item, kind:'done', note}).then(() => { toast(`Sent to ${inboxOwner(ib)}. They make the final call.`); renderInbox(); }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
+    else if(act === 'insuggest'){ const ib = inboxes.find(x => x.id === a.dataset.id), box = a.closest('.inform2'); if(ib && box){ const text = box.querySelector('.sgtext').value.trim(); if(!text){ toast('Say what should be done first.'); return; } inboxPropose(ib, {kind:'new', text, due:box.querySelector('.sgdue').value, note:box.querySelector('.sgnote').value.trim()}).then(() => { toast(`Suggested to ${inboxOwner(ib)}: they can add it or decline.`); renderInbox(); }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
+    else if(act === 'inpage'){ sharedView = {id:a.dataset.id, file:a.dataset.file}; filter = 'sharedwith'; saveUi(); renderAll(); }
+    else if(act === 'inback'){ sharedView = null; renderDetail(); }
+    else if(act === 'inreply'){ const ib = inboxes.find(x => x.id === a.dataset.id), box = a.closest('.insugg2'); if(ib && box){ const msg = box.querySelector('.sgmsg').value.trim(); if(!msg){ toast('Write your suggestion first.'); return; } inboxReply(ib, a.dataset.file, msg, box.querySelector('.sgappend').checked).then(() => { toast(`Sent to ${inboxOwner(ib)}.`); box.querySelector('.sgmsg').value = ''; }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
+    else if(act === 'sugyes' || act === 'sugno') decideSuggestion(a.dataset.id, act === 'sugyes');
+    else if(act === 'sharego') applyShare(); else if(act === 'shareclose') $('#sharedlg').close();
+    else if(act === 'sharestop'){ const si = byId(shareDlgItem); $('#sharedlg').close(); if(si) stopSharing(si, false); }
+    else if(act === 'nameuse') nameChosen(a.dataset.n);
+    else if(act === 'nameadd'){ if(nameCtx){ const k = capFirst(nameCtx.raw); addPerson(k); touch(); renderRail(); nameChosen(k); } }
+    else if(act === 'nameguest'){ if(nameCtx){ const k = capFirst(nameCtx.raw); addGuest(k); touch(); renderRail(); nameChosen(k); } }
+    else if(act === 'guestteam'){ const n = a.dataset.n; db.guests = db.guests.filter(g => g !== n); addPerson(n); touch(); renderSettings(); renderRail(); }
+    else if(act === 'guestremove'){ const n = a.dataset.n; if(personUsed(n) && !confirm(`Remove ${n}? Their actions become unassigned.`)) return; db.items.forEach(i => { for(const o of [i, ...i.checklist]) if((o.assignee || '').toLowerCase() === n.toLowerCase()){ o.assignee = ''; i.updated = now(); } }); db.guests = db.guests.filter(g => g !== n); if(actPerson.toLowerCase() === n.toLowerCase()){ actPerson = ''; saveUi(); } touch(); renderSettings(); renderAll(); }
+    else if(act === 'nameclose'){ nameChosen(undefined); }
+    else if(act === 'teamadd'){ const inp = $('#teamadd'), v = inp ? inp.value.trim() : ''; if(v){ if(teamName(v)) toast(`${teamName(v)} is already on the team.`); else { addPerson(capFirst(v)); touch(); renderRail(); } renderSettings(); } }
+    else if(act === 'teammerge') mergePerson(a.dataset.from, a.dataset.to);
+    else if(act === 'teamremove'){ removePerson(a.dataset.id); renderSettings(); }
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
     else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
@@ -3895,7 +4511,7 @@ window.addEventListener('error', e => toast('Something went wrong: ' + (e.messag
 window.addEventListener('unhandledrejection', e => toast('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)));
 init();
 </script>
-<script>window.NB_BUILD = '20261103103536';</script>
+<script>window.NB_BUILD = '20261105113909';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
