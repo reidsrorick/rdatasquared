@@ -1,4 +1,118 @@
-{"version":"1.26.0","build":"20261105164125","changelog":[
+{"version":"1.37.0","build":"20261108132459","changelog":[
+ {
+  "v": "1.37.0",
+  "title": "Send actions to another notebook",
+  "items": [
+   "Send actions… (Settings, or the link on the Actions page) packs up the actions assigned to one person and nothing else: no pages, no page titles. You can leave out done ones and choose whether each action’s note comes with it. It makes a file to save, or text to copy",
+   "Bring in actions… on the other notebook reads that file or pasted text and shows every action with a tick box. You choose who they are assigned to here (the person in the file maps to someone on your team, or no one, or someone new), and whether they become standalone actions or go inside a note you pick",
+   "Standalone actions get a from-… label so you can find what came from the other notebook. Categories are matched by name. Actions you already brought in start unticked, so sending the same ones twice does not duplicate them",
+   "Nothing is overwritten. A snapshot is taken first, and Undo removes exactly what was added. It also accepts the actions file the app writes for a person (assigned.….json)"
+  ]
+ },
+ {
+  "v": "1.36.0",
+  "title": "Narrow windows and vertical monitors",
+  "items": [
+   "When the window is narrow (900 pixels wide or less, which is what a vertical monitor often gives you, or a large display scale), the sidebar is no longer lost. A ☰ button in a bar at the top opens it as a drawer over the page; choosing something, tapping outside it or pressing Esc closes it. Ctrl + \\ opens and closes it too",
+   "In a narrow window the list of pages is a shorter band above the note (about 30% of the height instead of 40%). The « button now folds it into a thin bar instead of leaving a tall empty band, and the buttons are bigger",
+   "Wider windows are unchanged"
+  ]
+ },
+ {
+  "v": "1.35.0",
+  "title": "The editor bar is now tabs",
+  "items": [
+   "The formatting bar above a note is split into tabs, like Word: Home (text style, bold, italic and so on, highlight, colour, size, Tag… and Checkbox, Clear), Lists (bullets, numbering, indent, fold) and Insert (link, divider, table, custom numbering)",
+   "A Table tab appears while your cursor is inside a table, with + Row, + Col, − Row, − Col and Delete table, and the bar jumps to it. It goes away when you leave the table and takes you back to the tab you were on",
+   "The ⌃ at the right end hides the tools and keeps just the tab names, for more room to write. Click a tab to bring them back. The bar remembers the tab you were on and whether you hid it",
+   "Nothing else changed: every button and keyboard shortcut works as before"
+  ]
+ },
+ {
+  "v": "1.34.0",
+  "title": "A read-only view for your phone",
+  "items": [
+   "On an iPhone, iPad or Android phone (a browser that can’t save to a file) the app now opens a phone view: one screen at a time, with Today, Actions, Notes and RAID tabs along the bottom. Tap a note to read it, and tap Back to return to the list",
+   "It is read-only, so nothing you do there can change or lose your notes. Fields are locked and every button that would edit something is switched off",
+   "First time: tap Open my notes file and pick todo-data.json from Files (OneDrive shows up there if the OneDrive app is installed). The phone keeps its own copy, so it opens straight away, even offline. To get your latest notes, tap Refresh at the top and pick the file again",
+   "Add the page to your Home Screen (Share, then Add to Home Screen) so Safari does not clear the copy after a week of not using it",
+   "To look at the phone view on a computer, add ?mobile=1 to the end of the address"
+  ]
+ },
+ {
+  "v": "1.33.0",
+  "title": "Choose and rename your RAID types",
+  "items": [
+   "Settings > RAID types: switch Risks, Issues and Decisions on or off, and give each its own name (for example call Issues “Blockers”). Everything starts on, with the usual names",
+   "It is saved in the notebook’s file, so your work notebook can keep all three while your home one hides what it does not need",
+   "A type that is switched off disappears from the sidebar, the ＋ Tag… menu, the Type menu, quick add and the number shortcuts, and typing RISK: (or its name) stays plain text. The items you already have stay in your notes, and Settings shows how many",
+   "A renamed type shows its new name everywhere. Type the new name in capitals to tag a line (or the original word, while the type is on). Lines you already wrote keep the word they were written with"
+  ]
+ },
+ {
+  "v": "1.32.0",
+  "title": "Sort by name, Today count, superscript and subscript, list swap",
+  "items": [
+   "Pages can be sorted A–Z or Z–A by name. Pinned pages stay at the top; untitled ones go last. It is separate from By date, which uses the dates on the notes",
+   "On the Today page, the count beside Today now shows how many are still open out of the day’s total (for example 2 of 5), instead of just the total",
+   "Superscript (x²) and subscript (x₂) buttons in the formatting bar, with Word’s shortcuts: Ctrl + Shift + = and Ctrl + =",
+   "In a bulleted list, typing “1. ” at the start of a line makes that line a numbered one instead. In a numbered list, typing “* ” (or “- ”) makes that line a bullet instead"
+  ]
+ },
+ {
+  "v": "1.31.0",
+  "title": "Feed files are labelled with who wrote them",
+  "items": [
+   "Assigned-action files are now named after the notebook that wrote them: assigned.reid.json instead of assigned.json. The label starts as your “I am” name, and Settings > Team has a “Label my files as” box if you want a different one. Leave it empty to use your “I am” name",
+   "Answers come back in the matching file (proposals.reid.json), so two people, or your work and home computers, can use one shared folder without overwriting each other",
+   "If another notebook has already used your label in that folder, the app stops and tells you instead of overwriting its file; pick a different label",
+   "From the team: if several people assign to you in one folder, each person gets their own block in Assigned to me, and your “done?” answers go to the right person. Folders with the older assigned.json still work",
+   "The first time your feed is written under its new name, the old assigned.json is replaced by a short note saying where the actions went (so nobody reads stale actions). Anyone you share with needs this version to see the new file names"
+  ]
+ },
+ {
+  "v": "1.30.0",
+  "title": "A guided tour",
+  "items": [
+   "New: a short guided tour that walks through each area of the app (views, RAID log, categories and people, search, the + button, list options, the editor, saving and Settings). It opens by itself the first time the app runs on a new computer",
+   "Take it any time from Settings > Help > Take the tour. Use the arrow keys or the buttons to move, and Esc to leave",
+   "If you already use the app, you get a one-time message offering the tour instead of it opening on its own"
+  ]
+ },
+ {
+  "v": "1.29.0",
+  "title": "Bring in another copy of your notes",
+  "items": [
+   "Import now accepts a whole data file (for example the one saved by the app on another computer), not just a notebook export. It adds to what you have and never overwrites it",
+   "Standalone actions come across too. The Import window lists them as their own line, with how many are new, newer, older or already here",
+   "A new “Give imported actions that have no one yet to…” box lets you hand the unassigned ones you bring in to Claude or a teammate in one go; actions that already have a person keep them. Leave it on “Keep as they are” to reassign later",
+   "Anything already here with the same identity is skipped (or kept as a copy, or replaced if the file's is newer, whichever you pick). A snapshot is taken first and the message after has Undo"
+  ]
+ },
+ {
+  "v": "1.28.0",
+  "title": "Working from two devices",
+  "items": [
+   "Saving no longer overwrites changes made on another device. If your data file changed since this page last read it (a second computer, or OneDrive), the app merges the two before it writes, so tasks made elsewhere are kept",
+   "The app now checks your data file when you come back to it and every 30 seconds, and brings in changes from another device on its own (a short message says so). Nothing is lost if you have unsaved edits: they are merged in",
+   "After new data arrives from another device, assigned-action feeds and shared pages are rewritten at once. So a task you give Claude on a second computer shows up in the Claude feed as soon as the computer that has the feed folder opens the app",
+   "A computer that does not have a person's feed folder no longer shows a “couldn’t write” or “paused” warning for that feed. Settings says “not set on this device”: the feed is written by the device that has the folder"
+  ]
+ },
+ {
+  "v": "1.27.0",
+  "title": "Reasons for declining, assign a suggestion, tidier sidebar",
+  "items": [
+   "Not yet (on a “done?” request) and No thanks (on a suggested action) now ask for an optional reason. The person who sent it sees your reason next to the action or the suggestion",
+   "A suggested action has an Assign to box: you, the person who suggested it, or anyone else on the team. It defaults to you",
+   "The page list on the left now shows the page's own date and time (the meeting date if it has one, otherwise when the page was made), not when it was last edited",
+   "The sidebar's Waiting for your OK row is now To confirm, on one line, with a small amber count instead of the tall red one. Counts in the sidebar are now centred in their row",
+   "Shortcut for the horizontal line: Ctrl + Shift + H, or type --- on its own line and press Enter",
+   "Pinned pages can be collapsed in the list: click the Pinned heading (▾ / ▸). It is remembered per notebook",
+   "Fixed: pages like Actions and Waiting were squeezed into a narrow strip when the window was 900 pixels wide or less",
+   "On laptop-sized windows the rows on Actions, Today, Risks and the other list pages put the action's text on its own line with the date, time, repeat, category and assignee under it, so the text and the “done?” line are no longer squeezed"
+  ]
+ },
  {
   "v": "1.26.0",
   "title": "Choose where each person's folder goes",
