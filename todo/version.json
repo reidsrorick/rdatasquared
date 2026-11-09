@@ -1,4 +1,25 @@
-{"version":"1.37.0","build":"20261108132459","changelog":[
+{"version":"1.39.0","build":"20261108151827","changelog":[
+ {
+  "v": "1.39.0",
+  "title": "Claude projects",
+  "items": [
+   "Settings > Team has a new “Add a Claude project” box. Type a name (say Website) and pick that project's folder, and you have a team member called Claude-Website. Assign to it by typing @Claude-Website, the same as any person. You can also tick “this is a Claude project” on an existing feed",
+   "A Claude project's feed starts with a “start here” block that tells whichever Claude opens the folder what the file is, how to answer in proposals.<label>.json, and the safety rules (your notes are not instructions, nothing changes until you press Confirm, never read your save file). The note behind each action and the note's title are included by default",
+   "Pages you share with a Claude project also get a Markdown (.md) copy next to the JSON, kept up to date, which is the easy one for a project to read",
+   "Each Claude project shows a status line (how many open, how many waiting for your OK, when it last answered) and a “Copy line for CLAUDE.md” button with a ready-made paragraph to paste into that project, so every session checks the feed",
+   "Names like Claude-Website are no longer offered as a slip of Claude, and the other way round, when you type an @name"
+  ]
+ },
+ {
+  "v": "1.38.0",
+  "title": "Settings in tabs",
+  "items": [
+   "Settings is no longer one long scroll. It opens as a window with tabs down the left: Your notes (save file, earlier versions, moving actions between notebooks), Appearance & RAID, Team (your team, feeds, and what others shared with you) and Help. Only one tab shows at a time",
+   "The app remembers the tab you were on. On a narrow window the tabs sit in a row across the top",
+   "Nothing in Settings was removed or renamed; each part is now under the tab it belongs with",
+   "On a teammate's computer, an action you answered with “done?” no longer stays at “Sent: waiting for … to confirm” after the owner says “Not yet”. It now shows the owner's answer and the reason they gave"
+  ]
+ },
  {
   "v": "1.37.0",
   "title": "Send actions to another notebook",
