@@ -446,6 +446,31 @@ a.nlink{font-size:12px;color:var(--mute);text-decoration:none;cursor:pointer;whi
 a.nlink:hover,a.nlink.has{color:var(--accent)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#2b2a27;color:#fff;padding:9px 10px 9px 16px;border-radius:12px;display:none;gap:12px;align-items:center;box-shadow:0 8px 24px #0005;max-width:80vw;font-size:13px;z-index:20}
 #toast.show{display:flex}
+h4.gh[data-gk]{cursor:pointer;user-select:none}
+h4.gh[data-gk]::before{content:"▾";display:inline-block;width:1.2em;color:var(--mute);font-size:11px}
+h4.gh.folded::before{content:"▸"}
+h4.gh[data-gk]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gh-hid{display:none !important}
+.donewhen{margin-left:8px;color:var(--mute);font-size:12px}
+.railbtns{display:flex;gap:2px}
+.bellbtn{position:relative}
+.bellbtn .bellN{position:absolute;top:-2px;right:-3px;min-width:16px;height:16px;border-radius:99px;background:var(--accent);color:#fff;font:700 10px/16px inherit;text-align:center;padding:0 4px}
+.bellbtn .bellN[hidden]{display:none}
+.app.rail-off .railtop .bellbtn{display:none}
+body.mobile .bellbtn{display:none !important}
+#narrowbar .bellbtn{margin-left:auto}
+#notifdlg{width:min(480px,94vw)}
+#notifdlg .nlist{max-height:52vh;overflow:auto;margin:8px 0;display:flex;flex-direction:column;gap:2px}
+#notifdlg .nrow{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;line-height:1.4}
+#notifdlg .nrow:hover{background:var(--hover)}
+#notifdlg .nrow.new{font-weight:600;background:var(--hover2)}
+#notifdlg .nrow .ni{flex:0 0 20px;text-align:center}
+#notifdlg .nrow small{display:block;font-weight:400;color:var(--mute)}
+#notifdlg .nnone{padding:18px 8px;text-align:center;color:var(--mute)}
+#notifdlg .nfoot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:6px}
+#notifdlg button,#setdlg .alertrow button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 12px;font:inherit}
+#notifdlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+#setdlg .alertrow{display:block;margin:8px 0;font-size:14px}#setdlg .alertrow small{display:block;color:var(--mute);margin-left:22px;font-size:12.5px}
 #tour{position:fixed;inset:0;z-index:60;display:none}
 #tour.show{display:block}
 #tour .hole{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(20,18,15,.64);outline:2px solid var(--accent);transition:left .25s,top .25s,width .25s,height .25s}
@@ -594,11 +619,11 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <body>
 <div id="banner"></div>
 <div id="mobstrip"></div>
-<div id="narrowbar"><button class="sb" data-nav="drawer" title="Menu">☰</button><h3>My Notebook</h3></div>
+<div id="narrowbar"><button class="sb" data-nav="drawer" title="Menu">☰</button><h3>My Notebook</h3><button class="sb bellbtn" data-act="notifs" title="Notifications">🔔<b class="bellN" hidden></b></button></div>
 <div id="scrim" data-nav="close"></div>
 <div class="app">
   <nav class="rail">
-    <div class="railtop"><h3>My Notebook</h3><button class="sb" data-act="togglerail">«</button></div>
+    <div class="railtop"><h3>My Notebook</h3><span class="railbtns"><button class="sb bellbtn" data-act="notifs" title="Notifications">🔔<b class="bellN" hidden></b></button><button class="sb" data-act="togglerail">«</button></span></div>
     <div id="filters"></div>
     <div class="lbl">RAID log</div>
     <div id="raid"></div>
@@ -688,6 +713,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <input type="file" id="mobfile" accept=".json,application/json,text/plain" hidden>
 <input type="file" id="bringfile" accept=".json,application/json,text/plain" hidden>
 <input type="file" id="nbfile" accept=".json,application/json" hidden>
+<dialog id="notifdlg"><h3>🔔 Notifications</h3><div class="nlist" id="notiflist"></div><div class="nfoot"><span><button data-act="notifread">Mark all read</button> <button data-act="notifpop" id="notifpopbtn"></button></span><button class="pri" data-act="notifclose">Close</button></div></dialog>
 <div id="tour" role="dialog" aria-modal="true" aria-labelledby="tourt"><div class="hole none"></div><div class="card"><h4 id="tourt"></h4><div id="tourx"></div><div class="tfoot"><span class="tdots"></span><span class="tbtns"><button class="tskip" data-t="skip">Skip tour</button><button data-t="back">Back</button><button class="pri" data-t="next">Next</button></span></div></div></div>
 <dialog id="nbexp">
   <h3 id="nbexpt">Export</h3>
@@ -779,19 +805,24 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 </dialog>
 <dialog id="setdlg">
   <h3>⚙ Settings</h3>
-  <div class="setwrap"><nav class="setnav" role="tablist" aria-label="Settings"><button role="tab" data-stab="notes" aria-selected="true" class="on">Your notes</button><button role="tab" data-stab="look" aria-selected="false" class="">Appearance & RAID</button><button role="tab" data-stab="team" aria-selected="false" class="">Team</button><button role="tab" data-stab="help" aria-selected="false" class="">Help</button></nav><div class="setbody">
+  <div class="setwrap"><nav class="setnav" role="tablist" aria-label="Settings"><button role="tab" data-stab="notes" aria-selected="true" class="on">Your notes</button><button role="tab" data-stab="look" aria-selected="false" class="">Appearance</button><button role="tab" data-stab="raid" aria-selected="false" class="">RAID types</button><button role="tab" data-stab="alerts" aria-selected="false" class="">Alerts</button><button role="tab" data-stab="team" aria-selected="false" class="">Team</button><button role="tab" data-stab="help" aria-selected="false" class="">Help</button></nav><div class="setbody">
 <div class="setpane" role="tabpanel" data-spane="notes">
   <div class="setsec"><h4>Save file</h4><div id="setfile"></div></div>
   <div class="setsec"><h4>Earlier versions</h4><div class="setline">The app keeps a snapshot of your notes every few minutes.</div><div class="setbtns"><button data-act="snaps">Browse earlier versions…</button></div></div>
   <div class="setsec"><h4>Move actions between notebooks</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Send the actions assigned to one person from this notebook, and bring them into another one, without sharing any notes or pages. For example, ideas you jot down at home that you want in your work notebook.</div><div class="setbtns"><button data-act="sendact">Send actions…</button><button data-act="bringact">Bring in actions…</button></div></div>
 </div><div class="setpane" role="tabpanel" data-spane="look" hidden>
   <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
-  <div class="setsec"><h4>RAID types</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Choose which of these this notebook uses, and what you call them. It is saved in this notebook’s file, so your work and home notebooks can differ. Switching one off hides its page, menus and shortcuts; the items you already have stay in your notes.</div><div id="setraid"></div></div>
 </div><div class="setpane" role="tabpanel" data-spane="team" hidden>
   <div class="setsec"><h4>Team and assigned-action feeds</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Your team is the list of people you can assign to. A feed is a file in a folder you choose for that person (share that folder with them) listing the actions assigned to them, so they can see them and answer “done?”. You always confirm. It holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
   <div class="setsec"><h4>From the team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">If someone shared a folder with you, connect it here. Then you see what is assigned to you and the pages shared with you, and can send “done?” requests and suggestions back.</div><div id="setinbox"></div></div>
 </div><div class="setpane" role="tabpanel" data-spane="help" hidden>
   <div class="setsec"><h4>Help</h4><div class="setbtns"><button data-act="tour">▶ Take the tour</button><button data-act="shortcuts">⌨ Keyboard shortcuts</button><button data-act="about">What's new and updates</button></div></div>
+</div>
+<div class="setpane" role="tabpanel" data-spane="raid" hidden>
+  <div class="setsec"><h4>RAID types</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Choose the types this notebook uses, what you call them, and add your own or delete the ones you do not need (at least one stays). It is saved in this notebook’s file, so your work and home notebooks can differ. Switching one off hides its page, menus and shortcuts; the items you already have stay in your notes.</div><div id="setraid"></div></div>
+</div>
+<div class="setpane" role="tabpanel" data-spane="alerts" hidden>
+<div class="setsec"><h4>Notifications</h4><div id="setalerts"></div></div>
 </div>
 </div></div>
   <div class="dfoot"><span></span><button class="pri" data-act="setclose">Close</button></div>
@@ -858,8 +889,70 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.39.0';
+const APP_VERSION = '1.45.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.45.0",
+  "title": "Fold sections, today(), and when things were done",
+  "items": [
+   "Section headings can be folded. Click a heading (Past due, Today, Tomorrow, On your timeline, and the groups on Actions, the RAID pages, a person's page and To confirm, where each assigned person is a group) and everything under it hides. The count stays in the heading. The app remembers what you folded on this computer",
+   "Type today() anywhere (a note, an action, the search box, a title) and it turns into today's date as yyyy-mm-dd the moment you type the closing bracket. Ctrl + ; still works too",
+   "When you tick an action done, the app now keeps the date and time, and who it was (for example Claude, when you confirm their “done?”). It shows as “✓ Done Nov 9, 3:12 PM” on the Actions and Today pages, in the tooltip of a ticked action item in a note, and in the files for other people (doneAt, doneBy). Actions that were already done before this version have no date",
+   "Fixed: turning on browser pop-ups no longer unticks itself after you press Allow. The box now shows your choice, and a note says if the browser has not allowed it yet"
+  ]
+ },
+ {
+  "v": "1.44.0",
+  "title": "Your own RAID types",
+  "items": [
+   "Settings > RAID types is now a list you control. Add your own types (say Idea, Question or Blocker), rename any of them, change the icon, switch them on and off, and delete the ones you do not want. At least one type always stays. Risk, Issue and Decision are only the starting set, and you can bring one back with Restore",
+   "You can also rename the section itself (it starts as “RAID log”), so a notebook that is not about RAID can call it something else. The name shows in the sidebar, on the pages and in the phone view",
+   "Deleting a type keeps its items: they become plain actions, and the message after has Undo. Lines already written in your notes keep working",
+   "Your own types work everywhere the built-in ones do: the sidebar, the ＋ Tag… menu and typing the word in capitals, the Type menu, quick add (type idea: …), the page for each type, and the files shared with a Claude project (the type's name is used)",
+   "Number keys 5, 6 and 7 now go to the first three types you have switched on, whatever they are called",
+   "Older files open exactly as before: all three starting types on, with their usual names"
+  ]
+ },
+ {
+  "v": "1.43.0",
+  "title": "Notifications",
+  "items": [
+   "A 🔔 bell at the top of the sidebar (and in the top bar of a narrow window) shows how many things are new. Click it for the list: things waiting for your OK (done?, hand backs, suggestions), replies waiting on a shared page, what is due today or past due, and actions that are due at a certain time. If you are a teammate it also lists what was assigned to you and the owner's answers",
+   "Click an item to jump to it. Items you have not looked at are in bold, and Mark all read clears the count",
+   "Browser pop-ups: turn them on from the bell or Settings > Alerts, and the browser shows a notification when something new arrives, a timed action comes due, and once a day for what is due today. They only appear while the app is open in a tab. Nothing pops up for things that were already there when you first turned them on",
+   "Settings has two new tabs: Alerts (pop-ups, due-time reminders, the daily summary, and a test button) and RAID types, which used to share the Appearance tab"
+  ]
+ },
+ {
+  "v": "1.42.0",
+  "title": "Hand an action back",
+  "items": [
+   "On the Assigned to me page, each action now has a ↩ Hand back button next to Mark done… One click sends it back to whoever assigned it (type a note in the box first if you want to say why)",
+   "The owner sees it in To confirm as “… hands this back”, with Take it back (it becomes theirs again) or Keep with … (with an optional reason). Nothing changes until they press one",
+   "The teammate's screen says “Handed back: waiting for … to take it”, and shows the reason if the owner kept it with them",
+   "A Claude project can hand an action back too: the feed lists it as kind “back”"
+  ]
+ },
+ {
+  "v": "1.41.0",
+  "title": "Renaming a person carries everything",
+  "items": [
+   "Renaming a person now moves their feed, their folder, the pages shared with them and their earlier answers to the new name, not just their actions. Before, you got a second empty feed under the new name",
+   "Settings > Team has a Rename… button on every feed row (the People editor in the sidebar does the same thing). If the new name already exists, the two are merged into one",
+   "If you pick a folder that another person already uses, the app now asks “Move it to this name?” instead of refusing. The other person stops getting a feed until you choose a folder for them",
+   "A project that still answers under the old name is understood, so a rename never loses its answers",
+   "The name Claude is only offered in Settings > Team while there is no Claude on your team yet"
+  ]
+ },
+ {
+  "v": "1.40.0",
+  "title": "Insert today's date",
+  "items": [
+   "Press Ctrl + ; to type today's date as yyyy-mm-dd (for example 2026-11-09) wherever the cursor is: in a note, an action, the search box, a title or any other text box. It is the same shortcut Excel uses",
+   "If the cursor is not in a text box, the date is copied instead, with a message, so you can paste it where you want it",
+   "It is listed in the keyboard shortcuts sheet (press ?)"
+  ]
+ },
  {
   "v": "1.39.0",
   "title": "Claude projects",
@@ -1354,8 +1447,8 @@ function cleanHtml(html){
       let o = inner; if(c) o = `<span class="${c}">${o}</span>`; if(fc) o = `<span class="fc-${fc}">${o}</span>`; return o;
     }       // text size (the browser's own size command makes <font size>)
     if(tag === 'SPAN'){
-      const cl = n.getAttribute('class') || '', tg = /\bt-(action|risk|issue|decision)\b/.exec(cl), rid = n.getAttribute('data-rid') || '';
-      if(/\brtag\b/.test(cl)) return tg && /^[\w-]{3,40}$/.test(rid) ? `<span class="rtag t-${tg[1]}" data-rid="${rid}">${inner}</span>` : inner;       // ACTION: / RISK: / ISSUE: / DECISION: markers
+      const cl = n.getAttribute('class') || '', tg = /\bt-([a-z][a-z0-9]*)\b/.exec(cl), rid = n.getAttribute('data-rid') || '';
+      if(/\brtag\b/.test(cl)) return tg && /^[\w-]{3,40}$/.test(rid) ? `<span class="rtag t-${tg[1] === 'action' || isRaidKind(tg[1]) ? tg[1] : 'action'}" data-rid="${rid}">${inner}</span>` : inner;       // ACTION: / RISK: / ISSUE: / DECISION: markers
       const sz = /\bsz-(s|l|xl)\b/.exec(cl); if(sz) return `<span class="sz-${sz[1]}">${inner}</span>`;
       const fcc = /\bfc-(red|orange|green|blue|purple|gray)\b/.exec(cl); if(fcc) return `<span class="fc-${fcc[1]}">${inner}</span>`;
     }
@@ -1371,7 +1464,7 @@ function cleanHtml(html){
     if(t && !docsWrapper){
       let at = '';
       if((t === 'div' || t === 'li') && n.getAttribute('data-done') === '1') at += ' data-done="1"';          // the action on this tagged line is finished
-      if(t === 'div' || t === 'li'){ const rk = n.getAttribute('data-raid'); if(['action', 'risk', 'issue', 'decision'].includes(rk)) at += ` data-raid="${rk}"`; }
+      if(t === 'div' || t === 'li'){ const rk = n.getAttribute('data-raid'); if(rk === 'action' || isRaidKind(rk)) at += ` data-raid="${rk}"`; }
       if(t === 'div' || t === 'li'){ const cb = n.getAttribute('data-cb'); if(cb === '0' || cb === '1'){ at += ` data-cb="${cb}"`; const da = n.getAttribute('data-at'); if(cb === '1' && /^\d{4}-\d\d-\d\d$/.test(da || '')) at += ` data-at="${da}"`; } }                 // a checkbox line
       if((t === 'div' || t === 'li') && n.hasAttribute('data-seq') && /^[\w\-.]{0,24}$/.test(n.getAttribute('data-seq'))) at += ` data-seq="${esc(n.getAttribute('data-seq'))}"`;           // a numbered series (EAM_1, EAM_2…)
       if(t === 'li' && n.getAttribute('data-fold')) at += ' data-fold="1"';                       // a folded bullet (its sub-points are hidden)
@@ -1616,7 +1709,7 @@ function setRepeat(o, key){
 const proposalOf = o => o && o.proposed && o.proposed.by && (o.assignee || '').toLowerCase() === o.proposed.by.toLowerCase() && !(o.proposed.kind === 'done' && o.done) ? o.proposed : null;
 function logProposal(entry){ db.proposals = db.proposals.filter(x => x.id !== entry.id); db.proposals.unshift(entry); if(db.proposals.length > 300) db.proposals.length = 300; }
 function settleProposal(id, status, why){ const e = db.proposals.find(x => x.id === id); if(e){ e.status = status; e.decidedAt = now(); e.decidedBy = db.me || 'You'; if(why !== undefined) e.why = clipS(why, 200); } }
-function completeToggle(o, item, checked){
+function completeToggle(o, item, checked, by){
   item.updated = now();
   if(checked && o.repeat){
     const prev = o.due, nd = nextDue(o.repeat, o.due);
@@ -1624,7 +1717,8 @@ function completeToggle(o, item, checked){
     toast(`Done ✓ — next due ${fmtDay(nd)}${o.time ? ' ' + fmtTime(o.time) : ''} (${lcFirst(describeRepeat(o.repeat))})`, () => { o.due = prev; o.done = false; item.updated = now(); touch(); refreshViews(); });
     return true;
   }
-  o.done = checked; if(item.checklist && item.checklist.includes(o)) markDoneLines(item);
+  o.done = checked; o.doneAt = checked ? now() : ''; o.doneBy = checked ? (by || db.me || '') : '';          // when it was ticked, and who (the person whose “done?” you confirmed, or you)
+  if(item.checklist && item.checklist.includes(o)) markDoneLines(item);
   if(checked && o.proposed && o.proposed.kind === 'done'){ settleProposal(o.proposed.id, 'confirmed'); o.proposed = null; }          // ticking it yourself settles the proposal
   return false;
 }
@@ -1649,14 +1743,36 @@ function markDoneLines(item){                             // cross out (or resto
 const DEFAULT_CATS = () => [{id:'work', name:'Work', color:'#3b6ea5'}, {id:'personal', name:'Personal', color:'#4f8a5b'}, {id:'admin', name:'Admin', color:'#c2862d'}];
 /* ---- RAID types: which of Risk / Issue / Decision this data file uses, and what it calls them (kept in the file, so work and home can differ) ----
    The kinds stay 'risk' / 'issue' / 'decision' inside the data; only the name shown and the on/off switch change. `was` remembers earlier names so lines already written in a note keep working after a rename. */
-const RAID_KINDS = ['risk', 'issue', 'decision'];
-const RAID_DEFAULT = {risk:'Risk', issue:'Issue', decision:'Decision'};
+const RAID_BUILTIN = ['risk', 'issue', 'decision'];
+const RAID_ID_RE = /^x[a-z0-9]{3,12}$/;
+const liveArr = f => new Proxy([], {get:(t, k) => { const a = f(), v = a[k]; return typeof v === 'function' ? v.bind(a) : v; }, has:(t, k) => k in f()});          // an array that is always the current list
+const raidCfgNow = () => (typeof db !== 'undefined' && db && db.raidCfg) || {};
+const raidAllIds = cfg => Object.keys(cfg || {}).filter(k => cfg[k] && typeof cfg[k] === 'object' && !Array.isArray(cfg[k]));
+const raidLive = cfg => raidAllIds(cfg).filter(k => !cfg[k].del);
+const RAID_KINDS = liveArr(() => raidLive(raidCfgNow()));          // the types in use, in order (they were once always risk / issue / decision)
+let _normLive = null;                                              // while a file is being cleaned: the types that file defines
+const isRaidKind = v => !!v && (_normLive ? _normLive.has(v) : RAID_KINDS.includes(v));
+const RAID_COLORS = ['#6b5b95', '#2f8f9d', '#c2862d', '#8a6bbf', '#4f8a5b', '#c2562d', '#3b6ea5', '#a14a76'];
+const RAID_DEFAULT = new Proxy({risk:'Risk', issue:'Issue', decision:'Decision'}, {get:(t, k) => typeof k === 'string' ? (t[k] || '') : t[k]});          // the starting names; a type you add has none
 const RAID_NAME_RE = /^[A-Za-z][A-Za-z0-9_-]{0,19}$/;
 const cleanRaidName = (n, kind) => { n = typeof n === 'string' ? n.trim() : ''; return RAID_NAME_RE.test(n) && n.toLowerCase() !== RAID_DEFAULT[kind].toLowerCase() ? n : ''; };
-const cleanRaidCfg = c => { const o = {}; for(const k of RAID_KINDS){ const x = c && typeof c === 'object' && c[k] && typeof c[k] === 'object' ? c[k] : {}; o[k] = {on:x.on !== false, name:cleanRaidName(x.name, k), was:[...new Set((Array.isArray(x.was) ? x.was : []).map(w => cleanRaidName(w, k)).filter(Boolean))].slice(-10)}; } return o; };
-const raidCfgIsDefault = c => RAID_KINDS.every(k => !c || !c[k] || (c[k].on !== false && !c[k].name));
-const raidC = k => (typeof db !== 'undefined' && db && db.raidCfg && db.raidCfg[k]) || {on:true, name:'', was:[]};
-const raidOn = k => raidC(k).on !== false;
+const cleanRaidIcon = v => [...(typeof v === 'string' ? v.trim() : '')].slice(0, 2).join('');
+const cleanRaidCfg = c => {
+  const src = c && typeof c === 'object' ? c : {}, o = {title:typeof src.title === 'string' ? src.title.trim().slice(0, 30) : ''};
+  const was = (x, k) => [...new Set((Array.isArray(x.was) ? x.was : []).map(w => RAID_BUILTIN.includes(k) ? cleanRaidName(w, k) : (typeof w === 'string' && RAID_NAME_RE.test(w.trim()) ? w.trim() : '')).filter(Boolean))].slice(-10);
+  for(const k of RAID_BUILTIN){ const x = src[k] && typeof src[k] === 'object' ? src[k] : {}; o[k] = {on:x.on !== false, name:cleanRaidName(x.name, k), was:was(x, k), icon:cleanRaidIcon(x.icon), del:!!x.del}; }
+  for(const k of Object.keys(src).filter(k => RAID_ID_RE.test(k) && src[k] && typeof src[k] === 'object').slice(0, 20)){ const x = src[k], nm = typeof x.name === 'string' ? x.name.trim() : ''; if(!RAID_NAME_RE.test(nm)) continue;
+    o[k] = {custom:true, on:x.on !== false, name:nm, was:was(x, k), icon:cleanRaidIcon(x.icon) || '◆', color:/^#[0-9a-f]{6}$/i.test(x.color || '') ? x.color : RAID_COLORS[Object.keys(o).length % RAID_COLORS.length], del:!!x.del}; }
+  if(!raidLive(o).length) for(const k of RAID_BUILTIN) o[k].del = false;          // at least one type always stays
+  return o;
+};
+
+const raidCfgIsDefault = c => !c || (!c.title && RAID_BUILTIN.every(k => !c[k] || (c[k].on !== false && !c[k].name && !c[k].icon && !c[k].del)) && !Object.keys(c).some(k => RAID_ID_RE.test(k)));
+const raidC = k => { const c = raidCfgNow()[k]; return c && typeof c === 'object' ? c : {on:true, name:'', was:[]}; };
+const raidOn = k => { const c = raidCfgNow()[k]; return !!c && typeof c === 'object' && c.on !== false && !c.del; };
+const raidTitle = () => raidCfgNow().title || 'RAID log';
+const raidShort = () => raidTitle().replace(/\s+log$/i, '');
+const raidWire = k => !k ? '' : RAID_BUILTIN.includes(k) ? k : (raidOne(k) || k).toLowerCase();          // the name used in files for other people
 const raidOne = k => raidC(k).name || RAID_DEFAULT[k];
 const pluralOf = w => /[^aeiou]y$/i.test(w) ? w.slice(0, -1) + 'ies' : /(s|x|ch|sh)$/i.test(w) ? w + 'es' : w + 's';
 const raidMany = k => pluralOf(raidOne(k));
@@ -1664,8 +1780,9 @@ const raidKinds = () => RAID_KINDS.filter(raidOn);
 const listAnd = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 const aAn = w =>(/^[aeiou]/i.test(w) ? 'an ' : 'a ') + w.toLowerCase();
 function tagWordMap(all){                                          // UPPERCASE keyword -> kind; `all` also includes switched-off types and earlier names (for lines already written)
-  const m = {ACTION:'action'};
-  for(const k of RAID_KINDS){ if(!all && !raidOn(k)) continue; const c = raidC(k); for(const w of [RAID_DEFAULT[k], c.name, ...(all ? (c.was || []) : [])]) if(w) m[w.toUpperCase()] = k; }
+  const cfg = raidCfgNow(), m = {ACTION:'action'};
+  if(all) for(const k of raidAllIds(cfg)) if(cfg[k].del) for(const w of [RAID_DEFAULT[k], cfg[k].name, ...(cfg[k].was || [])]) if(w) m[w.toUpperCase()] = 'action';          // a deleted type: its lines keep working, as plain actions
+  for(const k of raidLive(cfg)){ if(!all && !raidOn(k)) continue; const c = raidC(k); for(const w of [RAID_DEFAULT[k], c.name, ...(all ? (c.was || []) : [])]) if(w) m[w.toUpperCase()] = k; }
   return m;
 }
 let _tagRe = null, _tagReKey = '';
@@ -1691,11 +1808,11 @@ const cleanPeople = a => { const seen = new Set(), out = []; for(const n of Arra
 /* ---- "done?" proposals: the person an action is assigned to can say it is done; the owner confirms ---- */
 function cleanShared(sh){ const w = cleanPeople(sh.with).slice(0, 30); return {on:true, file:String(sh.file || ''), last:String(sh.last || ''), with:w, sent:cleanPeople(sh.sent).slice(0, 30), global: !!sh.global || !w.length, root: sh.root !== undefined ? !!sh.root : !!sh.file}; }
 function cleanProposed(p){
-  if(!p || typeof p !== 'object' || !/^[\w\-.:]{1,80}$/.test(String(p.id || '')) || !['done', 'note'].includes(p.kind)) return null;
+  if(!p || typeof p !== 'object' || !/^[\w\-.:]{1,80}$/.test(String(p.id || '')) || !['done', 'note', 'back'].includes(p.kind)) return null;
   return {id:String(p.id), kind:p.kind, by:clipS(p.by, 40).trim(), at:okIso(p.at) || now(), note:clipS(p.note, 500)};
 }
-function cleanFeeds(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(f => f && typeof f.person === 'string' && f.person.trim() && !seen.has(f.person.trim().toLowerCase()) && seen.add(f.person.trim().toLowerCase())).map(f => ({person:clipS(f.person, 40).trim(), on:!!f.on, titles:!!f.titles, folder:clipS(f.folder, 80), file:clipS(f.file, 80), claude:!!f.claude})).slice(0, 50); }
-function cleanProposalLog(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(x => x && /^[\w\-.:]{1,80}$/.test(String(x.id || '')) && !seen.has(x.id) && seen.add(x.id)).map(x => ({id:String(x.id), item:clipS(x.item, 80), text:clipS(x.text, 160), by:clipS(x.by, 40), kind:x.kind === 'note' ? 'note' : x.kind === 'new' ? 'new' : 'done', due:okDate(x.due), note:clipS(x.note, 500), at:okIso(x.at) || now(), status:['pending', 'confirmed', 'declined', 'dismissed', 'ignored'].includes(x.status) ? x.status : 'pending', decidedAt:okIso(x.decidedAt), decidedBy:clipS(x.decidedBy, 40), why:clipS(x.why, 200)})).slice(0, 300); }
+function cleanFeeds(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(f => f && typeof f.person === 'string' && f.person.trim() && !seen.has(f.person.trim().toLowerCase()) && seen.add(f.person.trim().toLowerCase())).map(f => ({person:clipS(f.person, 40).trim(), on:!!f.on, titles:!!f.titles, folder:clipS(f.folder, 80), file:clipS(f.file, 80), claude:!!f.claude, was:cleanPeople(f.was).slice(0, 5)})).slice(0, 50); }
+function cleanProposalLog(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).filter(x => x && /^[\w\-.:]{1,80}$/.test(String(x.id || '')) && !seen.has(x.id) && seen.add(x.id)).map(x => ({id:String(x.id), item:clipS(x.item, 80), text:clipS(x.text, 160), by:clipS(x.by, 40), kind:x.kind === 'note' ? 'note' : x.kind === 'new' ? 'new' : x.kind === 'back' ? 'back' : 'done', due:okDate(x.due), note:clipS(x.note, 500), at:okIso(x.at) || now(), status:['pending', 'confirmed', 'declined', 'dismissed', 'ignored'].includes(x.status) ? x.status : 'pending', decidedAt:okIso(x.decidedAt), decidedBy:clipS(x.decidedBy, 40), why:clipS(x.why, 200)})).slice(0, 300); }
 /* Every action item (checklist entry) must have an id that no other note uses: lists such as Actions and Today find an entry by that id alone. */
 function renewChecklistIds(it){                           // give a copied note its own action items; its tagged lines are re-pointed at the new ids
   const map = {}; it.checklist.forEach(c => { const o = c.id; c.id = uid(); map[o] = c.id; });
@@ -1786,7 +1903,7 @@ const clipS = (v, n) => typeof v === 'string' ? v.replace(/\u0000/g, '').slice(0
 const okDate = v => typeof v === 'string' && /^\d{4}-\d\d-\d\d$/.test(v) ? v : '';
 const okTime = v => typeof v === 'string' && /^\d\d:\d\d$/.test(v) ? v : '';
 const okIso = v => typeof v === 'string' && !isNaN(Date.parse(v)) ? new Date(v).toISOString() : '';
-const okRaid = v => ['risk', 'issue', 'decision'].includes(v) ? v : '';
+const okRaid = v => isRaidKind(v) ? v : '';
 function cleanChange(c, k, keep){
   if(!c || typeof c !== 'object' || !REPLY_KINDS.includes(c.kind)) return null;
   const o = {id: /^[\w\-.:]{1,60}$/.test(String(c.id || '')) ? String(c.id) : 'c' + (k + 1), kind:c.kind, why:clipS(c.why, 300), status:'pending', by:'', when:'', before:'', note:''};
@@ -1815,13 +1932,17 @@ function cleanReply(r, keep){
 }
 function cleanReplies(a){ const seen = new Set(); return (Array.isArray(a) ? a : []).map(r => cleanReply(r, true)).filter(r => r && !seen.has(r.id) && seen.add(r.id)).slice(-200); }
 function normalize(d){
+  const prev = _normLive; _normLive = new Set(raidLive(cleanRaidCfg(d && d.raidCfg)));
+  try { return normalizeBody(d); } finally { _normLive = prev; }
+}
+function normalizeBody(d){
   const rich = d.bodyFormat === 'html', conv = s => rich ? cleanHtml(s || '') : plainToHtml(s || '');      // files from before formatting hold plain text
   d.categories = Array.isArray(d.categories) ? d.categories.map(c => ({id:c.id || uid(), name:c.name || 'Untitled', color:c.color || '#888888'})) : DEFAULT_CATS();
   const item = i => ({
     id: i.id || uid(), type: i.type === 'task' ? 'task' : 'note',      // older files had a separate "meeting" type: meetings are now just notes that have a date
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
-    done: !!i.done, pinned: !!i.pinned, pinAll: !!i.pinned && !!i.pinAll, proposed: cleanProposed(i.proposed), shared: i.shared && i.shared.on ? cleanShared(i.shared) : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: ['risk', 'issue', 'decision'].includes(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat), proposed:cleanProposed(c.proposed)})) : [],
+    done: !!i.done, doneAt: i.done ? (okIso(i.doneAt) || '') : '', doneBy: i.done ? clipS(i.doneBy, 40).trim() : '', pinned: !!i.pinned, pinAll: !!i.pinned && !!i.pinAll, proposed: cleanProposed(i.proposed), shared: i.shared && i.shared.on ? cleanShared(i.shared) : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: isRaidKind(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, doneAt:c.done ? (okIso(c.doneAt) || '') : '', doneBy:c.done ? clipS(c.doneBy, 40).trim() : '', due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: isRaidKind(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat), proposed:cleanProposed(c.proposed)})) : [],
     replies: cleanReplies(i.replies), autoDt: i.type === 'note' && !!i.autoDt && !!(i.date || i.time), created: i.created || now(), updated: i.updated || now()
   });
   d.items = (d.items || []).map(item);
@@ -1948,6 +2069,7 @@ function mergeDb(fileDb, local){
   const nbm = new Map(fileDb.notebooks.map(n => [n.id, n])); for(const n of local.notebooks || []) if(!nbm.has(n.id)) nbm.set(n.id, n); fileDb.notebooks = [...nbm.values()];
   fileDb.people = cleanPeople([...fileDb.people, ...(local.people || [])]); if(!fileDb.me) fileDb.me = local.me || ''; if(!fileDb.label) fileDb.label = local.label || ''; if(!fileDb.sourceId) fileDb.sourceId = local.sourceId || '';
   if(raidCfgIsDefault(fileDb.raidCfg) && !raidCfgIsDefault(local.raidCfg)) fileDb.raidCfg = cleanRaidCfg(local.raidCfg);
+  else { const fc = cleanRaidCfg(fileDb.raidCfg), lc = cleanRaidCfg(local.raidCfg); for(const k of raidAllIds(lc)) if(!fc[k] && lc[k].custom) fc[k] = lc[k]; if(!fc.title && lc.title) fc.title = lc.title; fileDb.raidCfg = cleanRaidCfg(fc); }          // types added here are kept
   { const im = new Map((fileDb.imported || []).map(r => [r.src + '|' + r.id, r])); for(const r of local.imported || []) if(!im.has(r.src + '|' + r.id)) im.set(r.src + '|' + r.id, r); fileDb.imported = [...im.values()].slice(-3000); }
   const fm =new Map((fileDb.feeds || []).map(f => [f.person.toLowerCase(), f])); for(const f of local.feeds || []) if(!fm.has(f.person.toLowerCase())) fm.set(f.person.toLowerCase(), f); fileDb.feeds = [...fm.values()];
   const pm = new Map((fileDb.proposals || []).map(x => [x.id, x])); for(const x of local.proposals || []) if(!pm.has(x.id)) pm.set(x.id, x); fileDb.proposals = [...pm.values()].slice(0, 300);
@@ -2268,20 +2390,55 @@ function renderSettings(){
   const ok = fileState === 'ready' && !writeError;
   $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
-  $('#settheme').value = theme; renderInboxSettings(); renderRaidSettings();
-  const names = [...new Set(['Claude', ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
+  $('#settheme').value = theme; renderInboxSettings(); renderRaidSettings(); renderAlertSettings();
+  const hasClaude = [...db.people, ...(db.feeds || []).map(f => f.person)].some(n => /^claude/i.test(n)), names = [...new Set([...(hasClaude ? [] : ['Claude']), ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
   const sl = srcSlug();
   $('#setfeeds').innerHTML = `<div class="feedrow srclabelrow"><label>Label my files as <input type="text" id="srclabel" value="${esc(db.label || '')}" placeholder="${esc(db.me || 'e.g. Reid')}" maxlength="40" autocomplete="off" style="width:150px"></label><small>${sl ? `Your feeds are written as <b>assigned.${esc(sl)}.json</b>${db.label ? '' : ' (taken from your “I am” name)'}` : 'No label, so the files are named assigned.json'}. People you share with can see where actions came from, and two notebooks can use one folder without overwriting each other. Leave it empty to use your “I am” name.</small></div>` + names.map(n => { const f = (db.feeds || []).find(x => x.person.toLowerCase() === n.toLowerCase()), openN = feedItems({person:n, titles:false}).filter(x => !x.done).length;
     const sim = db.people.includes(n) ? nearNames(n).filter(m => db.people.includes(m))[0] : '';
-    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b>${f && f.claude ? ' <small class="cpchip">Claude project</small>' : ''} <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}</small></label>${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><label class="feedt"><input type="checkbox" data-feedc="${esc(n)}" ${f.claude ? 'checked' : ''}> this is a Claude project <small>(adds start-here notes to the feed and a Markdown copy of each page you share)</small></label>${f.claude ? `<span class="feedp"><small>${esc(claudeStatus(n))}</small> <button data-act="feedcopy" data-p="${esc(n)}" title="A paragraph to paste into that project’s CLAUDE.md so every session checks the feed">Copy line for CLAUDE.md</button></span>` : ''}<span class="feedp">${folderLine(n)}</span>` : ''}</div>`; }).join('')
+    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b>${f && f.claude ? ' <small class="cpchip">Claude project</small>' : ''} <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}</small></label><span class="feedmerge"><button data-act="feedrename" data-p="${esc(n)}" title="Rename this person. Their feed, folder and shared pages move with the name">Rename…</button></span>${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><label class="feedt"><input type="checkbox" data-feedc="${esc(n)}" ${f.claude ? 'checked' : ''}> this is a Claude project <small>(adds start-here notes to the feed and a Markdown copy of each page you share)</small></label>${f.claude ? `<span class="feedp"><small>${esc(claudeStatus(n))}</small> <button data-act="feedcopy" data-p="${esc(n)}" title="A paragraph to paste into that project’s CLAUDE.md so every session checks the feed">Copy line for CLAUDE.md</button></span>` : ''}<span class="feedp">${folderLine(n)}</span>` : ''}</div>`; }).join('')
     + guestRowsHtml() + `<div class="feedrow teamadd"><input type="text" id="cpadd" placeholder="Add a Claude project, e.g. Website…" autocomplete="off"><button data-act="cpadd" title="Makes a team member called Claude-Website and asks which folder is that project’s">Add Claude project</button></div><div class="feedrow teamadd"><input type="text" id="teamadd" placeholder="Add a team member…" autocomplete="off"><button data-act="teamadd">Add</button></div><label class="feedrow"><input type="checkbox" id="teamstrict" ${db.strict ? 'checked' : ''}> Only assign to people on the team (ask me before adding a new name)</label>`;
 }
 function renderRaidSettings(){
-  const all = allRaid();
-  $('#setraid').innerHTML = RAID_KINDS.map(k => { const on = raidOn(k), n = all.filter(x => x.raid === k).length;
-    return `<div class="feedrow"><label><input type="checkbox" data-raidon="${k}" ${on ? 'checked' : ''}> ${esc(RAID_BASE[k].icon)} <b>${esc(raidOne(k))}</b></label> <label class="feedt">Called <input type="text" data-raidname="${k}" value="${esc(raidC(k).name)}" placeholder="${esc(RAID_DEFAULT[k])}" maxlength="20" autocomplete="off" style="width:130px"></label>${on ? '' : `<small>${n ? `${n} existing stay in your notes, hidden from the pages` : 'switched off'}</small>`}</div>`; }).join('')
-    + `<div class="setline" style="font-size:12px;color:var(--mute);display:block">One word, letters, numbers, - or _. Lines you already wrote keep the word they were written with. To tag a line, type the name in capitals (for example <b>${esc(tagListText())}</b>) or use ＋ Tag… in the editor.</div>`;
+  const all = allRaid(), cfg = raidCfgNow(), live = raidLive(cfg), dead = RAID_BUILTIN.filter(k => cfg[k] && cfg[k].del);
+  const rows = live.map(k => { const on = raidOn(k), n = all.filter(x => x.raid === k).length, c = raidC(k), base = RAID_BASE_RAW[k];
+    return `<div class="feedrow raidrow"><label><input type="checkbox" data-raidon="${k}" ${on ? 'checked' : ''}> <b>${esc(raidOne(k))}</b></label> <label class="feedt">Icon <input type="text" data-raidicon="${k}" value="${esc(c.icon || '')}" placeholder="${esc(base ? base.icon : '◆')}" maxlength="4" autocomplete="off" style="width:48px;text-align:center"></label> <label class="feedt">Called <input type="text" data-raidname="${k}" value="${esc(c.name || '')}" placeholder="${esc(RAID_DEFAULT[k])}" maxlength="20" autocomplete="off" style="width:130px"></label> <button class="x" data-act="raiddel" data-k="${k}" title="${live.length < 2 ? 'At least one type has to stay' : 'Delete this type'}" ${live.length < 2 ? 'disabled' : ''}>×</button>${on ? '' : `<small>${n ? `${n} existing stay in your notes, hidden from the pages` : 'switched off'}</small>`}</div>`; }).join('');
+  $('#setraid').innerHTML = `<div class="feedrow"><label class="feedt" style="margin:0">Section name <input type="text" id="raidtitle" value="${esc(cfg.title || '')}" placeholder="RAID log" maxlength="30" autocomplete="off" style="width:170px"></label> <small>shown in the sidebar and on the pages</small></div>`
+    + rows
+    + `<div class="feedrow teamadd"><input type="text" id="raidnew" placeholder="Add your own type, e.g. Idea…" maxlength="20" autocomplete="off"><button data-act="raidadd">Add type</button></div>`
+    + (dead.length ? `<div class="feedrow"><small>Removed starting types:</small> ${dead.map(k => `<button data-act="raidrestore" data-k="${k}">Restore ${esc(RAID_DEFAULT[k])}</button>`).join(' ')}</div>` : '')
+    + `<div class="setline" style="font-size:12px;color:var(--mute);display:block">One word, letters, numbers, - or _. Lines you already wrote keep the word they were written with. To tag a line, type the name in capitals (for example <b>${esc(tagListText())}</b>) or use ＋ Tag… in the editor. Deleting a type turns its items into plain actions (Undo is offered); at least one type stays.</div>`;
 }
+const raidWordTaken = (w, except) => w.toUpperCase() === 'ACTION' || raidLive(raidCfgNow()).some(o => o !== except && [RAID_DEFAULT[o], raidC(o).name].some(x => x && x.toLowerCase() === w.toLowerCase()));
+function syncRaidCss(){                                            // colours for the types you add (the starting three have theirs in the stylesheet)
+  let el = document.getElementById('raidcss'); if(!el){ el = document.createElement('style'); el.id = 'raidcss'; document.head.appendChild(el); }
+  const cfg = raidCfgNow(), css = raidAllIds(cfg).filter(k => cfg[k].custom && RAID_ID_RE.test(k)).map(k => `.rt .rtag.t-${k}{background:${cfg[k].color}}.rbadge.t-${k}{background:${cfg[k].color}}`).join('');
+  if(el.textContent !== css) el.textContent = css;
+}
+function addRaidType(){
+  const inp = $('#raidnew'), v = inp ? inp.value.trim() : '';
+  if(!v){ toast('Type a name for the new type first, such as Idea.'); return; }
+  if(!RAID_NAME_RE.test(v)){ toast('Use one word: letters, numbers, - or _ (up to 20 characters), starting with a letter.'); return; }
+  if(raidWordTaken(v, '')){ toast(`“${v}” is already used by another type. Pick a different word.`); return; }
+  const cfg = db.raidCfg = db.raidCfg || cleanRaidCfg();
+  if(raidAllIds(cfg).filter(k => cfg[k].custom).length >= 20){ toast('That is plenty of types. Delete one you do not use first.'); return; }
+  let id; do { id = 'x' + Math.random().toString(36).slice(2, 8).padEnd(4, '0'); } while(cfg[id] || !RAID_ID_RE.test(id));
+  cfg[id] = {custom:true, on:true, name:v, was:[], icon:'◆', color:RAID_COLORS[raidAllIds(cfg).length % RAID_COLORS.length], del:false};
+  touch(); renderAll(); renderRaidSettings(); toast(`Added “${v}”. Type ${v.toUpperCase()}: at the start of a line in a note, or use ＋ Tag….`);
+}
+function deleteRaidType(k){
+  if(raidLive(raidCfgNow()).length < 2){ toast('At least one type has to stay. Add another one first, or rename this one.'); return; }
+  const nm = raidOne(k), moved = [];
+  for(const it of db.items){ if(it.raid === k) moved.push(it); for(const c of it.checklist) if(c.raid === k) moved.push(c); }
+  if(!confirm(`Delete “${nm}”?${moved.length ? ` Its ${moved.length} item${moved.length === 1 ? '' : 's'} stay in your notes and Actions as plain actions.` : ''} You can undo this right after.`)) return;
+  takeSnapshot('before deleting a RAID type', true);
+  const stamp = new Map(); db.items.forEach(it => stamp.set(it, it.updated));
+  moved.forEach(o => { o.raid = ''; });
+  db.items.forEach(it => { if(it.raid === '' && moved.includes(it) || it.checklist.some(c => moved.includes(c))) it.updated = now(); });
+  db.raidCfg[k].del = true; if(filter === k){ filter = 'today'; saveUi(); }
+  touch(); renderAll(); renderRaidSettings();
+  toast(`Deleted “${nm}”.`, () => { moved.forEach(o => { o.raid = k; }); db.raidCfg[k].del = false; db.items.forEach(it => { if(stamp.has(it)) it.updated = stamp.get(it); }); touch(); renderAll(); renderRaidSettings(); });
+}
+$('#setraid').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.id === 'raidnew'){ e.preventDefault(); addRaidType(); } });
 function renderTagMenu(){                                           // the ＋ Tag… menu in the editor: ACTION and the RAID types that are switched on
   const sel = $('#fmttag'); if(!sel) return;
   const html = '<option value="">＋ Tag…</option>' + ['ACTION', ...raidKinds().map(k => raidOne(k).toUpperCase())].map(w => `<option value="${esc(w)}">${esc(w)}</option>`).join('');
@@ -2289,17 +2446,22 @@ function renderTagMenu(){                                           // the ＋ T
 }
 $('#setraid').addEventListener('change', e => {
   const t = e.target; db.raidCfg = db.raidCfg || cleanRaidCfg();
+  if(t.id === 'raidtitle'){ db.raidCfg.title = clipS(t.value, 30).trim(); touch(); renderAll(); renderRaidSettings(); return; }
   if(t.dataset.raidon){
     const k = t.dataset.raidon; db.raidCfg[k].on = t.checked; touch();
     if(!t.checked && filter === k){ filter = 'today'; saveUi(); }
     renderAll(); renderRaidSettings(); return;
   }
+  if(t.dataset.raidicon){
+    const k = t.dataset.raidicon, v = cleanRaidIcon(t.value), base = RAID_BASE_RAW[k];
+    db.raidCfg[k].icon = base && v === base.icon ? '' : (v || (base ? '' : '◆')); touch(); renderAll(); renderRaidSettings(); return;
+  }
   if(t.dataset.raidname){
-    const k = t.dataset.raidname, v = t.value.trim(), cur = raidC(k).name;
-    const taken = w => w.toUpperCase() === 'ACTION' || RAID_KINDS.some(o => o !== k && [RAID_DEFAULT[o], raidC(o).name].some(x => x && x.toLowerCase() === w.toLowerCase()));
+    const k = t.dataset.raidname, v = t.value.trim(), cur = raidC(k).name, custom = !!raidC(k).custom;
+    if(custom && !v){ toast('A type you added needs a name. Delete it instead if you do not want it.'); t.value = cur; return; }
     if(v && !RAID_NAME_RE.test(v)){ toast('Use one word: letters, numbers, - or _ (up to 20 characters).'); t.value = cur; return; }
-    if(v && taken(v)){ toast(`“${v}” is already used by another type. Pick a different word.`); t.value = cur; return; }
-    const nv = v.toLowerCase() === RAID_DEFAULT[k].toLowerCase() ? '' : v;
+    if(v && raidWordTaken(v, k)){ toast(`“${v}” is already used by another type. Pick a different word.`); t.value = cur; return; }
+    const nv = !custom && v.toLowerCase() === RAID_DEFAULT[k].toLowerCase() ? '' : v;
     if(nv === cur) return;
     if(cur) db.raidCfg[k].was = [...new Set([...(db.raidCfg[k].was || []), cur])].slice(-10);
     db.raidCfg[k].name = nv; touch();
@@ -2382,6 +2544,7 @@ document.querySelector('#setdlg .setnav').addEventListener('keydown', e => {
   e.preventDefault(); setTab(n.dataset.stab, true); n.focus();
 });
 function renderRail(){
+  if(typeof notifSoon === 'function') notifSoon();
   const cnt = t => db.items.filter(i => i.type === t).length;
   const openActions = allActions().filter(x => !x.done && x.text.trim()).length;
   const planned = db.plan.filter(b => b.repeat ? !b.until || b.until >= todayStr() : !b.done && b.end >= todayStr()).length;
@@ -2395,7 +2558,7 @@ function renderRail(){
   $('#people').innerHTML = (db.people.length ? db.people.slice().sort((a, b) => a.localeCompare(b)).map(personTag).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>Type @name in an action</small></div>')
     + ((db.guests || []).length ? '<div class="guestlbl">Guests</div>' + db.guests.slice().sort((a, b) => a.localeCompare(b)).map(personTag).join('') : '');
   const raidOpen = k => allRaid().filter(x => x.raid === k && !x.done && x.text.trim()).length;
-  const rlbl = $('#raid').previousElementSibling; if(rlbl) rlbl.style.display = raidKinds().length ? '' : 'none';
+  const rlbl = $('#raid').previousElementSibling; if(rlbl){ rlbl.style.display = raidKinds().length ? '' : 'none'; rlbl.textContent = raidTitle(); }
   $('#raid').innerHTML = raidKinds().map(k =>`<div class="f ${filter === k ? 'on' : ''}" data-filter="${k}">${RAID_META[k].icon} ${RAID_META[k].many} <small>${raidOpen(k)}</small></div>`).join('');
   const tags = {}; db.items.forEach(i => i.tags.forEach(t => tags[t] = (tags[t] || 0) + 1));
   $('#cats').innerHTML = db.categories.length ? db.categories.map(c => `<div class="tag ${filter==='cat:'+c.id?'on':''}" data-filter="cat:${esc(c.id)}"><span class="cn"><i class="cdot" style="background:${esc(c.color)}"></i>${esc(c.name)}</span><small>${db.items.filter(i => i.category === c.id).length}</small></div>`).join('') : '<div class="tag" style="opacity:.5;cursor:default"><small>No categories</small></div>';
@@ -2477,18 +2640,20 @@ function renderList(){
   if(filter === 'task') html = `<div class="gh2"><a data-filter="actions">‹ Back to all actions</a></div>` + html;
   $('#items').innerHTML = (filter === 'note' ? html : v.length ? html : '') || `<div class="empty">${search ? 'Nothing matches your search.' : filtered && db.items.length ? 'Nothing matches these filters.<br><a data-act="resetfilters">Reset filters</a>' : 'Nothing here yet.<br>Use + to add something.'}</div>`;
 }
-const ckHead = i => { const n = i.checklist.filter(c => c.done).length; return `<h4>${i.type === 'note' ? 'RAID' : 'Action items'}${n || hideCkDone ? ` <label class="ckhide"><input type="checkbox" id="ckhide" ${hideCkDone ? 'checked' : ''}> Hide completed${n ? (hideCkDone ? ` (${n} hidden)` : ` (${n})`) : ''}</label>` : ''}</h4>`; };
+const ckHead = i => { const n = i.checklist.filter(c => c.done).length; return `<h4>${i.type === 'note' ? esc(raidShort()) : 'Action items'}${n || hideCkDone ? ` <label class="ckhide"><input type="checkbox" id="ckhide" ${hideCkDone ? 'checked' : ''}> Hide completed${n ? (hideCkDone ? ` (${n} hidden)` : ` (${n})`) : ''}</label>` : ''}</h4>`; };
 function ckRows(i){
   const inherit = catById(i.category), blank = inherit ? inherit.name + ' (inherited)' : 'No category';
-  return (hideCkDone ? i.checklist.filter(c => !c.done) : i.checklist).map(c => `<div class="ai ${c.done?'done':''}"><input type="checkbox" data-cc="${c.id}" class="${proposalOf(c) && proposalOf(c).kind === 'done' ? 'pcb' : ''}" ${c.done?'checked':''}>${propPill(c)}${raidBadge(c.raid || 'action')}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${propLine(c, c.id)}<div class="ctl"><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" autocomplete="off" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select></div>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
+  return (hideCkDone ? i.checklist.filter(c => !c.done) : i.checklist).map(c => `<div class="ai ${c.done?'done':''}" ${doneText(c) ? `title="${esc(doneText(c))}"` : ''}><input type="checkbox" data-cc="${c.id}" class="${proposalOf(c) && proposalOf(c).kind === 'done' ? 'pcb' : ''}" ${c.done?'checked':''}>${propPill(c)}${raidBadge(c.raid || 'action')}<textarea class="tx" rows="1" data-ci="${c.id}">${esc(c.text)}</textarea><button class="nb ${isBlank(c.note) ? '' : 'has'}" data-act="cknote" data-id="${c.id}" title="Notes">📝</button><button class="x" data-act="delck" data-id="${c.id}" title="Remove">×</button>${propLine(c, c.id)}<div class="ctl"><input type="date" data-cd="${c.id}" value="${esc(c.due)}" title="Due date"><input type="time" data-ct="${c.id}" value="${esc(c.time)}" title="Time"><select data-cs="${c.id}" title="Category: ${esc(catById(c.cat) ? catById(c.cat).name : blank)}">${catOptions(c.cat, blank)}</select><input type="text" class="who" autocomplete="off" data-ca="${c.id}" value="${esc(c.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)"><select class="rp" data-cr="${c.id}" title="Repeat">${repeatOptions(c.repeat)}</select></div>${openNotes.has(c.id) ? `<div class="rt cknote" contenteditable="true" spellcheck="true" data-cn="${c.id}" data-ph="Notes for this action…" ${isBlank(c.note) ? 'data-empty' : ''}>${forEditor(c.note)}</div>` : ''}</div>`).join('');
 }
 
 /* ---- Actions tab: every task + every checklist/action item, in one list ---- */
 const textTime = text => (parseWhen(text || '') || {}).time || '';
 const sortTime = (time, text) => time || textTime(text) || '99:99';          // untimed things go after timed ones; a time only written in the text still counts
-const RAID_BASE = {risk:{icon:'⚠', blurb:'Things that might go wrong. Each has an owner and a date to revisit.', done:'Resolved'}, issue:{icon:'⛔', blurb:'Problems happening now that need fixing.', done:'Resolved'}, decision:{icon:'✔', blurb:'Decisions made, or still needed. Tick one off once it is decided.', done:'Decided'}};
-const RAID_META = {};          // read it like before (RAID_META.risk.one); the names come from this file's RAID settings, so a renamed type shows its new name everywhere
-for(const k of RAID_KINDS) Object.defineProperty(RAID_META, k, {enumerable:true, get: () => ({one:raidOne(k), many:raidMany(k), icon:RAID_BASE[k].icon, add:'Add ' + aAn(raidOne(k)) + '…', blurb:RAID_BASE[k].blurb, done:RAID_BASE[k].done})});
+const RAID_BASE_RAW = {risk:{icon:'⚠', blurb:'Things that might go wrong. Each has an owner and a date to revisit.', done:'Resolved'}, issue:{icon:'⛔', blurb:'Problems happening now that need fixing.', done:'Resolved'}, decision:{icon:'✔', blurb:'Decisions made, or still needed. Tick one off once it is decided.', done:'Decided'}};
+const RAID_BASE = new Proxy({}, {get:(t, k) => { const b = RAID_BASE_RAW[k], c = raidC(k); return {icon:c.icon || (b ? b.icon : '◆'), blurb:b ? b.blurb : 'Your own list. Each one has an owner and a date, like an action.', done:b ? b.done : 'Done'}; }});
+const RAID_META = new Proxy({}, {
+  get:(t, k) => typeof k === 'string' && RAID_KINDS.includes(k) ? {one:raidOne(k), many:raidMany(k), icon:RAID_BASE[k].icon, add:'Add ' + aAn(raidOne(k)) + '…', blurb:RAID_BASE[k].blurb, done:RAID_BASE[k].done} : undefined,
+  has:(t, k) => RAID_KINDS.includes(k), ownKeys:() => [...RAID_KINDS], getOwnPropertyDescriptor:(t, k) => RAID_KINDS.includes(k) ? {enumerable:true, configurable:true} : undefined});          // read it like before (RAID_META.risk.one); the names come from this file's RAID settings
 const raidBadge = k => k === 'action' ? '<span class="rbadge t-action">Action</span>' : k && RAID_META[k] ? `<span class="rbadge t-${k}">${RAID_META[k].one}</span>` : '';
 function allRaid(){                                           // risks, issues and decisions: standalone ones, and ones tagged inside a note
   const out = [];
@@ -2528,10 +2693,13 @@ function groupActions(list){
   groups.forEach(g => g.rows.sort((p, q) => dk(p) < dk(q) ? -1 : dk(p) > dk(q) ? 1 : p.text.localeCompare(q.text)));
   return groups;
 }
-const propPill = o => { const p = proposalOf(o); return p && p.kind === 'done' ? `<span class="prop" title="${esc(p.by)} says this is done. You decide.">${esc(p.by)}: done?</span>` : ''; };
+const whenFmt = iso => iso ? new Date(iso).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : '';
+const doneText = o => o && o.done && o.doneAt ? 'Done ' + whenFmt(o.doneAt) + (o.doneBy && o.doneBy !== db.me ? ' · ' + o.doneBy : '') : '';
+const propPill = o => { const p = proposalOf(o); return p && p.kind === 'done' ? `<span class="prop" title="${esc(p.by)} says this is done. You decide.">${esc(p.by)}: done?</span>` : p && p.kind === 'back' ? `<span class="prop" title="${esc(p.by)} hands this back. You decide.">${esc(p.by)}: hands back</span>` : ''; };
 const propLine = (o, key) => {
   const p = proposalOf(o); if(!p) return '';
   const when = p.at ? new Date(p.at).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : '';
+  if(p.kind === 'back') return `<div class="propln"><span class="pn"><b>${esc(p.by)}</b> hands this back${p.note ? ': ' + esc(p.note) : ''} <small>${esc(when)}</small></span><span class="pbtns"><button class="ok" data-act="propok" data-key="${esc(key)}">↩ Take it back</button><button data-act="propno" data-key="${esc(key)}">✕ Keep with ${esc(p.by)}</button></span><span class="pwhy" hidden><input class="whyin" placeholder="Why? (optional)" autocomplete="off"><button class="ok" data-act="propsend" data-key="${esc(key)}">Send</button><button data-act="propback">Back</button></span></div>`;
   return p.kind === 'done'
     ? `<div class="propln"><span class="pn"><b>${esc(p.by)}</b> says this is done${p.note ? ': ' + esc(p.note) : ''} <small>${esc(when)}</small></span><span class="pbtns"><button class="ok" data-act="propok" data-key="${esc(key)}">✓ Confirm</button><button data-act="propno" data-key="${esc(key)}">✕ Not yet</button></span><span class="pwhy" hidden><input class="whyin" placeholder="Why not yet? (optional)" autocomplete="off"><button class="ok" data-act="propsend" data-key="${esc(key)}">Send</button><button data-act="propback">Back</button></span></div>`
     : `<div class="propln info"><span class="pn"><b>${esc(p.by)}</b>: ${esc(p.note)} <small>${esc(when)}</small></span><button data-act="propdismiss" data-key="${esc(key)}">Dismiss</button></div>`;
@@ -2539,10 +2707,11 @@ const propLine = (o, key) => {
 function decideProposal(key, ok, why){
   const ent = findEntry(key); if(!ent) return;
   const o = ent.kind === 'task' ? ent.item : ent.ck, p = proposalOf(o); if(!p) return;
-  if(ok && p.kind === 'done'){ completeToggle(o, ent.item, true); if(o.proposed){ settleProposal(p.id, 'confirmed'); o.proposed = null; } }
+  if(ok && p.kind === 'done'){ completeToggle(o, ent.item, true, p.by); if(o.proposed){ settleProposal(p.id, 'confirmed'); o.proposed = null; } }
+  else if(ok && p.kind === 'back'){ o.assignee = db.me || ''; settleProposal(p.id, 'confirmed'); o.proposed = null; }
   else { settleProposal(p.id, p.kind === 'note' ? 'dismissed' : 'declined', why || ''); o.proposed = null; }
   ent.item.updated = now(); touch(); refreshViews(); renderRail();
-  toast(ok && p.kind === 'done' ? 'Confirmed: marked done.' : p.kind === 'note' ? 'Dismissed.' : 'Not yet: ' + p.by + ' will see that it was declined.');
+  toast(ok && p.kind === 'done' ? 'Confirmed: marked done.' : ok && p.kind === 'back' ? 'Taken back: ' + (db.me ? 'it is now assigned to ' + db.me + '.' : 'it is now unassigned.') : p.kind === 'note' ? 'Dismissed.' : p.kind === 'back' ? 'Kept with ' + p.by + ': they will see that.' : 'Not yet: ' + p.by + ' will see that it was declined.');
 }
 const waitingSuggestions = () => db.proposals.filter(x => x.kind === 'new' && x.status === 'pending');
 function decideSuggestion(id, ok, why){
@@ -2564,7 +2733,7 @@ const sugRow = sg => {
     <span class="pwhy" hidden><input class="whyin" placeholder="Why not? (optional)" autocomplete="off"><button class="ok" data-act="sugsend" data-id="${esc(sg.id)}">Send</button><button data-act="propback">Back</button></span></div>`;
 };
 function waitingEntries(){ return allEntries().filter(x => x.text.trim() && proposalOf(x.kind === 'task' ? x.item : x.ck)); }
-const waitingRailHtml = () => { const n = waitingEntries().filter(x => proposalOf(x.kind === 'task' ? x.item : x.ck).kind === 'done').length + waitingSuggestions().length; return n ? `<div class="f ${filter === 'waiting' ? 'on' : ''}" data-filter="waiting" title="Actions that someone says are done, for you to confirm"><span>✓ To confirm</span> <small class="amb">${n}</small></div>` : ''; };
+const waitingRailHtml = () => { const n = waitingEntries().filter(x => proposalOf(x.kind === 'task' ? x.item : x.ck).kind !== 'note').length + waitingSuggestions().length; return n ? `<div class="f ${filter === 'waiting' ? 'on' : ''}" data-filter="waiting" title="Actions that someone says are done, or hands back, for you to confirm"><span>✓ To confirm</span> <small class="amb">${n}</small></div>` : ''; };
 function renderWaiting(){
   const all = waitingEntries(), groups = {};
   all.forEach(x => { const p = proposalOf(x.kind === 'task' ? x.item : x.ck); (groups[p.by] = groups[p.by] || []).push(x); });
@@ -2580,7 +2749,7 @@ function actRow(x){
   const po = x.kind === 'task' ? x.item : x.ck, pp = proposalOf(po);
   return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''} ${pp && pp.kind === 'done' ? 'hasprop' : ''}" data-key="${x.key}">
     <input type="checkbox" data-ax="done" class="${pp && pp.kind === 'done' ? 'pcb' : ''}" ${x.done?'checked':''}>
-    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea>${propLine(po, x.key)}<div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a></div></div>
+    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea>${propLine(po, x.key)}<div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a>${doneText(po) ? `<small class="donewhen">✓ ${esc(doneText(po))}</small>` : ''}</div></div>
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
     <input type="time" data-ax="time" value="${esc(x.time)}" title="Time">
     <select data-ax="repeat" title="Repeat">${repeatOptions(x.repeat)}</select>
@@ -2631,7 +2800,7 @@ function renderRaid(kind){
   list = list.filter(matchQ).filter(matchD);
   const groups = groupActions(list), opt = (v, l, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`;
   $('#detail').innerHTML = `
-    <div class="type">RAID log</div>
+    <div class="type">${esc(raidTitle())}</div>
     <h1 class="ptitle">${M.many}</h1>
     <p class="psub">${M.blurb} ${open} open. Write <b>${M.one.toUpperCase()}</b> (in capitals) at the start of a line in any note to add one from there. <a data-act="scantags" style="cursor:pointer;color:var(--accent);text-decoration:underline">Scan my notes now</a></p>
     ${pageSearchBox('Filter by text, owner, category or note…', true)}
@@ -3194,12 +3363,41 @@ function renderPeople(){
   $('#pme').innerHTML = `<option value="">(not set)</option>` + db.people.slice().sort((a, b) => a.localeCompare(b)).map(n => `<option value="${esc(n)}" ${db.me.toLowerCase() === n.toLowerCase() ? 'selected' : ''}>${esc(n)}</option>`).join('');
 }
 function renamePerson(old, nu){
-  nu = nu.trim(); if(!nu || nu === old) return;
-  const same = n => (n || '').toLowerCase() === old.toLowerCase();
-  db.items.forEach(i => { for(const o of [i, ...i.checklist]) if(same(o.assignee)){ o.assignee = nu; i.updated = now(); } });
+  nu = clipS(nu, 40).trim(); if(!nu || nu === old) return;
+  const same = n => (n || '').toLowerCase() === old.toLowerCase(), isNu = n => (n || '').toLowerCase() === nu.toLowerCase();
+  const swap = a => cleanPeople((a || []).map(n => same(n) ? nu : n));
+  db.items.forEach(i => {
+    for(const o of [i, ...i.checklist]){ if(same(o.assignee)){ o.assignee = nu; i.updated = now(); } if(o.proposed && same(o.proposed.by)) o.proposed.by = nu; }
+    if(i.shared){ const had = (i.shared.with || []).some(same); i.shared.with = swap(i.shared.with); i.shared.sent = swap(i.shared.sent); if(had) i.updated = now(); }
+  });
+  (db.proposals || []).forEach(x => { if(same(x.by)) x.by = nu; });
+  db.guests = swap(db.guests);
   db.people = cleanPeople(db.people.map(n => same(n) ? nu : n)); if(same(db.me)) db.me = nu;
   if(same(actPerson)){ actPerson = nu; saveUi(); }
-  touch(); renderPeople(); renderRail();
+  // the feed and the folder chosen for this person follow the name
+  const fo = (db.feeds || []).find(f => same(f.person)), fn = (db.feeds || []).find(f => isNu(f.person) && f !== fo);
+  if(fo){
+    fo.was = [...new Set([...(fo.was || []), old])].slice(-5);
+    if(fn){ fn.was = [...new Set([...(fn.was || []), ...fo.was])].slice(-5); if(fo.claude) fn.claude = true; db.feeds = db.feeds.filter(f => f !== fo); }
+    else fo.person = nu;
+  }
+  feedWritten.delete(old);
+  const ko = personKey(old), kn = personKey(nu);
+  if(ko !== kn && personDirs.has(ko)){
+    if(!personDirs.has(kn)){ personDirs.set(kn, personDirs.get(ko)); if(personState.has(ko)) personState.set(kn, personState.get(ko)); }
+    personDirs.delete(ko); personState.delete(ko); savePersonDirs();
+  }
+  const mf = (db.feeds || []).find(f => isNu(f.person)); if(mf && personDirs.has(kn)) mf.folder = personDirs.get(kn).name;
+  touch(); renderPeople(); renderRail(); if($('#setdlg').open) renderSettings();
+  if(db.feeds.some(f => f.on) || db.items.some(i => i.shared && i.shared.on)) runShareWrites(true);
+}
+function renameFromSettings(pn){
+  const nu = (prompt(`Rename “${pn}” to:`, pn) || '').trim();
+  if(!nu || nu === pn) return;
+  const exists = !!teamName(nu) && personKey(nu) !== personKey(pn);
+  if(!db.people.some(x => personKey(x) === personKey(pn))) addPerson(nu);
+  renamePerson(pn, nu); addPerson(nu);
+  toast(exists ? `Merged ${pn} into ${nu}.` : `Renamed ${pn} to ${nu}. Their feed, folder and shared pages moved with the name.`);
 }
 function removePerson(n){
   const same = x => (x || '').toLowerCase() === n.toLowerCase(), used = personUsed(n);
@@ -3252,7 +3450,7 @@ function renderDetail(){
   if(filter === 'waiting'){ renderWaiting(); return; }
   if(filter === 'inbox'){ renderInbox(); return; }
   if(filter === 'sharedwith'){ renderSharedWith(); return; }
-  if(['risk', 'issue', 'decision'].includes(filter)){ renderRaid(filter); return; }
+  if(isRaidKind(filter)){ renderRaid(filter); return; }
   if(filter === 'person'){ renderPerson(); return; }
   const el = $('#detail'), i = byId(selId);
   if(!i){ el.innerHTML = `<div class="welcome"><p style="font-size:18px;margin-bottom:12px">Nothing selected</p><button data-new="task">+ Action</button><button data-new="note">+ Note</button></div>`; return; }
@@ -3286,7 +3484,7 @@ function grow(t){
   const min = t.classList.contains('big') ? 320 : /cknote|anote/.test(t.className) ? 70 : 150;
   t.style.height = Math.max(t.scrollHeight + 2, min) + 'px';
 }
-const FULL_PAGES = ['actions', 'timeline', 'today', 'trash', 'risk', 'issue', 'decision', 'person', 'waiting', 'inbox', 'sharedwith'];          // pages that use the whole width instead of list + detail
+const FULL_PAGES = liveArr(() => ['actions', 'timeline', 'today', 'trash', 'person', 'waiting', 'inbox', 'sharedwith', ...RAID_KINDS]);          // pages that use the whole width instead of list + detail
 function applyMode(){
   const app = document.querySelector('.app');
   app.classList.toggle('actions-mode', FULL_PAGES.includes(filter)); app.classList.toggle('rail-off', railOff); app.classList.toggle('list-off', listOff);
@@ -3295,7 +3493,8 @@ function applyMode(){
   l.textContent = listOff ? '»' : '«'; l.title = listOff ? 'Show the list' : 'Hide the list';
 }
 function renderAll(){
-  if(RAID_KINDS.includes(filter) && !raidOn(filter)){ filter = 'today'; saveUi(); }          // that RAID page was switched off
+  syncRaidCss();
+  if((RAID_BUILTIN.includes(filter) || RAID_ID_RE.test(filter)) && !raidOn(filter)){ filter = 'today'; saveUi(); }          // that RAID page was switched off or deleted
   if(MOBILE){ railOff = false; listOff = false; metaOff = true; if(!(['today', 'actions', 'note'].includes(filter) || RAID_KINDS.includes(filter))) filter = 'today'; }          // phone: only these pages
   applyMode();
   $('#q').value = search; $('#hidedone').checked = hideDone;
@@ -3608,10 +3807,10 @@ const proposalsNameFor = assignedName => assignedName.replace(/^assigned/i, 'pro
 const isMyProposals = name => { const n = name.toLowerCase(); return n === 'proposals.json' || n.endsWith('.proposals.json') || (!!srcSlug() && n === 'proposals.' + srcSlug() + '.json'); };
 const ensureSourceId = () => { if(!db.sourceId){ db.sourceId = 'src' + uid(); touch(); } return db.sourceId; };          // tells two notebooks that picked the same label apart
 const feedChecked = new Set();
-function lastProposalFor(id){ const e = db.proposals.filter(x => x.item === id).sort((a, b) => b.at.localeCompare(a.at))[0]; return e ? {id:e.id, status:e.status, at:e.at, decidedAt:e.decidedAt || '', why:e.status === 'declined' ? e.why || '' : ''} : null; }
+function lastProposalFor(id){ const e = db.proposals.filter(x => x.item === id).sort((a, b) => b.at.localeCompare(a.at))[0]; return e ? {id:e.id, kind:e.kind, status:e.status, at:e.at, decidedAt:e.decidedAt || '', why:e.status === 'declined' ? e.why || '' : ''} : null; }
 function feedItems(f){
   const want = f.person.toLowerCase(), cutoff = Date.now() - 14 * 864e5, out = [];
-  const entry = (o, it, isCk) => ({id:isCk ? o.id : it.id, type:(isCk ? o.raid : it.raid) || 'action', text:isCk ? o.text : it.title, done:!!o.done, due:o.due || '', time:o.time || '', details:htmlToPlain(isCk ? o.note : it.body).slice(0, 600), inNote:isCk,
+  const entry = (o, it, isCk) => ({id:isCk ? o.id : it.id, type:raidWire(isCk ? o.raid : it.raid) || 'action', text:isCk ? o.text : it.title, done:!!o.done, ...(o.done && o.doneAt ? {doneAt:o.doneAt, doneBy:o.doneBy || ''} : {}), due:o.due || '', time:o.time || '', details:htmlToPlain(isCk ? o.note : it.body).slice(0, 600), inNote:isCk,
     ...(isCk && f.titles ? {noteTitle:it.title} : {}), ...(isCk && it.shared && it.shared.on && (it.shared.with || []).some(w => w.toLowerCase() === want) ? {page:{id:it.id, title:it.title, file:shareFileName(it)}} : {}), proposal:lastProposalFor(isCk ? o.id : it.id)});
   for(const it of db.items){
     if(it.type === 'task' && (it.assignee || '').toLowerCase() === want && it.title.trim() && (!it.done || Date.parse(it.updated) > cutoff)) out.push(entry(it, it, false));
@@ -3640,7 +3839,7 @@ function feedPayload(f){
     howToPropose:{
       file:proposalsNameFor(fileName) + ' (in this same folder, next to this file). It is written only by ' + f.person + '. The owner decides: a proposal never changes anything until they press Confirm.',
       template:{app:'notebook-proposals', format:1, from:f.person, proposals:[{id:'unique-id', item:'<id of an item above>', kind:'done', note:'short plain-text note', at:now()}]},
-      kinds:{new:'a suggested new action for the owner: {kind:"new", text, due, note}; it appears for them to Add or decline', done:'says the action is done; shows “done?” beside its checkbox for the owner to confirm', note:'a short progress note shown on the action (the owner can dismiss it)'},
+      kinds:{back:'hands this action back to the owner, who presses Take it back and it becomes theirs again; use it when you cannot do it', new:'a suggested new action for the owner: {kind:"new", text, due, note}; it appears for them to Add or decline', done:'says the action is done; shows “done?” beside its checkbox for the owner to confirm', note:'a short progress note shown on the action (the owner can dismiss it)'},
       rules:'Only items assigned to ' + f.person + ' are accepted. Reuse the same file: add new proposals with new ids. Each item above shows its latest proposal and what the owner decided.'
     },
     suggestions:db.proposals.filter(x => x.kind === 'new' && x.by.toLowerCase() === f.person.toLowerCase()).slice(0, 20).map(x => ({id:x.id, text:x.text, status:x.status, at:x.at, why:x.status === 'declined' ? x.why || '' : ''})),
@@ -3675,7 +3874,14 @@ async function hasFolder(person){ await personDirsReady; return personDirs.has(p
 async function pickPersonDir(person){
   if(!shareOk()) throw new Error('This browser can’t open folders (turn on the File System Access flag in Brave).');
   const h = await showDirectoryPicker({mode:'readwrite', id:'nb-' + feedSlug(person)});
-  for(const [k, o] of personDirs) if(k !== personKey(person)){ let same = false; try { same = await o.isSameEntry(h); } catch {} if(same) throw new Error(`That folder is already used for ${k}. Pick a different one, so each person only sees their own files.`); }
+  for(const [k, o] of [...personDirs]) if(k !== personKey(person)){
+    let same = false; try { same = await o.isSameEntry(h); } catch {}
+    if(!same) continue;
+    const other = (db.feeds || []).find(f => personKey(f.person) === k), nm = other ? other.person : k;
+    if(!confirm(`“${h.name}” is already ${nm}’s folder. Move it to ${person}? ${nm} will stop getting a feed until you choose another folder for them.`)) throw new Error(`That folder is already used for ${nm}. Pick a different one, so each person only sees their own files.`);
+    personDirs.delete(k); personState.delete(k); if(other){ other.on = false; other.folder = ''; }
+    break;
+  }
   personDirs.set(personKey(person), h); personState.set(personKey(person), 'ok'); await savePersonDirs();
   const f = (db.feeds || []).find(x => personKey(x.person) === personKey(person)); if(f) f.folder = h.name;
   touch(); return h;
@@ -3718,7 +3924,7 @@ function sharePayload(i){
       id:i.id, title:i.title, kind:i.type === 'task' ? 'action' : 'note', notebook:nb ? nb.name : '', category:catName(i.category), tags:i.tags, pinned:!!i.pinned, pinnedEverywhere:!!i.pinAll,
       date:i.autoDt ? '' : i.date, time:i.autoDt ? '' : i.time, attendees:i.attendees, assignedTo:i.assignee || '', created:i.created, updated:i.updated,
       body:i.body, bodyText:htmlToPlain(i.body),
-      actionItems:i.checklist.filter(c => c.text.trim()).map(c => ({id:c.id, text:c.text, type:c.raid || 'action', done:c.done, due:c.due, time:c.time, assignedTo:c.assignee || '', category:catName(c.cat || i.category), repeats:c.repeat ? describeRepeat(c.repeat) : '', note:htmlToPlain(c.note), fromTaggedLine:c.src === 'tag'}))
+      actionItems:i.checklist.filter(c => c.text.trim()).map(c => ({id:c.id, text:c.text, type:raidWire(c.raid) || 'action', done:c.done, ...(c.done && c.doneAt ? {doneAt:c.doneAt, doneBy:c.doneBy || ''} : {}), due:c.due, time:c.time, assignedTo:c.assignee || '', category:catName(c.cat || i.category), repeats:c.repeat ? describeRepeat(c.repeat) : '', note:htmlToPlain(c.note), fromTaggedLine:c.src === 'tag'}))
     },
     summary:{actionItems:i.checklist.filter(c => c.text.trim()).length, open},
     readable:itemToMd(i),
@@ -3894,11 +4100,12 @@ const replySeen = new Map();                              // file → last modif
 let replyBusy = false, repItem = '';
 function ingestProposalFile(data, folderSlug){
   if(!data || data.app !== 'notebook-proposals' || typeof data.from !== 'string') return 0;
-  const from = clipS(data.from, 40).trim(); if(!from || feedSlug(from) !== folderSlug) return 0;          // the folder says who it is
-  const feed = (db.feeds || []).find(f => f.on && f.person.toLowerCase() === from.toLowerCase()); if(!feed) return 0;
+  const given = clipS(data.from, 40).trim(), feed = (db.feeds || []).find(f => f.on && feedSlug(f.person) === folderSlug); if(!given || !feed) return 0;
+  if(![feed.person, ...(feed.was || [])].some(n => feedSlug(n) === feedSlug(given))) return 0;          // the folder says who it is (a name the person used to have counts too)
+  const from = feed.person;
   let n = 0;
   for(const raw of (Array.isArray(data.proposals) ? data.proposals : []).slice(0, 200)){
-    const id = raw && /^[\w\-.:]{1,80}$/.test(String(raw.id || '')) ? String(raw.id) : '', kind = raw && (raw.kind === 'done' || raw.kind === 'note' || raw.kind === 'new') ? raw.kind : '';
+    const id = raw && /^[\w\-.:]{1,80}$/.test(String(raw.id || '')) ? String(raw.id) : '', kind = raw && (raw.kind === 'done' || raw.kind === 'note' || raw.kind === 'new' || raw.kind === 'back') ? raw.kind : '';
     if(!id || !kind || db.proposals.some(x => x.id === id)) continue;
     if(kind === 'new'){                                        // a suggested new action: the owner adds it or not
       const text = clipS(raw.text, 200).trim(); if(!text) continue;
@@ -3909,12 +4116,13 @@ function ingestProposalFile(data, folderSlug){
     const o = ent ? (ent.kind === 'task' ? ent.item : ent.ck) : null;
     if(!o){ entry.status = 'ignored'; entry.why = 'no such action'; }
     else if((o.assignee || '').toLowerCase() !== from.toLowerCase()){ entry.status = 'ignored'; entry.why = 'not assigned to ' + from; }
-    else if(kind === 'done' && o.done){ entry.status = 'ignored'; entry.why = 'already done'; }
+    else if((kind === 'done' || kind === 'back') && o.done){ entry.status = 'ignored'; entry.why = 'already done'; }
     else { o.proposed = {id, kind, by:from, at, note}; ent.item.updated = ent.item.updated; n++; }
     logProposal(entry);
   }
   return n;
 }
+const authorOk = (a, slug) => feedSlug(a) === slug || (db.feeds || []).some(f => feedSlug(f.person) === slug && (f.was || []).some(w => feedSlug(w) === feedSlug(a)));
 function ingestReplyFile(data, folderSlug){
   if(!data || data.app !== 'notebook-reply' || typeof data.page !== 'string') return null;
   const i = byId(data.page); if(!i) return null;
@@ -3923,7 +4131,7 @@ function ingestReplyFile(data, folderSlug){
   const list = Array.isArray(data.replies) ? data.replies : data.reply ? [data.reply] : [];
   const added = [];
   for(const raw of list.slice(0, 50)){
-    const r = cleanReply(raw, false); if(!r || i.replies.some(x => x.id === r.id) || (folderSlug && feedSlug(r.author) !== folderSlug)) continue;          // in a person's folder, only that person can be the author
+    const r = cleanReply(raw, false); if(!r || i.replies.some(x => x.id === r.id) || (folderSlug && !authorOk(r.author, folderSlug))) continue;          // in a person's folder, only that person can be the author
     r.changes.forEach(ch => {                                  // a tick from the person the action is assigned to becomes a “done?” on the action itself
       if(ch.kind !== 'tick' || !ch.done) return;
       const c = findAction(i, ch); if(!c || c === 'many' || c.done || (c.assignee || '').toLowerCase() !== r.author.toLowerCase()) return;
@@ -4368,7 +4576,7 @@ function renderToday(){
 function qaParse(raw){
   let text = String(raw).trim(), kind = 'task';
   const words = {note:'note', meeting:'meeting', action:'task', task:'task', n:'note', m:'meeting', a:'task', t:'task'};          // what you can type before the colon; the RAID words depend on this file's settings
-  for(const k of raidKinds()){ words[RAID_DEFAULT[k].toLowerCase()] = k; words[raidOne(k).toLowerCase()] = k; words[k[0]] = k; }
+  for(const k of raidKinds()){ words[RAID_DEFAULT[k].toLowerCase()] = k; words[raidOne(k).toLowerCase()] = k; if(!RAID_ID_RE.test(k)) words[k[0]] = k; }
   const m = text.match(/^([A-Za-z][\w-]{0,19})\s*:\s*/);
   if(m && words[m[1].toLowerCase()]){ kind = words[m[1].toLowerCase()]; text = text.slice(m[0].length).trim(); }
   const p = text ? parseWhen(text) : null;
@@ -4545,12 +4753,14 @@ async function inboxPropose(ib, p){          // ib is one view: the answer goes 
   ib.mine = cur.proposals; if(ib._s) ib._s.mine = cur.proposals;
 }
 function inboxItemState(ib, it){
-  const mine = (ib.mine || []).filter(x => x.item === it.id && x.kind === 'done').sort((a, b) => (b.at || '').localeCompare(a.at || ''))[0], lp = it.proposal;
+  const mine = (ib.mine || []).filter(x => x.item === it.id && (x.kind === 'done' || x.kind === 'back')).sort((a, b) => (b.at || '').localeCompare(a.at || ''))[0], lp = it.proposal, who = inboxOwner(ib);
   if(it.done) return {k:'done', t:'✓ Done'};
+  const isBack = x => !!x && x.kind === 'back', lpBack = !!lp && (lp.kind === 'back' || (!!mine && lp.id === mine.id && isBack(mine)));
+  const wait = b => ({k:'sent', t: b ? 'Handed back: waiting for ' + who + ' to take it' : 'Sent: waiting for ' + who + ' to confirm'});
   const answeredAfter = !!(lp && lp.decidedAt && mine && lp.decidedAt > (mine.at || ''));          // the owner answered after you sent yours, so that answer is the one to show (whichever proposal it was attached to)
-  if(mine && !answeredAfter && (!lp || (lp.id !== mine.id && (mine.at || '') > (lp.at || '')))) return {k:'sent', t:'Sent: waiting for ' + inboxOwner(ib) + ' to confirm'};
-  if(lp && lp.status === 'pending') return {k:'sent', t:'Sent: waiting for ' + inboxOwner(ib) + ' to confirm'};
-  if(lp && lp.status === 'declined') return {k:'declined', t:'Not yet: ' + inboxOwner(ib) + ' did not confirm it' + (lp.why ? ': “' + lp.why + '”' : '')};
+  if(mine && !answeredAfter && (!lp || (lp.id !== mine.id && (mine.at || '') > (lp.at || '')))) return wait(isBack(mine));
+  if(lp && lp.status === 'pending') return wait(lpBack);
+  if(lp && lp.status === 'declined') return {k:'declined', t:(lpBack ? who + ' kept this with you' : 'Not yet: ' + who + ' did not confirm it') + (lp.why ? ': “' + lp.why + '”' : '')};
   return {k:'open', t:''};
 }
 const inboxRailHtml = () => {
@@ -4570,12 +4780,12 @@ function renderInbox(){
       + (sugg.length ? `<div class="sgmine">${sugg.map(x => `<span class="sgchip ${esc(x.status)}">${esc(x.text.slice(0, 40))}: ${x.status === 'pending' ? 'waiting' : x.status === 'confirmed' ? 'added' : 'declined' + (x.why ? ' (“' + esc(x.why) + '”)' : '')}</span>`).join('')}</div>` : '')
       + (items.map(it => {
         const st = inboxItemState(ib, it), pg = it.page && ib.pages.find(p => p.data.page.id === it.page.id);
-        return `<div class="inrow ${st.k}" data-ib="${esc(ib.id)}" data-src="${esc(ib.src)}" data-item="${esc(it.id)}"><div class="intext"><b>${esc(it.text)}</b><small>${esc(({action:'Action', risk:'Risk', issue:'Issue', decision:'Decision'})[it.type] || 'Action')}${it.due ? ' · due ' + esc(fmtDay(it.due)) + (it.time ? ' ' + esc(fmtTime(it.time)) : '') : ''}${it.noteTitle ? ' · in “' + esc(it.noteTitle) + '”' : ''}</small>${it.details ? `<div class="indet">${esc(it.details)}</div>` : ''}${pg ? `<a class="inlink" data-act="inpage" data-id="${esc(ib.id)}" data-file="${esc(pg.name)}">Open the page “${esc(pg.data.page.title || 'Untitled')}”</a>` : ''}</div>
-          <div class="inact">${st.k === 'done' ? '<span class="rst">✓ Done</span>' : st.k === 'sent' ? `<span class="rst">${esc(st.t)}</span>` : `${st.k === 'declined' ? `<span class="rst bad">${esc(st.t)}</span>` : ''}<button data-act="inprop">Mark done…</button>`}</div>
+        return `<div class="inrow ${st.k}" data-ib="${esc(ib.id)}" data-src="${esc(ib.src)}" data-item="${esc(it.id)}"><div class="intext"><b>${esc(it.text)}</b><small>${esc(({action:'Action', risk:'Risk', issue:'Issue', decision:'Decision'})[it.type] || (it.type ? capFirst(it.type) : 'Action'))}${it.due ? ' · due ' + esc(fmtDay(it.due)) + (it.time ? ' ' + esc(fmtTime(it.time)) : '') : ''}${it.noteTitle ? ' · in “' + esc(it.noteTitle) + '”' : ''}</small>${it.details ? `<div class="indet">${esc(it.details)}</div>` : ''}${pg ? `<a class="inlink" data-act="inpage" data-id="${esc(ib.id)}" data-file="${esc(pg.name)}">Open the page “${esc(pg.data.page.title || 'Untitled')}”</a>` : ''}</div>
+          <div class="inact">${st.k === 'done' ? '<span class="rst">✓ Done</span>' : st.k === 'sent' ? `<span class="rst">${esc(st.t)}</span>` : `${st.k === 'declined' ? `<span class="rst bad">${esc(st.t)}</span>` : ''}<button data-act="inprop">Mark done…</button> <button data-act="inback" title="Give this back to ${esc(inboxOwner(ib))}. Type a note first if you want to say why">↩ Hand back</button>`}</div>
           <div class="inform" hidden><input class="innote" placeholder="Short note for ${esc(inboxOwner(ib))} (optional)" autocomplete="off"><button class="ok" data-act="insend">Send</button></div></div>`;
       }).join('') || '<div class="empty">Nothing is assigned to you right now.</div>');
   }).join('');
-  $('#detail').innerHTML = `<div class="type">From the team</div><h1 class="ptitle">Assigned to me</h1><p class="psub">Actions other people have assigned to you. Marking one done sends them a request: they make the final call.</p>${blocks || '<div class="empty">Connect a folder in Settings to see what has been assigned to you.</div>'}`;
+  $('#detail').innerHTML = `<div class="type">From the team</div><h1 class="ptitle">Assigned to me</h1><p class="psub">Actions other people have assigned to you. Marking one done, or handing it back, sends them a request: they make the final call.</p>${blocks || '<div class="empty">Connect a folder in Settings to see what has been assigned to you.</div>'}`;
 }
 function renderSharedWith(){
   if(sharedView){
@@ -4611,7 +4821,7 @@ function todayAdd(){ const el = $('#tqa'); if(!el) return; if(!el.value.trim()){
 const SHORTCUTS = [
   ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['Q / Ctrl + Q', 'Quick add (type it in plain words). Ctrl + Q also works while typing in a note']]],
   ['Go to', [['1', 'Today'], ['2', 'Actions'], ['3', 'Notes'], ['4', 'Timeline'], ['5', 'Risks'], ['6', 'Issues'], ['7', 'Decisions'], ['8', 'Trash'], ['/', 'Search everything']]],
-  ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P / Shift + P', 'Pin to the top of its notebook / pin everywhere (press again to unpin)'], ['Ctrl + S', 'Save right now'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
+  ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P / Shift + P', 'Pin to the top of its notebook / pin everywhere (press again to unpin)'], ['Ctrl + S', 'Save right now'], ['today()', 'Type it anywhere and it turns into today’s date, yyyy-mm-dd'], ['Ctrl + ;', 'The same date, from the keyboard, wherever the cursor is'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
   ['In notes', [['Ctrl + B / I / U', 'Bold, italic, underline'], ['Ctrl + K', 'Add a link'], ['Ctrl + Shift + H', 'Insert a horizontal line (or type --- and press Enter)'], ['Tab / Shift + Tab', 'Indent / outdent (in a table: next / previous cell)'], ['Click a bullet', 'Fold / unfold its sub-points'], ['ACTION  RISK  ISSUE  DECISION', 'Start a line with one in CAPITALS (a colon is optional): it becomes an entry, the line is highlighted, and “by Friday 3pm” and “@Sam” fill its date and owner'], ['- or 1. then space', 'Start a bulleted or numbered list']]],
   ['Timeline', [['← →', 'Previous / next week or month'], ['T', 'Jump to today'], ['Drag across days', 'Make a block'], ['Click a block', 'Edit it and read its description']]],
   ['Mouse tips', [['Right-click a row', 'Open, mark done, pin, duplicate, copy, export, category, trash'], ['Right-click on any page', 'Today, Actions and Timeline have the same menu'], ['Drag a due date chip', 'Timeline “Due dates” view: reschedule it'], ['Drag a page onto a notebook', 'Moves it there (or use right-click → Notebook)']]],
@@ -4621,12 +4831,13 @@ const SHORTCUTS = [
 const TOUR = [
   {t:'Welcome to My Notebook', x:'<p>A quick look around, about a minute. Each step lights up one area of the app.</p><p>Use <kbd>→</kbd> and <kbd>←</kbd> or the buttons. <kbd>Esc</kbd> leaves the tour at any time.</p>'},
   {sel:['#filters'], t:'Your views', x:'<p><b>Today</b> is what is due or past due, plus what is on your timeline today. <b>Actions</b> lists every action, whether it stands alone or sits inside a note. <b>Notes</b> holds your pages, grouped into notebooks along the top of the list. <b>Timeline</b> is a week or month calendar where you can drag across days to plan a block.</p><p>The numbers show what is still open.</p>'},
-  {sel:['#raid'], t:'RAID log', x:'<p>Risks, Issues and Decisions in one place. Tag a line in any note (the <b>＋ Tag…</b> menu in the editor) and it appears here, with an owner and a due date if you want.</p>'},
+  {sel:['#raid'], get t(){ return raidTitle(); }, get x(){ return `<p>${esc(listAnd(raidKinds().map(k => raidMany(k))))} in one place. Tag a line in any note (the <b>＋ Tag…</b> menu in the editor) and it appears here, with an owner and a due date if you want.</p>`; }},
   {sel:['#cats', '#people', '#tags'], t:'Categories, people and tags', x:'<p><b>Categories</b> colour-code your items. <b>People</b> is your team: type <b>@Sam</b> in an action to give it to Sam, and click a name to see everything assigned to them. <b>Tags</b> are the #words you add to a note.</p>'},
   {sel:['#q'], t:'Search', x:'<p>Searches everything: titles, notes, action items and tags. Press <kbd>/</kbd> from anywhere to jump here.</p>'},
   {sel:['#newbtn'], t:'Add something', x:'<p>The <b>+</b> button adds an <b>Action</b> or a <b>Note</b>. <b>Quick add</b> (press <kbd>Q</kbd>) lets you type it in plain words, like “call Sam by Friday 3pm”.</p>'},
   {sel:['.list .opts'], t:'Sort and filter the list', x:'<p>Order the list by recent edits or by date, hide completed items, or filter by a date range or only dated items.</p>'},
   {sel:['#detail'], t:'The editor', x:'<p>Open any item and it appears here. In a note, the toolbar above formats text. Start a line with <b>[]</b> for a checkbox. Tag a line <b>ACTION</b>, <b>RISK</b>, <b>ISSUE</b> or <b>DECISION</b> and it becomes a tracked item you will see in the views on the left.</p><p>Right-click almost anything for more: pin, duplicate, export, move to trash.</p>'},
+  {sel:['.rail .railtop .bellbtn'], t:'Notifications', x:'<p>The 🔔 bell counts what is new: things waiting for your OK, replies, what is due today, and (if you are a teammate) what was assigned to you. Click it for the list, and turn on browser pop-ups there if you want them.</p>'},
   {sel:['#fileinfo'], t:'Saving, updates and Settings', x:'<p>Everything saves to your JSON file by itself. If saving ever stops, a red bar appears at the top and says why.</p><p>The version number shows what is new. <b>Settings</b> is where you set up your team, share pages and assigned actions with other people, change the theme, and get back earlier versions.</p>'},
   {t:'That is the tour', x:'<p>A few habits worth learning: <kbd>N</kbd> new action, <kbd>3</kbd> go to Notes, <kbd>Ctrl</kbd>+<kbd>Enter</kbd> mark done.</p><p>You can run this tour again any time from <b>Settings &gt; Help &gt; Take the tour</b>. All the shortcuts are listed right beside it.</p>'}
 ];
@@ -4699,13 +4910,177 @@ window.addEventListener('keydown', e => {                // while the tour is up
   else if(e.key !== 'Tab' && !(e.key === 'Enter' || e.key === ' ')) e.preventDefault();
 }, true);
 window.addEventListener('resize', () => { if(tourOpen) tourShow(); });
+/* ---- Notifications: a bell with what is new, and (if you allow it) browser pop-ups while the app is open ---- */
+const NOTIF_KEY = 'notebook-notifs';
+let notifSt = null, notifList = [], notifTimer = null;
+function notifGet(){
+  if(notifSt) return notifSt;
+  let j = null; try { j = JSON.parse(localStorage.getItem(NOTIF_KEY) || 'null'); } catch {}
+  j = j && typeof j === 'object' ? j : {};
+  notifSt = {base:+j.base || 0, known:Array.isArray(j.known) ? j.known.slice(-500) : [], seen:Array.isArray(j.seen) ? j.seen.slice(-500) : [], popups:!!j.popups, timed:j.timed !== false, daily:j.daily !== false};
+  return notifSt;
+}
+function notifSave(){ const st = notifGet(); st.known = st.known.slice(-500); st.seen = st.seen.slice(-500); try { localStorage.setItem(NOTIF_KEY, JSON.stringify(st)); } catch {} }
+const nowHm = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+function collectNotifs(){
+  const out = [], T = todayStr(), st = notifGet();
+  for(const x of waitingEntries()){ const o = x.kind === 'task' ? x.item : x.ck, pr = proposalOf(o); if(!pr) continue;
+    out.push({id:'p:' + pr.id, icon:pr.kind === 'back' ? '↩' : pr.kind === 'note' ? '💬' : '✓', text:`${pr.by} ${pr.kind === 'back' ? 'hands back' : pr.kind === 'note' ? 'wrote' : 'says done'}: ${x.text}`, sub:pr.note || '', go:'waiting'}); }
+  for(const sg of waitingSuggestions()) out.push({id:'s:' + sg.id, icon:'＋', text:`${sg.by} suggests: ${sg.text}`, sub:sg.note || '', go:'waiting'});
+  for(const i of db.items){ const n = pendingOf(i); if(n){ const last = (i.replies || []).filter(r => r.changes.length ? r.changes.some(c => c.status === 'pending') : !r.ack).pop(); out.push({id:'r:' + i.id + ':' + (last ? last.id : n), icon:'💬', text:`${last ? last.author : 'Someone'} replied on “${i.title || 'Untitled'}”`, sub:n + ' to review', go:'note', sel:i.id}); } }
+  const dueNow = allEntries().filter(x => !x.done && x.text.trim() && x.due && x.due <= T), over = dueNow.filter(x => x.due < T).length, today = dueNow.length - over;
+  if(dueNow.length) out.push({id:'d:' + T, icon:'☀', text:`${today} due today${over ? `, ${over} past due` : ''}`, sub:'', go:'today', digest:true});
+  const hm = nowHm();
+  for(const x of dueNow.filter(y => y.due === T && y.time && y.time <= hm)) out.push({id:`t:${x.key}:${T}:${x.time}`, icon:'⏰', text:`Due now: ${x.text}`, sub:fmtTime(x.time), go:'today', timed:true});
+  for(const ib of inboxViews()){
+    if(!ib.assigned) continue; const who = inboxOwner(ib);
+    for(const it of ib.assigned.items || []){
+      if(!it.done) out.push({id:`a:${ib.id}:${ib.src}:${it.id}`, icon:'☰', text:`${who} assigned you: ${it.text}`, sub:it.due ? 'due ' + fmtDay(it.due) : '', go:'inbox'});
+      const lp = it.proposal; if(lp && lp.status === 'declined' && lp.decidedAt) out.push({id:'n:' + lp.id, icon:'↺', text:`${who} ${lp.kind === 'back' ? 'kept this with you' : 'said not yet'}: ${it.text}`, sub:lp.why || '', go:'inbox'});
+    }
+    for(const sg of ib.assigned.suggestions || []) if(sg.status === 'confirmed' || sg.status === 'declined') out.push({id:`g:${sg.id}:${sg.status}`, icon:'↺', text:`${who} ${sg.status === 'confirmed' ? 'added' : 'declined'} your suggestion: ${sg.text}`, sub:sg.why || '', go:'inbox'});
+  }
+  return out;
+}
+function notifUnread(){ const seen = new Set(notifGet().seen); return notifList.filter(n => !seen.has(n.id)); }
+function notifBadge(){
+  const n = notifUnread().length;
+  document.querySelectorAll('.bellbtn').forEach(b => { const c = b.querySelector('.bellN'); if(!c) return; c.hidden = !n; c.textContent = n > 99 ? '99+' : String(n); b.title = n ? `Notifications: ${n} new` : 'Notifications'; });
+}
+const notifPerm = () => { if(typeof window.Notification !== 'function') return 'unsupported'; const p = Notification.permission; return p === 'default' && notifGet().granted ? 'granted' : p; };          // some browsers keep saying “default” for a while after you press Allow
+const notifCan = () => !MOBILE && notifPerm() === 'granted';
+function notifPopup(n){
+  try { const nt = new Notification('My Notebook', {body:n.text + (n.sub ? '\n' + n.sub : ''), tag:n.id}); nt.onclick = () => { try { window.focus(); } catch {} notifGo(n); try { nt.close(); } catch {} }; } catch {}
+}
+function notifRefresh(){
+  if(typeof db === 'undefined' || !db || !Array.isArray(db.items)) return;
+  const st = notifGet(); let list = []; try { list = collectNotifs(); } catch { return; }
+  notifList = list;
+  const firstRun = !st.base; if(firstRun) st.base = Date.now();
+  const quiet = firstRun || Date.now() - st.base < 60000;          // whatever already exists when you first get notifications is background, not news
+  const fresh = list.filter(n => !st.known.includes(n.id));
+  for(const n of fresh){ st.known.push(n.id); if(quiet) st.seen.push(n.id); }
+  if(fresh.length || firstRun) notifSave();
+  if(!quiet && st.popups && notifCan()){
+    const want = fresh.filter(n => n.digest ? st.daily : n.timed ? st.timed : true);
+    if(want.length > 3) notifPopup({id:'sum:' + Date.now(), text:`${want.length} new things in My Notebook`, sub:'', go:want[0].go});
+    else want.forEach(notifPopup);
+  }
+  notifBadge();
+  if($('#notifdlg').open) renderNotifList();
+}
+const notifSoon = () => { clearTimeout(notifTimer); notifTimer = setTimeout(notifRefresh, 400); };
+function renderNotifList(){
+  const seen = new Set(notifGet().seen), st = notifGet();
+  const rows = notifList.slice().sort((a, b) => (seen.has(a.id) ? 1 : 0) - (seen.has(b.id) ? 1 : 0));
+  $('#notiflist').innerHTML = rows.length ? rows.map(n => `<div class="nrow ${seen.has(n.id) ? '' : 'new'}" data-nid="${esc(n.id)}"><span class="ni">${n.icon}</span><span>${esc(n.text)}${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</span></div>`).join('') : '<div class="nnone">Nothing new. You are all caught up.</div>';
+  const btn = $('#notifpopbtn');
+  if(MOBILE || typeof window.Notification !== 'function'){ btn.hidden = true; }
+  else { btn.hidden = false; btn.textContent = st.popups ? '🔕 Turn off pop-ups' : '🔔 Turn on pop-ups'; }
+}
+function notifGo(n){
+  const st = notifGet(); if(!st.seen.includes(n.id)){ st.seen.push(n.id); notifSave(); }
+  if($('#notifdlg').open) $('#notifdlg').close();
+  if(n.sel){ filter = 'note'; enterNotes(); selId = n.sel; saveUi(); applyMode(); renderAll(); }
+  else if(n.go) goView(n.go);
+  notifBadge();
+}
+function openNotifs(){ notifRefresh(); renderNotifList(); if(!$('#notifdlg').open) $('#notifdlg').showModal(); }
+function notifReadAll(){ const st = notifGet(); notifList.forEach(n => { if(!st.seen.includes(n.id)) st.seen.push(n.id); }); notifSave(); notifBadge(); renderNotifList(); }
+async function notifSetPopups(on){
+  const st = notifGet();
+  if(!on){ st.popups = false; notifSave(); renderNotifList(); renderAlertSettings(); return; }
+  if(typeof window.Notification !== 'function'){ toast('This browser cannot show notifications.'); renderAlertSettings(); return; }
+  let perm = Notification.permission;
+  if(perm === 'default'){ try { perm = await Notification.requestPermission(); } catch { perm = 'denied'; } }
+  if(perm === 'granted'){ st.popups = true; st.granted = true; notifSave(); toast('Pop-ups are on. They show while the app is open in a tab.'); }
+  else if(perm === 'denied'){ st.popups = false; st.granted = false; notifSave(); toast('Your browser is blocking notifications for this site. Allow them in the browser’s site settings, then try again.'); }
+  else { st.popups = false; notifSave(); toast('The browser did not ask, or the question was closed. Try again and choose Allow.'); }
+  renderNotifList(); renderAlertSettings();
+}
+function renderAlertSettings(){
+  const el = $('#setalerts'); if(!el) return; const st = notifGet();
+  const perm = notifPerm();
+  el.innerHTML = MOBILE ? '<div class="setline" style="font-size:13px;color:var(--mute)">Pop-ups are not used in the phone view. The bell still lists what is new.</div>' : `
+    <div class="setline" style="font-size:13px;color:var(--mute);display:block">The bell at the top of the sidebar lists what is new. Pop-ups are optional: the browser shows them while this app is open in a tab (a closed browser cannot). They are kept per computer.</div>
+    <label class="alertrow"><input type="checkbox" id="alertpop" ${st.popups ? 'checked' : ''} ${perm === 'unsupported' ? 'disabled' : ''}> Show pop-ups from the browser <small>${st.popups && perm !== 'granted' && perm !== 'denied' ? 'Waiting for the browser to allow it. If you pressed Allow and this stays, reload the page once.' : perm === 'granted' ? 'The browser allows notifications from this app.' : perm === 'denied' ? 'The browser is blocking notifications for this site. Allow them in the browser’s site settings.' : perm === 'unsupported' ? 'This browser cannot show notifications.' : 'The browser will ask you the first time.'}</small></label>
+    <label class="alertrow"><input type="checkbox" id="alerttimed" ${st.timed ? 'checked' : ''}> Remind me when an action with a time comes due <small>For actions due today that have a time, at that time.</small></label>
+    <label class="alertrow"><input type="checkbox" id="alertdaily" ${st.daily ? 'checked' : ''}> A summary of what is due, once a day <small>The first time the app is open each day: how many are due today and past due.</small></label>
+    <div class="setbtns"><button id="alerttest" ${perm === 'granted' ? '' : 'disabled'}>Send a test pop-up</button></div>`;
+}
+$('#setalerts').addEventListener('change', e => {
+  const st = notifGet();
+  if(e.target.id === 'alertpop') notifSetPopups(e.target.checked);
+  else if(e.target.id === 'alerttimed'){ st.timed = e.target.checked; notifSave(); }
+  else if(e.target.id === 'alertdaily'){ st.daily = e.target.checked; notifSave(); }
+});
+$('#setalerts').addEventListener('click', e => { if(e.target.id === 'alerttest' && notifCan()) notifPopup({id:'test:' + Date.now(), text:'This is a test. Pop-ups are working.', sub:'', go:''}); });
+$('#notiflist').addEventListener('click', e => { const r = e.target.closest('[data-nid]'); if(!r) return; const n = notifList.find(x => x.id === r.dataset.nid); if(n) notifGo(n); });
+setInterval(() => { if(!document.hidden || notifGet().popups) notifRefresh(); }, 30000);
+/* ---- Section headings (Past due, Today, a person's name…) fold: click one and what is under it hides. Kept per computer. ---- */
+const GH_KEY = 'notebook-ghfold';
+let ghFold = new Set(); try { ghFold = new Set(JSON.parse(localStorage.getItem(GH_KEY) || '[]')); } catch {}
+const ghKey = h => filter + (filter === 'person' ? ':' + actPerson : '') + '|' + (h.firstChild ? h.firstChild.textContent : h.textContent).trim();
+function ghApply(){
+  const root = document.getElementById('detail'); if(!root) return;
+  root.querySelectorAll('h4.gh').forEach(h => {
+    const k = ghKey(h), folded = ghFold.has(k);
+    h.dataset.gk = k; h.tabIndex = 0; h.setAttribute('role', 'button'); h.setAttribute('aria-expanded', folded ? 'false' : 'true'); h.title = folded ? 'Click to show' : 'Click to fold';
+    h.classList.toggle('folded', folded);
+    for(let n = h.nextElementSibling; n && !n.matches('h4.gh'); n = n.nextElementSibling) n.classList.toggle('gh-hid', folded);
+  });
+}
+function ghToggle(h){
+  const k = h.dataset.gk; if(!k) return;
+  if(ghFold.has(k)) ghFold.delete(k); else ghFold.add(k);
+  try { localStorage.setItem(GH_KEY, JSON.stringify([...ghFold].slice(-300))); } catch {}
+  ghApply();
+  if(!ghFold.has(k)) document.getElementById('detail').querySelectorAll('textarea').forEach(t => { try { grow(t); } catch {} });          // rows that were hidden get their height back
+}
+document.getElementById('detail').addEventListener('click', e => { const h = e.target.closest && e.target.closest('h4.gh'); if(h && h.dataset.gk && !e.target.closest('a, button, input, select')) ghToggle(h); });
+document.getElementById('detail').addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('h4.gh[data-gk]')){ e.preventDefault(); ghToggle(e.target); } });
+new MutationObserver(() => ghApply()).observe(document.getElementById('detail'), {childList:true});
+
+/* ---- today() turns into today's date as soon as the closing bracket is typed ---- */
+document.addEventListener('input', e => {
+  if(e.inputType !== 'insertText' || e.data !== ')' || e.isComposing) return;
+  const el = e.target; if(!el) return;
+  if(el.isContentEditable){
+    const sel = getSelection(); if(!sel.rangeCount || !sel.isCollapsed) return;
+    const n = sel.anchorNode, off = sel.anchorOffset; if(!n || n.nodeType !== 3 || off < 7 || !/(^|[^\w])today\(\)$/i.test(n.nodeValue.slice(0, off))) return;
+    const r = document.createRange(); r.setStart(n, off - 7); r.setEnd(n, off); sel.removeAllRanges(); sel.addRange(r);
+    let ok = false; try { ok = document.execCommand('insertText', false, todayStr()); } catch {}
+    if(!ok){                                   // (a browser refuses this while another edit is still running)
+      n.deleteData(off - 7, 7); n.insertData(off - 7, todayStr());
+      const c = document.createRange(); c.setStart(n, off - 7 + todayStr().length); c.collapse(true); sel.removeAllRanges(); sel.addRange(c);
+      el.dispatchEvent(new InputEvent('input', {bubbles:true, inputType:'insertText', data:todayStr()}));
+    }
+  } else if(el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.getAttribute('type') || ''))){
+    if(el.readOnly || el.disabled) return;
+    const pos = el.selectionStart; if(pos == null || pos < 7 || !/(^|[^\w])today\(\)$/i.test(el.value.slice(0, pos))) return;
+    el.setSelectionRange(pos - 7, pos);
+    let ok = false; try { ok = document.execCommand('insertText', false, todayStr()); } catch {}
+    if(!ok){ el.setRangeText(todayStr(), pos - 7, pos, 'end'); el.dispatchEvent(new Event('input', {bubbles:true})); }
+  }
+});
+function insertToday(){
+  const d = todayStr(), el = document.activeElement;
+  const text = !!el && !el.readOnly && !el.disabled && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.getAttribute('type') || '')) || el.isContentEditable);
+  if(!text){
+    const done = () => toast(`Today’s date, ${d}, is copied. Click where it should go and press Ctrl + V.`);
+    try { navigator.clipboard.writeText(d).then(done, () => toast(`Today’s date is ${d}. Click in a text box first and press Ctrl + ; again.`)); } catch { toast(`Today’s date is ${d}. Click in a text box first and press Ctrl + ; again.`); }
+    return;
+  }
+  let ok = false; try { ok = document.execCommand('insertText', false, d); } catch {}
+  if(!ok && el.setRangeText){ try { el.setRangeText(d, el.selectionStart, el.selectionEnd, 'end'); el.dispatchEvent(new Event('input', {bubbles:true})); } catch {} }
+}
 function openShortcuts(){
-  const goRows = rows => rows.filter(([k]) => !(['5', '6', '7'].includes(k) && !raidOn(RAID_KINDS[+k - 5]))).map(([k, d]) => ['5', '6', '7'].includes(k) ? [k, raidMany(RAID_KINDS[+k - 5])] : [k, d]);          // the RAID pages use their names from Settings
+  const goRows = rows => { const vk = viewKeys(); return rows.filter(([k]) => !(['5', '6', '7'].includes(k) && !vk[+k - 1])).map(([k, d]) => ['5', '6', '7'].includes(k) ? [k, raidMany(vk[+k - 1])] : [k, d]); };          // the RAID pages use their names from Settings
   $('#kbbody').innerHTML = '<div class="kbgrid">' + SHORTCUTS.map(([h, rows0]) => [h, h === 'Go to' ? goRows(rows0) : rows0]).map(([h, rows]) => `<div><h4>${esc(h)}</h4>${rows.map(([k, d]) => `<div class="kr"><span>${esc(d)}</span><span>${k.split(' / ').map(x => `<kbd>${esc(x)}</kbd>`).join(' ')}</span></div>`).join('')}</div>`).join('') + '</div>';
   $('#kbdlg').showModal();
 }
-const VIEW_KEYS = ['today', 'actions', 'note', 'timeline', 'risk', 'issue', 'decision', 'trash'];
-function goView(v){ if(RAID_KINDS.includes(v) && !raidOn(v)) return; filter = v; if(v === 'note') enterNotes(); saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
+const viewKeys = () => ['today', 'actions', 'note', 'timeline', ...[0, 1, 2].map(k => raidKinds()[k] || ''), 'trash'];          // keys 5, 6 and 7 go to the first three types in use
+function goView(v){ if(!v || (RAID_KINDS.includes(v) && !raidOn(v))) return; filter = v; if(v === 'note') enterNotes(); saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); }
 document.addEventListener('keydown', e => {
   const t = e.target, typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
   if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === 'Enter'){          // done / not done, from anywhere
@@ -4715,6 +5090,9 @@ document.addEventListener('keydown', e => {
     if(ai){ const c = i.checklist.find(x => x.id === (ai.querySelector('[data-ci]') || {dataset:{}}).dataset.ci); if(c){ e.preventDefault(); completeToggle(c, i, !c.done); edited(i); renderDetail(); } return; }
     if(i.type === 'task'){ e.preventDefault(); completeToggle(i, i, !i.done); edited(i); renderDetail(); }
     return;
+  }
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === ';'){          // today's date as yyyy-mm-dd, wherever the cursor is
+    e.preventDefault(); insertToday(); return;
   }
   if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'q' || e.key === 'Q')){          // quick add, even while typing in a note; the action is its own, not tied to the note
     if(!document.querySelector('dialog[open]')){ e.preventDefault(); openQuickAdd(); }
@@ -4726,7 +5104,7 @@ document.addEventListener('keydown', e => {
   else if(k === 'n'){ e.preventDefault(); newItem('task'); } else if(k === 'N'){ e.preventDefault(); newItem('note'); }
   else if(k === 'q' || k === 'Q'){ e.preventDefault(); openQuickAdd(); }
   else if(k === '/'){ e.preventDefault(); if(FULL_PAGES.includes(filter)){ filter = 'note'; saveUi(); fixSelection(); renderAll(); } if(listOff){ listOff = false; applyMode(); } $('#q').focus(); }
-  else if(/^[1-8]$/.test(k)){ e.preventDefault(); goView(VIEW_KEYS[+k - 1]); }
+  else if(/^[1-8]$/.test(k)){ e.preventDefault(); goView(viewKeys()[+k - 1]); }
   else if((k === 'p' || k === 'P') && !FULL_PAGES.includes(filter)){ const i = byId(selId); if(i){ e.preventDefault(); if(k === 'P' && i.type === 'note') setPin(i, i.pinAll ? 'off' : 'all'); else setPin(i, i.pinned ? 'off' : 'nb'); } }
 });
 
@@ -5063,6 +5441,7 @@ document.addEventListener('click', e => {
     else if(act === 'inboxconnect') connectInbox();
     else if(act === 'inboxallow'){ (async () => { for(const ib of inboxes){ try { await ib.handle.requestPermission({mode:'readwrite'}); } catch {} } refreshInboxes(true); })(); }
     else if(act === 'inboxremove'){ inboxes = inboxes.filter(x => x.id !== a.dataset.id); saveInboxList(); inboxSig = ''; renderRail(); renderSettings(); if(['inbox', 'sharedwith'].includes(filter)) renderDetail(); }
+    else if(act === 'inback'){ const row = a.closest('.inrow'), ib = row && viewOf(row.dataset.ib, row.dataset.src); if(ib){ const note = (row.querySelector('.innote') || {value:''}).value.trim(); inboxPropose(ib, {item:row.dataset.item, kind:'back', note}).then(() => { toast(`Handed back to ${inboxOwner(ib)}. They confirm it.`); renderInbox(); }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
     else if(act === 'inprop'){ const row = a.closest('.inrow'), f = row && row.querySelector('.inform'); if(f){ f.hidden = !f.hidden; const n = f.querySelector('.innote'); if(!f.hidden && n) n.focus(); } }
     else if(act === 'insend'){ const row = a.closest('.inrow'), ib = row && viewOf(row.dataset.ib, row.dataset.src); if(ib){ const note = row.querySelector('.innote').value.trim(); inboxPropose(ib, {item:row.dataset.item, kind:'done', note}).then(() => { toast(`Sent to ${inboxOwner(ib)}. They make the final call.`); renderInbox(); }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
     else if(act === 'insuggest'){ const ib = viewOf(a.dataset.id, a.dataset.src), box = a.closest('.inform2'); if(ib && box){ const text = box.querySelector('.sgtext').value.trim(); if(!text){ toast('Say what should be done first.'); return; } inboxPropose(ib, {kind:'new', text, due:box.querySelector('.sgdue').value, note:box.querySelector('.sgnote').value.trim()}).then(() => { toast(`Suggested to ${inboxOwner(ib)}: they can add it or decline.`); renderInbox(); }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
@@ -5081,6 +5460,10 @@ document.addEventListener('click', e => {
     else if(act === 'guestremove'){ const n = a.dataset.n; if(personUsed(n) && !confirm(`Remove ${n}? Their actions become unassigned.`)) return; db.items.forEach(i => { for(const o of [i, ...i.checklist]) if((o.assignee || '').toLowerCase() === n.toLowerCase()){ o.assignee = ''; i.updated = now(); } }); db.guests = db.guests.filter(g => g !== n); if(actPerson.toLowerCase() === n.toLowerCase()){ actPerson = ''; saveUi(); } touch(); renderSettings(); renderAll(); }
     else if(act === 'nameclose'){ nameChosen(undefined); }
     else if(act === 'cpadd') addClaudeProject();
+    else if(act === 'raidadd') addRaidType();
+    else if(act === 'raiddel') deleteRaidType(a.dataset.k);
+    else if(act === 'raidrestore'){ const k = a.dataset.k, nm = RAID_DEFAULT[k]; if(raidWordTaken(nm, k)){ toast(`“${nm}” is used by another type now. Rename that one first.`); } else { db.raidCfg[k].del = false; db.raidCfg[k].on = true; touch(); renderAll(); renderRaidSettings(); toast(`Brought back ${nm}.`); } }
+    else if(act === 'feedrename') renameFromSettings(a.dataset.p);
     else if(act === 'feedcopy') copyClaudeLine(a.dataset.p);
     else if(act === 'teamadd'){ const inp = $('#teamadd'), v = inp ? inp.value.trim() : ''; if(v){ if(teamName(v)) toast(`${teamName(v)} is already on the team.`); else { addPerson(capFirst(v)); touch(); renderRail(); } renderSettings(); } }
     else if(act === 'teammerge') mergePerson(a.dataset.from, a.dataset.to);
@@ -5088,6 +5471,8 @@ document.addEventListener('click', e => {
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
     else if(act === 'tour') startTour();
+    else if(act === 'notifs') openNotifs(); else if(act === 'notifclose') $('#notifdlg').close(); else if(act === 'notifread') notifReadAll();
+    else if(act === 'notifpop'){ const st = notifGet(); notifSetPopups(!(st.popups && typeof window.Notification === 'function' && Notification.permission === 'granted')); }
     else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
     else if(act === 'quickadd'){ $('#newmenu').classList.remove('open'); openQuickAdd(); }
     else if(act === 'qasave'){ if(quickAdd($('#qai').value)) $('#qadlg').close(); else $('#qai').focus(); } else if(act === 'qacancel') $('#qadlg').close();
@@ -5456,7 +5841,7 @@ function mobChrome(){
   document.body.dataset.mv = mv;
   const cur = RAID_KINDS.includes(filter) ? 'raid' : filter;
   const tabs = [['today', '☀', 'Today'], ['actions', '☐', 'Actions'], ['note', '✎', 'Notes']];
-  if(raidKinds().length) tabs.push(['raid', '⚠', 'RAID']);
+  if(raidKinds().length) tabs.push(['raid', '⚠', raidShort()]);
   $('#mobtabs').innerHTML = tabs.map(([k, ic, l]) => `<a data-mob="tab" data-tab="${k}" class="${cur === k ? 'on' : ''}"><i>${ic}</i>${l}</a>`).join('');
   let tip = ''; try { tip = !mobStandalone() && !localStorage.getItem('notebook-mobtip') ? '<div class="tip"><span>Tip: tap Share, then Add to Home Screen, so Safari keeps this copy.</span><a data-mob="tipclose">Got it</a></div>' : ''; } catch {}
   $('#mobstrip').innerHTML = mobRec ? `<span>Read-only copy of <b>${esc(mobRec.name)}</b> · loaded ${esc(new Date(mobRec.at).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}))}</span><button data-mob="pick">Refresh</button>${tip}` : '';
@@ -5527,7 +5912,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261108151827';</script>
+<script>window.NB_BUILD = '20261109155123';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

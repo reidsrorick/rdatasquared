@@ -1,4 +1,66 @@
-{"version":"1.39.0","build":"20261108151827","changelog":[
+{"version":"1.45.0","build":"20261109155123","changelog":[
+ {
+  "v": "1.45.0",
+  "title": "Fold sections, today(), and when things were done",
+  "items": [
+   "Section headings can be folded. Click a heading (Past due, Today, Tomorrow, On your timeline, and the groups on Actions, the RAID pages, a person's page and To confirm, where each assigned person is a group) and everything under it hides. The count stays in the heading. The app remembers what you folded on this computer",
+   "Type today() anywhere (a note, an action, the search box, a title) and it turns into today's date as yyyy-mm-dd the moment you type the closing bracket. Ctrl + ; still works too",
+   "When you tick an action done, the app now keeps the date and time, and who it was (for example Claude, when you confirm their “done?”). It shows as “✓ Done Nov 9, 3:12 PM” on the Actions and Today pages, in the tooltip of a ticked action item in a note, and in the files for other people (doneAt, doneBy). Actions that were already done before this version have no date",
+   "Fixed: turning on browser pop-ups no longer unticks itself after you press Allow. The box now shows your choice, and a note says if the browser has not allowed it yet"
+  ]
+ },
+ {
+  "v": "1.44.0",
+  "title": "Your own RAID types",
+  "items": [
+   "Settings > RAID types is now a list you control. Add your own types (say Idea, Question or Blocker), rename any of them, change the icon, switch them on and off, and delete the ones you do not want. At least one type always stays. Risk, Issue and Decision are only the starting set, and you can bring one back with Restore",
+   "You can also rename the section itself (it starts as “RAID log”), so a notebook that is not about RAID can call it something else. The name shows in the sidebar, on the pages and in the phone view",
+   "Deleting a type keeps its items: they become plain actions, and the message after has Undo. Lines already written in your notes keep working",
+   "Your own types work everywhere the built-in ones do: the sidebar, the ＋ Tag… menu and typing the word in capitals, the Type menu, quick add (type idea: …), the page for each type, and the files shared with a Claude project (the type's name is used)",
+   "Number keys 5, 6 and 7 now go to the first three types you have switched on, whatever they are called",
+   "Older files open exactly as before: all three starting types on, with their usual names"
+  ]
+ },
+ {
+  "v": "1.43.0",
+  "title": "Notifications",
+  "items": [
+   "A 🔔 bell at the top of the sidebar (and in the top bar of a narrow window) shows how many things are new. Click it for the list: things waiting for your OK (done?, hand backs, suggestions), replies waiting on a shared page, what is due today or past due, and actions that are due at a certain time. If you are a teammate it also lists what was assigned to you and the owner's answers",
+   "Click an item to jump to it. Items you have not looked at are in bold, and Mark all read clears the count",
+   "Browser pop-ups: turn them on from the bell or Settings > Alerts, and the browser shows a notification when something new arrives, a timed action comes due, and once a day for what is due today. They only appear while the app is open in a tab. Nothing pops up for things that were already there when you first turned them on",
+   "Settings has two new tabs: Alerts (pop-ups, due-time reminders, the daily summary, and a test button) and RAID types, which used to share the Appearance tab"
+  ]
+ },
+ {
+  "v": "1.42.0",
+  "title": "Hand an action back",
+  "items": [
+   "On the Assigned to me page, each action now has a ↩ Hand back button next to Mark done… One click sends it back to whoever assigned it (type a note in the box first if you want to say why)",
+   "The owner sees it in To confirm as “… hands this back”, with Take it back (it becomes theirs again) or Keep with … (with an optional reason). Nothing changes until they press one",
+   "The teammate's screen says “Handed back: waiting for … to take it”, and shows the reason if the owner kept it with them",
+   "A Claude project can hand an action back too: the feed lists it as kind “back”"
+  ]
+ },
+ {
+  "v": "1.41.0",
+  "title": "Renaming a person carries everything",
+  "items": [
+   "Renaming a person now moves their feed, their folder, the pages shared with them and their earlier answers to the new name, not just their actions. Before, you got a second empty feed under the new name",
+   "Settings > Team has a Rename… button on every feed row (the People editor in the sidebar does the same thing). If the new name already exists, the two are merged into one",
+   "If you pick a folder that another person already uses, the app now asks “Move it to this name?” instead of refusing. The other person stops getting a feed until you choose a folder for them",
+   "A project that still answers under the old name is understood, so a rename never loses its answers",
+   "The name Claude is only offered in Settings > Team while there is no Claude on your team yet"
+  ]
+ },
+ {
+  "v": "1.40.0",
+  "title": "Insert today's date",
+  "items": [
+   "Press Ctrl + ; to type today's date as yyyy-mm-dd (for example 2026-11-09) wherever the cursor is: in a note, an action, the search box, a title or any other text box. It is the same shortcut Excel uses",
+   "If the cursor is not in a text box, the date is copied instead, with a message, so you can paste it where you want it",
+   "It is listed in the keyboard shortcuts sheet (press ?)"
+  ]
+ },
  {
   "v": "1.39.0",
   "title": "Claude projects",
