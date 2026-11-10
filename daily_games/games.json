@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-10-26",
+  "updated": "2026-11-10",
   "categories": [
     "Movies & TV",
     "Words",
@@ -257,6 +257,46 @@
       "url": "https://krillion.io/",
       "desc": "Trivia where rare answers dive deepest.",
       "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "custom_playplain_mvqqddah",
+      "name": "Playplain",
+      "url": "https://playplain.app/",
+      "desc": "",
+      "category": "Words",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "custom_versle_mvqqdowv",
+      "name": "Versle",
+      "url": "https://versle.web.app/",
+      "desc": "",
+      "category": "Faith",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "custom_versefix_mwausvmo",
+      "name": "Versefix",
+      "url": "https://dailybiblefix.com/versefix.html",
+      "desc": "",
+      "category": "Faith",
+      "tags": [
+        "Daily"
+      ]
+    },
+    {
+      "id": "custom_searchfix_mwaut6fe",
+      "name": "Searchfix",
+      "url": "https://dailybiblefix.com/searchfix.html",
+      "desc": "",
+      "category": "Faith",
       "tags": [
         "Daily"
       ]
