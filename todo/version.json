@@ -1,4 +1,21 @@
-{"version":"1.46.0","build":"20261109173518","changelog":[
+{"version":"1.46.2","build":"20261110114809","changelog":[
+ {
+  "v": "1.46.2",
+  "title": "Ticking “this is a Claude project” offers the Name_Claude name",
+  "items": [
+   "When you tick “this is a Claude project” on a person whose name does not already have Claude at either end (for example Notebook), the app asks whether to rename them to Notebook_Claude. Their actions, feed, folder and shared pages move with the name. Say no and nothing is renamed"
+  ]
+ },
+ {
+  "v": "1.46.1",
+  "title": "Claude projects: Name_Claude names, @Notebook finds Notebook_Claude, rename keeps the folder",
+  "items": [
+   "New Claude projects are named like Notebook_Claude (your name first, then _Claude) instead of Claude-Notebook",
+   "Typing @notebook finds Notebook_Claude, and also Claude_Notebook or Claude-Notebook if you already have one named that way. The @ list shows the match as you type, and a name you type in an Assign box is matched the same way",
+   "Renaming a person whose files live in the old shared/for-name folder now keeps using that same folder, instead of leaving the new name with no folder",
+   "Settings > Team: when Notebook and Notebook_Claude both exist, each row says how many open actions are under the other one and offers Merge, so the open count and the People list agree. Merging no longer throws away a Claude project's feed or folder"
+  ]
+ },
  {
   "v": "1.46.0",
   "title": "Add from a person's page, Open on the new-action message",

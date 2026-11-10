@@ -889,8 +889,25 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.46.0';
+const APP_VERSION = '1.46.2';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.46.2",
+  "title": "Ticking “this is a Claude project” offers the Name_Claude name",
+  "items": [
+   "When you tick “this is a Claude project” on a person whose name does not already have Claude at either end (for example Notebook), the app asks whether to rename them to Notebook_Claude. Their actions, feed, folder and shared pages move with the name. Say no and nothing is renamed"
+  ]
+ },
+ {
+  "v": "1.46.1",
+  "title": "Claude projects: Name_Claude names, @Notebook finds Notebook_Claude, rename keeps the folder",
+  "items": [
+   "New Claude projects are named like Notebook_Claude (your name first, then _Claude) instead of Claude-Notebook",
+   "Typing @notebook finds Notebook_Claude, and also Claude_Notebook or Claude-Notebook if you already have one named that way. The @ list shows the match as you type, and a name you type in an Assign box is matched the same way",
+   "Renaming a person whose files live in the old shared/for-name folder now keeps using that same folder, instead of leaving the new name with no folder",
+   "Settings > Team: when Notebook and Notebook_Claude both exist, each row says how many open actions are under the other one and offers Merge, so the open count and the People list agree. Merging no longer throws away a Claude project's feed or folder"
+  ]
+ },
  {
   "v": "1.46.0",
   "title": "Add from a person's page, Open on the new-action message",
@@ -2402,12 +2419,14 @@ function renderSettings(){
   $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
   $('#settheme').value = theme; renderInboxSettings(); renderRaidSettings(); renderAlertSettings();
-  const hasClaude = [...db.people, ...(db.feeds || []).map(f => f.person)].some(n => /^claude/i.test(n)), names = [...new Set([...(hasClaude ? [] : ['Claude']), ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
+  const hasClaude = [...db.people, ...(db.feeds || []).map(f => f.person)].some(n => /^claude/i.test(n) || claudeStem(n)) || (db.feeds || []).some(f => f.claude), names = [...new Set([...(hasClaude ? [] : ['Claude']), ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
   const sl = srcSlug();
   $('#setfeeds').innerHTML = `<div class="feedrow srclabelrow"><label>Label my files as <input type="text" id="srclabel" value="${esc(db.label || '')}" placeholder="${esc(db.me || 'e.g. Reid')}" maxlength="40" autocomplete="off" style="width:150px"></label><small>${sl ? `Your feeds are written as <b>assigned.${esc(sl)}.json</b>${db.label ? '' : ' (taken from your “I am” name)'}` : 'No label, so the files are named assigned.json'}. People you share with can see where actions came from, and two notebooks can use one folder without overwriting each other. Leave it empty to use your “I am” name.</small></div>` + names.map(n => { const f = (db.feeds || []).find(x => x.person.toLowerCase() === n.toLowerCase()), openN = feedItems({person:n, titles:false}).filter(x => !x.done).length;
-    const sim = db.people.includes(n) ? nearNames(n).filter(m => db.people.includes(m))[0] : '';
-    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b>${f && f.claude ? ' <small class="cpchip">Claude project</small>' : ''} <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}</small></label><span class="feedmerge"><button data-act="feedrename" data-p="${esc(n)}" title="Rename this person. Their feed, folder and shared pages move with the name">Rename…</button></span>${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><label class="feedt"><input type="checkbox" data-feedc="${esc(n)}" ${f.claude ? 'checked' : ''}> this is a Claude project <small>(adds start-here notes to the feed and a Markdown copy of each page you share)</small></label>${f.claude ? `<span class="feedp"><small>${esc(claudeStatus(n))}</small> <button data-act="feedcopy" data-p="${esc(n)}" title="A paragraph to paste into that project’s CLAUDE.md so every session checks the feed">Copy line for CLAUDE.md</button></span>` : ''}<span class="feedp">${folderLine(n)}</span>` : ''}</div>`; }).join('')
-    + guestRowsHtml() + `<div class="feedrow teamadd"><input type="text" id="cpadd" placeholder="Add a Claude project, e.g. Website…" autocomplete="off"><button data-act="cpadd" title="Makes a team member called Claude-Website and asks which folder is that project’s">Add Claude project</button></div><div class="feedrow teamadd"><input type="text" id="teamadd" placeholder="Add a team member…" autocomplete="off"><button data-act="teamadd">Add</button></div><label class="feedrow"><input type="checkbox" id="teamstrict" ${db.strict ? 'checked' : ''}> Only assign to people on the team (ask me before adding a new name)</label>`;
+    const kin = kinNames(n), kinOpen = kin.map(k => [k, allEntries().filter(x => !x.done && (x.assignee || '').toLowerCase() === k.toLowerCase()).length]).filter(o => o[1]);
+    const kinBtn = kin.map(k => { const aff = !!claudeStem(n); return aff === !!claudeStem(k) ? '' : aff ? `<button data-act="teammerge" data-from="${esc(k)}" data-to="${esc(n)}">Merge ${esc(k)} into ${esc(n)}</button>` : `<button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(k)}">Merge into ${esc(k)}</button>`; }).join('');
+    const sim = kin.length ? '' : db.people.includes(n) ? nearNames(n).filter(m => db.people.includes(m))[0] : '';
+    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b>${f && f.claude ? ' <small class="cpchip">Claude project</small>' : ''} <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}${kinOpen.map(o => ` · <b class="bad">${o[1]} more under “${esc(o[0])}”</b>`).join('')}</small></label><span class="feedmerge"><button data-act="feedrename" data-p="${esc(n)}" title="Rename this person. Their feed, folder and shared pages move with the name">Rename…</button></span>${kinBtn ? `<span class="feedmerge"><small>same project</small> ${kinBtn}</span>` : ''}${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><label class="feedt"><input type="checkbox" data-feedc="${esc(n)}" ${f.claude ? 'checked' : ''}> this is a Claude project <small>(adds start-here notes to the feed and a Markdown copy of each page you share)</small></label>${f.claude ? `<span class="feedp"><small>${esc(claudeStatus(n))}</small> <button data-act="feedcopy" data-p="${esc(n)}" title="A paragraph to paste into that project’s CLAUDE.md so every session checks the feed">Copy line for CLAUDE.md</button></span>` : ''}<span class="feedp">${folderLine(n)}</span>` : ''}</div>`; }).join('')
+    + guestRowsHtml() + `<div class="feedrow teamadd"><input type="text" id="cpadd" placeholder="Add a Claude project, e.g. Website…" autocomplete="off"><button data-act="cpadd" title="Makes a team member called Website_Claude and asks which folder is that project’s">Add Claude project</button></div><div class="feedrow teamadd"><input type="text" id="teamadd" placeholder="Add a team member…" autocomplete="off"><button data-act="teamadd">Add</button></div><label class="feedrow"><input type="checkbox" id="teamstrict" ${db.strict ? 'checked' : ''}> Only assign to people on the team (ask me before adding a new name)</label>`;
 }
 function renderRaidSettings(){
   const all = allRaid(), cfg = raidCfgNow(), live = raidLive(cfg), dead = RAID_BUILTIN.filter(k => cfg[k] && cfg[k].del);
@@ -2503,7 +2522,7 @@ async function addClaudeProject(){
   if(!raw){ toast('Type a name for the project first, such as Website.'); return; }
   let nm = raw.replace(/[^\w-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
   if(!nm){ toast('Use letters or numbers in the name.'); return; }
-  if(!/^claude/i.test(nm)) nm = 'Claude-' + nm;
+  if(!claudeStem(nm) && !/^claude$/i.test(nm)) nm = nm + '_Claude';          // your name first, then _Claude
   nm = teamName(capFirst(nm)) || capFirst(nm);
   let f = (db.feeds || []).find(x => personKey(x.person) === personKey(nm));
   if(f && f.claude && f.on){ toast(`${nm} is already a Claude project.`); return; }
@@ -2534,7 +2553,12 @@ $('#setfeeds').addEventListener('change', e => {
   if(t.id === 'teamstrict'){ db.strict = t.checked; touch(); }
   else if(t.id === 'srclabel'){ db.label = clipS(t.value, 40).trim(); touch(); runShareWrites(true); renderSettings(); }
   else if(t.dataset.feed) setFeed(t.dataset.feed, t.checked);
-  else if(t.dataset.feedc){ const f = (db.feeds || []).find(x => x.person.toLowerCase() === t.dataset.feedc.toLowerCase()); if(f){ f.claude = t.checked; if(t.checked) f.titles = true; touch(); runShareWrites(true); renderSettings(); } }
+  else if(t.dataset.feedc){ const f = (db.feeds || []).find(x => x.person.toLowerCase() === t.dataset.feedc.toLowerCase()); if(f){ f.claude = t.checked; if(t.checked) f.titles = true; touch();
+    const nu = f.person.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '') + '_Claude';          // offer your name first, then _Claude
+    if(t.checked && !claudeStem(f.person) && !/^claude$/i.test(f.person) && !teamName(nu) && !(db.feeds || []).some(x => personKey(x.person) === personKey(nu)) && confirm(`Rename “${f.person}” to “${nu}”? Their actions, feed, folder and shared pages move with the name.`)){
+      const old = f.person; renamePerson(old, nu); addPerson(nu); toast(`Renamed ${old} to ${nu}.`);
+    }
+    runShareWrites(true); renderSettings(); } }
   else if(t.dataset.feedt){ const f = (db.feeds || []).find(x => x.person.toLowerCase() === t.dataset.feedt.toLowerCase()); if(f){ f.titles = t.checked; touch(); runShareWrites(true); } }
 });
 function setTab(t, save){
@@ -2892,14 +2916,26 @@ function openItemById(id){ const oi = byId(id); if(!oi) return; filter = viewFor
 /* ---- people ---- */
 const teamName = v => { const x = String(v || '').trim().toLowerCase(); return x ? db.people.find(k => k.toLowerCase() === x) || '' : ''; };
 const guestName = v => { const x = String(v || '').trim().toLowerCase(); return x ? (db.guests || []).find(k => k.toLowerCase() === x) || '' : ''; };
-const knownName = v => teamName(v) || guestName(v);
+/* A Claude project is named <name>_Claude (or the older Claude_<name> / Claude-<name>). Typing just the name finds it. */
+const claudeStem = n => { const t = String(n || '').trim(), m = /^claude[-_]+(.+)$/i.exec(t) || /^(.+?)[-_]+claude$/i.exec(t); return m ? m[1] : ''; };
+const nameKey = n => (claudeStem(n) || String(n || '').trim()).toLowerCase();
+function stemName(v){                                       // @notebook → Notebook_Claude, when exactly one team member fits and no one is called exactly that
+  const x = String(v || '').trim().toLowerCase(), k = nameKey(v); if(!k) return '';
+  const hit = db.people.filter(p => claudeStem(p) && nameKey(p) === k && p.toLowerCase() !== x);
+  return hit.length === 1 ? hit[0] : '';
+}
+function kinNames(n){                                       // the same project under another spelling: Notebook / Notebook_Claude / Claude_Notebook
+  const k = nameKey(n); if(!k) return [];
+  return [...new Set([...db.people, ...(db.feeds || []).map(f => f.person)])].filter(o => o.toLowerCase() !== String(n).toLowerCase() && nameKey(o) === k && (claudeStem(o) || claudeStem(n)));
+}
+const knownName = v => teamName(v) || stemName(v) || guestName(v);
 const everyone = () => [...db.people, ...(db.guests || [])];
 function addGuest(n){ n = String(n || '').trim(); if(!n || knownName(n)) return false; (db.guests = db.guests || []).push(n); return true; }
 function rememberName(n){ if(!n || knownName(n)) return; if(db.strict) addGuest(n); else addPerson(n); }
 function lev(a, b){ const m = a.length, n = b.length; let prev = Array.from({length:n + 1}, (_, j) => j); for(let i = 1; i <= m; i++){ const cur = [i]; for(let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; } return prev[n]; }
 function nearNames(v){                                    // team names that this one could be a slip of: Rei / Reid, Ried / Reid
   const x = String(v || '').trim().toLowerCase(); if(!x) return [];
-  return db.people.filter(n => n.toLowerCase() !== x).map(n => { const l = n.toLowerCase(); const pre = (l.startsWith(x) && !/[-_]/.test(l[x.length] || '')) || (x.startsWith(l) && !/[-_]/.test(x[l.length] || '')); return {n, d:pre && Math.min(l.length, x.length) >= 2 ? 0 : lev(l, x)}; })
+  return db.people.filter(n => n.toLowerCase() !== x).map(n => { const l = n.toLowerCase(); if((claudeStem(n) || claudeStem(v)) && nameKey(n) === nameKey(v)) return {n, d:0}; const pre = (l.startsWith(x) && !/[-_]/.test(l[x.length] || '')) || (x.startsWith(l) && !/[-_]/.test(x[l.length] || '')); return {n, d:pre && Math.min(l.length, x.length) >= 2 ? 0 : lev(l, x)}; })
     .filter(o => o.d <= (x.length <= 3 ? 1 : 2)).sort((a, b) => a.d - b.d || a.n.localeCompare(b.n)).map(o => o.n).slice(0, 4);
 }
 let nameCtx = null;
@@ -2947,8 +2983,8 @@ function commitAssignee(t){                               // an Assign box was f
 }
 function mergePerson(from, to){
   db.guests = (db.guests || []).filter(g => g.toLowerCase() !== from.toLowerCase());
-  const f = (db.feeds || []).find(x => x.person.toLowerCase() === from.toLowerCase()); if(f) db.feeds = db.feeds.filter(x => x !== f);
-  renamePerson(from, to); toast(`Merged ${from} into ${to}.`);
+  const f = (db.feeds || []).find(x => x.person.toLowerCase() === from.toLowerCase()); if(f && !f.claude && !personDirs.has(personKey(from))) db.feeds = db.feeds.filter(x => x !== f);          // a stray feed goes; a Claude project's feed and folder move across
+  renamePerson(from, to); addPerson(to); touch(); renderPeople(); if($('#setdlg').open) renderSettings(); toast(`Merged ${from} into ${to}.`);
 }
 const canonPerson = n => db.people.find(k => k.toLowerCase() === String(n).trim().toLowerCase()) || capFirst(String(n).trim());
 function addPerson(n){ n = String(n || '').trim(); if(!n || db.people.some(k => k.toLowerCase() === n.toLowerCase())) return false; db.people.push(n); return true; }
@@ -2965,7 +3001,7 @@ function findAssignee(text, item){
   const t = String(text || ''); if(!t.trim()) return null;
   const known = personNamesFor(item), canon = n => known.find(k => k.toLowerCase() === n.toLowerCase()) || n;
   for(const k of known){ if(new RegExp("(^|[\\s(,])@" + reEsc(k) + "(?![\\w'’-])", 'i').test(t)) return {name:k, match:'@' + k}; }
-  let m = /(^|[\s(,])@([A-Za-z][\w'’-]*)/.exec(t); if(m) return {name:capFirst(m[2]), match:'@' + m[2]};
+  let m = /(^|[\s(,])@([A-Za-z][\w'’-]*)/.exec(t); if(m){ const sn = stemName(m[2]); return {name:sn || capFirst(m[2]), match:'@' + m[2]}; }
   const strong = /\b(?:assign(?:ed)?(?:\s+this)?\s+to|give(?:\s+this)?\s+to|hand(?:ed)?(?:\s+this)?(?:\s+off)?\s+to|delegate(?:d)?(?:\s+this)?\s+to)\s+([A-Za-z][\w'’-]*)/gi;
   const soft = /\b(?:waiting\s+(?:on|for)|follow(?:ing)?\s+up\s+with|ask)\s+([A-Za-z][\w'’-]*)/gi;
   let x;
@@ -3402,8 +3438,19 @@ function renamePerson(old, nu){
     personDirs.delete(ko); personState.delete(ko); savePersonDirs();
   }
   const mf = (db.feeds || []).find(f => isNu(f.person)); if(mf && personDirs.has(kn)) mf.folder = personDirs.get(kn).name;
+  const adopt = fo && ko !== kn && !personDirs.has(kn) ? adoptOldFolder(old, nu) : Promise.resolve();          // a feed in the old shared/for-name folder keeps using that same folder
   touch(); renderPeople(); renderRail(); if($('#setdlg').open) renderSettings();
-  if(db.feeds.some(f => f.on) || db.items.some(i => i.shared && i.shared.on)) runShareWrites(true);
+  adopt.then(() => { if($('#setdlg').open) renderSettings(); if(db.feeds.some(f => f.on) || db.items.some(i => i.shared && i.shared.on)) runShareWrites(true); });
+}
+async function adoptOldFolder(old, nu){
+  try {
+    await personDirsReady; const d = await shareReady(false); if(!d) return;
+    const h = await (await d.getDirectoryHandle('shared')).getDirectoryHandle(feedDirName(old));
+    const kn = personKey(nu); if(personDirs.has(kn)) return;
+    personDirs.set(kn, h); personState.set(kn, 'ok'); await savePersonDirs();
+    const f = (db.feeds || []).find(x => personKey(x.person) === kn); if(f) f.folder = h.name;
+    touch();
+  } catch {}
 }
 function renameFromSettings(pn){
   const nu = (prompt(`Rename “${pn}” to:`, pn) || '').trim();
@@ -4659,7 +4706,8 @@ function pickerToken(el){
 }
 function pickerChoices(qy){
   const ql = qy.toLowerCase(), names = [...db.people].sort((a, b) => a.localeCompare(b)).concat([...(db.guests || [])].sort((a, b) => a.localeCompare(b)));
-  let list = names.filter(n => n.toLowerCase().startsWith(ql)).map(n => ({name:n, guest:!db.people.includes(n)}));
+  const hit = n => n.toLowerCase().startsWith(ql) ? 0 : (claudeStem(n) && nameKey(n).startsWith(ql) ? 1 : -1);
+  let list = names.filter(n => hit(n) >= 0).sort((a, b) => hit(a) - hit(b)).map(n => ({name:n, guest:!db.people.includes(n)}));
   if(!list.length && ql.length >= 2) list = nearNames(qy).map(n => ({name:n, similar:true}));
   const anyFeed = (db.feeds || []).some(f => f.on);
   list.forEach(o => { o.nofeed = anyFeed && !o.guest && !(db.feeds || []).some(f => f.on && f.person.toLowerCase() === o.name.toLowerCase()); });
@@ -5932,7 +5980,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261109173518';</script>
+<script>window.NB_BUILD = '20261110114809';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
