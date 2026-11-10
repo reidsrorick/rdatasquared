@@ -889,8 +889,19 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.45.0';
+const APP_VERSION = '1.46.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.46.0",
+  "title": "Add from a person's page, Open on the new-action message",
+  "items": [
+   "On a person's page (click a name under People) there is now an add box. What you type becomes an action already assigned to that person, with the same quick-add words as Today (dates, times, @names, risk: …). Press Enter or Add",
+   "The message that appears after you add something now has an Open button next to Undo, which takes you to the new item so you can edit it",
+   "td() works like today(): type it and it becomes today's date",
+   "Fixed: after unfolding a section on To confirm (or any page), the rows no longer have a big gap between the action and the answer buttons",
+   "Pop-ups: the Alerts tab now says so when the app is opened from a file on this computer, because browsers do not allow pop-ups there (use the live address; the bell works either way). The test button now tells you what to check if nothing appears"
+  ]
+ },
  {
   "v": "1.45.0",
   "title": "Fold sections, today(), and when things were done",
@@ -2827,6 +2838,8 @@ function renderPerson(){
     <div class="type">People</div>
     <h1 class="ptitle">${esc(name)}</h1>
     <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}</div>
+    <div class="addrow"><input type="text" id="pqa" placeholder="Add for ${esc(name)}: “call the vendor Friday 3pm”${raidKinds().length ? `, “${esc(raidOne(raidKinds()[0]).toLowerCase())}: vendor may slip”` : ''}" autocomplete="off"><button data-act="padd">Add</button></div>
+    <div class="qapv" id="pqapv"></div>
     ${pageSearchBox('Filter this person’s items…', true)}
     <div class="afilters" style="margin-bottom:6px"><label><input type="checkbox" id="adone" ${actDone ? 'checked' : ''}> Show completed</label></div>
     ${sec('', 'Actions')}${RAID_KINDS.map(k => sec(k, esc(raidMany(k)))).join('')}
@@ -2840,7 +2853,7 @@ function addRaid(kind){
   db.items.push(i); autoDate(i, i.title, i);
   touch(); renderRail(); renderDetail();
   const n = $('#rnew'); if(n) n.focus({preventScroll:true});
-  toast(`Added the ${RAID_META[kind].one.toLowerCase()} “${i.title}”.`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
+  toast(`Added the ${RAID_META[kind].one.toLowerCase()} “${i.title}”.`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); }, 'Undo', i.id);
 }
 
 function addAction(){
@@ -2860,20 +2873,21 @@ function addAction(){
   touch(); renderRail(); renderDetail();
   const when = [i.due ? fmtDay(i.due) : '', i.time ? fmtTime(i.time) : ''].filter(Boolean).join(' ');
   toast(`Added “${i.title}”${i.assignee ? ' → ' + i.assignee : ''}${when ? ' — due ' + when : ''}${i.repeat ? ', repeats ' + lcFirst(describeRepeat(i.repeat)) : ''}${hidden ? ' (' + hid.join(' and ') + ' filter cleared)' : ''}`,
-    () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
+    () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); }, 'Undo', i.id);
   const row = document.querySelector(`.act[data-key="${i.id}"]`);
   if(row){ row.classList.add('flash'); const b = row.getBoundingClientRect(); if(b.bottom > innerHeight - 70 || b.top < 0) row.scrollIntoView({block:'center', behavior:'smooth'}); }   // highlight it, and bring it into view if it's below the fold
   const n = $('#anew'); if(n) n.focus({preventScroll:true});
 }
 
 /* ---- auto-detect dates + undo toast ---- */
-let toastUndo = null, toastTimer = null;
-function toast(msg, undo, label = 'Undo'){
-  toastUndo = undo || null; const el = $('#toast');
-  el.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button data-act="toastundo">${esc(label)}</button>` : ''}<button data-act="toastx" aria-label="Dismiss">×</button>`;
+let toastUndo = null, toastTimer = null, toastOpenId = null;
+function toast(msg, undo, label = 'Undo', openId){
+  toastUndo = undo || null; toastOpenId = openId || null; const el = $('#toast');
+  el.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button data-act="toastundo">${esc(label)}</button>` : ''}${openId ? '<button data-act="toastopen" title="Go to it, to edit it">Open</button>' : ''}<button data-act="toastx" aria-label="Dismiss">×</button>`;
   el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 9000);
 }
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
+function openItemById(id){ const oi = byId(id); if(!oi) return; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); selId = id; selCk = ''; search = ''; saveUi(); renderAll(); }
 /* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
 /* ---- people ---- */
 const teamName = v => { const x = String(v || '').trim().toLowerCase(); return x ? db.people.find(k => k.toLowerCase() === x) || '' : ''; };
@@ -4588,20 +4602,21 @@ function qaSummary(q){
   const date = q.date || (q.kind === 'meeting' ? todayStr() : '');
   return [{task:'☐ Action', note:'✎ Note', meeting:'✎ Note'}[q.kind] || (RAID_META[q.kind] ? RAID_META[q.kind].icon + ' ' + RAID_META[q.kind].one : ''),[date ? fmtDay(date) : '', q.time ? fmtTime(q.time) : ''].filter(Boolean).join(' '), q.repeat ? '↻ ' + describeRepeat(q.repeat) : '', q.assignee ? '→ ' + q.assignee : ''].filter(Boolean).join(' · ');
 }
-function quickAdd(raw){
+function quickAdd(raw, who){                    // who: the person whose page you are on, so what you add is theirs
   const q = qaParse(raw); if(!q.title) return null;
   let unknownWho = '';
   const i = {id:uid(), type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ const tn = knownName(q.assignee); if(tn) i.assignee = tn; else if(!db.strict){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } else unknownWho = q.assignee; } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = insideNotebook() ? nbView : inboxId(); const qnb = nbById(i.notebook); if(qnb && catById(qnb.category)) i.category = qnb.category; }
+  if(who && i.type === 'task' && !i.assignee && !unknownWho) i.assignee = who;
   db.items.push(i); touch(); refreshViews();
   if(unknownWho) setTimeout(() => resolveAssignee(unknownWho, nm => { if(nm){ i.assignee = nm; i.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 400); else if(i.assignee) afterAssign(i.assignee);
-  toast(`Added “${q.title}” — ${qaSummary(q)}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); });
+  toast(`Added “${q.title}” — ${qaSummary(q)}${who ? ' → ' + who : ''}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); }, 'Undo', i.id);
   return i;
 }
 function openQuickAdd(){ $('#qai').value = ''; $('#qapv2').textContent = qaSummary(qaParse('')); $('#qadlg').showModal(); $('#qai').focus(); }
 $('#qai').addEventListener('input', e => { $('#qapv2').textContent = qaSummary(qaParse(e.target.value)); });
 $('#qai').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(quickAdd(e.target.value)) $('#qadlg').close(); } });
-$('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) : ''; });
+$('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) : ''; if(e.target.id === 'pqa') $('#pqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) + (qaParse(e.target.value).assignee ? '' : ' → ' + actPerson) : ''; });
 function addPreview(text){                                // what the Actions add box will pick up from the words
   const t = text.trim(); if(!t) return '';
   const w = findAssignee(t, {assignee:'', checklist:[], attendees:'', type:'task'}), r = parseWhen(t), bits = [];
@@ -4627,7 +4642,7 @@ $('#detail').addEventListener('change', e => {
 });
 $('#detail').addEventListener('keydown', e => { if(e.key === 'Escape' && e.target.id === 'psearch' && e.target.value){ e.target.value = ''; e.target.dispatchEvent(new Event('input', {bubbles:true})); } });
 /* ---- the @-name picker: your team's names, as you type ---- */
-const PICK_TEXT = '#anew, #rnew, #newck, #qai, #tqa, textarea.tx, .rt[data-f=body], .rt.cknote, .rt.anote', PICK_WHO = 'input.who';
+const PICK_TEXT = '#anew, #rnew, #newck, #qai, #tqa, #pqa, textarea.tx, .rt[data-f=body], .rt.cknote, .rt.anote', PICK_WHO = 'input.who';
 const atpick = document.createElement('div'); atpick.id = 'atpick'; atpick.className = 'atpick'; atpick.hidden = true;
 let pk = null;
 function pickerToken(el){
@@ -4815,13 +4830,14 @@ function renderInboxSettings(){
 setInterval(() => { if(!document.hidden) refreshInboxes(); }, 25000);
 window.addEventListener('focus', () => refreshInboxes());
 setTimeout(() => loadInboxList().then(() => refreshInboxes(true)), 1500);
+function personAdd(){ const el = $('#pqa'); if(!el) return; if(!el.value.trim()){ el.focus(); toast('Type what needs doing first.'); return; } quickAdd(el.value, actPerson); const n = $('#pqa'); if(n) n.focus(); }
 function todayAdd(){ const el = $('#tqa'); if(!el) return; if(!el.value.trim()){ el.focus(); toast('Type what needs doing first.'); return; } quickAdd(el.value); const n = $('#tqa'); if(n) n.focus(); }
 
 /* ---- keyboard shortcuts + the cheat sheet ---- */
 const SHORTCUTS = [
   ['Create', [['N', 'New action'], ['Shift + N', 'New note'], ['Q / Ctrl + Q', 'Quick add (type it in plain words). Ctrl + Q also works while typing in a note']]],
   ['Go to', [['1', 'Today'], ['2', 'Actions'], ['3', 'Notes'], ['4', 'Timeline'], ['5', 'Risks'], ['6', 'Issues'], ['7', 'Decisions'], ['8', 'Trash'], ['/', 'Search everything']]],
-  ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P / Shift + P', 'Pin to the top of its notebook / pin everywhere (press again to unpin)'], ['Ctrl + S', 'Save right now'], ['today()', 'Type it anywhere and it turns into today’s date, yyyy-mm-dd'], ['Ctrl + ;', 'The same date, from the keyboard, wherever the cursor is'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
+  ['Working', [['Ctrl + Enter', 'Mark the open action done / not done'], ['P / Shift + P', 'Pin to the top of its notebook / pin everywhere (press again to unpin)'], ['Ctrl + S', 'Save right now'], ['today() or td()', 'Type either anywhere and it turns into today’s date, yyyy-mm-dd'], ['Ctrl + ;', 'The same date, from the keyboard, wherever the cursor is'], ['Ctrl + \\', 'Hide or show the sidebar'], ['Esc', 'Close a menu or window'], ['?', 'Show this sheet']]],
   ['In notes', [['Ctrl + B / I / U', 'Bold, italic, underline'], ['Ctrl + K', 'Add a link'], ['Ctrl + Shift + H', 'Insert a horizontal line (or type --- and press Enter)'], ['Tab / Shift + Tab', 'Indent / outdent (in a table: next / previous cell)'], ['Click a bullet', 'Fold / unfold its sub-points'], ['ACTION  RISK  ISSUE  DECISION', 'Start a line with one in CAPITALS (a colon is optional): it becomes an entry, the line is highlighted, and “by Friday 3pm” and “@Sam” fill its date and owner'], ['- or 1. then space', 'Start a bulleted or numbered list']]],
   ['Timeline', [['← →', 'Previous / next week or month'], ['T', 'Jump to today'], ['Drag across days', 'Make a block'], ['Click a block', 'Edit it and read its description']]],
   ['Mouse tips', [['Right-click a row', 'Open, mark done, pin, duplicate, copy, export, category, trash'], ['Right-click on any page', 'Today, Actions and Timeline have the same menu'], ['Drag a due date chip', 'Timeline “Due dates” view: reschedule it'], ['Drag a page onto a notebook', 'Moves it there (or use right-click → Notebook)']]],
@@ -4948,7 +4964,8 @@ function notifBadge(){
   document.querySelectorAll('.bellbtn').forEach(b => { const c = b.querySelector('.bellN'); if(!c) return; c.hidden = !n; c.textContent = n > 99 ? '99+' : String(n); b.title = n ? `Notifications: ${n} new` : 'Notifications'; });
 }
 const notifPerm = () => { if(typeof window.Notification !== 'function') return 'unsupported'; const p = Notification.permission; return p === 'default' && notifGet().granted ? 'granted' : p; };          // some browsers keep saying “default” for a while after you press Allow
-const notifCan = () => !MOBILE && notifPerm() === 'granted';
+let notifFile = () => location.protocol === 'file:' || window.isSecureContext === false;          // browsers do not allow pop-ups for a page opened from a file
+const notifCan = () => !MOBILE && !notifFile() && notifPerm() === 'granted';
 function notifPopup(n){
   try { const nt = new Notification('My Notebook', {body:n.text + (n.sub ? '\n' + n.sub : ''), tag:n.id}); nt.onclick = () => { try { window.focus(); } catch {} notifGo(n); try { nt.close(); } catch {} }; } catch {}
 }
@@ -4991,6 +5008,7 @@ async function notifSetPopups(on){
   const st = notifGet();
   if(!on){ st.popups = false; notifSave(); renderNotifList(); renderAlertSettings(); return; }
   if(typeof window.Notification !== 'function'){ toast('This browser cannot show notifications.'); renderAlertSettings(); return; }
+  if(notifFile()){ toast('Browsers do not allow pop-ups for a page opened from a file on this computer. Open the app from its web address to use them. The bell works either way.'); renderAlertSettings(); return; }
   let perm = Notification.permission;
   if(perm === 'default'){ try { perm = await Notification.requestPermission(); } catch { perm = 'denied'; } }
   if(perm === 'granted'){ st.popups = true; st.granted = true; notifSave(); toast('Pop-ups are on. They show while the app is open in a tab.'); }
@@ -5000,13 +5018,13 @@ async function notifSetPopups(on){
 }
 function renderAlertSettings(){
   const el = $('#setalerts'); if(!el) return; const st = notifGet();
-  const perm = notifPerm();
+  const perm = notifPerm(), fileMode = notifFile();
   el.innerHTML = MOBILE ? '<div class="setline" style="font-size:13px;color:var(--mute)">Pop-ups are not used in the phone view. The bell still lists what is new.</div>' : `
     <div class="setline" style="font-size:13px;color:var(--mute);display:block">The bell at the top of the sidebar lists what is new. Pop-ups are optional: the browser shows them while this app is open in a tab (a closed browser cannot). They are kept per computer.</div>
-    <label class="alertrow"><input type="checkbox" id="alertpop" ${st.popups ? 'checked' : ''} ${perm === 'unsupported' ? 'disabled' : ''}> Show pop-ups from the browser <small>${st.popups && perm !== 'granted' && perm !== 'denied' ? 'Waiting for the browser to allow it. If you pressed Allow and this stays, reload the page once.' : perm === 'granted' ? 'The browser allows notifications from this app.' : perm === 'denied' ? 'The browser is blocking notifications for this site. Allow them in the browser’s site settings.' : perm === 'unsupported' ? 'This browser cannot show notifications.' : 'The browser will ask you the first time.'}</small></label>
+    <label class="alertrow"><input type="checkbox" id="alertpop" ${st.popups && !fileMode ? 'checked' : ''} ${perm === 'unsupported' || fileMode ? 'disabled' : ''}> Show pop-ups from the browser <small>${fileMode ? 'Not available here: this page was opened from a file on this computer, and browsers do not allow pop-ups for that. Open the app from its web address (the live site) and this works. The bell works everywhere.' : st.popups && perm !== 'granted' && perm !== 'denied' ? 'Waiting for the browser to allow it. If you pressed Allow and this stays, reload the page once.' : perm === 'granted' ? 'The browser allows notifications from this app.' : perm === 'denied' ? 'The browser is blocking notifications for this site. Allow them in the browser’s site settings.' : perm === 'unsupported' ? 'This browser cannot show notifications.' : 'The browser will ask you the first time.'}</small></label>
     <label class="alertrow"><input type="checkbox" id="alerttimed" ${st.timed ? 'checked' : ''}> Remind me when an action with a time comes due <small>For actions due today that have a time, at that time.</small></label>
     <label class="alertrow"><input type="checkbox" id="alertdaily" ${st.daily ? 'checked' : ''}> A summary of what is due, once a day <small>The first time the app is open each day: how many are due today and past due.</small></label>
-    <div class="setbtns"><button id="alerttest" ${perm === 'granted' ? '' : 'disabled'}>Send a test pop-up</button></div>`;
+    <div class="setbtns"><button id="alerttest" ${perm === 'granted' && !fileMode ? '' : 'disabled'}>Send a test pop-up</button></div>`;
 }
 $('#setalerts').addEventListener('change', e => {
   const st = notifGet();
@@ -5014,7 +5032,7 @@ $('#setalerts').addEventListener('change', e => {
   else if(e.target.id === 'alerttimed'){ st.timed = e.target.checked; notifSave(); }
   else if(e.target.id === 'alertdaily'){ st.daily = e.target.checked; notifSave(); }
 });
-$('#setalerts').addEventListener('click', e => { if(e.target.id === 'alerttest' && notifCan()) notifPopup({id:'test:' + Date.now(), text:'This is a test. Pop-ups are working.', sub:'', go:''}); });
+$('#setalerts').addEventListener('click', e => { if(e.target.id === 'alerttest' && notifCan()){ notifPopup({id:'test:' + Date.now(), text:'This is a test. Pop-ups are working.', sub:'', go:''}); toast('Test sent. If nothing appeared, check that Windows notifications are on for your browser and that Focus assist (Do not disturb) is off.'); } });
 $('#notiflist').addEventListener('click', e => { const r = e.target.closest('[data-nid]'); if(!r) return; const n = notifList.find(x => x.id === r.dataset.nid); if(n) notifGo(n); });
 setInterval(() => { if(!document.hidden || notifGet().popups) notifRefresh(); }, 30000);
 /* ---- Section headings (Past due, Today, a person's name…) fold: click one and what is under it hides. Kept per computer. ---- */
@@ -5035,7 +5053,7 @@ function ghToggle(h){
   if(ghFold.has(k)) ghFold.delete(k); else ghFold.add(k);
   try { localStorage.setItem(GH_KEY, JSON.stringify([...ghFold].slice(-300))); } catch {}
   ghApply();
-  if(!ghFold.has(k)) document.getElementById('detail').querySelectorAll('textarea').forEach(t => { try { grow(t); } catch {} });          // rows that were hidden get their height back
+  if(!ghFold.has(k)) document.getElementById('detail').querySelectorAll('textarea.anote, textarea.cknote').forEach(t => { try { grow(t); } catch {} });          // (the one-line row boxes size themselves)
 }
 document.getElementById('detail').addEventListener('click', e => { const h = e.target.closest && e.target.closest('h4.gh'); if(h && h.dataset.gk && !e.target.closest('a, button, input, select')) ghToggle(h); });
 document.getElementById('detail').addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('h4.gh[data-gk]')){ e.preventDefault(); ghToggle(e.target); } });
@@ -5047,20 +5065,20 @@ document.addEventListener('input', e => {
   const el = e.target; if(!el) return;
   if(el.isContentEditable){
     const sel = getSelection(); if(!sel.rangeCount || !sel.isCollapsed) return;
-    const n = sel.anchorNode, off = sel.anchorOffset; if(!n || n.nodeType !== 3 || off < 7 || !/(^|[^\w])today\(\)$/i.test(n.nodeValue.slice(0, off))) return;
-    const r = document.createRange(); r.setStart(n, off - 7); r.setEnd(n, off); sel.removeAllRanges(); sel.addRange(r);
+    const n = sel.anchorNode, off = sel.anchorOffset, tm = n && n.nodeType === 3 ? /(^|[^\w])(today|td)\(\)$/i.exec(n.nodeValue.slice(0, off)) : null; if(!tm) return;
+    const L = tm[2].length + 2, r = document.createRange(); r.setStart(n, off - L); r.setEnd(n, off); sel.removeAllRanges(); sel.addRange(r);
     let ok = false; try { ok = document.execCommand('insertText', false, todayStr()); } catch {}
     if(!ok){                                   // (a browser refuses this while another edit is still running)
-      n.deleteData(off - 7, 7); n.insertData(off - 7, todayStr());
-      const c = document.createRange(); c.setStart(n, off - 7 + todayStr().length); c.collapse(true); sel.removeAllRanges(); sel.addRange(c);
+      n.deleteData(off - L, L); n.insertData(off - L, todayStr());
+      const c = document.createRange(); c.setStart(n, off - L + todayStr().length); c.collapse(true); sel.removeAllRanges(); sel.addRange(c);
       el.dispatchEvent(new InputEvent('input', {bubbles:true, inputType:'insertText', data:todayStr()}));
     }
   } else if(el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.getAttribute('type') || ''))){
     if(el.readOnly || el.disabled) return;
-    const pos = el.selectionStart; if(pos == null || pos < 7 || !/(^|[^\w])today\(\)$/i.test(el.value.slice(0, pos))) return;
-    el.setSelectionRange(pos - 7, pos);
+    const pos = el.selectionStart, tm = pos == null ? null : /(^|[^\w])(today|td)\(\)$/i.exec(el.value.slice(0, pos)); if(!tm) return;
+    const L = tm[2].length + 2; el.setSelectionRange(pos - L, pos);
     let ok = false; try { ok = document.execCommand('insertText', false, todayStr()); } catch {}
-    if(!ok){ el.setRangeText(todayStr(), pos - 7, pos, 'end'); el.dispatchEvent(new Event('input', {bubbles:true})); }
+    if(!ok){ el.setRangeText(todayStr(), pos - L, pos, 'end'); el.dispatchEvent(new Event('input', {bubbles:true})); }
   }
 });
 function insertToday(){
@@ -5332,6 +5350,7 @@ $('#detail').addEventListener('keydown', e => {
   if(e.key === 'Enter' && e.target.id === 'newck'){ e.preventDefault(); addCk(); }
   if(e.key === 'Enter' && e.target.id === 'anew'){ e.preventDefault(); addAction(); }
   if(e.key === 'Enter' && e.target.id === 'tqa'){ e.preventDefault(); todayAdd(); }
+  if(e.key === 'Enter' && e.target.id === 'pqa'){ e.preventDefault(); personAdd(); }
   if(e.key === 'Enter' && e.target.id === 'rnew'){ e.preventDefault(); addRaid(e.target.dataset.raid); }
   if(e.key === 'Enter' && e.target.matches && e.target.matches('textarea.title, textarea.tx')){ e.preventDefault(); e.target.blur(); }      // titles wrap visually but stay one line of text
 });
@@ -5476,12 +5495,13 @@ document.addEventListener('click', e => {
     else if(act === 'shortcuts') openShortcuts(); else if(act === 'kbclose') $('#kbdlg').close();
     else if(act === 'quickadd'){ $('#newmenu').classList.remove('open'); openQuickAdd(); }
     else if(act === 'qasave'){ if(quickAdd($('#qai').value)) $('#qadlg').close(); else $('#qai').focus(); } else if(act === 'qacancel') $('#qadlg').close();
-    else if(act === 'qadd') todayAdd();
+    else if(act === 'qadd') todayAdd(); else if(act === 'padd') personAdd();
     else if(act === 'addraid') addRaid(a.dataset.raid); else if(act === 'scantags') scanAllTags();
     else if(act === 'gotl'){ tlAnchor = todayStr(); goView('timeline'); }
     else if(act === 'export'){ const i = byId(selId); if(i){ const r = a.getBoundingClientRect(); openMenu(r.left, r.bottom + 4, [{hd:'Export this ' + (i.type === 'task' ? 'action' : 'note')}, ...exportEntries(i)], null); } }
     else if(act === 'trestore') restoreItem(a.dataset.id); else if(act === 'tpurge') purgeItem(a.dataset.id); else if(act === 'tempty') emptyTrash();
     else if(act === 'scandates') scanDates();
+    else if(act === 'toastopen'){ const id = toastOpenId; toastOpenId = null; $('#toast').classList.remove('show'); if(id && byId(id)) openItemById(id); }
     else if(act === 'toastundo'){ const u = toastUndo; toastUndo = null; $('#toast').classList.remove('show'); if(u) u(); }
     else if(act === 'toastx') $('#toast').classList.remove('show');
     else if(act === 'togglerail'){ if(isNarrow()) toggleDrawer(); else { railOff = !railOff; saveUi(); applyMode(); } }
@@ -5912,7 +5932,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261109155123';</script>
+<script>window.NB_BUILD = '20261109173518';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

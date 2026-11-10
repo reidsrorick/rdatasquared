@@ -1,4 +1,15 @@
-{"version":"1.45.0","build":"20261109155123","changelog":[
+{"version":"1.46.0","build":"20261109173518","changelog":[
+ {
+  "v": "1.46.0",
+  "title": "Add from a person's page, Open on the new-action message",
+  "items": [
+   "On a person's page (click a name under People) there is now an add box. What you type becomes an action already assigned to that person, with the same quick-add words as Today (dates, times, @names, risk: …). Press Enter or Add",
+   "The message that appears after you add something now has an Open button next to Undo, which takes you to the new item so you can edit it",
+   "td() works like today(): type it and it becomes today's date",
+   "Fixed: after unfolding a section on To confirm (or any page), the rows no longer have a big gap between the action and the answer buttons",
+   "Pop-ups: the Alerts tab now says so when the app is opened from a file on this computer, because browsers do not allow pop-ups there (use the live address; the bell works either way). The test button now tells you what to check if nothing appears"
+  ]
+ },
  {
   "v": "1.45.0",
   "title": "Fold sections, today(), and when things were done",
