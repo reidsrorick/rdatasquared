@@ -1,4 +1,34 @@
-{"version":"1.46.2","build":"20261110114809","changelog":[
+{"version":"1.48.0","build":"20261112140836","changelog":[
+ {
+  "v": "1.48.0",
+  "title": "Set-up guide: a checklist that ticks itself",
+  "items": [
+   "New Settings > Set up tab (also a button under Help). Part 1, Getting started: your browser can save to a file, the save file is chosen, your name is set, you have taken the tour, and (optionally) a folder from the team is connected. Each step ticks itself and has a button to do it",
+   "Part 2, a Claude project: for each one, the folder is chosen, the feed file is really in it, the instructions are given, and a test works. Buttons: choose the folder, copy the paragraph for the project's CLAUDE.md, write a NOTEBOOK.md guide into the folder (how to read the feed and answer, in plain words), and send a test action. The last step turns green when that project has answered",
+   "One paragraph to put in your own CLAUDE.md once (the one in your user folder) so every Claude project knows to check its notebook folder when you say “check the notebook”",
+   "Nothing needs installing: the app is one web page. The guide says which browsers can save to a file and what each person sets up for themselves"
+  ]
+ },
+ {
+  "v": "1.47.0",
+  "title": "Shortcuts you can change, a quick access toolbar, and a safety net for Ctrl+Z",
+  "items": [
+   "New Settings > Shortcuts tab. Every shortcut (new action, new note, quick add, search, go to each page, done, pin, save, today's date, hide the sidebar, the editor's link, divider, subscript and superscript) can be changed: press Change, then the keys you want. It refuses a clash with another shortcut and keys the editor or the browser keeps, and each one has Reset and Clear. They are saved in your notebook file, so they follow you between computers",
+   "New quick access toolbar: a slim strip above your notes with the buttons you pick (it starts with New note, Quick add, Today, Search, Undo, the bell and Settings). Buttons do not take the cursor out of the note you are typing in, so Insert date and Undo act right where you are. Choose and reorder the buttons, or hide the bar, in Settings > Shortcuts, or press ⋯ on the bar",
+   "Ctrl+Z while typing: the app now keeps its own short history of what you typed in each box (a note, a title, an action's text). If the browser's own undo does nothing, for example after the page redrew the note, Ctrl+Z steps back through that history instead (Ctrl+Y or Ctrl+Shift+Z steps forward). Ctrl+Z when you are not typing presses Undo on the message at the bottom, if there is one",
+   "The shortcut sheet (press ?) shows your current keys"
+  ]
+ },
+ {
+  "v": "1.46.3",
+  "title": "Notes sort by date, Add in Notes, the bell, clear filters on RAID pages",
+  "items": [
+   "Fixed: sorting your notes By date now really sorts them by the note's date and time (newest first), not by when you last edited them. A note whose date was only filled in automatically uses the day it was created",
+   "In Notes, the + button now adds a note straight away, with no menu of Action / Note / Quick add",
+   "The bell list now uses the full width: each row has the text on the left and a label on the right (To confirm, Today, Reply, From a teammate), and a line at the top explains how the bell differs from the To confirm page",
+   "RAID pages (Risks, Issues, Decisions and any type you add) now have a ✕ Clear all filters link, and say so when the filters are hiding everything. The Owner, Category and Notebook filters are shared with the Actions page, which is why a new type could open already filtered"
+  ]
+ },
  {
   "v": "1.46.2",
   "title": "Ticking “this is a Claude project” offers the Name_Claude name",
