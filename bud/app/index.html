@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Budget</title>
+    <meta name="description" content="Local budget app for apartment splits, subscriptions, and reimbursable expenses — keeps everything in one file in your OneDrive folder and exports to Excel." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#2f6df6" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Budget" />
+    <link rel="stylesheet" href="styles.css?v=25" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <aside class="sidebar" id="sidebar">
+        <div class="side-brand">
+          <span class="logo">$</span><span class="brand-text">Budget</span>
+        </div>
+        <nav id="tabs" class="side-tabs"></nav>
+        <button id="collapseBtn" class="collapse-btn" title="Collapse sidebar" aria-label="Collapse sidebar">
+          <span class="chev">«</span><span class="brand-text">Collapse</span>
+        </button>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <button id="navToggle" class="btn ghost nav-toggle" title="Menu" aria-label="Toggle menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          <h1 id="pageTitle" class="page-title">Dashboard</h1>
+          <div class="controls">
+            <label id="autoToggle" class="switch" hidden>
+              <input type="checkbox" id="autoChk" />
+              <span class="track"><span class="thumb"></span></span>
+              <span class="switch-label">Autosave</span>
+            </label>
+            <span id="status" class="status">No folder</span>
+            <button id="exportBtn" class="btn ghost" title="Export everything to an Excel file" aria-label="Export to Excel" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Excel</button>
+            <button id="maskBtn" class="btn ghost" title="Hide amounts" aria-label="Hide amounts" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button id="reloadBtn" class="btn ghost" title="Reload from disk" aria-label="Reload from disk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M5 3v5h5M19 21v-5h-5"/></svg></button>
+            <button id="connectBtn" class="btn primary">Open budget folder</button>
+            <input id="fallbackInput" type="file" accept=".json,.xlsx" multiple hidden />
+          </div>
+        </header>
+
+        <div id="banner" class="banner-stack"></div>
+        <main id="view" class="view"></main>
+      </div>
+    </div>
+
+    <div id="saveBar" class="savebar"></div>
+    <div id="modal" class="modal"></div>
+    <div id="toast" class="toast"></div>
+
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="js/model.js?v=25"></script>
+    <script src="js/excel.js?v=25"></script>
+    <script src="js/store.js?v=25"></script>
+    <script src="js/ui.js?v=25"></script>
+    <script src="js/app.js?v=25"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("sw.js").catch(function (e) {
+            console.warn("SW registration failed", e);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
