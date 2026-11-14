@@ -446,15 +446,11 @@ a.nlink{font-size:12px;color:var(--mute);text-decoration:none;cursor:pointer;whi
 a.nlink:hover,a.nlink.has{color:var(--accent)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#2b2a27;color:#fff;padding:9px 10px 9px 16px;border-radius:12px;display:none;gap:12px;align-items:center;box-shadow:0 8px 24px #0005;max-width:80vw;font-size:13px;z-index:20}
 #toast.show{display:flex}
-#qat{display:flex;align-items:center;gap:2px;padding:3px 10px;background:var(--rail);border-bottom:1px solid var(--line);flex:0 0 auto;overflow-x:auto;white-space:nowrap}
-#qat[hidden]{display:none}
-#qat .qb{border:1px solid transparent;background:transparent;color:var(--text);border-radius:7px;padding:3px 9px;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;opacity:.9}
-#qat .qb:hover{background:var(--hover);opacity:1}
-#qat .qb:active{background:var(--hover2)}
-#qat .qb .qi{font-size:14px;line-height:1}
-#qat .qsep{flex:1}
-body.mobile #qat{display:none !important}
-@media (max-width:900px){#qat .ql{display:none}}
+.rqat{display:flex;align-items:center;gap:2px;padding:3px 8px;border-bottom:1px solid var(--line);flex-wrap:wrap;min-height:36px}
+.rqat[hidden]{display:none}
+.rqat .rqhint{color:var(--mute);font-size:12px;padding:0 6px}
+.rqat .rqmore{margin-left:auto}
+.rqat .rqlabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);padding:0 8px 0 4px}
 .keyrow,.qrow{display:flex;gap:10px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line);font-size:13.5px}
 .keyrow .kl,.qrow label{flex:1;min-width:0}
 .keyrow .kk{display:flex;gap:4px;flex-wrap:wrap;min-width:110px;justify-content:flex-end}
@@ -487,18 +483,33 @@ h4.gh[data-gk]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .app.rail-off .railtop .bellbtn{display:none}
 body.mobile .bellbtn{display:none !important}
 #narrowbar .bellbtn{margin-left:auto}
-#notifdlg{width:min(480px,94vw)}
-#notifdlg .nlist{max-height:52vh;overflow:auto;margin:8px 0;display:flex;flex-direction:column;gap:2px}
-#notifdlg .nrow{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;line-height:1.4}
-#notifdlg .nrow:hover{background:var(--hover)}
-#notifdlg .nrow.new{font-weight:600;background:var(--hover2)}
-#notifdlg .nrow .ni{flex:0 0 20px;text-align:center}
-#notifdlg .nrow .nt{flex:1;min-width:0;overflow-wrap:anywhere}
-#notifdlg .nrow .ng{flex:0 0 auto;align-self:center;font-size:11px;font-weight:500;color:var(--mute);border:1px solid var(--line);border-radius:10px;padding:1px 9px;white-space:nowrap}
-#notifdlg .nhelp{margin:2px 0 6px;font-size:12.5px;color:var(--mute);line-height:1.4}
-#notifdlg .nrow small{display:block;font-weight:400;color:var(--mute)}
-#notifdlg .nnone{padding:18px 8px;text-align:center;color:var(--mute)}
-#notifdlg .nfoot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:6px}
+#notifdlg{width:min(620px,94vw)}
+#notifdlg .nhead{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+#notifdlg .nhead h3{margin:0}
+#notifdlg .ncount{background:var(--accent);color:#fff;border-radius:99px;font:600 12px/1 inherit;padding:4px 10px}
+#notifdlg .ncount[hidden]{display:none}
+#notifdlg .nx{margin-left:auto;border:0 !important;background:none !important;font-size:16px;color:var(--mute);padding:4px 8px !important}
+#notifdlg .nhelp{margin:4px 0 4px;font-size:12.5px;color:var(--mute);line-height:1.45}
+#notifdlg .nlist{max-height:58vh;overflow:auto;margin:6px 0;padding-right:2px}
+#notifdlg .nghd{display:flex;align-items:center;gap:7px;font:700 11.5px/1 inherit;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:14px 2px 6px}
+#notifdlg .nghd:first-child{margin-top:4px}
+#notifdlg .nghd small{background:var(--hover2);border-radius:99px;padding:2px 7px;font-size:11px;letter-spacing:0}
+#notifdlg .nrow{display:flex;width:100%;box-sizing:border-box;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:7px;background:var(--panel);cursor:pointer;line-height:1.35}
+#notifdlg .nrow:hover{background:var(--hover);border-color:var(--accent)}
+#notifdlg .nrow.new{border-left:4px solid var(--accent);padding-left:9px}
+#notifdlg .nrow .ni{flex:0 0 36px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--hover2)}
+#notifdlg .nrow.g-waiting .ni{background:rgba(224,138,30,.2)}
+#notifdlg .nrow.g-note .ni{background:rgba(75,143,217,.2)}
+#notifdlg .nrow.g-today .ni{background:rgba(224,81,75,.18)}
+#notifdlg .nrow.g-inbox .ni{background:rgba(63,155,91,.2)}
+#notifdlg .nrow .nt{flex:1 1 0;min-width:0;overflow-wrap:anywhere}
+#notifdlg .nrow .nt b{display:block;font-weight:500;font-size:14px}
+#notifdlg .nrow.new .nt b{font-weight:700}
+#notifdlg .nrow .nt small{display:block;max-height:2.9em;overflow:hidden;color:var(--mute);font-size:12.5px;margin-top:2px}
+#notifdlg .nrow .ngo{flex:0 0 auto;color:var(--mute);font-size:20px;line-height:1}
+#notifdlg .nnone{padding:26px 8px;text-align:center;color:var(--mute)}
+#notifdlg .nnone b{display:block;font-size:30px;margin-bottom:4px}
+#notifdlg .nfoot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:8px}
 #notifdlg button,#setdlg .alertrow button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:6px 12px;font:inherit}
 #notifdlg button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 #setdlg .alertrow{display:block;margin:8px 0;font-size:14px}#setdlg .alertrow small{display:block;color:var(--mute);margin-left:22px;font-size:12.5px}
@@ -652,7 +663,6 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <div id="mobstrip"></div>
 <div id="narrowbar"><button class="sb" data-nav="drawer" title="Menu">☰</button><h3>My Notebook</h3><button class="sb bellbtn" data-act="notifs" title="Notifications">🔔<b class="bellN" hidden></b></button></div>
 <div id="scrim" data-nav="close"></div>
-<div id="qat" hidden></div>
 <div class="app">
   <nav class="rail">
     <div class="railtop"><h3>My Notebook</h3><span class="railbtns"><button class="sb bellbtn" data-act="notifs" title="Notifications">🔔<b class="bellN" hidden></b></button><button class="sb" data-act="togglerail">«</button></span></div>
@@ -683,16 +693,17 @@ body.mobile #mobwelcome .bad{color:var(--red)}
     <div class="chips" id="chips"></div>
     <div class="chips" id="catchips"></div>
     <div class="opts">
-      <div class="seg" id="sortseg" title="How the list is ordered"><button data-sort="updated">Recent</button><button data-sort="date">By date</button><button data-sort="az" title="By name, A to Z">A–Z</button><button data-sort="za" title="By name, Z to A">Z–A</button></div>
+      <div class="seg" id="sortseg" title="How the list is ordered"><button data-sort="updated">Recent</button><button data-sort="date" title="Newest first, by when the note was created (or its page date, if you pick Page date in the date menu)">By date</button><button data-sort="az" title="By name, A to Z">A–Z</button><button data-sort="za" title="By name, Z to A">Z–A</button></div>
       <label><input type="checkbox" id="hidedone"> Hide completed</label>
       <label id="qscopewrap" style="display:none" title="You're searching inside one notebook. Tick this to search every notebook."><input type="checkbox" id="qscope"> All notebooks</label>
-      <span id="datewrap" class="datef" style="display:none"><select id="dfield" title="Which date to filter on"><option value="updated">Edited</option><option value="created">Created</option><option value="page">Page date</option></select><select id="dpreset" title="Show only notes from this period"><option value="">Any time</option><option value="today">Today</option><option value="week">Last 7 days</option><option value="month">Last 30 days</option><option value="thismonth">This month</option><option value="custom">Custom range…</option></select><span id="dcustom" style="display:none"><input type="date" id="dfrom" title="From"> – <input type="date" id="dto" title="To"></span></span>
+      <span id="datewrap" class="datef" style="display:none"><select id="dfield" title="Which date to filter on. Sorting By date uses Page date if you pick it here, otherwise when the note was created"><option value="updated">Edited</option><option value="created">Created</option><option value="page">Page date</option></select><select id="dpreset" title="Show only notes from this period"><option value="">Any time</option><option value="today">Today</option><option value="week">Last 7 days</option><option value="month">Last 30 days</option><option value="thismonth">This month</option><option value="custom">Custom range…</option></select><span id="dcustom" style="display:none"><input type="date" id="dfrom" title="From"> – <input type="date" id="dto" title="To"></span></span>
       <label id="datedwrap" title="Only show items that have a due date or note date"><input type="checkbox" id="datedonly"> Dated only</label>
     </div>
     <div class="items" id="items"></div>
   </section>
   <div class="detailwrap">
     <div class="fmtbar" id="fmtbar" style="display:none">
+      <div class="rqat" id="rqat" aria-label="Quick access toolbar"></div>
       <div class="rtabs" role="tablist"><button data-rtab="home" class="on">Home</button><button data-rtab="lists">Lists</button><button data-rtab="insert">Insert</button><button data-rtab="table" id="rtabtable" hidden>Table</button><button class="rcol" data-rcollapse title="Hide or show the tools">⌃</button></div>
       <div class="rpane" data-pane="home">
       <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
@@ -745,7 +756,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <input type="file" id="mobfile" accept=".json,application/json,text/plain" hidden>
 <input type="file" id="bringfile" accept=".json,application/json,text/plain" hidden>
 <input type="file" id="nbfile" accept=".json,application/json" hidden>
-<dialog id="notifdlg"><h3>🔔 Notifications</h3><p class="nhelp">A short list of what needs a look right now. Click a row to go to it. <b>To confirm</b> (in the sidebar) is the full list of answers from teammates, with the Confirm and Not yet buttons.</p><div class="nlist" id="notiflist"></div><div class="nfoot"><span><button data-act="notifread">Mark all read</button> <button data-act="notifpop" id="notifpopbtn"></button></span><button class="pri" data-act="notifclose">Close</button></div></dialog>
+<dialog id="notifdlg"><div class="nhead"><h3>🔔 Notifications</h3><span class="ncount" id="notifcount" hidden></span><button class="nx" data-act="notifclose" aria-label="Close" title="Close">✕</button></div><p class="nhelp">What needs a look right now. Click a card to go to it. <b>To confirm</b> in the sidebar has the full list of teammates’ answers, with the Confirm and Not yet buttons.</p><div class="nlist" id="notiflist"></div><div class="nfoot"><span><button data-act="notifread">Mark all read</button> <button data-act="notifpop" id="notifpopbtn"></button></span><button class="pri" data-act="notifclose">Close</button></div></dialog>
 <div id="tour" role="dialog" aria-modal="true" aria-labelledby="tourt"><div class="hole none"></div><div class="card"><h4 id="tourt"></h4><div id="tourx"></div><div class="tfoot"><span class="tdots"></span><span class="tbtns"><button class="tskip" data-t="skip">Skip tour</button><button data-t="back">Back</button><button class="pri" data-t="next">Next</button></span></div></div></div>
 <dialog id="nbexp">
   <h3 id="nbexpt">Export</h3>
@@ -859,7 +870,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <div class="setsec"><h4>Notifications</h4><div id="setalerts"></div></div>
 </div>
 <div class="setpane" role="tabpanel" data-spane="keys" hidden>
-<div class="setsec"><h4>Quick access toolbar</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">A slim strip above your notes with the buttons you use most. Tick the ones you want and use the arrows to put them in order. It is saved in your notebook file.</div><div id="setqat"></div></div>
+<div class="setsec"><h4>Quick access toolbar (in notes)</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">A strip above the editor tabs that stays put whichever tab is open. The easy way: right-click any button or menu in the editor and choose Add to Quick Access Toolbar. Or tick them here and use the arrows to put them in order. It is saved in your notebook file.</div><div id="setqat"></div></div>
 <div class="setsec"><h4>Keyboard shortcuts</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Press <b>Change</b>, then the keys you want. Keys without Ctrl or Alt (like N or /) only work when you are not typing; Ctrl or Alt combinations work anywhere. Saved in your notebook file, so they follow you between computers.</div><div id="setkeys"></div></div>
 </div>
 </div></div>
@@ -927,8 +938,18 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.48.0';
+const APP_VERSION = '1.49.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.49.0",
+  "title": "A quick access toolbar for notes, a tidier alerts list, By date by when you created",
+  "items": [
+   "Quick access toolbar for notes: a strip above the editor tabs (Home, Lists, Insert) that stays put whichever tab is open. Right-click any button or menu in the editor (bold, a list, Insert table, Highlight, Tag…) and choose Add to Quick Access Toolbar; right-click one in the strip to remove it. Tick, untick and reorder them in Settings > Shortcuts, or press ⋯ on the strip. It starts with bold, italic, underline, lists, checkbox and link. The all-purpose toolbar from 1.47 is gone",
+   "The alerts list (the bell) is redesigned: it is grouped (To confirm, Replies, Due, From your team), each alert is its own card with an icon, a clear title and the detail underneath, unread ones are marked, and it is wider. The count of new alerts is at the top",
+   "Notes sorted By date now go by when you created each note, newest first (or by the note's own page date if you choose Page date in the date menu). Each note shows the date used, for example Created Nov 13, 2:05 PM",
+   "Fixed: a note's By date order could be thrown off by a date typed into the note; the date menu now says what By date uses"
+  ]
+ },
  {
   "v": "1.48.0",
   "title": "Set-up guide: a checklist that ticks itself",
@@ -1896,15 +1917,15 @@ function tagRes(){                                                 // the patter
     add:new RegExp('^\\[?(' + a1 + ')\\]?(?:\\s*[:–—]\\s*|\\s+-\\s+|\\s+)(\\S[\\s\\S]*)$', 'i')};
 }
 const tagListText = () => ['ACTION', ...raidKinds().map(k => raidOne(k).toUpperCase())].join(' / ');
-const QAT_DEFAULT = ['newnote', 'quickadd', 'go1', 'search', 'undo', 'notifs', 'settings'];
+const QAT_DEFAULT = ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList', 'checkbox', 'link'];
 const COMBO_RE = /^(?:(?:Ctrl|Alt|Shift)\+)*\S{1,12}$/;
 function cleanShortcuts(o){          // {commandId: [key combos]}: only the ones you changed; an empty list means the command has no key
   const out = {}; if(o && typeof o === 'object' && !Array.isArray(o)) for(const [k, v] of Object.entries(o).slice(0, 80)){ if(!/^[a-z0-9]{2,16}$/.test(k) || !Array.isArray(v)) continue; const ks = [...new Set(v.filter(x => typeof x === 'string' && COMBO_RE.test(x)))].slice(0, 3); if(v.length && !ks.length) continue; out[k] = ks; }
   return out;
 }
-function cleanQat(o){                 // the quick access toolbar: on/off and the command ids in order
-  const ok = !!o && typeof o === 'object' && !Array.isArray(o);
-  return {on: ok ? o.on !== false : true, items: ok && Array.isArray(o.items) ? [...new Set(o.items.filter(x => typeof x === 'string' && /^[a-z0-9]{2,16}$/.test(x)))].slice(0, 20) : QAT_DEFAULT.slice()};
+function cleanQat(o){                 // the notes quick access toolbar (v2: editor buttons; an older global toolbar is dropped): on/off and the pinned ids in order
+  const ok = !!o && typeof o === 'object' && !Array.isArray(o) && o.v === 2;
+  return {v:2, on: ok ? o.on !== false : true, items: ok && Array.isArray(o.items) ? [...new Set(o.items.filter(x => typeof x === 'string' && /^[A-Za-z0-9:_-]{2,32}$/.test(x)))].slice(0, 24) : QAT_DEFAULT.slice()};
 }
 const BLANK = () => ({app:'notebook', version:3, bodyFormat:'html', savedAt:'', categories:DEFAULT_CATS(), items:[], plan:[], trash:[], people:[], me:'', feeds:[], proposals:[], strict:true, guests:[], label:'', sourceId:'', raidCfg:cleanRaidCfg(), shortcuts:{}, qat:cleanQat(), imported:[], notebooks:[{id:'general', name:'General', color:'#3b6ea5'}]});
 const TRASH_DAYS = 30;
@@ -2390,7 +2411,7 @@ function listEntries(opts = {}){
   const key = e => eDate(e) ? eDate(e) + sortTime(eTime(e), e.kind === 'ck' ? e.ck.text : e.item.title) : '', upd = e => e.item.updated || '';
   const order = e => e.kind === 'item' ? -1 : e.item.checklist.indexOf(e.ck);               // an item comes before its own action items
   const notesOnly = (filter === 'note' || filter.startsWith('nb:')) && !search.trim();          // in Notes, By date means the note's own date and time, newest first
-  const noteKey = e => { const i = e.item; return ((i.date || (i.created ? dstr(new Date(i.created)) : '')) + ' ' + (i.time || '00:00')); };
+  const noteKey = e => { const i = e.item; return dateField === 'page' ? (i.date || (i.created ? dstr(new Date(i.created)) : '')) + ' ' + (i.time || '00:00') : (i.created || i.updated || ''); };          // By date = when you created it (or its page date, if you pick Page date in the date menu)
   const nameKey = e => ((e.kind === 'ck' ? e.ck.text : e.item.title) || '').trim();
   a.sort((x, y) => {
     if(sortMode === 'date' && notesOnly){
@@ -2717,7 +2738,7 @@ function entryHtml(e, withNb){
   }
   const w = whenOf(i), onRow = i.id === selId && !(selCk && i.checklist.some(c => c.id === selCk)), dd = itemDate(i), openT = !(i.type === 'task' && i.done);
   if(i.type === 'note'){                                          // a page: the title across the whole row, its date and time on the line below
-    const when = pageWhen(i);
+    const when = sortMode === 'date' && dateField !== 'page' && i.created ? 'Created ' + (() => { const c = new Date(i.created); return fmtDay(dstr(c)) + ', ' + fmtTime(pad(c.getHours()) + ':' + pad(c.getMinutes())); })() : pageWhen(i);
     return `<div draggable="true" data-nbdrop="${esc(nbKey(i))}" class="it noterow ${onRow ? 'on' : ''}" data-id="${i.id}">
       <span class="ic">${isMeeting(i) ? '◷' : '✎'}</span>
       <div><b>${i.pinAll ? '📍 ' : i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${pendingOf(i) ? '💬 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small class="when">${esc(when)}${withNb && nbById(nbKey(i)) ? ' · ' + esc(nbById(nbKey(i)).name) : ''}</small></div></div>`;
@@ -3650,7 +3671,7 @@ function renderAll(){
   applyMode();
   $('#q').value = search; $('#hidedone').checked = hideDone;
   renderTagMenu(); renderBanner(); renderStatus(); renderFileInfo(); renderRail(); renderList(); renderDetail();
-  try { renderQat(); } catch {}
+  try { renderRqat(); } catch {}
   if(MOBILE) mobRefresh();
 }
 
@@ -4980,7 +5001,7 @@ const TOUR = [
   {sel:['#raid'], get t(){ return raidTitle(); }, get x(){ return `<p>${esc(listAnd(raidKinds().map(k => raidMany(k))))} in one place. Tag a line in any note (the <b>＋ Tag…</b> menu in the editor) and it appears here, with an owner and a due date if you want.</p>`; }},
   {sel:['#cats', '#people', '#tags'], t:'Categories, people and tags', x:'<p><b>Categories</b> colour-code your items. <b>People</b> is your team: type <b>@Sam</b> in an action to give it to Sam, and click a name to see everything assigned to them. <b>Tags</b> are the #words you add to a note.</p>'},
   {sel:['#q'], t:'Search', x:'<p>Searches everything: titles, notes, action items and tags. Press <kbd>/</kbd> from anywhere to jump here.</p>'},
-  {sel:['#qat'], t:'Quick access toolbar', x:'<p>The buttons you use most: new note, quick add, search, undo and more. They do not take the cursor out of what you are typing. Press <b>⋯</b> to choose the buttons, and change any keyboard shortcut in <b>Settings &gt; Shortcuts</b>.</p>'},
+  {sel:['#rqat'], t:'Quick access toolbar', x:'<p>In a note, the strip above the Home, Lists and Insert tabs holds the buttons you pinned, so they are there whichever tab is open. Right-click any editor button and choose <b>Add to Quick Access Toolbar</b>. Change keyboard shortcuts in <b>Settings &gt; Shortcuts</b>.</p>'},
   {sel:['#newbtn'], t:'Add something', x:'<p>The <b>+</b> button adds an <b>Action</b> or a <b>Note</b>. <b>Quick add</b> (press <kbd>Q</kbd>) lets you type it in plain words, like “call Sam by Friday 3pm”.</p>'},
   {sel:['.list .opts'], t:'Sort and filter the list', x:'<p>Order the list by recent edits or by date, hide completed items, or filter by a date range or only dated items.</p>'},
   {sel:['#detail'], t:'The editor', x:'<p>Open any item and it appears here. In a note, the toolbar above formats text. Start a line with <b>[]</b> for a checkbox. Tag a line <b>ACTION</b>, <b>RISK</b>, <b>ISSUE</b> or <b>DECISION</b> and it becomes a tracked item you will see in the views on the left.</p><p>Right-click almost anything for more: pin, duplicate, export, move to trash.</p>'},
@@ -5121,7 +5142,9 @@ const notifSoon = () => { clearTimeout(notifTimer); notifTimer = setTimeout(noti
 function renderNotifList(){
   const seen = new Set(notifGet().seen), st = notifGet();
   const rows = notifList.slice().sort((a, b) => (seen.has(a.id) ? 1 : 0) - (seen.has(b.id) ? 1 : 0));
-  $('#notiflist').innerHTML = rows.length ? rows.map(n => `<div class="nrow ${seen.has(n.id) ? '' : 'new'}" data-nid="${esc(n.id)}"><span class="ni">${n.icon}</span><span class="nt">${esc(n.text)}${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</span><span class="ng">${({waiting:'To confirm', today:'Today', note:'Reply', inbox:'From a teammate'})[n.go] || ''}</span></div>`).join('') : '<div class="nnone">Nothing new. You are all caught up.</div>';
+  const GRP = [['waiting', 'To confirm'], ['note', 'Replies on your notes'], ['today', 'Due'], ['inbox', 'From your team']], gk = n => GRP.some(g => g[0] === n.go) ? n.go : 'today';
+  const unread = rows.filter(n => !seen.has(n.id)).length, cnt = $('#notifcount'); if(cnt){ cnt.hidden = !unread; cnt.textContent = unread + ' new'; }
+  $('#notiflist').innerHTML = rows.length ? GRP.map(([k, title]) => { const g = rows.filter(n => gk(n) === k); return g.length ? `<div class="nghd">${title} <small>${g.length}</small></div>` + g.map(n => `<div class="nrow g-${k} ${seen.has(n.id) ? '' : 'new'}" data-nid="${esc(n.id)}"><span class="ni">${n.icon}</span><span class="nt"><b>${esc(n.text)}</b>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</span><span class="ngo">›</span></div>`).join('') : ''; }).join('') : '<div class="nnone"><b>🎉</b>Nothing new. You are all caught up.</div>';
   const btn = $('#notifpopbtn');
   if(MOBILE || typeof window.Notification !== 'function'){ btn.hidden = true; }
   else { btn.hidden = false; btn.textContent = st.popups ? '🔕 Turn off pop-ups' : '🔔 Turn on pop-ups'; }
@@ -5133,7 +5156,7 @@ function notifGo(n){
   else if(n.go) goView(n.go);
   notifBadge();
 }
-function openNotifs(){ notifRefresh(); renderNotifList(); if(!$('#notifdlg').open) $('#notifdlg').showModal(); }
+function openNotifs(){ notifRefresh(); if(!$('#notifdlg').open) $('#notifdlg').showModal(); renderNotifList(); }
 function notifReadAll(){ const st = notifGet(); notifList.forEach(n => { if(!st.seen.includes(n.id)) st.seen.push(n.id); }); notifSave(); notifBadge(); renderNotifList(); }
 async function notifSetPopups(on){
   const st = notifGet();
@@ -5309,26 +5332,48 @@ document.addEventListener('keydown', e => {
   if(cmd.run(e) !== false) e.preventDefault();
 });
 
-/* ---- the quick access toolbar: a slim strip of the buttons you chose. Clicking one does not move the cursor out of what you were typing. ---- */
-let qatSig = '';
-function renderQat(){
-  const bar = document.getElementById('qat'); if(!bar) return;
-  const q = (db && db.qat) || cleanQat(null), items = q.items.map(id => CMD_BY.get(id)).filter(c => c && !c.noBar && cmdAvailable(c));
-  const sig = JSON.stringify([MOBILE, q.on, items.map(c => c.id + '|' + cmdLabel(c) + '|' + keysOf(c).join(','))]);
-  if(sig === qatSig) return; qatSig = sig;
-  bar.hidden = MOBILE || !q.on || !items.length;
-  bar.innerHTML = items.map(c => {
-    const k = keysOf(c)[0], tip = cmdLabel(c) + (k ? ' (' + showCombo(k) + ')' : '');
-    return c.id === 'notifs' ? `<button class="qb bellbtn" data-act="notifs" title="${esc(tip)}"><span class="qi">${c.icon}</span><span class="ql">${esc(c.short)}</span><b class="bellN" hidden></b></button>`
-      : `<button class="qb" data-qat="${c.id}" title="${esc(tip)}"><span class="qi">${c.icon}</span><span class="ql">${esc(c.short || cmdLabel(c))}</span></button>`;
-  }).join('') + '<span class="qsep"></span><button class="qb" data-qat="customize" title="Choose the buttons, and change the shortcuts"><span class="qi">⋯</span></button>';
-  try { notifBadge(); } catch {}
+/* ---- Quick access toolbar for notes: pin any editor button or menu here, so it is there whichever tab is open ---- */
+const ED_SELS = {fmthl:'hilite', fmtfc:'fcolor', fmtsize:'size', fmttag:'tag', fmtblock:'formatBlock'};
+const edLabel = el => ((el.title || '').split(/[.(]/)[0].trim() || (el.textContent || '').trim() || el.dataset.cmd || '').replace(/^./, c => c.toUpperCase());
+function edPinnables(){          // every button and menu on the editor's tabs: [{id, tab, el, label}]
+  const out = [];
+  document.querySelectorAll('#fmtbar .rpane').forEach(pane => pane.querySelectorAll('[data-cmd], select').forEach(el => {
+    const id = el.tagName === 'SELECT' ? (ED_SELS[el.id] ? 'sel:' + el.id : '') : (el.dataset.cmd && !/^tbl-/.test(el.dataset.cmd) ? el.dataset.cmd : '');
+    if(id && !out.some(o => o.id === id)) out.push({id, tab:pane.dataset.pane, el, label:edLabel(el)});
+  }));
+  return out;
 }
-document.getElementById('qat').addEventListener('mousedown', e => { if(e.target.closest('.qb')) e.preventDefault(); });          // keep the cursor where it was
-document.getElementById('qat').addEventListener('click', e => {
-  const b = e.target.closest('[data-qat]'); if(!b) return;
-  if(b.dataset.qat === 'customize'){ openSettings('keys'); return; }
-  const c = CMD_BY.get(b.dataset.qat); if(c && c.run) c.run(null);
+let rqatSig = '';
+function renderRqat(){
+  const bar = document.getElementById('rqat'); if(!bar) return;
+  const q = (db && db.qat) || cleanQat(null), pins = edPinnables(), items = q.on ? q.items.map(id => pins.find(p => p.id === id)).filter(Boolean) : [];
+  const sig = JSON.stringify([q.on, items.map(p => p.id + (p.el.tagName === 'SELECT' ? p.el.innerHTML : ''))]); if(sig === rqatSig) return; rqatSig = sig;
+  bar.hidden = !q.on; bar.textContent = '';
+  const lab = document.createElement('span'); lab.className = 'rqlabel'; lab.textContent = 'Quick access'; bar.appendChild(lab);
+  for(const p of items){
+    if(p.el.tagName === 'SELECT'){ const c = p.el.cloneNode(true); c.removeAttribute('id'); c.dataset.qsel = p.el.id; c.value = p.el.id === 'fmtblock' ? ($('#fmtblock') || {}).value || 'div' : ''; bar.appendChild(c); }
+    else { const b = document.createElement('button'); b.dataset.cmd = p.id; b.title = p.el.title; b.innerHTML = p.el.innerHTML; bar.appendChild(b); }
+  }
+  if(!items.length){ const h = document.createElement('span'); h.className = 'rqhint'; h.textContent = 'Right-click any button below and choose Add to Quick Access Toolbar'; bar.appendChild(h); }
+  const more = document.createElement('button'); more.className = 'rqmore'; more.dataset.rqat = 'edit'; more.title = 'Choose what is pinned here'; more.textContent = '⋯'; bar.appendChild(more);
+}
+function rqatSet(id, on){
+  const q = db.qat = cleanQat(db.qat);
+  if(on){ q.on = true; if(!q.items.includes(id)) q.items.push(id); } else q.items = q.items.filter(x => x !== id);
+  touch(); renderRqat(); if($('#setdlg').open) renderKeySettings();
+  toast(on ? 'Pinned to the Quick Access Toolbar.' : 'Removed from the Quick Access Toolbar.');
+}
+document.getElementById('rqat').addEventListener('click', e => { if(e.target.closest('[data-rqat=edit]')) openSettings('keys'); });
+document.getElementById('rqat').addEventListener('change', e => {          // a pinned menu does what the original does
+  const t = e.target, id = t.dataset && t.dataset.qsel; if(!id) return; const v = t.value, cmd = ED_SELS[id];
+  if(cmd === 'formatBlock') runCmd('formatBlock', v); else { t.value = ''; if(v) runCmd(cmd, cmd === 'hilite' && v === 'none' ? '' : v); }
+});
+document.getElementById('fmtbar').addEventListener('contextmenu', e => {
+  const el = e.target.closest('[data-cmd], select'); if(!el || el.closest('.rtabs')) return;
+  const id = el.dataset.qsel ? 'sel:' + el.dataset.qsel : el.tagName === 'SELECT' ? (ED_SELS[el.id] ? 'sel:' + el.id : '') : el.dataset.cmd;
+  if(!id || /^tbl-/.test(id)) return;
+  e.preventDefault(); const pinned = (cleanQat(db.qat).items).includes(id);
+  openMenu(e.clientX, e.clientY, [pinned ? {l:'Remove from Quick Access Toolbar', ic:'✕', fn: () => rqatSet(id, false)} : {l:'Add to Quick Access Toolbar', ic:'📌', fn: () => rqatSet(id, true)}, {sep:1}, {l:'Choose the buttons…', ic:'⋯', fn: () => openSettings('keys')}]);
 });
 /* ---- Settings > Shortcuts ---- */
 const KEY_RESERVED = new Set(['Ctrl+A', 'Ctrl+B', 'Ctrl+C', 'Ctrl+I', 'Ctrl+U', 'Ctrl+V', 'Ctrl+X', 'Ctrl+Y', 'Ctrl+Z', 'Ctrl+Shift+Z', 'Ctrl+Tab', 'Ctrl+Shift+Tab']);
@@ -5348,15 +5393,15 @@ function setKeys(id, keys){
   const cmd = CMD_BY.get(id); if(!cmd) return;
   db.shortcuts = cleanShortcuts(db.shortcuts);
   if(JSON.stringify(keys) === JSON.stringify(cmd.keys)) delete db.shortcuts[id]; else db.shortcuts[id] = keys;
-  touch(); renderKeySettings(); try { renderQat(); } catch {}
+  touch(); renderKeySettings(); try { renderRqat(); } catch {}
 }
 function renderKeySettings(){
   const q = $('#setqat'), k = $('#setkeys'); if(!q || !k) return;
-  const qt = db.qat = cleanQat(db.qat), avail = CMDS.filter(c => !c.noBar && cmdAvailable(c));
-  const chosen = qt.items.map(id => CMD_BY.get(id)).filter(c => c && avail.includes(c)), rest = avail.filter(c => !chosen.includes(c));
-  q.innerHTML = `<label class="setline"><input type="checkbox" id="qaton" ${qt.on ? 'checked' : ''}> Show the toolbar</label>`
-    + chosen.map((c, i) => `<div class="qrow"><label><input type="checkbox" data-qitem="${c.id}" checked> ${c.icon} ${esc(c.short || cmdLabel(c))}</label><span><button data-qmove="-1" data-id="${c.id}" ${i === 0 ? 'disabled' : ''} title="Move left">↑</button> <button data-qmove="1" data-id="${c.id}" ${i === chosen.length - 1 ? 'disabled' : ''} title="Move right">↓</button></span></div>`).join('')
-    + rest.map(c => `<div class="qrow"><label><input type="checkbox" data-qitem="${c.id}"> ${c.icon} ${esc(c.short || cmdLabel(c))}</label></div>`).join('')
+  const qt = db.qat = cleanQat(db.qat), pins = edPinnables(), chosen = qt.items.map(id => pins.find(p => p.id === id)).filter(Boolean), rest = pins.filter(p => !chosen.includes(p));
+  const tabName = {home:'Home', lists:'Lists', insert:'Insert'}, pv = p => p.el.tagName === 'SELECT' ? '▾' : p.el.innerHTML;
+  q.innerHTML = `<label class="setline"><input type="checkbox" id="qaton" ${qt.on ? 'checked' : ''}> Show the toolbar above the editor tabs</label>`
+    + chosen.map((p, i) => `<div class="qrow"><label><input type="checkbox" data-qitem="${esc(p.id)}" checked> <span class="qpv" style="display:inline-block;min-width:34px;text-align:center">${pv(p)}</span> ${esc(p.label)} <small style="color:var(--mute)">${tabName[p.tab] || p.tab}</small></label><span><button data-qmove="-1" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} title="Move left">↑</button> <button data-qmove="1" data-id="${esc(p.id)}" ${i === chosen.length - 1 ? 'disabled' : ''} title="Move right">↓</button></span></div>`).join('')
+    + rest.map(p => `<div class="qrow"><label><input type="checkbox" data-qitem="${esc(p.id)}"> <span class="qpv" style="display:inline-block;min-width:34px;text-align:center">${pv(p)}</span> ${esc(p.label)} <small style="color:var(--mute)">${tabName[p.tab] || p.tab}</small></label></div>`).join('')
     + `<div class="keyall"><button data-qreset>Reset the toolbar</button></div>`;
   const row = c => { const ks = keysOf(c), changed = Array.isArray(db.shortcuts && db.shortcuts[c.id]); const cap = keyCap === c.id;
     return `<div class="keyrow"><span class="kl">${esc(cmdLabel(c))}</span><span class="kk">${ks.length ? ks.map(x => `<kbd>${esc(showCombo(x))}</kbd>`).join(' ') : '<small>no key</small>'}</span><span><button data-kedit="${c.id}" class="${cap ? 'cap' : ''}">${cap ? 'Press the keys… (Esc cancels)' : 'Change'}</button>${changed ? ` <button data-kreset="${c.id}">Reset</button>` : ''}${ks.length ? ` <button data-kclear="${c.id}">Clear</button>` : ''}</span></div>`; };
@@ -5368,21 +5413,21 @@ $('#setqat').addEventListener('change', e => {
   if(t.id === 'qaton') qt.on = t.checked;
   else if(t.dataset.qitem){ if(t.checked){ if(!qt.items.includes(t.dataset.qitem)) qt.items.push(t.dataset.qitem); } else qt.items = qt.items.filter(x => x !== t.dataset.qitem); }
   else return;
-  touch(); renderKeySettings(); renderQat();
+  touch(); renderKeySettings(); renderRqat();
 });
 $('#setqat').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return; const qt = db.qat = cleanQat(db.qat);
-  if(b.dataset.qmove){ const i = qt.items.indexOf(b.dataset.id), j = i + (+b.dataset.qmove); const avail = qt.items.filter(id => { const c = CMD_BY.get(id); return c && !c.noBar && cmdAvailable(c); }); const a = avail.indexOf(b.dataset.id), z = a + (+b.dataset.qmove); if(a < 0 || z < 0 || z >= avail.length) return; const other = qt.items.indexOf(avail[z]); [qt.items[i], qt.items[other]] = [qt.items[other], qt.items[i]]; }
+  if(b.dataset.qmove){ const pins = edPinnables(), ids = qt.items.filter(id => pins.some(p => p.id === id)), a = ids.indexOf(b.dataset.id), z = a + (+b.dataset.qmove); if(a < 0 || z < 0 || z >= ids.length) return; const i = qt.items.indexOf(ids[a]), j = qt.items.indexOf(ids[z]); [qt.items[i], qt.items[j]] = [qt.items[j], qt.items[i]]; }
   else if('qreset' in b.dataset){ db.qat = cleanQat(null); }
   else return;
-  touch(); renderKeySettings(); renderQat();
+  touch(); renderKeySettings(); renderRqat();
 });
 $('#setkeys').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
   if(b.dataset.kedit){ keyCap = keyCap === b.dataset.kedit ? '' : b.dataset.kedit; keyMsg = ''; renderKeySettings(); return; }
-  if(b.dataset.kreset){ db.shortcuts = cleanShortcuts(db.shortcuts); delete db.shortcuts[b.dataset.kreset]; keyMsg = ''; touch(); renderKeySettings(); try { renderQat(); } catch {} return; }
+  if(b.dataset.kreset){ db.shortcuts = cleanShortcuts(db.shortcuts); delete db.shortcuts[b.dataset.kreset]; keyMsg = ''; touch(); renderKeySettings(); try { renderRqat(); } catch {} return; }
   if(b.dataset.kclear){ keyMsg = ''; setKeys(b.dataset.kclear, []); return; }
-  if('kresetall' in b.dataset){ if(Object.keys(db.shortcuts || {}).length && !confirm('Put every shortcut back to its standard key?')) return; db.shortcuts = {}; keyMsg = ''; touch(); renderKeySettings(); try { renderQat(); } catch {} }
+  if('kresetall' in b.dataset){ if(Object.keys(db.shortcuts || {}).length && !confirm('Put every shortcut back to its standard key?')) return; db.shortcuts = {}; keyMsg = ''; touch(); renderKeySettings(); try { renderRqat(); } catch {} }
 });
 window.addEventListener('keydown', e => {          // while "Change" is waiting, the next key combination is the new one
   if(!keyCap) return;
@@ -6055,6 +6100,7 @@ function fmtState(){
   document.querySelectorAll('#fmtbar [data-cmd]').forEach(b => { if(['bold', 'italic', 'underline', 'strikeThrough', 'superscript', 'subscript', 'insertUnorderedList', 'insertOrderedList'].includes(b.dataset.cmd)) b.classList.toggle('on', st(b.dataset.cmd)); });
   let blk = ''; try { blk = String(document.queryCommandValue('formatBlock')).toLowerCase().replace(/[<>]/g, ''); } catch {}
   $('#fmtblock').value = ['h1', 'h2', 'h3'].includes(blk) ? blk : 'div';
+  document.querySelectorAll('#rqat [data-qsel=fmtblock]').forEach(x => { x.value = $('#fmtblock').value; });
 }
 document.addEventListener('selectionchange', () => {
   const s = getSelection(); if(!s.rangeCount) return;
@@ -6362,7 +6408,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261112140836';</script>
+<script>window.NB_BUILD = '20261113135255';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

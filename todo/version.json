@@ -1,4 +1,14 @@
-{"version":"1.48.0","build":"20261112140836","changelog":[
+{"version":"1.49.0","build":"20261113135255","changelog":[
+ {
+  "v": "1.49.0",
+  "title": "A quick access toolbar for notes, a tidier alerts list, By date by when you created",
+  "items": [
+   "Quick access toolbar for notes: a strip above the editor tabs (Home, Lists, Insert) that stays put whichever tab is open. Right-click any button or menu in the editor (bold, a list, Insert table, Highlight, Tag…) and choose Add to Quick Access Toolbar; right-click one in the strip to remove it. Tick, untick and reorder them in Settings > Shortcuts, or press ⋯ on the strip. It starts with bold, italic, underline, lists, checkbox and link. The all-purpose toolbar from 1.47 is gone",
+   "The alerts list (the bell) is redesigned: it is grouped (To confirm, Replies, Due, From your team), each alert is its own card with an icon, a clear title and the detail underneath, unread ones are marked, and it is wider. The count of new alerts is at the top",
+   "Notes sorted By date now go by when you created each note, newest first (or by the note's own page date if you choose Page date in the date menu). Each note shows the date used, for example Created Nov 13, 2:05 PM",
+   "Fixed: a note's By date order could be thrown off by a date typed into the note; the date menu now says what By date uses"
+  ]
+ },
  {
   "v": "1.48.0",
   "title": "Set-up guide: a checklist that ticks itself",
