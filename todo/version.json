@@ -1,4 +1,13 @@
-{"version":"1.49.0","build":"20261113135255","changelog":[
+{"version":"1.50.0","build":"20261116104659","changelog":[
+ {
+  "v": "1.50.0",
+  "title": "No bell menu: alerts appear as a message. “Saved” no longer stays on screen",
+  "items": [
+   "The bell button and its list are gone from the sidebar. Notifications still work: when something new needs you (a teammate's answer to confirm, a reply on a note, something due now, the daily summary) a message appears at the bottom of the screen for 20 seconds with an Open button that takes you straight to it. If you are in another window, the tab title shows how many you have not seen, like (2) Notebook, until you come back",
+   "Settings > Alerts: a new tick box, “Show a message in the app”, is on by default (browser pop-ups stay optional). A button there still opens the full alert list if you ever want it",
+   "The “Saved 2:41:05 PM” / “All changes saved” label no longer stays on screen. It shows for a moment after each save and fades away. Warnings (Saving…, Not saved to a file) still stay until they are fixed"
+  ]
+ },
  {
   "v": "1.49.0",
   "title": "A quick access toolbar for notes, a tidier alerts list, By date by when you created",

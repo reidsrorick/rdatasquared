@@ -572,7 +572,9 @@ dialog p{color:var(--mute);font-size:13px}
 .dfoot button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:7px 16px}
 .dfoot button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 #status{position:fixed;right:20px;bottom:16px;padding:6px 14px;border-radius:99px;font-size:12px;color:#fff;background:#2b2a27;opacity:.93;pointer-events:none}
+#status{transition:opacity .6s}
 #status.ok::before{content:"✓ ";color:#8bd49a}
+#status.gone{opacity:0}
 #status.bad{background:#c0392b}
 #status.bad::before{content:"⚠ "}
 .txtbox{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:8px;font:12px/1.4 ui-monospace,Consolas,monospace;resize:vertical}
@@ -661,11 +663,11 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <body>
 <div id="banner"></div>
 <div id="mobstrip"></div>
-<div id="narrowbar"><button class="sb" data-nav="drawer" title="Menu">☰</button><h3>My Notebook</h3><button class="sb bellbtn" data-act="notifs" title="Notifications">🔔<b class="bellN" hidden></b></button></div>
+<div id="narrowbar"><button class="sb" data-nav="drawer" title="Menu">☰</button><h3>My Notebook</h3></div>
 <div id="scrim" data-nav="close"></div>
 <div class="app">
   <nav class="rail">
-    <div class="railtop"><h3>My Notebook</h3><span class="railbtns"><button class="sb bellbtn" data-act="notifs" title="Notifications">🔔<b class="bellN" hidden></b></button><button class="sb" data-act="togglerail">«</button></span></div>
+    <div class="railtop"><h3>My Notebook</h3><span class="railbtns"><button class="sb" data-act="togglerail">«</button></span></div>
     <div id="filters"></div>
     <div class="lbl">RAID log</div>
     <div id="raid"></div>
@@ -938,8 +940,17 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.49.0';
+const APP_VERSION = '1.50.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.50.0",
+  "title": "No bell menu: alerts appear as a message. “Saved” no longer stays on screen",
+  "items": [
+   "The bell button and its list are gone from the sidebar. Notifications still work: when something new needs you (a teammate's answer to confirm, a reply on a note, something due now, the daily summary) a message appears at the bottom of the screen for 20 seconds with an Open button that takes you straight to it. If you are in another window, the tab title shows how many you have not seen, like (2) Notebook, until you come back",
+   "Settings > Alerts: a new tick box, “Show a message in the app”, is on by default (browser pop-ups stay optional). A button there still opens the full alert list if you ever want it",
+   "The “Saved 2:41:05 PM” / “All changes saved” label no longer stays on screen. It shows for a moment after each save and fades away. Warnings (Saving…, Not saved to a file) still stay until they are fixed"
+  ]
+ },
  {
   "v": "1.49.0",
   "title": "A quick access toolbar for notes, a tidier alerts list, By date by when you created",
@@ -2500,13 +2511,17 @@ function renderBanner(){
   else if(externalChange) h = b('amber', `“${name}” was changed outside this page.` + (dirty ? ' You also have unsaved edits here.' : ''), btn('reload', 'Reload from file') + btn('keep', 'Keep my version'));
   $('#banner').innerHTML = h;
 }
+let statusTimer = null, statusShown = 0, statusPending = false;
 function renderStatus(){
-  const s = $('#status'); let cls, t;
+  const s = $('#status'); let cls, t, stamp = 0, calm = false;
   if(fileState === 'loading'){ cls = ''; t = 'Loading…'; }
   else if(fileState !== 'ready' || writeError){ cls = 'bad'; t = 'Not saved to a file'; }
   else if(saving || dirty){ cls = ''; t = 'Saving…'; }
-  else { cls = 'ok'; t = lastSaved ? 'Saved ' + lastSaved.toLocaleTimeString([], {hour:'numeric', minute:'2-digit', second:'2-digit'}) : 'All changes saved'; }
-  s.className = cls; s.textContent = t;
+  else { cls = 'ok'; calm = true; stamp = lastSaved ? +lastSaved : 0; t = lastSaved ? 'Saved ' + lastSaved.toLocaleTimeString([], {hour:'numeric', minute:'2-digit', second:'2-digit'}) : 'All changes saved'; }
+  s.textContent = t;
+  if(!calm){ clearTimeout(statusTimer); statusPending = false; s.className = cls; return; }          // a warning (or Saving…) stays; a calm “saved” only shows for a moment
+  if(stamp && stamp !== statusShown){ statusShown = stamp; s.className = 'ok'; clearTimeout(statusTimer); statusPending = true; statusTimer = setTimeout(() => { statusPending = false; s.classList.add('gone'); }, 2500); }
+  else if(!statusPending) s.className = 'ok gone';
 }
 function renderFileInfo(){
   const el = $('#fileinfo'), ok = fileState === 'ready' && !writeError;
@@ -3016,10 +3031,10 @@ function addAction(){
 
 /* ---- auto-detect dates + undo toast ---- */
 let toastUndo = null, toastTimer = null, toastOpenId = null;
-function toast(msg, undo, label = 'Undo', openId){
+function toast(msg, undo, label = 'Undo', openId, ms){
   toastUndo = undo || null; toastOpenId = openId || null; const el = $('#toast');
   el.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button data-act="toastundo">${esc(label)}</button>` : ''}${openId ? '<button data-act="toastopen" title="Go to it, to edit it">Open</button>' : ''}<button data-act="toastx" aria-label="Dismiss">×</button>`;
-  el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 9000);
+  el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms || 9000);
 }
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
 function openItemById(id){ const oi = byId(id); if(!oi) return; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); selId = id; selCk = ''; search = ''; saveUi(); renderAll(); }
@@ -5005,7 +5020,6 @@ const TOUR = [
   {sel:['#newbtn'], t:'Add something', x:'<p>The <b>+</b> button adds an <b>Action</b> or a <b>Note</b>. <b>Quick add</b> (press <kbd>Q</kbd>) lets you type it in plain words, like “call Sam by Friday 3pm”.</p>'},
   {sel:['.list .opts'], t:'Sort and filter the list', x:'<p>Order the list by recent edits or by date, hide completed items, or filter by a date range or only dated items.</p>'},
   {sel:['#detail'], t:'The editor', x:'<p>Open any item and it appears here. In a note, the toolbar above formats text. Start a line with <b>[]</b> for a checkbox. Tag a line <b>ACTION</b>, <b>RISK</b>, <b>ISSUE</b> or <b>DECISION</b> and it becomes a tracked item you will see in the views on the left.</p><p>Right-click almost anything for more: pin, duplicate, export, move to trash.</p>'},
-  {sel:['.rail .railtop .bellbtn'], t:'Notifications', x:'<p>The 🔔 bell counts what is new: things waiting for your OK, replies, what is due today, and (if you are a teammate) what was assigned to you. Click it for the list, and turn on browser pop-ups there if you want them.</p>'},
   {sel:['#fileinfo'], t:'Saving, updates and Settings', x:'<p>Everything saves to your JSON file by itself. If saving ever stops, a red bar appears at the top and says why.</p><p>The version number shows what is new. <b>Settings</b> is where you set up your team, share pages and assigned actions with other people, change the theme, and get back earlier versions.</p>'},
   {t:'That is the tour', x:'<p>A few habits worth learning: <kbd>N</kbd> new action, <kbd>3</kbd> go to Notes, <kbd>Ctrl</kbd>+<kbd>Enter</kbd> mark done.</p><p>You can run this tour again any time from <b>Settings &gt; Help &gt; Take the tour</b>. All the shortcuts are listed right beside it.</p>'}
 ];
@@ -5085,7 +5099,7 @@ function notifGet(){
   if(notifSt) return notifSt;
   let j = null; try { j = JSON.parse(localStorage.getItem(NOTIF_KEY) || 'null'); } catch {}
   j = j && typeof j === 'object' ? j : {};
-  notifSt = {base:+j.base || 0, known:Array.isArray(j.known) ? j.known.slice(-500) : [], seen:Array.isArray(j.seen) ? j.seen.slice(-500) : [], popups:!!j.popups, timed:j.timed !== false, daily:j.daily !== false};
+  notifSt = {base:+j.base || 0, known:Array.isArray(j.known) ? j.known.slice(-500) : [], seen:Array.isArray(j.seen) ? j.seen.slice(-500) : [], popups:!!j.popups, toasts:j.toasts !== false, timed:j.timed !== false, daily:j.daily !== false};
   return notifSt;
 }
 function notifSave(){ const st = notifGet(); st.known = st.known.slice(-500); st.seen = st.seen.slice(-500); try { localStorage.setItem(NOTIF_KEY, JSON.stringify(st)); } catch {} }
@@ -5113,7 +5127,8 @@ function collectNotifs(){
 function notifUnread(){ const seen = new Set(notifGet().seen); return notifList.filter(n => !seen.has(n.id)); }
 function notifBadge(){
   const n = notifUnread().length;
-  document.querySelectorAll('.bellbtn').forEach(b => { const c = b.querySelector('.bellN'); if(!c) return; c.hidden = !n; c.textContent = n > 99 ? '99+' : String(n); b.title = n ? `Notifications: ${n} new` : 'Notifications'; });
+  try { document.title = (n ? '(' + n + ') ' : '') + 'Notebook'; } catch {}          // in another window? the tab says how many you have not seen
+  document.querySelectorAll('.bellbtn').forEach(b => { const c = b.querySelector('.bellN'); if(!c) return; c.hidden = !n; c.textContent = n > 99 ? '99+' : String(n); });
 }
 const notifPerm = () => { if(typeof window.Notification !== 'function') return 'unsupported'; const p = Notification.permission; return p === 'default' && notifGet().granted ? 'granted' : p; };          // some browsers keep saying “default” for a while after you press Allow
 let notifFile = () => location.protocol === 'file:' || window.isSecureContext === false;          // browsers do not allow pop-ups for a page opened from a file
@@ -5130,10 +5145,15 @@ function notifRefresh(){
   const fresh = list.filter(n => !st.known.includes(n.id));
   for(const n of fresh){ st.known.push(n.id); if(quiet) st.seen.push(n.id); }
   if(fresh.length || firstRun) notifSave();
+  const want = fresh.filter(n => n.digest ? st.daily : n.timed ? st.timed : true);
   if(!quiet && st.popups && notifCan()){
-    const want = fresh.filter(n => n.digest ? st.daily : n.timed ? st.timed : true);
     if(want.length > 3) notifPopup({id:'sum:' + Date.now(), text:`${want.length} new things in My Notebook`, sub:'', go:want[0].go});
     else want.forEach(notifPopup);
+  }
+  if(!quiet && st.toasts && want.length && !MOBILE){          // the in-app message: the first thing, and how many more, with Open to go to it
+    const f = want[0], more = want.length - 1;
+    toast(f.text + (more ? ` (and ${more} more)` : ''), () => notifGo(f), 'Open', undefined, 20000);
+    if(!document.hidden){ want.forEach(n => { if(!st.seen.includes(n.id)) st.seen.push(n.id); }); notifSave(); }          // you were looking: it counts as seen
   }
   notifBadge();
   if($('#notifdlg').open) renderNotifList();
@@ -5173,22 +5193,25 @@ async function notifSetPopups(on){
 function renderAlertSettings(){
   const el = $('#setalerts'); if(!el) return; const st = notifGet();
   const perm = notifPerm(), fileMode = notifFile();
-  el.innerHTML = MOBILE ? '<div class="setline" style="font-size:13px;color:var(--mute)">Pop-ups are not used in the phone view. The bell still lists what is new.</div>' : `
-    <div class="setline" style="font-size:13px;color:var(--mute);display:block">The bell at the top of the sidebar lists what is new. Pop-ups are optional: the browser shows them while this app is open in a tab (a closed browser cannot). They are kept per computer.</div>
-    <label class="alertrow"><input type="checkbox" id="alertpop" ${st.popups && !fileMode ? 'checked' : ''} ${perm === 'unsupported' || fileMode ? 'disabled' : ''}> Show pop-ups from the browser <small>${fileMode ? 'Not available here: this page was opened from a file on this computer, and browsers do not allow pop-ups for that. Open the app from its web address (the live site) and this works. The bell works everywhere.' : st.popups && perm !== 'granted' && perm !== 'denied' ? 'Waiting for the browser to allow it. If you pressed Allow and this stays, reload the page once.' : perm === 'granted' ? 'The browser allows notifications from this app.' : perm === 'denied' ? 'The browser is blocking notifications for this site. Allow them in the browser’s site settings.' : perm === 'unsupported' ? 'This browser cannot show notifications.' : 'The browser will ask you the first time.'}</small></label>
+  el.innerHTML = MOBILE ? '<div class="setline" style="font-size:13px;color:var(--mute)">Pop-ups and messages are not used in the phone view.</div>' : `
+    <div class="setline" style="font-size:13px;color:var(--mute);display:block">When something new needs you, a message shows at the bottom of the screen with an Open button. In another window, the tab title shows how many you have not seen. Browser pop-ups are optional extras: the browser shows them while this app is open in a tab (a closed browser cannot). These are kept per computer.</div>
+    <label class="alertrow"><input type="checkbox" id="alertmsg" ${st.toasts ? 'checked' : ''}> Show a message in the app <small>A teammate’s answer to confirm, a reply on a note, something due now. It stays for 20 seconds.</small></label>
+    <label class="alertrow"><input type="checkbox" id="alertpop" ${st.popups && !fileMode ? 'checked' : ''} ${perm === 'unsupported' || fileMode ? 'disabled' : ''}> Show pop-ups from the browser <small>${fileMode ? 'Not available here: this page was opened from a file on this computer, and browsers do not allow pop-ups for that. Open the app from its web address (the live site) and this works. In-app messages work everywhere.' : st.popups && perm !== 'granted' && perm !== 'denied' ? 'Waiting for the browser to allow it. If you pressed Allow and this stays, reload the page once.' : perm === 'granted' ? 'The browser allows notifications from this app.' : perm === 'denied' ? 'The browser is blocking notifications for this site. Allow them in the browser’s site settings.' : perm === 'unsupported' ? 'This browser cannot show notifications.' : 'The browser will ask you the first time.'}</small></label>
     <label class="alertrow"><input type="checkbox" id="alerttimed" ${st.timed ? 'checked' : ''}> Remind me when an action with a time comes due <small>For actions due today that have a time, at that time.</small></label>
     <label class="alertrow"><input type="checkbox" id="alertdaily" ${st.daily ? 'checked' : ''}> A summary of what is due, once a day <small>The first time the app is open each day: how many are due today and past due.</small></label>
-    <div class="setbtns"><button id="alerttest" ${perm === 'granted' && !fileMode ? '' : 'disabled'}>Send a test pop-up</button></div>`;
+    <div class="setbtns"><button id="alerttest" ${perm === 'granted' && !fileMode ? '' : 'disabled'}>Send a test pop-up</button><button data-act="notifs">Show the alert list</button></div>`;
 }
 $('#setalerts').addEventListener('change', e => {
   const st = notifGet();
   if(e.target.id === 'alertpop') notifSetPopups(e.target.checked);
+  else if(e.target.id === 'alertmsg'){ st.toasts = e.target.checked; notifSave(); }
   else if(e.target.id === 'alerttimed'){ st.timed = e.target.checked; notifSave(); }
   else if(e.target.id === 'alertdaily'){ st.daily = e.target.checked; notifSave(); }
 });
 $('#setalerts').addEventListener('click', e => { if(e.target.id === 'alerttest' && notifCan()){ notifPopup({id:'test:' + Date.now(), text:'This is a test. Pop-ups are working.', sub:'', go:''}); toast('Test sent. If nothing appeared, check that Windows notifications are on for your browser and that Focus assist (Do not disturb) is off.'); } });
 $('#notiflist').addEventListener('click', e => { const r = e.target.closest('[data-nid]'); if(!r) return; const n = notifList.find(x => x.id === r.dataset.nid); if(n) notifGo(n); });
-setInterval(() => { if(!document.hidden || notifGet().popups) notifRefresh(); }, 30000);
+setInterval(() => { if(!document.hidden || notifGet().popups || notifGet().toasts) notifRefresh(); }, 30000);
+document.addEventListener('visibilitychange', () => { if(document.hidden) return; setTimeout(() => { const st = notifGet(); notifList.forEach(n => { if(!st.seen.includes(n.id)) st.seen.push(n.id); }); notifSave(); notifBadge(); }, 3000); });          // back in the window: what the tab title counted is now seen
 /* ---- Section headings (Past due, Today, a person's name…) fold: click one and what is under it hides. Kept per computer. ---- */
 const GH_KEY = 'notebook-ghfold';
 let ghFold = new Set(); try { ghFold = new Set(JSON.parse(localStorage.getItem(GH_KEY) || '[]')); } catch {}
@@ -5301,7 +5324,7 @@ const CMDS = [
   {id:'sidebar', g:'Working', l:'Hide or show the sidebar', short:'Sidebar', icon:'☰', keys:['Ctrl+\\'], dlg:true, run:() => { if(isNarrow()) toggleDrawer(); else { railOff = !railOff; saveUi(); applyMode(); } }},
   {id:'help', g:'Working', l:'Show the shortcut sheet', short:'Shortcuts', icon:'⌨', keys:['?'], run:() => { openShortcuts(); }},
   {id:'undo', g:'Working', l:'Undo (typing in the box you are in, or the message at the bottom)', short:'Undo', icon:'↶', keys:[], run:() => { cmdUndo(); }},
-  {id:'notifs', g:'Working', l:'Notifications', short:'Alerts', icon:'🔔', keys:[], run:() => { openNotifs(); }},
+  {id:'notifs', g:'Working', l:'Show the alert list', short:'Alerts', icon:'🔔', keys:[], run:() => { openNotifs(); }},
   {id:'settings', g:'Working', l:'Settings', short:'Settings', icon:'⚙', keys:[], run:() => { openSettings(); }},
   {id:'link', g:'In notes', scope:'editor', noBar:true, l:'Add a link', keys:['Ctrl+K'], run:() => { runCmd('link'); }},
   {id:'hr', g:'In notes', scope:'editor', noBar:true, l:'Insert a horizontal line (or type --- and press Enter)', keys:['Ctrl+Shift+H'], run:ed => { runCmd('hr'); if(ed && ed.dispatchEvent) ed.dispatchEvent(new Event('input', {bubbles:true})); }},
@@ -6408,7 +6431,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261113135255';</script>
+<script>window.NB_BUILD = '20261116104659';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
