@@ -1,4 +1,77 @@
-{"version":"1.50.0","build":"20261116104659","changelog":[
+{"version":"1.55.0","build":"20261117125711","changelog":[
+ {
+  "v": "1.55.0",
+  "title": "Spreadsheets: wrap text, freeze panes, INDEX / MATCH / SEQUENCE. Sticky note actions. Hide both panels",
+  "items": [
+   "Sticky note: a line that starts with ACTION: (or RISK:, ISSUE:, DECISION:) now becomes an action while you type in the floating window, about a second after you stop, just like in the main window. The tag turns into its coloured label there, and a small message under the note says what was created",
+   "Spreadsheet: Wrap text button. Select cells and press it to show long text on several lines (the row grows to fit); press again to turn it off",
+   "Spreadsheet: Freeze menu. Keep the top row, the first column, both, or everything above and left of the selected cell in view while you scroll (up to 30 rows and 5 columns). A heavier line shows where the frozen part ends. Choose Unfreeze to undo it",
+   "Spreadsheet formulas: INDEX(range, row, column), MATCH(find, range, 0) and SEQUENCE(rows, columns, start, step). Used together, =INDEX(C2:C20, MATCH(\"Ink\", A2:A20, 0)) looks up the value that sits beside \"Ink\". MATCH's last number: 0 exact (wildcards allowed), 1 or left out = the biggest value not above it in a list sorted small to big, -1 = the smallest not below it in a list sorted big to small. SEQUENCE fills cells like TEXTSPLIT does (down and to the right; add rows or columns first if it shows #SPILL!). =SUM(SEQUENCE(5)) works too",
+   "Spreadsheet: the AutoSum button is gone (type =SUM then Tab, drag over the cells, press Enter)",
+   "Hide both side panels at once: the new ⇤ Hide panels button at the top of every note, or Ctrl+. (press again to bring them back). Ctrl+, hides or shows just the list. Both keys can be changed in Settings > Shortcuts"
+  ]
+ },
+ {
+  "v": "1.54.0",
+  "title": "Spreadsheets: IF and 30 more formulas, dates, true/false",
+  "items": [
+   "IF is here: =IF(B2>100,\"big\",\"small\"). Compare with >, <, >=, <=, = and <> (text is compared without caring about capitals). Also AND, OR, NOT, IFERROR, and TRUE / FALSE. Join text with & (=A2&\" \"&B2)",
+   "Add up or count by condition: SUMIF(range, criteria, sum_range) and COUNTIF(range, criteria). Criteria can be a value, a test such as \">100\" or \"<>Travel\", or text with * and ? as wildcards (\"T*\")",
+   "Math: MEDIAN, ROUNDUP, ROUNDDOWN, SQRT, POWER, MOD, LARGE, SMALL, RANK",
+   "Text: CONCAT, LEFT, RIGHT, UPPER, LEN, TRIM, TEXTBEFORE, TEXTAFTER and TEXTSPLIT. TEXTSPLIT fills the cells to its right (and below, if you give it a row separator); if something is in the way you get #SPILL!",
+   "XLOOKUP(find, look_in, return_from, if_not_found): look a value up in one column or row and give back the matching one from another. Without if_not_found a miss shows #N/A. A fifth choice makes it use wildcards (2) or the nearest smaller (-1) or larger (1) number",
+   "Dates: type 2026-11-17 in a cell and it is a date (shown that way). TODAY(), DAYS(end, start) and EDATE(date, months) work with them, and there is a Date choice in the number format menu. A date is a number underneath, so =A2+30 works (give the answer cell the Date format)",
+   "When you type = and the start of any of these, Tab fills in the name, as before. Typing =TODAY() no longer turns into a plain date"
+  ]
+ },
+ {
+  "v": "1.53.0",
+  "title": "Easier formulas in spreadsheets: Tab completes, drag to pick cells, Enter closes the bracket",
+  "items": [
+   "Type = and the start of a function, for example =su, and a small list shows the matches with what each one does. Tab fills in the first one with its bracket: =SUM(. Up and Down choose another match first",
+   "While you are writing a formula, click a cell or drag across several cells and the reference is typed in for you (B2 or B2:B6), with a dashed outline on the cells. Click again to pick something else instead; type a comma to start the next one. It works in the cell and in the formula bar",
+   "Press Enter and a bracket you left open is closed for you: =SUM(B2:B6 becomes =SUM(B2:B6). This also happens when you finish the cell with Tab or by clicking away",
+   "While you type a formula the arrow keys move inside it instead of leaving the cell, so a formula is not finished by accident"
+  ]
+ },
+ {
+  "v": "1.52.1",
+  "title": "Fixed: no way to make a spreadsheet from inside Notes",
+  "items": [
+   "In Notes the + button makes a plain note straight away, so the Spreadsheet choice never showed. There is now a ▦ button beside the + while you are in Notes that makes a new spreadsheet in the notebook you are in. (Elsewhere the + menu still lists Spreadsheet.)"
+  ]
+ },
+ {
+  "v": "1.52.0",
+  "title": "New: sticky note, a note in a small window that floats above other programs",
+  "items": [
+   "Open any note and press ▭ Sticky note (top right of the note). The note opens in a small separate window that stays on top of your other programs, like Microsoft's Sticky Notes. Type in it and the note is saved straight away",
+   "The sticky note has the note's title and text, and a short row of buttons: bold, italic, underline, bulleted and numbered lists, a checkbox for the line, and highlight. Click a checkbox to tick it",
+   "Whatever you type in the floating window shows in the main window and the other way round (the window you are not typing in catches up as you click back into it). Lines that start with ACTION:, RISK: and so on become items when you leave the sticky note",
+   "One sticky note at a time: opening another note's sticky replaces the first. It closes by itself if you delete the note. It works in Brave, Chrome and Edge on a computer (not on a phone), also when the app is opened from the file on your computer",
+   "Not yet: it is not remembered after you close it, spreadsheets cannot be floated, and there is no keyboard shortcut for it"
+  ]
+ },
+ {
+  "v": "1.51.0",
+  "title": "New: spreadsheet notes (a grid with formulas, totals and percentages)",
+  "items": [
+   "A new kind of page: + > Spreadsheet makes a note that is a grid of cells. Click a cell and type. Formulas start with =, for example =SUM(B2:B6), =C2*D2, =B2/B$10 or =B2*15%. SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, ROUND, ABS and PRODUCT are there, and totals update as you type",
+   "Σ AutoSum puts a total under (or beside) the numbers, or under each column you select. Fill down and Fill right (Ctrl+D, Ctrl+R) copy a formula along, and its cell references move with it",
+   "Format cells as Number, Percent or Currency from the menu above the grid. Type 15% or $1,200 straight into a cell and it shows that way",
+   "Paste cells from Excel (or copy cells out to it). Import CSV puts a CSV file in at the selected cell, and Export CSV (also under Export… on the note) saves the values you see",
+   "Insert and delete rows and columns, drag the edge of a column header to change its width, and Ctrl+Z / Ctrl+Y undo and redo changes to the sheet. The formulas follow when you insert or delete",
+   "A sheet is saved in your data file and holds up to 2,000 rows by 50 columns. You get a gentle notice at 80% of that, and a message pointing you to Excel when you reach the limit. A paste or CSV that is too big asks before putting in just the part that fits",
+   "Not included: totals across notes, IF and lookup formulas. A spreadsheet note is also written into shared pages as a table, so Claude can read it"
+  ]
+ },
+ {
+  "v": "1.50.1",
+  "title": "Fixed: a new note or action always sorted to the bottom of its list",
+  "items": [
+   "Found the real cause of notes that “stay at the bottom” whatever the sort (Recent, By date, A–Z or Z–A): a note or action you created while the app was open did not have its pinned flag set yet, and the sort treated “not set” as different from “not pinned”, so it put every such item after all the others until the file was reloaded. Sorting now treats them the same, and new items are created with the flag set. This is why a note made yesterday stayed at the bottom for as long as the app stayed open, and why a title starting with the date did not help"
+  ]
+ },
  {
   "v": "1.50.0",
   "title": "No bell menu: alerts appear as a message. “Saved” no longer stays on screen",

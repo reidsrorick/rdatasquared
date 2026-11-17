@@ -391,6 +391,64 @@ input.who:focus{border-color:var(--accent)}
 .rt td,.rt th{border:1px solid var(--line);padding:5px 9px;vertical-align:top;line-height:1.45;min-width:40px}
 .rt th{background:var(--hover);text-align:left;font-weight:600}
 .rt td:focus-within,.rt th:focus-within{background:color-mix(in srgb,var(--soft) 50%,transparent)}
+.typebtns{display:flex;gap:6px}
+.typerow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stkbtn{border:1px solid var(--line);background:none;color:var(--text);border-radius:8px;padding:3px 10px;font-size:12px;opacity:.8}
+.new.alt{background:var(--panel);color:var(--accent);border:1px solid var(--line)}
+.new[hidden]{display:none}
+.stkbtn:hover{background:var(--hover2);opacity:1}
+body.mobile .stkbtn{display:none}
+.stk{flex:1;display:flex;flex-direction:column;gap:6px;padding:8px;min-height:0}
+.stkt{width:100%;border:0;border-bottom:1px solid var(--line);background:none;color:var(--text);font:600 16px Georgia,serif;padding:2px 2px 5px;outline:none}
+.stkbar{display:flex;gap:4px;flex-wrap:wrap}
+.stkbar button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:6px;padding:2px 8px;font-size:12.5px;cursor:pointer}
+.stkbar button:hover{background:var(--hover2)}
+.stkmsg{font-size:12px;color:var(--text);background:var(--hover2);border-radius:6px;padding:4px 8px}
+.stk .stkr{flex:1;min-height:0;overflow:auto;font-size:14px;padding:10px 12px;border-radius:8px}
+.sheet{margin:4px 0 6px}
+.shbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.shbar button,.shbar select{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:7px;padding:3px 9px;font-size:12.5px}
+.shbar button:hover{background:var(--hover2)}
+.shbar .sep{width:1px;height:18px;background:var(--line);margin:0 2px}
+.shsize{margin-left:auto;font-size:12px;color:var(--mute)}
+.shfx{display:flex;gap:6px;margin-bottom:8px}
+.shname{min-width:70px;text-align:center;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--hover2);font-size:12.5px;font-variant-numeric:tabular-nums}
+.shfxin{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--field);color:var(--text);font:13px Consolas,"Cascadia Mono",monospace}
+.shscroll{overflow:auto;max-height:min(68vh,640px);min-height:120px;border:1px solid var(--line);border-radius:8px;background:var(--field);scroll-padding:30px 50px}
+.shbox{position:relative;width:max-content}
+.shgrid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13px;outline:none;user-select:none;-webkit-user-select:none}
+.shgrid th{background:var(--hover);color:var(--mute);font-weight:600;font-size:11.5px;text-align:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:24px;padding:0;cursor:pointer;position:sticky;top:0;z-index:5;overflow:visible}
+.shgrid th.shrh{left:0;top:auto;z-index:4;font-weight:400}
+.shgrid th.shcorner{left:0;z-index:7}
+.shgrid th.fzh{z-index:6}
+.shgrid td.fzr,.shgrid td.fzc{position:sticky;z-index:1;background:var(--field)}
+.shgrid td.fzr.fzc{z-index:2}
+.shgrid td.fzr.sa,.shgrid td.fzc.sa{background:color-mix(in srgb,var(--soft) 55%,var(--field))}
+.shgrid .fzlr{border-bottom:2px solid var(--mute)}
+.shgrid .fzlc{border-right:2px solid var(--mute)}
+.shgrid th.shrh.fzr{z-index:6}
+.shbar select[data-shfz]{width:190px}
+.shgrid td.sw{white-space:pre-wrap;overflow-wrap:anywhere;text-overflow:clip;vertical-align:top;padding-top:3px;padding-bottom:3px;line-height:1.35}
+.shbar button.on{background:var(--soft);border-color:var(--accent)}
+.shgrid th .shrz{position:absolute;right:-3px;top:0;width:7px;height:100%;cursor:col-resize;z-index:5}
+.shgrid td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:24px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:cell}
+.shgrid td.sn{text-align:right;font-variant-numeric:tabular-nums}
+.shgrid td.sbool{text-align:center}
+.shgrid td.se{color:var(--red);text-align:center}
+.shgrid td.sa{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.shgrid td.ed{padding:0;overflow:visible}
+.shin{display:block;width:100%;height:100%;min-height:23px;border:0;outline:2px solid var(--accent);outline-offset:-2px;background:var(--panel);color:var(--text);font:inherit;padding:0 6px;user-select:text;-webkit-user-select:text}
+.shsel{position:absolute;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent);pointer-events:none;z-index:3;box-sizing:border-box}
+.sheet{position:relative}
+.shac{position:absolute;z-index:8;min-width:230px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px #0004;font-size:12.5px;overflow:hidden}
+.shaci{padding:4px 10px;cursor:pointer;white-space:nowrap}
+.shaci.on{background:var(--soft)}
+.shaci b{color:var(--accent)}
+.shaci span{color:var(--mute);margin-left:4px}
+.shacn{padding:3px 10px;font-size:11px;color:var(--mute);border-top:1px solid var(--line)}
+.shpt{display:none;position:absolute;border:2px dashed var(--blue);background:color-mix(in srgb,var(--blue) 10%,transparent);pointer-events:none;z-index:1;box-sizing:border-box}
+.shhint{margin-top:6px;font-size:12px;color:var(--mute)}
+body.mobile .shbar,body.mobile .shfx,body.mobile .shhint{display:none}
 .rt .fc-red{color:#e0514b}.rt .fc-orange{color:#e08a1e}.rt .fc-green{color:#3f9b5b}.rt .fc-blue{color:#4b8fd9}.rt .fc-purple{color:#9b6bd3}.rt .fc-gray{color:#8a8a8a}
 .rt span[style*="background-color"]:not([style*="transparent"]){color:#1d1d1b;border-radius:2px}
 .rt mark.h-green{background:#bff0c8}.rt mark.h-blue{background:#bfe0ff}.rt mark.h-pink{background:#ffc9de}.rt mark.h-orange{background:#ffd6aa}
@@ -612,7 +670,7 @@ body.mobile #mobtabs{display:flex;border-top:1px solid var(--line);background:va
 body.mobile #mobtabs a{flex:1;text-align:center;padding:9px 2px 8px;font-size:11.5px;color:var(--mute);cursor:pointer;line-height:1.25}
 body.mobile #mobtabs a i{display:block;font-style:normal;font-size:19px;line-height:1.1}
 body.mobile #mobtabs a.on{color:var(--accent);font-weight:600}
-body.mobile .rail,body.mobile #banner,body.mobile #fmtbar,body.mobile #status,body.mobile .list .top .sb,body.mobile #newbtn,body.mobile #newmenu,body.mobile #nbbar,body.mobile .list .chips,body.mobile .list .opts,body.mobile #detail button,body.mobile #detail .addrow,body.mobile #detail .qapv,body.mobile #detail .addnote,body.mobile #detail .nlink,body.mobile #detail .ckhide,body.mobile #detail a[data-act=scandates],body.mobile .nbhead2 button,body.mobile .nbgo{display:none !important}
+body.mobile .rail,body.mobile #banner,body.mobile #fmtbar,body.mobile #status,body.mobile .list .top .sb,body.mobile #newbtn,body.mobile #newsheetbtn,body.mobile #newmenu,body.mobile #nbbar,body.mobile .list .chips,body.mobile .list .opts,body.mobile #detail button,body.mobile #detail .addrow,body.mobile #detail .qapv,body.mobile #detail .addnote,body.mobile #detail .nlink,body.mobile #detail .ckhide,body.mobile #detail a[data-act=scandates],body.mobile .nbhead2 button,body.mobile .nbgo{display:none !important}
 body.mobile .app,body.mobile .app.actions-mode{grid-template-columns:1fr !important;flex:1;min-height:0}
 body.mobile .list{max-height:none;border:0;min-height:0;flex:1 1 auto}
 body.mobile .list .top{padding:10px 14px 6px}
@@ -685,9 +743,11 @@ body.mobile #mobwelcome .bad{color:var(--red)}
       <button class="sb" data-act="togglelist">«</button>
       <input type="search" id="q" placeholder="Search everything…">
       <button class="new" id="newbtn" title="New item">+</button>
+      <button class="new alt" id="newsheetbtn" title="New spreadsheet" hidden>▦</button>
       <div class="menu" id="newmenu">
         <button data-new="task">☐ Action</button>
         <button data-new="note">✎ Note</button>
+        <button data-new="sheet">▦ Spreadsheet</button>
         <button data-act="quickadd">⚡ Quick add…</button>
       </div>
     </div>
@@ -940,8 +1000,81 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.50.0';
+const APP_VERSION = '1.55.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.55.0",
+  "title": "Spreadsheets: wrap text, freeze panes, INDEX / MATCH / SEQUENCE. Sticky note actions. Hide both panels",
+  "items": [
+   "Sticky note: a line that starts with ACTION: (or RISK:, ISSUE:, DECISION:) now becomes an action while you type in the floating window, about a second after you stop, just like in the main window. The tag turns into its coloured label there, and a small message under the note says what was created",
+   "Spreadsheet: Wrap text button. Select cells and press it to show long text on several lines (the row grows to fit); press again to turn it off",
+   "Spreadsheet: Freeze menu. Keep the top row, the first column, both, or everything above and left of the selected cell in view while you scroll (up to 30 rows and 5 columns). A heavier line shows where the frozen part ends. Choose Unfreeze to undo it",
+   "Spreadsheet formulas: INDEX(range, row, column), MATCH(find, range, 0) and SEQUENCE(rows, columns, start, step). Used together, =INDEX(C2:C20, MATCH(\"Ink\", A2:A20, 0)) looks up the value that sits beside \"Ink\". MATCH's last number: 0 exact (wildcards allowed), 1 or left out = the biggest value not above it in a list sorted small to big, -1 = the smallest not below it in a list sorted big to small. SEQUENCE fills cells like TEXTSPLIT does (down and to the right; add rows or columns first if it shows #SPILL!). =SUM(SEQUENCE(5)) works too",
+   "Spreadsheet: the AutoSum button is gone (type =SUM then Tab, drag over the cells, press Enter)",
+   "Hide both side panels at once: the new ⇤ Hide panels button at the top of every note, or Ctrl+. (press again to bring them back). Ctrl+, hides or shows just the list. Both keys can be changed in Settings > Shortcuts"
+  ]
+ },
+ {
+  "v": "1.54.0",
+  "title": "Spreadsheets: IF and 30 more formulas, dates, true/false",
+  "items": [
+   "IF is here: =IF(B2>100,\"big\",\"small\"). Compare with >, <, >=, <=, = and <> (text is compared without caring about capitals). Also AND, OR, NOT, IFERROR, and TRUE / FALSE. Join text with & (=A2&\" \"&B2)",
+   "Add up or count by condition: SUMIF(range, criteria, sum_range) and COUNTIF(range, criteria). Criteria can be a value, a test such as \">100\" or \"<>Travel\", or text with * and ? as wildcards (\"T*\")",
+   "Math: MEDIAN, ROUNDUP, ROUNDDOWN, SQRT, POWER, MOD, LARGE, SMALL, RANK",
+   "Text: CONCAT, LEFT, RIGHT, UPPER, LEN, TRIM, TEXTBEFORE, TEXTAFTER and TEXTSPLIT. TEXTSPLIT fills the cells to its right (and below, if you give it a row separator); if something is in the way you get #SPILL!",
+   "XLOOKUP(find, look_in, return_from, if_not_found): look a value up in one column or row and give back the matching one from another. Without if_not_found a miss shows #N/A. A fifth choice makes it use wildcards (2) or the nearest smaller (-1) or larger (1) number",
+   "Dates: type 2026-11-17 in a cell and it is a date (shown that way). TODAY(), DAYS(end, start) and EDATE(date, months) work with them, and there is a Date choice in the number format menu. A date is a number underneath, so =A2+30 works (give the answer cell the Date format)",
+   "When you type = and the start of any of these, Tab fills in the name, as before. Typing =TODAY() no longer turns into a plain date"
+  ]
+ },
+ {
+  "v": "1.53.0",
+  "title": "Easier formulas in spreadsheets: Tab completes, drag to pick cells, Enter closes the bracket",
+  "items": [
+   "Type = and the start of a function, for example =su, and a small list shows the matches with what each one does. Tab fills in the first one with its bracket: =SUM(. Up and Down choose another match first",
+   "While you are writing a formula, click a cell or drag across several cells and the reference is typed in for you (B2 or B2:B6), with a dashed outline on the cells. Click again to pick something else instead; type a comma to start the next one. It works in the cell and in the formula bar",
+   "Press Enter and a bracket you left open is closed for you: =SUM(B2:B6 becomes =SUM(B2:B6). This also happens when you finish the cell with Tab or by clicking away",
+   "While you type a formula the arrow keys move inside it instead of leaving the cell, so a formula is not finished by accident"
+  ]
+ },
+ {
+  "v": "1.52.1",
+  "title": "Fixed: no way to make a spreadsheet from inside Notes",
+  "items": [
+   "In Notes the + button makes a plain note straight away, so the Spreadsheet choice never showed. There is now a ▦ button beside the + while you are in Notes that makes a new spreadsheet in the notebook you are in. (Elsewhere the + menu still lists Spreadsheet.)"
+  ]
+ },
+ {
+  "v": "1.52.0",
+  "title": "New: sticky note, a note in a small window that floats above other programs",
+  "items": [
+   "Open any note and press ▭ Sticky note (top right of the note). The note opens in a small separate window that stays on top of your other programs, like Microsoft's Sticky Notes. Type in it and the note is saved straight away",
+   "The sticky note has the note's title and text, and a short row of buttons: bold, italic, underline, bulleted and numbered lists, a checkbox for the line, and highlight. Click a checkbox to tick it",
+   "Whatever you type in the floating window shows in the main window and the other way round (the window you are not typing in catches up as you click back into it). Lines that start with ACTION:, RISK: and so on become items when you leave the sticky note",
+   "One sticky note at a time: opening another note's sticky replaces the first. It closes by itself if you delete the note. It works in Brave, Chrome and Edge on a computer (not on a phone), also when the app is opened from the file on your computer",
+   "Not yet: it is not remembered after you close it, spreadsheets cannot be floated, and there is no keyboard shortcut for it"
+  ]
+ },
+ {
+  "v": "1.51.0",
+  "title": "New: spreadsheet notes (a grid with formulas, totals and percentages)",
+  "items": [
+   "A new kind of page: + > Spreadsheet makes a note that is a grid of cells. Click a cell and type. Formulas start with =, for example =SUM(B2:B6), =C2*D2, =B2/B$10 or =B2*15%. SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, ROUND, ABS and PRODUCT are there, and totals update as you type",
+   "Σ AutoSum puts a total under (or beside) the numbers, or under each column you select. Fill down and Fill right (Ctrl+D, Ctrl+R) copy a formula along, and its cell references move with it",
+   "Format cells as Number, Percent or Currency from the menu above the grid. Type 15% or $1,200 straight into a cell and it shows that way",
+   "Paste cells from Excel (or copy cells out to it). Import CSV puts a CSV file in at the selected cell, and Export CSV (also under Export… on the note) saves the values you see",
+   "Insert and delete rows and columns, drag the edge of a column header to change its width, and Ctrl+Z / Ctrl+Y undo and redo changes to the sheet. The formulas follow when you insert or delete",
+   "A sheet is saved in your data file and holds up to 2,000 rows by 50 columns. You get a gentle notice at 80% of that, and a message pointing you to Excel when you reach the limit. A paste or CSV that is too big asks before putting in just the part that fits",
+   "Not included: totals across notes, IF and lookup formulas. A spreadsheet note is also written into shared pages as a table, so Claude can read it"
+  ]
+ },
+ {
+  "v": "1.50.1",
+  "title": "Fixed: a new note or action always sorted to the bottom of its list",
+  "items": [
+   "Found the real cause of notes that “stay at the bottom” whatever the sort (Recent, By date, A–Z or Z–A): a note or action you created while the app was open did not have its pinned flag set yet, and the sort treated “not set” as different from “not pinned”, so it put every such item after all the others until the file was reloaded. Sorting now treats them the same, and new items are created with the flag set. This is why a note made yesterday stayed at the bottom for as long as the app stayed open, and why a title starting with the date did not help"
+  ]
+ },
  {
   "v": "1.50.0",
   "title": "No bell menu: alerts appear as a message. “Saved” no longer stays on screen",
@@ -2076,13 +2209,13 @@ function normalize(d){
 function normalizeBody(d){
   const rich = d.bodyFormat === 'html', conv = s => rich ? cleanHtml(s || '') : plainToHtml(s || '');      // files from before formatting hold plain text
   d.categories = Array.isArray(d.categories) ? d.categories.map(c => ({id:c.id || uid(), name:c.name || 'Untitled', color:c.color || '#888888'})) : DEFAULT_CATS();
-  const item = i => ({
+  const item = i => { const sh = i.type === 'task' ? null : cleanSheet(i.sheet); return ({
     id: i.id || uid(), type: i.type === 'task' ? 'task' : 'note',      // older files had a separate "meeting" type: meetings are now just notes that have a date
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
     done: !!i.done, doneAt: i.done ? (okIso(i.doneAt) || '') : '', doneBy: i.done ? clipS(i.doneBy, 40).trim() : '', pinned: !!i.pinned, pinAll: !!i.pinned && !!i.pinAll, proposed: cleanProposed(i.proposed), shared: i.shared && i.shared.on ? cleanShared(i.shared) : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: isRaidKind(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, doneAt:c.done ? (okIso(c.doneAt) || '') : '', doneBy:c.done ? clipS(c.doneBy, 40).trim() : '', due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: isRaidKind(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat), proposed:cleanProposed(c.proposed)})) : [],
-    replies: cleanReplies(i.replies), autoDt: i.type === 'note' && !!i.autoDt && !!(i.date || i.time), created: i.created || now(), updated: i.updated || now()
-  });
+    replies: cleanReplies(i.replies), autoDt: i.type === 'note' && !!i.autoDt && !!(i.date || i.time), created: i.created || now(), updated: i.updated || now(), ...(sh ? {sheet: sh} : {})
+  }); };          // a spreadsheet note keeps its cells in `sheet` (only notes that are spreadsheets have one)
   d.items = (d.items || []).map(item);
   const nbSeen = new Set(); d.notebooks = (Array.isArray(d.notebooks) ? d.notebooks : []).filter(n => n && typeof n.name === 'string').map((n, k) => ({id: n.id && !nbSeen.has(n.id) ? n.id : uid(), name: n.name.trim() || 'Untitled', category: typeof n.category === 'string' ? n.category : '', color: /^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : NB_COLORS[k % NB_COLORS.length], shared: n.shared && n.shared.on ? {on:true, dir:String(n.shared.dir || ''), files:Array.isArray(n.shared.files) ? n.shared.files.filter(x => typeof x === 'string').slice(0, 5000) : [], last:String(n.shared.last || '')} : null})).filter(n => { nbSeen.add(n.id); return true; });
   d.notebooks.forEach(n => { if(n.category && !d.categories.some(c => c.id === n.category)) n.category = ''; });
@@ -2371,7 +2504,7 @@ function dueBucket(dateStr, done, isAction, from = new Date()){
 /* The list holds "entries": an item (task / note / meeting), or an action item (a checklist line inside one) */
 const eDate = e => e.kind === 'ck' ? e.ck.due : itemDate(e.item);
 const eTime = e => e.kind === 'ck' ? e.ck.time : e.item.time;
-const eDone = e => e.kind === 'ck' ? e.ck.done : (e.item.type === 'task' && e.item.done);
+const eDone = e => !!(e.kind === 'ck' ? e.ck.done : (e.item.type === 'task' && e.item.done));
 const eType = e => e.kind === 'ck' ? 'action' : typeOf(e.item);
 function bucketOf(e){
   if(e.kind === 'item' && e.item.pinned) return 'Pinned';
@@ -2390,7 +2523,7 @@ function filteredItems(opts = {}){
   if(sortMode === 'date' && datedOnly) a = a.filter(i => !!itemDate(i));
   if(dateActive()){ const [df, dt] = dateRange(); a = a.filter(i => { if(i.type !== 'note') return false; const d = noteDay(i); return !!d && d >= df && d <= dt; }); }
   const q = search.trim().toLowerCase();
-  if(q) a = a.filter(i => [i.title, htmlText(i.body), i.attendees, i.assignee, i.tags.join(' '), i.checklist.map(c => c.text + ' ' + htmlText(c.note)).join(' '), i.date, i.date ? fmtDay(i.date) : '', (i.updated || '').slice(0, 10)].join('\n').toLowerCase().includes(q));
+  if(q) a = a.filter(i => [i.title, htmlText(i.body), i.sheet ? shSearchText(i.sheet) : '', i.attendees, i.assignee, i.tags.join(' '), i.checklist.map(c => c.text + ' ' + htmlText(c.note)).join(' '), i.date, i.date ? fmtDay(i.date) : '', (i.updated || '').slice(0, 10)].join('\n').toLowerCase().includes(q));
   const off = chipsOff[chipView()] || [];
   if(!opts.skipChips && filter !== 'task' && off.length) a = a.filter(i => !off.includes(typeOf(i)));
   return a;
@@ -2426,7 +2559,7 @@ function listEntries(opts = {}){
   const nameKey = e => ((e.kind === 'ck' ? e.ck.text : e.item.title) || '').trim();
   a.sort((x, y) => {
     if(sortMode === 'date' && notesOnly){
-      const px = x.kind === 'item' && x.item.pinned, py = y.kind === 'item' && y.item.pinned;
+      const px = x.kind === 'item' && !!x.item.pinned, py = y.kind === 'item' && !!y.item.pinned;
       if(px !== py) return px ? -1 : 1;
       if(x.kind === 'item' && y.kind === 'item'){ const kx = noteKey(x), ky = noteKey(y); if(kx !== ky) return kx < ky ? 1 : -1; }
     } else if(sortMode === 'date'){
@@ -2435,13 +2568,13 @@ function listEntries(opts = {}){
       const kx = key(x), ky = key(y);
       if(kx && ky && kx !== ky) return BUCKETS[bx] === 'Past' ? (kx < ky ? 1 : -1) : (kx < ky ? -1 : 1);     // past items: most recent first
     } else if(sortMode === 'az' || sortMode === 'za'){
-      const px = x.kind === 'item' && x.item.pinned, py = y.kind === 'item' && y.item.pinned;
+      const px = x.kind === 'item' && !!x.item.pinned, py = y.kind === 'item' && !!y.item.pinned;
       if(px !== py) return px ? -1 : 1;
       const nx = nameKey(x), ny = nameKey(y);
       if(!nx !== !ny) return nx ? -1 : 1;                                           // untitled ones go last either way
       if(nx !== ny) return (sortMode === 'az' ? 1 : -1) * nx.localeCompare(ny, undefined, {numeric:true, sensitivity:'base'});
     } else {
-      const px = x.kind === 'item' && x.item.pinned, py = y.kind === 'item' && y.item.pinned;
+      const px = x.kind === 'item' && !!x.item.pinned, py = y.kind === 'item' && !!y.item.pinned;
       if(px !== py) return px ? -1 : 1;
       const dx = eDone(x), dy = eDone(y);
       if(dx !== dy) return dx ? 1 : -1;
@@ -2470,7 +2603,7 @@ function renderFilterBar(){
   const opts = document.querySelector('.list .opts'); if(opts) opts.classList.toggle('nblist', filter === 'note' && !nbView && !search.trim());
   $('#datewrap').style.display = filter === 'note' ? '' : 'none'; $('#dfield').value = dateField; $('#dpreset').value = datePreset; $('#dcustom').style.display = datePreset === 'custom' ? '' : 'none'; $('#dfrom').value = dateFrom; $('#dto').value = dateTo;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
-  { const nbtn = $('#newbtn'); if(nbtn) nbtn.title = (filter === 'note' || filter.startsWith('nb:')) ? 'New note' : 'New item'; }
+  { const nbtn = $('#newbtn'); if(nbtn) nbtn.title = (filter === 'note' || filter.startsWith('nb:')) ? 'New note' : 'New item'; const sbtn = $('#newsheetbtn'); if(sbtn) sbtn.hidden = !(filter === 'note' || filter.startsWith('nb:')); }
   $('#qscopewrap').style.display = filter.startsWith('nb:') && search.trim() ? '' : 'none'; $('#qscope').checked = searchAll;
   $('#datedonly').checked = datedOnly; $('#hidedone').checked = hideDone;
 }
@@ -2737,6 +2870,7 @@ function subOf(i){
   if(i.checklist.length) p.push(`${i.checklist.filter(c => c.done).length}/${i.checklist.length} done`);
   if(i.tags.length) p.push(i.tags.map(t => '#' + t).join(' '));
   const line = htmlText(i.body).split('\n').find(l => l.trim());
+  if(i.sheet) p.push(shSummary(i.sheet));
   if(line) p.push(line.trim());
   return p.join(' · ') || 'No details';
 }
@@ -2755,7 +2889,7 @@ function entryHtml(e, withNb){
   if(i.type === 'note'){                                          // a page: the title across the whole row, its date and time on the line below
     const when = sortMode === 'date' && dateField !== 'page' && i.created ? 'Created ' + (() => { const c = new Date(i.created); return fmtDay(dstr(c)) + ', ' + fmtTime(pad(c.getHours()) + ':' + pad(c.getMinutes())); })() : pageWhen(i);
     return `<div draggable="true" data-nbdrop="${esc(nbKey(i))}" class="it noterow ${onRow ? 'on' : ''}" data-id="${i.id}">
-      <span class="ic">${isMeeting(i) ? '◷' : '✎'}</span>
+      <span class="ic">${i.sheet ? '▦' : isMeeting(i) ? '◷' : '✎'}</span>
       <div><b>${i.pinAll ? '📍 ' : i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${pendingOf(i) ? '💬 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small class="when">${esc(when)}${withNb && nbById(nbKey(i)) ? ' · ' + esc(nbById(nbKey(i)).name) : ''}</small></div></div>`;
   }
   return `<div ${i.type === 'note' ? `draggable="true" data-nbdrop="${esc(nbKey(i))}" ` : ''}class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
@@ -2879,7 +3013,7 @@ function decideSuggestion(id, ok, why){
   if(ok){
     const sel = [...document.querySelectorAll('.sgwho')].find(x => x.dataset.id === id), who = sel ? sel.value : (db.me || '');
     if(who) rememberName(who);
-    const t = {id:uid(), type:'task', title:sg.text, body:plainToHtml('Suggested by ' + sg.by + (sg.note ? ': ' + sg.note : '')), tags:[], category:'', due:sg.due || '', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:who};
+    const t = {id:uid(), pinned:false, pinAll:false, type:'task', title:sg.text, body:plainToHtml('Suggested by ' + sg.by + (sg.note ? ': ' + sg.note : '')), tags:[], category:'', due:sg.due || '', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:who};
     db.items.push(t); settleProposal(id, 'confirmed'); toast(`Added “${sg.text}” to your actions${who ? ', assigned to ' + who : ''} (suggested by ${sg.by}).`);
     if(who) afterAssign(who);
   } else { settleProposal(id, 'declined', why || ''); toast('No thanks: ' + sg.by + ' will see that it was declined' + (why ? ' with your reason.' : '.')); }
@@ -2999,7 +3133,7 @@ function renderPerson(){
 function addRaid(kind){
   const t = $('#rnew'); if(!t) return;
   if(!t.value.trim()){ t.focus(); toast('Type it first, then press Add.'); return; }
-  const i = {id:uid(), type:'task', raid:kind, title:t.value.trim(), body:'', tags:[], category:$('#rcat').value, due:$('#rdue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
+  const i = {id:uid(), pinned:false, pinAll:false, type:'task', raid:kind, title:t.value.trim(), body:'', tags:[], category:$('#rcat').value, due:$('#rdue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
   db.items.push(i); autoDate(i, i.title, i);
   touch(); renderRail(); renderDetail();
   const n = $('#rnew'); if(n) n.focus({preventScroll:true});
@@ -3013,7 +3147,7 @@ function addAction(){
     toast('Type what needs doing first, then press Add.'); return;
   }
   const nt = $('#anotefld'), noteText = nt ? nt.value.trim() : '';
-  const i = {id:uid(), type:'task', title:t.value.trim(), body:noteText ? plainToHtml(noteText) : '', tags:[], category:$('#acat').value, due:$('#adue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
+  const i = {id:uid(), pinned:false, pinAll:false, type:'task', title:t.value.trim(), body:noteText ? plainToHtml(noteText) : '', tags:[], category:$('#acat').value, due:$('#adue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
   db.items.push(i); autoDate(i, i.title, i);
   const hid = [];                                         // don't let a filter hide what was just added
   if(actCat === 'none' ? !!i.category : actCat ? i.category !== actCat : false){ actCat = ''; hid.push('category'); }
@@ -3626,6 +3760,7 @@ const matchQ = x => {
   return [x.text, x.assignee, (catById(x.cat) || {}).name, x.item && x.item.title, x.due, x.due ? fmtDay(x.due) : '', RAID_META[x.raid] ? RAID_META[x.raid].one : '', htmlText(x.note || '')].join('\n').toLowerCase().includes(q);
 };
 function renderDetail(){
+  if(shEdit) shEndEdit(true);                              // a cell you were typing in is kept before the screen is redrawn
   if(dropEmptyNew()) touch();                              // an empty note you moved away from
   $('#detail').dataset.item = '';                         // while it is being redrawn, nothing in it belongs to any note
   if(FULL_PAGES.includes(filter)) pageQFor();
@@ -3649,21 +3784,23 @@ function renderDetail(){
   if(i.type === 'note') meta += `<label>Notebook <select data-f="notebook">${db.notebooks.map(n => `<option value="${esc(n.id)}" ${nbKey(i) === n.id ? 'selected' : ''}>${esc(n.name)}</option>`).join('')}</select></label>`;
   if(i.type === 'task') meta += `<label>Assigned to <input type="text" class="who" autocomplete="off" data-f="assignee" value="${esc(i.assignee || '')}" placeholder="Nobody"></label>`;
   meta += `<label class="grow">Tags <input type="text" data-f="tags" value="${esc(i.tags.join(', '))}" placeholder="acme, q4-planning"></label>`;
-  const bodyLabel = i.type === 'task' ? 'Details' : 'Notes';
+  const bodyLabel = i.type === 'task' ? 'Details' : i.sheet ? 'Spreadsheet' : 'Notes';
+  const shOld = i.sheet && document.querySelector('#sheet[data-id="' + i.id + '"] .shscroll'), shPos0 = shOld ? [shOld.scrollTop, shOld.scrollLeft] : null;          // redrawing the same sheet keeps where you were scrolled to
   el.innerHTML = `
     ${i.type === 'task' && proposalOf(i) ? propLine(i, i.id) : ''}
     ${replyBanner(i)}
-    <div class="type">${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'}</div>
+    <div class="typerow"><div class="type">${i.type === 'task' ? (i.raid ? RAID_META[i.raid].one : 'Action') : 'Note'}</div><span class="typebtns"><button class="stkbtn" data-act="panels" title="Hide the sidebar and the list so the note has the whole window (Ctrl+.)">${panelsHidden() ? '⇥ Show panels' : '⇤ Hide panels'}</button>${i.type === 'note' && !i.sheet && STICKY_OK() ? `<button class="stkbtn" data-act="sticky" title="Open this note in a small window that floats above your other programs">▭ Sticky note</button>` : ''}</span></div>
     <textarea class="title" rows="1" data-f="title" placeholder="Untitled">${esc(i.title)}</textarea>
     <div class="metahead"><a data-act="togglemeta" title="Show or hide date, time, category and the other fields">${metaOff ? '▸' : '▾'} Details</a>${metaOff ? `<small>${esc(metaSummary(i))}</small>` : ''}</div>
     <div class="meta ${metaOff ? 'off' : ''}">${meta}</div>
     <h4>${bodyLabel}</h4>
-    <div class="rt ${i.type==='note'?'big':''}" contenteditable="true" spellcheck="true" data-f="body" data-ph="Start typing…" ${isBlank(i.body)?'data-empty':''}>${forEditor(i.body)}</div>
+    ${i.sheet ? shHtml(i) : `<div class="rt ${i.type==='note'?'big':''}" contenteditable="true" spellcheck="true" data-f="body" data-ph="Start typing…" ${isBlank(i.body)?'data-empty':''}>${forEditor(i.body)}</div>`}
     ${ckHead(i)}
     <div id="cklist">${ckRows(i)}</div>
     <div class="ai add"><input type="checkbox" disabled><input type="text" id="newck" placeholder="Add an item and press Enter…"></div>
     <div class="foot"><span>Created ${esc(fmtDay(dstr(new Date(i.created))))}</span><span class="fbtns">${(i.replies || []).length ? `<button class="plain" data-act="replies" title="Replies to this shared page, and what you decided">💬 Replies${pendingOf(i) ? ' (' + pendingOf(i) + ')' : ''}</button>` : ''}<button class="plain" id="sharebtn" data-act="sharepage" title="${esc(shareBadge(i).tip)}">${esc(shareBadge(i).label)}</button><button class="plain" data-act="export" title="Download or print this note">Export…</button><button data-act="delete">Delete ${i.type === 'task' ? 'action' : 'note'}</button></span></div>`;
   el.dataset.item = i.id;                                  // the editor now on screen belongs to this note
+  if(i.sheet){ shAfterRender(i); const sc = document.querySelector('#sheet .shscroll'); if(sc && shPos0){ sc.scrollTop = shPos0[0]; sc.scrollLeft = shPos0[1]; } }
 }
 function grow(t){
   if(!t || t.isContentEditable) return;                  // rich editors size themselves
@@ -3672,12 +3809,19 @@ function grow(t){
   t.style.height = Math.max(t.scrollHeight + 2, min) + 'px';
 }
 const FULL_PAGES = liveArr(() => ['actions', 'timeline', 'today', 'trash', 'person', 'waiting', 'inbox', 'sharedwith', ...RAID_KINDS]);          // pages that use the whole width instead of list + detail
+const panelsHidden = () => isNarrow() ? listOff : (railOff && listOff);
+function togglePanels(){                                   // both side panels away (more room for the note), or both back
+  if(isNarrow()){ listOff = !listOff; if(document.body.classList.contains('drawer')) toggleDrawer(); }
+  else { const hide = !(railOff && listOff); railOff = hide; listOff = hide; }
+  saveUi(); applyMode();
+}
 function applyMode(){
   const app = document.querySelector('.app');
   app.classList.toggle('actions-mode', FULL_PAGES.includes(filter)); app.classList.toggle('rail-off', railOff); app.classList.toggle('list-off', listOff);
   const r = document.querySelector('[data-act=togglerail]'), l = document.querySelector('[data-act=togglelist]');
   r.textContent = railOff ? '»' : '«'; r.title = railOff ? 'Show sidebar (Ctrl+\\)' : 'Hide sidebar (Ctrl+\\)';
-  l.textContent = listOff ? '»' : '«'; l.title = listOff ? 'Show the list' : 'Hide the list';
+  l.textContent = listOff ? '»' : '«'; l.title = listOff ? 'Show the list (Ctrl+,)' : 'Hide the list (Ctrl+,)';
+  document.querySelectorAll('[data-act=panels]').forEach(b => { b.textContent = panelsHidden() ? '⇥ Show panels' : '⇤ Hide panels'; });
 }
 function renderAll(){
   syncRaidCss();
@@ -3687,14 +3831,15 @@ function renderAll(){
   $('#q').value = search; $('#hidedone').checked = hideDone;
   renderTagMenu(); renderBanner(); renderStatus(); renderFileInfo(); renderRail(); renderList(); renderDetail();
   try { renderRqat(); } catch {}
+  try { stickyRefresh(); } catch {}
   if(MOBILE) mobRefresh();
 }
 
 /* ================= actions ================= */
-function edited(i){ i.updated = now(); touch(); renderList(); renderRail(); }
+function edited(i){ i.updated = now(); touch(); renderList(); renderRail(); if(stickyId && stickyId === i.id) stickyPull(); }
 function parseTags(s){ return [...new Set(s.split(/[,\s]+/).map(t => t.replace(/^#/, '').toLowerCase()).filter(Boolean))]; }
 const isEmptyItem = i => !i.title.trim() && isBlank(i.body) && !i.checklist.some(c => c.text.trim() || !isBlank(c.note)) && !i.tags.length && !i.attendees && !i.assignee
-  && !(i.type === 'task' ? (i.due || i.time) : (!i.autoDt && (i.date || i.time))) && !(i.replies || []).length && !(i.shared && i.shared.on) && !i.pinned;
+  && !(i.type === 'task' ? (i.due || i.time) : (!i.autoDt && (i.date || i.time))) && !(i.replies || []).length && !(i.shared && i.shared.on) && !i.pinned && !shHas(i.sheet);
 function dropEmptyNew(){                                  // a new note or action you left without typing anything is not kept
   const gone = db.items.filter(i => i.id !== selId && isEmptyItem(i));
   if(!gone.length) return false;
@@ -3708,7 +3853,8 @@ function inboxId(){                                       // where a note goes w
 const insideNotebook = () => filter === 'note' && !!nbById(nbView);
 function newItem(kind){                      // kind: 'task', 'note' or 'meeting' (a note that starts with today's date)
   const type = kind === 'task' ? 'task' : 'note';
-  const i = {id:uid(), type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  const i = {id:uid(), pinned:false, pinAll:false, type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  if(kind === 'sheet') i.sheet = shNew();
   let toInbox = false;
   if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; const nbc = nbById(i.notebook); if(nbc && catById(nbc.category) && !i.category) i.category = nbc.category; }
   db.items.push(i); selId = i.id; search = '';
@@ -4485,6 +4631,7 @@ function itemAsText(i){
   const c = catById(i.category); if(c) meta.push(c.name); if(i.type === 'note' && db.notebooks.length > 1) meta.push('Notebook: ' + nbById(nbKey(i)).name); if(i.tags.length) meta.push(i.tags.map(t => '#' + t).join(' '));
   if(meta.length) L.push(meta.join(' · '));
   const body = htmlToPlain(i.body); if(body) L.push('', body);
+  if(i.sheet && shHas(i.sheet)){ const x = shExtent(i.sheet, shValues(i.sheet)); L.push('', shToText(shRect(i.sheet, 0, 0, x.r - 1, x.c - 1), '\t').replace(/\r\n/g, '\n')); }
   const cks = i.checklist.filter(k => k.text.trim());
   if(cks.length) L.push('', 'Action items:', ...cks.map(k => `${k.done ? '[x]' : '[ ]'} ${k.text}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`));
   return L.join('\n');
@@ -4660,6 +4807,7 @@ function itemToMd(i){
   const L = ['# ' + (i.title || 'Untitled'), ''], meta = itemMeta(i);
   if(meta.length) L.push(meta.map(([k, v]) => `**${k}:** ${v}`).join('  \n'), '');
   const body = htmlToMd(i.body); if(body) L.push(body, '');
+  if(i.sheet){ const t = shMdTable(i.sheet); if(t) L.push(t, ''); }
   const cks = i.checklist.filter(k => k.text.trim());
   if(cks.length){ L.push('## Action items', ''); cks.forEach(k => L.push(`- [${k.done ? 'x' : ' '}] ${k.text}${k.assignee && !k.text.includes('@' + k.assignee) ? ' (@' + k.assignee + ')' : ''}${k.due ? ' (due ' + fmtDay(k.due) + (k.time ? ' ' + fmtTime(k.time) : '') + ')' : ''}`)); L.push(''); }
   return L.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
@@ -4678,7 +4826,7 @@ function itemPrintBody(i){
   const meta = itemMeta(i), cks = i.checklist.filter(k => k.text.trim());
   return `<h1>${esc(i.title || 'Untitled')}</h1>
   ${meta.length ? `<div class="meta">${meta.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join(' &nbsp;·&nbsp; ')}</div>` : ''}
-  <div>${i.body || ''}</div>
+  <div>${i.sheet ? shPrintTable(i.sheet) : ''}${i.body || ''}</div>
   ${cks.length ? `<h2>Action items</h2><ul class="ck">${cks.map(k => `<li class="${k.done ? 'd' : ''}">${esc(k.text)}${k.assignee && !k.text.includes('@' + k.assignee) ? ' → ' + esc(k.assignee) : ''}${k.due ? ` <small>(due ${esc(fmtDay(k.due))}${k.time ? ' ' + esc(fmtTime(k.time)) : ''})</small>` : ''}</li>`).join('')}</ul>` : ''}`;
 }
 const printDoc = (title, body) => `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${PRINT_CSS}</style></head><body>${body}<\/body><\/html>`;
@@ -4699,7 +4847,7 @@ function exportItem(i, fmt){
   else if(fmt === 'txt'){ downloadFile(fileSlug(i) + '.txt', itemAsText(i) + '\n', 'text/plain'); toast(`Saved ${fileSlug(i)}.txt to your downloads.`); }
   else printHtml(itemPrintHtml(i));
 }
-const exportEntries = i => [{l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}];
+const exportEntries = i => [...(i.sheet ? [{l:'Spreadsheet (.csv)', ic:'⤓', fn: () => shExportCsv(i)}] : []), {l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}];
 
 /* ---- Trash ---- */
 function setPin(i, mode){                                  // 'off', 'nb' (top of its own notebook) or 'all' (top of every notebook)
@@ -4779,7 +4927,7 @@ function qaSummary(q){
 function quickAdd(raw, who){                    // who: the person whose page you are on, so what you add is theirs
   const q = qaParse(raw); if(!q.title) return null;
   let unknownWho = '';
-  const i = {id:uid(), type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
+  const i = {id:uid(), pinned:false, pinAll:false, type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ const tn = knownName(q.assignee); if(tn) i.assignee = tn; else if(!db.strict){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } else unknownWho = q.assignee; } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = insideNotebook() ? nbView : inboxId(); const qnb = nbById(i.notebook); if(qnb && catById(qnb.category)) i.category = qnb.category; }
   if(who && i.type === 'task' && !i.assignee && !unknownWho) i.assignee = who;
   db.items.push(i); touch(); refreshViews();
@@ -5252,6 +5400,7 @@ document.addEventListener('input', e => {
     }
   } else if(el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.getAttribute('type') || ''))){
     if(el.readOnly || el.disabled) return;
+    if(el.value[0] === '=' && el.classList && (el.classList.contains('shin') || el.classList.contains('shfxin'))) return;          // =TODAY() in a spreadsheet is a formula
     const pos = el.selectionStart, tm = pos == null ? null : /(^|[^\w])(today|td)\(\)$/i.exec(el.value.slice(0, pos)); if(!tm) return;
     const L = tm[2].length + 2; el.setSelectionRange(pos - L, pos);
     let ok = false; try { ok = document.execCommand('insertText', false, todayStr()); } catch {}
@@ -5313,6 +5462,7 @@ function cmdUndo(){
 const CMDS = [
   {id:'newaction', g:'Create', l:'New action', icon:'☐', keys:['N'], run:() => { newItem('task'); }},
   {id:'newnote', g:'Create', l:'New note', icon:'✎', keys:['Shift+N'], run:() => { newItem('note'); }},
+  {id:'newsheet', g:'Create', l:'New spreadsheet', icon:'▦', keys:[], run:() => { newItem('sheet'); }},
   {id:'quickadd', g:'Create', l:'Quick add (type it in plain words)', short:'Quick add', icon:'⚡', keys:['Q', 'Ctrl+Q'], run:() => { openQuickAdd(); }},
   {id:'search', g:'Go to', l:'Search everything', short:'Search', icon:'🔍', keys:['/'], run:() => { cmdSearch(); }},
   ...[1, 2, 3, 4, 5, 6, 7, 8].map(n => ({id:'go' + n, g:'Go to', view:n, l:() => n >= 5 && n <= 7 ? raidMany(viewKeys()[n - 1]) : GO_NAMES[n - 1], short:n === 1 ? 'Today' : undefined, icon:['☀', '☰', '✎', '▦', '⚠', '⛔', '✔', '🗑'][n - 1], keys:[String(n)], run:() => { goView(viewKeys()[n - 1]); }})),
@@ -5322,6 +5472,8 @@ const CMDS = [
   {id:'savenow', g:'Working', l:'Save right now', short:'Save', icon:'💾', keys:['Ctrl+S'], dlg:true, run:() => { flush(); }},
   {id:'todaydate', g:'Working', l:'Type today’s date, yyyy-mm-dd, at the cursor', short:'Insert date', icon:'📅', keys:['Ctrl+;'], dlg:true, run:() => { insertToday(); }},
   {id:'sidebar', g:'Working', l:'Hide or show the sidebar', short:'Sidebar', icon:'☰', keys:['Ctrl+\\'], dlg:true, run:() => { if(isNarrow()) toggleDrawer(); else { railOff = !railOff; saveUi(); applyMode(); } }},
+  {id:'panels', g:'Working', l:'Hide or show both side panels (more room for the note)', short:'Panels', icon:'⇤', keys:['Ctrl+.'], dlg:true, run:() => { togglePanels(); }},
+  {id:'listpanel', g:'Working', l:'Hide or show the list of notes', short:'List', icon:'▤', keys:['Ctrl+,'], dlg:true, run:() => { listOff = !listOff; saveUi(); applyMode(); }},
   {id:'help', g:'Working', l:'Show the shortcut sheet', short:'Shortcuts', icon:'⌨', keys:['?'], run:() => { openShortcuts(); }},
   {id:'undo', g:'Working', l:'Undo (typing in the box you are in, or the message at the bottom)', short:'Undo', icon:'↶', keys:[], run:() => { cmdUndo(); }},
   {id:'notifs', g:'Working', l:'Show the alert list', short:'Alerts', icon:'🔔', keys:[], run:() => { openNotifs(); }},
@@ -5349,7 +5501,7 @@ document.addEventListener('keydown', e => {
   if(keyCap) return;
   const c = comboOf(e); if(!c) return;
   const cmd = comboMap().get(c); if(!cmd || cmd.scope === 'editor') return;
-  const t = e.target, typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)), withMod = /(^|\+)(Ctrl|Alt)\+/.test(c);
+  const t = e.target, typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || (t.classList && t.classList.contains('shgrid'))), withMod = /(^|\+)(Ctrl|Alt)\+/.test(c);
   if(withMod){ if(!cmd.dlg && document.querySelector('dialog[open]')) return; }
   else if(typing || document.querySelector('dialog[open]') || $('#ctxmenu')) return;
   if(cmd.run(e) !== false) e.preventDefault();
@@ -5532,7 +5684,7 @@ async function writeGuide(person){
   refreshSetup();
 }
 function sendTest(person){
-  const i = {id:uid(), type:'task', raid:'', title:'Test from My Notebook: say hello and mark this done', body:plainToHtml('This is a test of the set-up. Read the feed, then answer with a “done” proposal whose note says hello. The owner confirms it in the app.'), tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:person};
+  const i = {id:uid(), pinned:false, pinAll:false, type:'task', raid:'', title:'Test from My Notebook: say hello and mark this done', body:plainToHtml('This is a test of the set-up. Read the feed, then answer with a “done” proposal whose note says hello. The owner confirms it in the app.'), tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:person};
   db.items.push(i); suSet(personKey(person) + ':test', i.id); touch(); refreshViews(); renderSetup(); try { runShareWrites(true); } catch {}
   toast(`Sent a test action to ${person}. Open that project in Claude and say “check the notebook”.`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); renderSetup(); try { runShareWrites(true); } catch {} }, 'Undo', i.id);
 }
@@ -5651,13 +5803,13 @@ function wrapRootRuns(body){                                // loose text at the
   flush(); return changed;
 }
 function syncTags(i, live){
-  if(live && !(live.closest('#detail') && live.closest('#detail').dataset.item === i.id)) live = null;          // never read another note's editor
+  if(live && !((live.closest('#detail') && live.closest('#detail').dataset.item === i.id) || (live.classList.contains('stkr') && stickyId === i.id))) live = null;          // never read another note's editor
   const html = i.body || '';
   const flat = html.replace(/<[^>]+>/g, m => /^<\/(div|li|p|h[1-3]|blockquote|td|th)/i.test(m) || /^<br/i.test(m) ? '\n' : '');
   const TR = tagRes(), hasText = TR.hasSep.test(flat) || TR.hasCaps.test(flat), hasSpan = /class="rtag/.test(html);
   if(!hasText && !hasSpan && !i.checklist.some(c => c.src === 'tag')) return null;
   const doc = live ? live.ownerDocument : new DOMParser().parseFromString('<!doctype html><body>' + html, 'text/html'), body = live || doc.body;
-  const sel = live ? getSelection() : null;
+  const sel = live ? live.ownerDocument.defaultView.getSelection() : null;
   let sn = sel && sel.rangeCount && live.contains(sel.anchorNode) ? sel.anchorNode : null, so = sn ? sel.anchorOffset : 0;           // where the cursor is, so it can be put back
   if(hasText || hasSpan) wrapRootRuns(body);
   body.querySelectorAll('[data-raid]').forEach(el => el.removeAttribute('data-raid'));
@@ -5711,14 +5863,15 @@ function setCaretTextOffset(ed, off){
   const w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT); let n, left = off;
   while((n = w.nextNode())){ if(left <= n.nodeValue.length){ const r = document.createRange(); r.setStart(n, left); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); return; } left -= n.nodeValue.length; }
 }
-function runTagSync(id, quiet){
+function runTagSync(id, quiet, liveEd){
   const i = byId(id); if(!i) return null;
-  const res = syncTags(i, selId === id && $('#detail').dataset.item === id ? document.querySelector('#detail .rt[data-f=body]') : null); if(!res) return null;
+  const res = syncTags(i, liveEd || (selId === id && $('#detail').dataset.item === id ? document.querySelector('#detail .rt[data-f=body]') : null)); if(!res) return null;
   (res.created || []).forEach(c => { const w = !c.assignee ? findAssignee(c.text, i) : null; if(w && db.strict && !knownName(w.name)) setTimeout(() => resolveAssignee(w.name, nm => { if(nm){ c.assignee = nm; i.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 450); });
   if(!(res.bodyChanged || res.created.length || res.removed.length || res.updated)) return res;
   i.updated = now(); touch(); renderRail(); renderList();
   if(selId === id && $('#cklist')) $('#cklist').innerHTML = ckRows(i);
   if(!quiet && res.created.length){
+    if(stickyOpen() && stickyId === id) stickyMsg(`Created ${res.created.length === 1 ? 'an item' : res.created.length + ' items'}: ${res.created.map(c => '“' + c.text.slice(0, 30) + (c.text.length > 30 ? '…' : '') + '”').join(', ')}`);
     toast(`Created ${res.created.length === 1 ? '' : res.created.length + ' items: '}${res.created.map(c => (RAID_META[c.raid] ? RAID_META[c.raid].one : 'Action') + ' “' + c.text.slice(0, 40) + (c.text.length > 40 ? '…' : '') + '”' + (c.due ? ', due ' + fmtDay(c.due) + (c.time ? ' ' + fmtTime(c.time) : '') : '') + (c.assignee ? ', → ' + c.assignee : '')).join('; ')}.`);
   } else if(!quiet && res.removed.length){
     const back = res.removed;
@@ -5803,6 +5956,918 @@ function addCk(){
   i.checklist.push(c); autoDate(c, c.text, i);
   $('#cklist').innerHTML = ckRows(i); inp.value = ''; inp.focus(); edited(i);
 }
+
+/* ================= spreadsheet notes: the calculating part (no screen code) ================= */
+const SH_FZ_R = 30, SH_FZ_C = 5;                            // most rows / columns that can be frozen
+const SH_MAX_R = 2000, SH_MAX_C = 50, SH_KEY_RE = /^([A-Z]{1,2})(\d{1,4})$/;
+const SH_FULL = 'This sheet is at its size limit. For tables this big, use Excel, and import the CSV here if you only need a part of it.';
+const shColName = n => { let s = ''; for(n++; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };      // 0 -> A, 26 -> AA
+const shColNum = s => { let n = 0; for(const ch of s) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+const shKey = (r, c) => shColName(c) + (r + 1);                                                                                                     // zero-based row and column -> "B3"
+const shPos = k => { const m = SH_KEY_RE.exec(k); return m ? {r: +m[2] - 1, c: shColNum(m[1])} : null; };
+const shNew = () => ({r:30, c:10, cells:{}, f:{}, w:{}, wr:{}});
+function cleanSheet(s){                                  // a sheet as read from a file: only valid cells, formats and widths, inside the size limit
+  if(!s || typeof s !== 'object' || Array.isArray(s)) return null;
+  const out = {r:30, c:10, cells:{}, f:{}, w:{}, wr:{}}; let mr = 0, mc = 0;
+  if(s.cells && typeof s.cells === 'object') for(const [k, v] of Object.entries(s.cells)){
+    const p = shPos(k); if(!p || p.r >= SH_MAX_R || p.c >= SH_MAX_C) continue;
+    const t = typeof v === 'number' && isFinite(v) ? String(v) : typeof v === 'string' ? v.slice(0, 2000) : ''; if(t === '') continue;
+    out.cells[k] = t; mr = Math.max(mr, p.r + 1); mc = Math.max(mc, p.c + 1);
+  }
+  if(s.f && typeof s.f === 'object') for(const [k, v] of Object.entries(s.f)){ const p = shPos(k); if(p && p.r < SH_MAX_R && p.c < SH_MAX_C && (v === 'n' || v === 'p' || v === 'c' || v === 'd')) out.f[k] = v; }
+  if(s.w && typeof s.w === 'object') for(const [k, v] of Object.entries(s.w)){ const c = +k; if(Number.isInteger(c) && c >= 0 && c < SH_MAX_C && typeof v === 'number' && v >= 40 && v <= 600) out.w[c] = Math.round(v); }
+  if(s.wr && typeof s.wr === 'object') for(const k of Object.keys(s.wr)){ const p = shPos(k); if(p && p.r < SH_MAX_R && p.c < SH_MAX_C && s.wr[k]) out.wr[k] = 1; }
+  out.r = Math.min(SH_MAX_R, Math.max(1, Number.isInteger(s.r) ? s.r : 30, mr)); out.c = Math.min(SH_MAX_C, Math.max(1, Number.isInteger(s.c) ? s.c : 10, mc));
+  if(s.fz && typeof s.fz === 'object'){ const fr = Math.max(0, Math.min(SH_FZ_R, Math.min(out.r - 1, Number.isInteger(s.fz.r) ? s.fz.r : 0))), fc = Math.max(0, Math.min(SH_FZ_C, Math.min(out.c - 1, Number.isInteger(s.fz.c) ? s.fz.c : 0))); if(fr || fc) out.fz = {r: fr, c: fc}; }
+  return out;
+}
+const shHas = s => !!s && Object.keys(s.cells).length > 0;
+function shExtent(s, vals){                              // rows and columns that hold something (with `vals`, cells filled in by TEXTSPLIT count too)
+  let r = 0, c = 0;
+  for(const k of Object.keys(s.cells)){ const p = shPos(k); if(p){ r = Math.max(r, p.r + 1); c = Math.max(c, p.c + 1); } }
+  if(vals) for(const [k, v] of vals){ if(v === null) continue; const p = shPos(k); if(p){ r = Math.max(r, p.r + 1); c = Math.max(c, p.c + 1); } }
+  return {r, c};
+}
+
+/* ---- what a cell holds ---- */
+class ShErr { constructor(e){ this.e = e; } }
+class ShArr { constructor(rows){ this.rows = rows; } }          // a formula that fills several cells (TEXTSPLIT)
+const SH_EPOCH = 25569;                                         // days from 1899-12-30 (Excel's day 0) to 1970-01-01
+const shSerial = (y, m, d) => Math.round(Date.UTC(y, m - 1, d) / 864e5) + SH_EPOCH;
+const shYmd = n => { const t = new Date((Math.floor(n) - SH_EPOCH) * 864e5); return [t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate()]; };
+const shDateText = n => { const [y, m, d] = shYmd(n); return String(y).padStart(4, '0') + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0'); };
+const SH_LIT = /^(-|\+)?(\$)?(-|\+)?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)(%)?$/;
+function shLiteral(raw){                                 // what typing this means: a number or date (with the format it suggests) or plain text
+  const t = String(raw).trim();
+  if(t === '') return {v:null, auto:''};
+  if(raw[0] === "'") return {v:String(raw).slice(1), auto:''};          // 'text forces text
+  const m = SH_LIT.exec(t);
+  if(m){ let n = parseFloat(m[4].replace(/,/g, '')) * ((m[1] || m[3]) === '-' ? -1 : 1); if(m[5]) n /= 100; return {v:n, auto: m[5] ? 'p' : m[2] ? 'c' : ''}; }
+  const d = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);                       // 2026-11-17
+  if(d){ const y = +d[1], mo = +d[2], da = +d[3]; if(y >= 1900 && mo >= 1 && mo <= 12 && da >= 1 && da <= new Date(Date.UTC(y, mo, 0)).getUTCDate()) return {v: shSerial(y, mo, da), auto:'d'}; }
+  return {v:String(raw), auto:''};
+}
+
+/* ---- formulas: =SUM(B2:B6), =C2*D2, =IF(B2>100,"big","small"), =A1&" "&B1 ---- */
+const SH_REF_AT = /^(\$?)([A-Za-z]{1,2})(\$?)(\d{1,4})(?![A-Za-z0-9_(])/;
+function shParse(src){
+  const s = src; let i = 0;
+  const bad = () => { throw new ShErr('#ERROR!'); };
+  const ws = () => { while(s[i] === ' ') i++; };
+  const refAt = () => { const m = SH_REF_AT.exec(s.slice(i)); if(!m) return null; i += m[0].length; const c = shColNum(m[2].toUpperCase()), r = +m[4] - 1; return {c, r, ac: !!m[1], ar: !!m[3]}; };
+  function cmp(){ let a = cat(); for(;;){ ws(); const two = s.substr(i, 2); let o = ''; if(two === '<=' || two === '>=' || two === '<>') o = two; else if(s[i] === '<' || s[i] === '>' || s[i] === '=') o = s[i]; if(!o) return a; i += o.length; a = {t:'cmp', o, a, b:cat()}; } }
+  function cat(){ let a = expr(); for(;;){ ws(); if(s[i] === '&'){ i++; a = {t:'cat', a, b:expr()}; } else return a; } }
+  function expr(){ let a = term(); for(;;){ ws(); const o = s[i]; if(o === '+' || o === '-'){ i++; a = {t:'bin', o, a, b:term()}; } else return a; } }
+  function term(){ let a = pow(); for(;;){ ws(); const o = s[i]; if(o === '*' || o === '/'){ i++; a = {t:'bin', o, a, b:pow()}; } else return a; } }
+  function pow(){ let a = unary(); for(;;){ ws(); if(s[i] === '^'){ i++; a = {t:'bin', o:'^', a, b:unary()}; } else return a; } }
+  function unary(){ ws(); if(s[i] === '-'){ i++; return {t:'neg', a:unary()}; } if(s[i] === '+'){ i++; return unary(); } return post(); }
+  function post(){ let a = prim(); for(;;){ ws(); if(s[i] === '%'){ i++; a = {t:'pct', a}; } else return a; } }
+  function prim(){
+    ws(); const ch = s[i]; if(ch === undefined) bad();
+    if(ch === '('){ i++; const a = cmp(); ws(); if(s[i] !== ')') bad(); i++; return a; }
+    if(ch === '"'){ let v = ''; i++; for(;;){ if(i >= s.length) bad(); if(s[i] === '"'){ if(s[i + 1] === '"'){ v += '"'; i += 2; } else { i++; break; } } else v += s[i++]; } return {t:'str', v}; }
+    if(s.startsWith('#REF!', i)){ i += 5; return {t:'err', v:'#REF!'}; }
+    let m = /^(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/.exec(s.slice(i));
+    if(m){ i += m[0].length; return {t:'num', v:parseFloat(m[0])}; }
+    m = /^(TRUE|FALSE)(?![A-Za-z0-9_(])/i.exec(s.slice(i));
+    if(m){ i += m[0].length; return {t:'bool', v:m[1].toUpperCase() === 'TRUE'}; }
+    const save = i, a = refAt();
+    if(a){ ws(); if(s[i] === ':'){ i++; ws(); const b = refAt(); if(!b) bad(); return {t:'rng', a, b}; } return {t:'ref', a}; }
+    i = save; m = /^([A-Za-z][A-Za-z0-9_.]*)\s*\(/.exec(s.slice(i));
+    if(m){
+      i += m[0].length; const args = []; ws();
+      if(s[i] === ')') i++;
+      else for(;;){ args.push(cmp()); ws(); if(s[i] === ','){ i++; continue; } if(s[i] === ')'){ i++; break; } bad(); }
+      return {t:'fn', n:m[1].toUpperCase(), args};
+    }
+    return bad();
+  }
+  const ast = cmp(); ws(); if(i < s.length) bad(); return ast;
+}
+const shAst = new Map();
+const shRank = v => typeof v === 'number' ? 0 : typeof v === 'string' ? 1 : 2;
+function shCmp(a, b){                                    // -1, 0 or 1: numbers before text before TRUE/FALSE, text without caring about capitals, a blank takes the other side's type
+  if(a === null) a = typeof b === 'string' ? '' : typeof b === 'boolean' ? false : 0;
+  if(b === null) b = typeof a === 'string' ? '' : typeof a === 'boolean' ? false : 0;
+  const ra = shRank(a), rb = shRank(b); if(ra !== rb) return ra < rb ? -1 : 1;
+  if(ra === 1){ a = a.toLowerCase(); b = b.toLowerCase(); }
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function shWild(pat){ let r = ''; for(let k = 0; k < pat.length; k++){ const ch = pat[k]; if(ch === '~' && k + 1 < pat.length){ r += pat[++k].replace(/[.+^${}()|[\]\\*?]/g, '\\$&'); } else if(ch === '*') r += '[\\s\\S]*'; else if(ch === '?') r += '[\\s\\S]'; else r += ch.replace(/[.+^${}()|[\]\\]/g, '\\$&'); } return new RegExp('^' + r + '$', 'i'); }
+function shCrit(c){                                      // SUMIF / COUNTIF: a test for one cell value, from 5, "apple", ">100", "<>x", "a*"
+  if(c instanceof ShErr) throw c;
+  if(typeof c === 'number') return v => typeof v === 'number' && v === c;
+  if(typeof c === 'boolean') return v => v === c;
+  const t = c === null ? '' : String(c), m = /^(<=|>=|<>|<|>|=)?([\s\S]*)$/.exec(t), op = m[1] || '=', rest = m[2], lit = shLiteral(rest);
+  const test = r => op === '=' ? r === 0 : op === '<>' ? r !== 0 : op === '<' ? r < 0 : op === '>' ? r > 0 : op === '<=' ? r <= 0 : r >= 0;
+  if(typeof lit.v === 'number') return v => typeof v === 'number' ? test(v < lit.v ? -1 : v > lit.v ? 1 : 0) : op === '<>';
+  if(op === '=' || op === '<>'){ const rx = shWild(rest); return v => { const x = v === null ? '' : typeof v === 'string' ? v : null; const hit = x !== null && rx.test(x); return op === '<>' ? !hit : hit; }; }
+  const low = rest.toLowerCase(); return v => typeof v === 'string' && test(v.toLowerCase() < low ? -1 : v.toLowerCase() > low ? 1 : 0);
+}
+const SH_ONE = {                                         // functions of one value, for the table below
+  UPPER: t => t.toUpperCase(), LEN: t => t.length, TRIM: t => t.replace(/ +/g, ' ').replace(/^ | $/g, '')
+};
+function shRun(src, cellAt, rangeAt, gridAt){
+  let ast = shAst.get(src); if(!ast){ ast = shParse(src); if(shAst.size > 4000) shAst.delete(shAst.keys().next().value); shAst.set(src, ast); }
+  const E = e => new ShErr(e);
+  const num = v => { if(v instanceof ShErr) throw v; if(v === null || v === '') return 0; if(typeof v === 'number') return v; if(typeof v === 'boolean') return v ? 1 : 0; throw E('#VALUE!'); };
+  const txt = v => { if(v instanceof ShErr) throw v; if(v === null) return ''; if(typeof v === 'number') return shNumText(v, ''); if(typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'; return String(v); };
+  const bool = v => { if(v instanceof ShErr) throw v; if(typeof v === 'boolean') return v; if(v === null) return false; if(typeof v === 'number') return v !== 0; throw E('#VALUE!'); };
+  const nums = args => { const out = []; for(const a of args){ if(a.t === 'rng'){ for(const v of rangeAt(a.a, a.b)){ if(v instanceof ShErr) throw v; if(typeof v === 'number') out.push(v); } } else { const v = ev(a); if(v instanceof ShErr) throw v; if(v instanceof ShArr){ for(const row of v.rows) for(const x of row) if(typeof x === 'number') out.push(x); } else if(typeof v === 'number') out.push(v); else if(typeof v === 'boolean') out.push(v ? 1 : 0); } } return out; };
+  const grid = a => { if(a.t === 'rng') return gridAt(Math.min(a.a.r, a.b.r), Math.min(a.a.c, a.b.c), Math.max(a.a.r, a.b.r), Math.max(a.a.c, a.b.c)); const v = ev(a); return v instanceof ShArr ? v.rows : [[v]]; };
+  const flat = g => g.reduce((o, r) => o.concat(r), []);
+  const round = (x, d, mode) => { const k = Math.pow(10, d), y = Math.abs(x) * k, z = mode === 'up' ? Math.ceil(+y.toFixed(9)) : mode === 'down' ? Math.floor(+y.toFixed(9)) : Math.round(y + 1e-9); return (x < 0 ? -z : z) / k; };
+  const int = (v, lo) => { const n = Math.trunc(num(v)); if(n < lo) throw E('#VALUE!'); return n; };
+  const argc = (A, lo, hi) => { if(A.length < lo || A.length > hi) throw E('#ERROR!'); };
+  function ev(n){
+    switch(n.t){
+      case 'num': case 'str': case 'bool': return n.v;
+      case 'err': throw E(n.v);
+      case 'ref': return cellAt(n.a.r, n.a.c);
+      case 'rng': throw E('#VALUE!');
+      case 'neg': return -num(ev(n.a));
+      case 'pct': return num(ev(n.a)) / 100;
+      case 'cat': return txt(ev(n.a)) + txt(ev(n.b));
+      case 'cmp': { const a = ev(n.a), b = ev(n.b); if(a instanceof ShErr) throw a; if(b instanceof ShErr) throw b; const r = shCmp(a, b); return n.o === '=' ? r === 0 : n.o === '<>' ? r !== 0 : n.o === '<' ? r < 0 : n.o === '>' ? r > 0 : n.o === '<=' ? r <= 0 : r >= 0; }
+      case 'bin': {
+        const a = num(ev(n.a)), b = num(ev(n.b));
+        if(n.o === '+') return a + b; if(n.o === '-') return a - b; if(n.o === '*') return a * b;
+        if(n.o === '/'){ if(b === 0) throw E('#DIV/0!'); return a / b; }
+        const p = Math.pow(a, b); if(!isFinite(p)) throw E('#NUM!'); return p;
+      }
+      case 'fn': return call(n.n, n.args);
+    }
+    throw E('#ERROR!');
+  }
+  function call(f, A){
+    switch(f){
+      case 'SUM': return nums(A).reduce((x, y) => x + y, 0);
+      case 'PRODUCT': { const v = nums(A); return v.length ? v.reduce((x, y) => x * y, 1) : 0; }
+      case 'AVERAGE': case 'AVG': { const v = nums(A); if(!v.length) throw E('#DIV/0!'); return v.reduce((x, y) => x + y, 0) / v.length; }
+      case 'MIN': { const v = nums(A); return v.length ? Math.min(...v) : 0; }
+      case 'MAX': { const v = nums(A); return v.length ? Math.max(...v) : 0; }
+      case 'COUNT': return nums(A).length;
+      case 'COUNTA': { let k = 0; for(const a of A){ if(a.t === 'rng'){ for(const v of rangeAt(a.a, a.b)) if(v !== null) k++; } else { const v = ev(a); if(v !== null) k++; } } return k; }
+      case 'ABS': argc(A, 1, 1); return Math.abs(num(ev(A[0])));
+      case 'ROUND': case 'ROUNDUP': case 'ROUNDDOWN': argc(A, 1, 2); return round(num(ev(A[0])), A.length > 1 ? Math.max(-10, Math.min(10, Math.trunc(num(ev(A[1]))))) : 0, f === 'ROUNDUP' ? 'up' : f === 'ROUNDDOWN' ? 'down' : '');
+      case 'SQRT': { argc(A, 1, 1); const x = num(ev(A[0])); if(x < 0) throw E('#NUM!'); return Math.sqrt(x); }
+      case 'POWER': { argc(A, 2, 2); const p = Math.pow(num(ev(A[0])), num(ev(A[1]))); if(!isFinite(p)) throw E('#NUM!'); return p; }
+      case 'MOD': { argc(A, 2, 2); const a = num(ev(A[0])), b = num(ev(A[1])); if(b === 0) throw E('#DIV/0!'); return a - b * Math.floor(a / b); }
+      case 'MEDIAN': { const v = nums(A).sort((x, y) => x - y); if(!v.length) throw E('#NUM!'); const h = v.length >> 1; return v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2; }
+      case 'LARGE': case 'SMALL': { argc(A, 2, 2); const v = nums([A[0]]).sort((x, y) => x - y), k = Math.trunc(num(ev(A[1]))); if(k < 1 || k > v.length) throw E('#NUM!'); return f === 'LARGE' ? v[v.length - k] : v[k - 1]; }
+      case 'RANK': { argc(A, 2, 3); const x = num(ev(A[0])), v = nums([A[1]]), asc = A.length > 2 && num(ev(A[2])) !== 0; if(!v.includes(x)) throw E('#N/A'); return 1 + v.filter(n => asc ? n < x : n > x).length; }
+      case 'IF': { argc(A, 2, 3); return bool(ev(A[0])) ? ev(A[1]) : A.length > 2 ? ev(A[2]) : false; }
+      case 'IFERROR': { argc(A, 2, 2); try { const v = ev(A[0]); if(v instanceof ShErr) throw v; return v; } catch(e){ if(e instanceof ShErr) return ev(A[1]); throw e; } }
+      case 'AND': case 'OR': { let seen = false, res = f === 'AND'; for(const a of A){ const vs = a.t === 'rng' ? rangeAt(a.a, a.b).filter(v => typeof v === 'boolean' || typeof v === 'number' || v instanceof ShErr) : [ev(a)]; for(const v of vs){ const b = bool(v); seen = true; if(f === 'AND') res = res && b; else res = res || b; } } if(!seen) throw E('#VALUE!'); return res; }
+      case 'NOT': argc(A, 1, 1); return !bool(ev(A[0]));
+      case 'SUMIF': case 'COUNTIF': {
+        argc(A, 2, f === 'SUMIF' ? 3 : 2); const g = grid(A[0]), test = shCrit(ev(A[1])); let total = 0, count = 0, src = g;
+        if(f === 'SUMIF' && A.length > 2){ if(A[2].t !== 'rng') throw E('#VALUE!'); const r1 = Math.min(A[2].a.r, A[2].b.r), c1 = Math.min(A[2].a.c, A[2].b.c); src = gridAt(r1, c1, r1 + g.length - 1, c1 + g[0].length - 1); }
+        for(let r = 0; r < g.length; r++) for(let c = 0; c < g[r].length; c++){ const v = g[r][c]; if(v instanceof ShErr){ continue; } if(test(v)){ count++; const x = src[r][c]; if(x instanceof ShErr) throw x; if(typeof x === 'number') total += x; } }
+        return f === 'SUMIF' ? total : count;
+      }
+      case 'CONCAT': { let out = ''; for(const a of A){ if(a.t === 'rng'){ for(const v of flat(grid(a))) out += txt(v); } else out += txt(ev(a)); } return out; }
+      case 'LEFT': case 'RIGHT': { argc(A, 1, 2); const t = txt(ev(A[0])), n = A.length > 1 ? int(ev(A[1]), 0) : 1; return f === 'LEFT' ? t.slice(0, n) : n ? t.slice(-n) : ''; }
+      case 'UPPER': case 'LEN': case 'TRIM': argc(A, 1, 1); return SH_ONE[f](txt(ev(A[0])));
+      case 'TEXTBEFORE': case 'TEXTAFTER': {
+        argc(A, 2, 3); const t = txt(ev(A[0])), d = txt(ev(A[1])), n = A.length > 2 ? Math.trunc(num(ev(A[2]))) : 1; if(n === 0) throw E('#VALUE!');
+        if(d === '') return f === 'TEXTBEFORE' ? '' : t;
+        let at = -1;
+        if(n > 0){ for(let k = 0; k < n; k++){ at = t.indexOf(d, at + 1); if(at < 0) throw E('#N/A'); } }
+        else { at = t.length; for(let k = 0; k < -n; k++){ at = at - 1 < 0 ? -1 : t.lastIndexOf(d, at - 1); if(at < 0) throw E('#N/A'); } }
+        return f === 'TEXTBEFORE' ? t.slice(0, at) : t.slice(at + d.length);
+      }
+      case 'TEXTSPLIT': {
+        argc(A, 2, 3); const t = txt(ev(A[0])), cd = txt(ev(A[1])), rd = A.length > 2 ? txt(ev(A[2])) : ''; if(cd === '') throw E('#VALUE!');
+        const rows = (rd ? t.split(rd) : [t]).map(r => r.split(cd)), w = rows.reduce((m, r) => Math.max(m, r.length), 0);
+        rows.forEach(r => { while(r.length < w) r.push(''); });
+        return rows.length === 1 && w === 1 ? rows[0][0] : new ShArr(rows);
+      }
+      case 'XLOOKUP': {
+        argc(A, 3, 5); const look = ev(A[0]); if(look instanceof ShErr) throw look;
+        const la = grid(A[1]), ra = grid(A[2]); if((la.length > 1 && la[0].length > 1) || (ra.length > 1 && ra[0].length > 1)) throw E('#VALUE!');
+        const L = flat(la), R = flat(ra); if(L.length !== R.length) throw E('#VALUE!');
+        const mode = A.length > 4 ? Math.trunc(num(ev(A[4]))) : 0;          // 0 exact, 2 with * and ? wildcards, -1 exact or the next smaller, 1 exact or the next larger
+        let at = -1; const rx = mode === 2 && typeof look === 'string' ? shWild(look) : null;
+        if((mode === -1 || mode === 1) && typeof look === 'number'){ for(let k = 0; k < L.length; k++){ const v = L[k]; if(typeof v !== 'number') continue; if(v === look){ at = k; break; } if(mode === -1 ? v < look : v > look){ if(at < 0 || (mode === -1 ? v > L[at] : v < L[at])) at = k; } } }
+        else for(let k = 0; k < L.length && at < 0; k++){ const v = L[k]; if(v === null || v instanceof ShErr) continue; if(rx ? (typeof v === 'string' && rx.test(v)) : shCmp(look, v) === 0) at = k; }
+        return at >= 0 ? R[at] : (A.length > 3 ? ev(A[3]) : (() => { throw E('#N/A'); })());
+      }
+      case 'SEQUENCE': {
+        argc(A, 1, 4); const nr = int(ev(A[0]), 1), nc = A.length > 1 ? int(ev(A[1]), 1) : 1, start = A.length > 2 ? num(ev(A[2])) : 1, step = A.length > 3 ? num(ev(A[3])) : 1;
+        if(nr * nc > 100000) throw E('#NUM!');
+        const rows = []; let x = start; for(let r = 0; r < nr; r++){ const row = []; for(let c = 0; c < nc; c++){ row.push(+x.toFixed(12)); x += step; } rows.push(row); }
+        return nr === 1 && nc === 1 ? rows[0][0] : new ShArr(rows);
+      }
+      case 'MATCH': {
+        argc(A, 2, 3); const look = ev(A[0]); if(look instanceof ShErr) throw look;
+        const g = grid(A[1]); if(g.length > 1 && g[0].length > 1) throw E('#N/A');
+        const L = flat(g), mode = A.length > 2 ? Math.trunc(num(ev(A[2]))) : 1; let at = -1;
+        if(mode === 0){ const rx = typeof look === 'string' ? shWild(look) : null; for(let k = 0; k < L.length; k++){ const v = L[k]; if(v === null || v instanceof ShErr) continue; if(rx ? (typeof v === 'string' && rx.test(v)) : shCmp(look, v) === 0){ at = k; break; } } }
+        else for(let k = 0; k < L.length; k++){                                         // 1: the biggest value that is not above it (list sorted small to big); -1: the smallest not below it (sorted big to small)
+          const v = L[k]; if(v === null || v instanceof ShErr || shRank(v) !== shRank(look)) continue;
+          const c = shCmp(v, look); if(c === 0){ at = k; if(mode === 1) continue; break; }
+          if(mode === 1 ? c < 0 && (at < 0 || shCmp(v, L[at]) >= 0) : c > 0 && (at < 0 || shCmp(v, L[at]) <= 0)) at = k;
+        }
+        if(at < 0) throw E('#N/A'); return at + 1;
+      }
+      case 'INDEX': {
+        argc(A, 2, 3); const g = grid(A[0]), a = Math.trunc(num(ev(A[1]))), b = A.length > 2 ? Math.trunc(num(ev(A[2]))) : null;
+        let r, c;
+        if(b === null){ if(g.length === 1){ r = 1; c = a; } else if(g[0].length === 1){ r = a; c = 1; } else throw E('#REF!'); } else { r = a; c = b; }
+        if(r < 1 || c < 1 || r > g.length || c > g[0].length) throw E('#REF!');
+        const v = g[r - 1][c - 1]; if(v instanceof ShErr) throw v; return v;
+      }
+      case 'TODAY': argc(A, 0, 0); { const d = new Date(); return shSerial(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+      case 'DAYS': argc(A, 2, 2); return Math.trunc(num(ev(A[0]))) - Math.trunc(num(ev(A[1])));
+      case 'EDATE': {
+        argc(A, 2, 2); const [y, m, d] = shYmd(num(ev(A[0]))), n = Math.trunc(num(ev(A[1]))), tm = (y * 12 + (m - 1)) + n, ny = Math.floor(tm / 12), nm = (tm % 12 + 12) % 12 + 1;
+        return shSerial(ny, nm, Math.min(d, new Date(Date.UTC(ny, nm, 0)).getUTCDate()));
+      }
+    }
+    throw E('#NAME?');
+  }
+  return ev(ast);
+}
+function shValues(s){                                    // every filled cell's value: a number, text, TRUE/FALSE, an ShErr, or null (the map also has the cells a TEXTSPLIT fills in)
+  const memo = new Map(), busy = new Set(), spill = new Set();
+  const order = (x, y) => { const a = shPos(x), b = shPos(y); return a.r - b.r || a.c - b.c; };
+  const keys = Object.keys(s.cells).sort(order);
+  const spillers = keys.filter(k => s.cells[k][0] === '=' && /(TEXTSPLIT|SEQUENCE)\s*\(/i.test(s.cells[k]));
+  let spilled = false;
+  const ensureSpill = () => { if(spilled) return; spilled = true; for(const k of spillers) val(k); };
+  const cell = (r, c) => (r < 0 || c < 0 || r >= SH_MAX_R || c >= SH_MAX_C) ? new ShErr('#REF!') : val(shKey(r, c));
+  const val = k => {
+    if(memo.has(k)) return memo.get(k);
+    const raw = s.cells[k]; let v;
+    if(raw === undefined || raw === ''){ ensureSpill(); if(memo.has(k)) return memo.get(k); v = null; }
+    else if(raw[0] === '='){
+      if(busy.has(k)) return new ShErr('#CIRC!');
+      busy.add(k);
+      try {
+        v = shRun(raw.slice(1), (r, c) => { const x = cell(r, c); if(x instanceof ShErr) throw x; return x; },
+          (a, b) => {                                  // the filled cells in a range, in no particular order
+            const out = [], r1 = Math.min(a.r, b.r), r2 = Math.max(a.r, b.r), c1 = Math.min(a.c, b.c), c2 = Math.max(a.c, b.c);
+            ensureSpill();
+            for(const k2 of [...Object.keys(s.cells), ...spill]){ const p = shPos(k2); if(p && p.r >= r1 && p.r <= r2 && p.c >= c1 && p.c <= c2) out.push(val(k2)); }
+            return out;
+          },
+          (r1, c1, r2, c2) => { const g = []; for(let r = r1; r <= r2; r++){ const row = []; for(let c = c1; c <= c2; c++) row.push(cell(r, c)); g.push(row); } return g; });
+        if(v instanceof ShArr){
+          const p = shPos(k), rows = v.rows; let blocked = false;
+          for(let r = 0; r < rows.length && !blocked; r++) for(let c = 0; c < rows[r].length; c++){ if(!r && !c) continue; const rr = p.r + r, cc = p.c + c; if(rr >= s.r || cc >= s.c || s.cells[shKey(rr, cc)] !== undefined || spill.has(shKey(rr, cc))){ blocked = true; break; } }
+          if(blocked) v = new ShErr('#SPILL!');
+          else { for(let r = 0; r < rows.length; r++) for(let c = 0; c < rows[r].length; c++){ if(!r && !c) continue; const kk = shKey(p.r + r, p.c + c); memo.set(kk, rows[r][c]); spill.add(kk); } v = rows[0][0]; }
+        }
+        if(v === null) v = 0; if(typeof v === 'number' && !isFinite(v)) v = new ShErr('#NUM!');
+      } catch(e){ v = e instanceof ShErr ? e : new ShErr('#ERROR!'); }
+      busy.delete(k);
+    } else v = shLiteral(raw).v;
+    memo.set(k, v); return v;
+  };
+  ensureSpill();
+  for(const k of keys) val(k);                       // top to bottom, so a running total never needs a deep chain
+  memo.spill = spill; return memo;
+}
+function shNumText(v, f){
+  if(f === 'p') return String(+(v * 100).toFixed(2)) + '%';
+  if(f === 'c') return (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if(f === 'n') return v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if(f === 'd' && v >= 1 && v < 2958466) return shDateText(v);
+  return String(+v.toPrecision(15));
+}
+const shShow = (v, f) => v instanceof ShErr ? v.e : v === null || v === undefined ? '' : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : typeof v === 'number' ? shNumText(v, f) : String(v);          // what the cell displays
+function shFmtOf(s, k, raw){ return s.f[k] || (raw ? (raw[0] === '=' ? (/^=\s*(TODAY|EDATE)\s*\(/i.test(raw) ? 'd' : '') : shLiteral(raw).auto) : ''); }
+function shPlain(v, f){                                  // what goes into a CSV or onto the clipboard: numbers without thousands separators
+  if(v instanceof ShErr) return v.e; if(v === null || v === undefined) return '';
+  if(typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+  if(typeof v === 'number'){ if(f === 'p' || f === 'd') return shNumText(v, f); if(f === 'c' || f === 'n') return String(+v.toFixed(2)); return shNumText(v, ''); }
+  return String(v);
+}
+
+/* ---- moving, inserting and deleting: references inside formulas follow ---- */
+const SH_RW = /(?<![A-Za-z0-9_.$])(\$?)([A-Za-z]{1,2})(\$?)(\d{1,4})(?::(\$?)([A-Za-z]{1,2})(\$?)(\d{1,4}))?(?![A-Za-z0-9_(])/g;
+const shRefText = a => (a.ac ? '$' : '') + shColName(a.c) + (a.ar ? '$' : '') + (a.r + 1);
+function shRewrite(f, fn){                               // calls fn(ref) or fn(ref, ref2) for every cell or range written in the formula (not inside quotes)
+  return f.split(/("(?:[^"]|"")*")/).map((part, k) => k % 2 ? part : part.replace(SH_RW, (m, a1, a2, a3, a4, b1, b2, b3, b4) => {
+    const a = {ac: !!a1, c: shColNum(a2.toUpperCase()), ar: !!a3, r: +a4 - 1};
+    const b = b2 ? {ac: !!b1, c: shColNum(b2.toUpperCase()), ar: !!b3, r: +b4 - 1} : null;
+    return fn(a, b);
+  })).join('');
+}
+function shMoveRefs(f, dr, dc){                          // copy a formula dr rows down and dc columns right: relative parts move, $ parts stay
+  if(!f || f[0] !== '=') return f;
+  const mv = a => ({...a, r: a.ar ? a.r : a.r + dr, c: a.ac ? a.c : a.c + dc}), ok = a => a.r >= 0 && a.c >= 0 && a.r < SH_MAX_R && a.c < SH_MAX_C;
+  return shRewrite(f, (a, b) => { const x = mv(a), y = b && mv(b); if(!ok(x) || (y && !ok(y))) return '#REF!'; return shRefText(x) + (y ? ':' + shRefText(y) : ''); });
+}
+function shAdjust(f, axis, at, n, del){                  // a row (axis 'r') or column ('c') was inserted before index `at`, or `n` of them deleted from `at`
+  if(!f || f[0] !== '=') return f;
+  const one = x => del ? (x >= at && x < at + n ? null : x >= at + n ? x - n : x) : (x >= at ? x + n : x);
+  return shRewrite(f, (a, b) => {
+    if(!b){ const v = one(a[axis]); return v === null ? '#REF!' : shRefText({...a, [axis]: v}); }
+    let x = a[axis], y = b[axis];
+    if(del){ if(x >= at && y < at + n) return '#REF!'; x = x < at ? x : x >= at + n ? x - n : at; y = y < at ? y : y >= at + n ? y - n : at - 1; if(y < x) return '#REF!'; }
+    else { if(x >= at) x += n; if(y >= at) y += n; }
+    return shRefText({...a, [axis]: x}) + ':' + shRefText({...b, [axis]: y});
+  });
+}
+function shInsert(s, axis, at, n){                       // false when the sheet would get past its size limit
+  const lim = axis === 'r' ? SH_MAX_R : SH_MAX_C; if(s[axis] + n > lim) return false;
+  const cells = {}, f = {}, w = {}, wr = {};
+  for(const k of Object.keys(s.wr || {})){ const p = shPos(k); if(p[axis] >= at) p[axis] += n; wr[shKey(p.r, p.c)] = 1; }
+  for(const [k, v] of Object.entries(s.cells)){ const p = shPos(k); const q = {r: p.r, c: p.c}; if(q[axis] >= at) q[axis] += n; cells[shKey(q.r, q.c)] = shAdjust(v, axis, at, n, false); }
+  for(const [k, v] of Object.entries(s.f)){ const p = shPos(k); if(p[axis] >= at) p[axis] += n; f[shKey(p.r, p.c)] = v; }
+  for(const [k, v] of Object.entries(s.w)){ const c = +k; w[axis === 'c' && c >= at ? c + n : c] = v; }
+  s.cells = cells; s.f = f; s.w = w; s.wr = wr; s[axis] += n; return true;
+}
+function shDelete(s, axis, at, n){
+  n = Math.min(n, s[axis] - at); if(n < 1) return;
+  const cells = {}, f = {}, w = {}, wr = {};
+  for(const k of Object.keys(s.wr || {})){ const p = shPos(k); if(p[axis] >= at && p[axis] < at + n) continue; if(p[axis] >= at + n) p[axis] -= n; wr[shKey(p.r, p.c)] = 1; }
+  for(const [k, v] of Object.entries(s.cells)){ const p = shPos(k); if(p[axis] >= at && p[axis] < at + n) continue; if(p[axis] >= at + n) p[axis] -= n; cells[shKey(p.r, p.c)] = shAdjust(v, axis, at, n, true); }
+  for(const [k, v] of Object.entries(s.f)){ const p = shPos(k); if(p[axis] >= at && p[axis] < at + n) continue; if(p[axis] >= at + n) p[axis] -= n; f[shKey(p.r, p.c)] = v; }
+  for(const [k, v] of Object.entries(s.w)){ const c = +k; if(axis === 'c' && c >= at && c < at + n) continue; w[axis === 'c' && c >= at + n ? c - n : c] = v; }
+  s.cells = cells; s.f = f; s.w = w; s.wr = wr; s[axis] = Math.max(1, s[axis] - n);
+  if(s.fz){ s.fz.r = Math.min(s.fz.r, s.r - 1); s.fz.c = Math.min(s.fz.c, s.c - 1); if(!s.fz.r && !s.fz.c) delete s.fz; }
+}
+
+/* ---- text in and out: CSV, and what Excel puts on the clipboard (tab separated) ---- */
+function shParseDelim(text, delim){
+  const rows = []; let row = [], cur = '', q = false;
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if(q){ if(ch === '"'){ if(text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if(ch === '"' && cur === '') q = true;
+    else if(ch === delim){ row.push(cur); cur = ''; }
+    else if(ch === '\n' || ch === '\r'){ if(ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  if(cur !== '' || row.length){ row.push(cur); rows.push(row); }
+  while(rows.length && rows[rows.length - 1].every(x => x === '')) rows.pop();
+  return rows;
+}
+function shDelim(text){ const first = text.replace(/^﻿/, '').split(/\r?\n/, 1)[0] || '', n = ch => first.split(ch).length - 1; const t = n('\t'), c = n(','), s = n(';'); return t && t >= c && t >= s ? '\t' : c >= s ? ',' : ';'; }
+function shQuote(v, delim){ return /["\r\n]/.test(v) || v.includes(delim) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function shRect(s, r1, c1, r2, c2){                      // the displayed values in a rectangle, as rows of text
+  const vals = shValues(s), out = [];
+  for(let r = r1; r <= r2; r++){ const row = []; for(let c = c1; c <= c2; c++){ const k = shKey(r, c); row.push(shPlain(vals.get(k), shFmtOf(s, k, s.cells[k]))); } out.push(row); }
+  return out;
+}
+function shToText(rows, delim){ return rows.map(r => r.map(v => shQuote(v, delim)).join(delim)).join('\r\n'); }
+
+/* ================= spreadsheet notes: the grid on screen ================= */
+const SH_W = 110;                                          // default column width in px
+const shSelMap = new Map(), shHist = new Map(), shWarned = new Set();
+let shEdit = null, shDragging = false, shResize = null, shClip = null, shShown = new Map();
+const shItem = () => { const id = $('#detail').dataset.item; const i = id ? byId(id) : null; return i && i.sheet ? i : null; };          // the sheet the screen was drawn for
+const shSelOf = i => { let s = shSelMap.get(i.id); if(!s){ s = {ar:0, ac:0, er:0, ec:0, r1:0, c1:0, r2:0, c2:0}; shSelMap.set(i.id, s); } return s; };
+const shTd = (r, c) => document.querySelector(`#detail .shgrid td[data-k="${shKey(r, c)}"]`);
+const shFocus = () => { const g = document.querySelector('#detail .shgrid'); if(g) g.focus({preventScroll:true}); };
+const shCls = (v, wrapped) => ((typeof v === 'number' ? 'sn' : typeof v === 'boolean' ? 'sbool' : v instanceof ShErr ? 'se' : '') + (wrapped ? ' sw' : '')).trim();
+const shSummary = s => { const x = shExtent(s); return x.r ? `Spreadsheet · ${x.r} row${x.r === 1 ? '' : 's'} × ${x.c} column${x.c === 1 ? '' : 's'}` : 'Spreadsheet · empty'; };
+const shSearchText = s => Object.values(s.cells).filter(v => v[0] !== '=').join(' ');
+const shSizeLine = s => `${s.r.toLocaleString()} rows × ${s.c} columns · limit ${SH_MAX_R.toLocaleString()} × ${SH_MAX_C}`;
+function shRowHtml(s, r, vals){
+  let h = `<tr><th class="shrh" data-rh="${r}">${r + 1}</th>`;
+  for(let c = 0; c < s.c; c++){
+    const k = shKey(r, c), raw = s.cells[k], v = vals.get(k);
+    if(raw === undefined && (v === undefined || v === null)){ h += `<td data-k="${k}"${s.wr[k] ? ' class="sw"' : ''}></td>`; continue; }
+    const t = shShow(v, shFmtOf(s, k, raw)), cl = shCls(v, s.wr[k]); shShown.set(k, t);
+    h += `<td data-k="${k}"${cl ? ` class="${cl}"` : ''}>${esc(t)}</td>`;
+  }
+  return h + '</tr>';
+}
+function shHtml(i){
+  const s = i.sheet, vals = shValues(s), w = c => s.w[c] || SH_W; shShown = new Map();
+  let total = 46, cols = '', ths = '';
+  for(let c = 0; c < s.c; c++){ total += w(c); cols += `<col style="width:${w(c)}px">`; ths += `<th data-ch="${c}">${shColName(c)}<i class="shrz" data-rz="${c}" title="Drag to change the width"></i></th>`; }
+  let rows = ''; for(let r = 0; r < s.r; r++) rows += shRowHtml(s, r, vals);
+  return `<div class="sheet" id="sheet" data-id="${esc(i.id)}">
+    <div class="shbar">
+      <button data-sh="undo" title="Undo (Ctrl+Z)">↶</button><button data-sh="redo" title="Redo (Ctrl+Y)">↷</button><i class="sep"></i>
+      <button data-sh="addrow" title="Insert a row above the selected one">＋ Row</button><button data-sh="addcol" title="Insert a column to the left of the selected one">＋ Column</button><button data-sh="delrow">Delete row</button><button data-sh="delcol">Delete column</button><i class="sep"></i>
+      <button data-sh="wrap" title="Show long text on several lines in the selected cells (again to turn it off)">↵ Wrap text</button>
+      <select data-shfmt title="How the selected cells show numbers"><option value="g">General</option><option value="n">Number 1,234.50</option><option value="p">Percent 12%</option><option value="c">Currency $1,234.50</option><option value="d">Date 2026-11-17</option></select>
+      <select data-shfz title="Keep the first rows and columns in view while you scroll"><option value="">Freeze: off</option><option value="r1">Freeze top row</option><option value="c1">Freeze first column</option><option value="rc">Freeze top row and first column</option><option value="sel">Freeze rows above and columns left of the selected cell</option><option value="off">Unfreeze</option></select>
+      <button data-sh="filld" title="Copy the cell above down through the selection (Ctrl+D)">Fill down</button><button data-sh="fillr" title="Copy the cell on the left across the selection (Ctrl+R)">Fill right</button><i class="sep"></i>
+      <button data-sh="import" title="Put the cells of a CSV file in, starting at the selected cell">⬆ Import CSV</button><button data-sh="export" title="Download the values you see as a CSV file">⬇ Export CSV</button><input type="file" id="shfile" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden>
+      <span class="shsize">${esc(shSizeLine(s))}</span>
+    </div>
+    <div class="shfx"><span class="shname">A1</span><input class="shfxin" spellcheck="false" autocomplete="off" placeholder="Type a value or a formula, like =SUM(B2:B6)"></div>
+    <div class="shscroll"><div class="shbox"><table class="shgrid" tabindex="0" style="width:${total}px"><colgroup><col style="width:46px">${cols}</colgroup><thead><tr><th class="shcorner" title="Select everything"></th>${ths}</tr></thead><tbody>${rows}</tbody></table><div class="shsel"></div><div class="shpt"></div></div></div>
+    <div class="shhint">Click a cell and type. Formulas start with =: type =SUM then Tab, drag over the cells, press Enter. Other examples: =C2*D2 or =B2*15%. Paste cells from Excel straight in. Arrow keys move, Tab and Enter finish a cell, Delete clears.</div>
+  </div>`;
+}
+function shAfterRender(i){ const s = shSelOf(i); shFreeze(i); shSetSel(i, s.ar, s.ac, s.er, s.ec); }
+function shShowSel(i){
+  const sel = shSelOf(i), box = document.querySelector('#detail .shsel'), a = shTd(sel.r1, sel.c1), b = shTd(sel.r2, sel.c2); if(!box || !a || !b) return;
+  box.style.cssText = `left:${a.offsetLeft}px;top:${a.offsetTop}px;width:${b.offsetLeft + b.offsetWidth - a.offsetLeft}px;height:${b.offsetTop + b.offsetHeight - a.offsetTop}px`;
+  document.querySelectorAll('#detail .shgrid td.sa').forEach(x => x.classList.remove('sa')); const act = shTd(sel.ar, sel.ac); if(act) act.classList.add('sa');
+  const k = shKey(sel.ar, sel.ac), nm = document.querySelector('#detail .shname'), fx = document.querySelector('#detail .shfxin'), fm = document.querySelector('#detail [data-shfmt]');
+  if(nm) nm.textContent = sel.r1 === sel.r2 && sel.c1 === sel.c2 ? k : shKey(sel.r1, sel.c1) + ':' + shKey(sel.r2, sel.c2);
+  if(fx && document.activeElement !== fx){ fx.value = i.sheet.cells[k] || ''; fx.dataset.k = k; }
+  if(fm) fm.value = i.sheet.f[k] || (i.sheet.cells[k] ? shLiteral(i.sheet.cells[k]).auto : '') || 'g';
+  const wb = document.querySelector('#detail [data-sh=wrap]'); if(wb) wb.classList.toggle('on', !!i.sheet.wr[k]);
+  const fz = document.querySelector('#detail [data-shfz]'), z = i.sheet.fz; if(fz){ fz.options[0].textContent = z ? 'Frozen: ' + [z.r ? z.r + (z.r === 1 ? ' row' : ' rows') : '', z.c ? z.c + (z.c === 1 ? ' column' : ' columns') : ''].filter(Boolean).join(', ') : 'Freeze: off'; fz.value = ''; }
+}
+function shSetSel(i, ar, ac, er, ec){
+  const s = i.sheet, cl = (v, m) => Math.max(0, Math.min(v, m - 1)), sel = shSelOf(i);
+  ar = cl(ar, s.r); ac = cl(ac, s.c); er = cl(er, s.r); ec = cl(ec, s.c);
+  Object.assign(sel, {ar, ac, er, ec, r1: Math.min(ar, er), r2: Math.max(ar, er), c1: Math.min(ac, ec), c2: Math.max(ac, ec)});
+  shShowSel(i);
+}
+const shScrollTo = (r, c) => { const td = shTd(r, c); if(td) td.scrollIntoView({block:'nearest', inline:'nearest'}); };
+function shPaint(i){                                       // after a change: update only the cells whose text is different now
+  const s = i.sheet, vals = shValues(s), seen = new Set();
+  const ks = new Set(Object.keys(s.cells)); for(const [k0, v0] of vals) if(v0 !== null && v0 !== undefined) ks.add(k0);          // including the cells a TEXTSPLIT filled in
+  for(const k of ks){ seen.add(k); const v = vals.get(k), t = shShow(v, shFmtOf(s, k, s.cells[k])), cl = shCls(v, s.wr[k]);
+    const td = document.querySelector(`#detail .shgrid td[data-k="${k}"]`); if(td){ if(shShown.get(k) !== t) td.textContent = t; if(td.className.replace(/\b(sa|ed)\b/g, '').trim() !== cl) td.className = (cl + (td.classList.contains('sa') ? ' sa' : '')).trim(); }
+    shShown.set(k, t); }
+  for(const k of [...shShown.keys()]) if(!seen.has(k)){ const td = document.querySelector(`#detail .shgrid td[data-k="${k}"]`); if(td){ td.textContent = ''; td.className = td.classList.contains('sa') ? 'sa' : ''; } shShown.delete(k); }
+  const sz = document.querySelector('#detail .shsize'); if(sz) sz.textContent = shSizeLine(s);
+  if(s.fz && s.fz.r) shFreeze(i);
+  shShowSel(i);
+}
+function shRedraw(i){                                      // the shape of the sheet changed: draw the grid again, keeping the scroll position
+  const old = document.getElementById('sheet'); if(!old) return;
+  const sc = old.querySelector('.shscroll'), top = sc ? sc.scrollTop : 0, left = sc ? sc.scrollLeft : 0, had = old.contains(document.activeElement);
+  shEdit = null; old.outerHTML = shHtml(i);
+  const sc2 = document.querySelector('#sheet .shscroll'); if(sc2){ sc2.scrollTop = top; sc2.scrollLeft = left; }
+  shAfterRender(i); if(had) shFocus();
+}
+function shTrim(h){ let n = 0; for(const x of h.u) n += x.length; while(h.u.length > 1 && (h.u.length > 40 || n > 8e6)){ n -= h.u.shift().length; } }
+function shGrew(i){                                        // a quiet warning at 80% of the limit
+  const s = i.sheet; if((s.r >= SH_MAX_R * .8 || s.c >= SH_MAX_C * .8) && !shWarned.has(i.id)){ shWarned.add(i.id); toast(`This sheet is getting big (${s.r.toLocaleString()} of ${SH_MAX_R.toLocaleString()} rows, ${s.c} of ${SH_MAX_C} columns). At the limit it stops growing. For bigger tables, use Excel.`); }
+}
+function shDo(i, fn, o){                                   // every change goes through here: remembered for Undo, saved, and drawn
+  if(MOBILE || !i || !i.sheet) return false;
+  const s = i.sheet, before = JSON.stringify(s), rb = s.r, cb = s.c;
+  if(fn(s) === false) return false;
+  if(JSON.stringify(s) === before) return true;
+  let h = shHist.get(i.id); if(!h){ h = {u:[], r:[]}; shHist.set(i.id, h); }
+  h.u.push(before); h.r = []; shTrim(h);
+  edited(i);
+  if(s.r !== rb || s.c !== cb || (o && o.redraw)) shRedraw(i); else shPaint(i);
+  shGrew(i); return true;
+}
+function shUndoStep(i, dir){
+  const h = shHist.get(i.id), from = h && (dir < 0 ? h.u : h.r), to = h && (dir < 0 ? h.r : h.u), snap = from && from.pop();
+  if(snap === undefined || !h){ toast(dir < 0 ? 'Nothing to undo in this sheet.' : 'Nothing to redo in this sheet.'); return false; }
+  to.push(JSON.stringify(i.sheet)); i.sheet = cleanSheet(JSON.parse(snap)); edited(i); shRedraw(i); return true;
+}
+function shCommitCell(i, r, c, raw){
+  const s = i.sheet, k = shKey(r, c); raw = String(raw).replace(/\r?\n/g, ' ');
+  if(/^\s*=/.test(raw)) raw = shClose(raw.trim());
+  if(raw.trim() === '') raw = '';
+  else if(s.f[k] === 'p' && /^\s*[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)?(?:\.\d+)?\s*$/.test(raw)) raw = raw.trim() + '%';          // a cell shown as a percentage: typing 20 means 20%
+  if((s.cells[k] || '') === raw) return;
+  shDo(i, s => { if(raw === '') delete s.cells[k]; else s.cells[k] = raw.slice(0, 2000); });
+}
+function shGrow(i, axis){                                  // one more row or column at the end (arrow past the edge)
+  const s = i.sheet, lim = axis === 'r' ? SH_MAX_R : SH_MAX_C; if(MOBILE) return false;
+  if(s[axis] >= lim){ toast(SH_FULL); return false; }
+  s[axis]++; edited(i);
+  if(axis === 'r'){ const tb = document.querySelector('#detail .shgrid tbody'); if(tb){ tb.insertAdjacentHTML('beforeend', shRowHtml(s, s.r - 1, new Map())); if(s.fz && s.fz.c) shFreeze(i); } const sz = document.querySelector('#detail .shsize'); if(sz) sz.textContent = shSizeLine(s); }
+  else shRedraw(i);
+  shGrew(i); return true;
+}
+function shMove(i, dr, dc){
+  const s = i.sheet, sel = shSelOf(i); let r = sel.ar + dr, c = sel.ac + dc;
+  if(r >= s.r && dr > 0 && !shGrow(i, 'r')) r = s.r - 1;
+  if(c >= s.c && dc > 0 && !shGrow(i, 'c')) c = s.c - 1;
+  r = Math.max(0, Math.min(r, s.r - 1)); c = Math.max(0, Math.min(c, s.c - 1));
+  shSetSel(i, r, c, r, c); shScrollTo(r, c);
+}
+function shExtend(i, dr, dc){ const sel = shSelOf(i); shSetSel(i, sel.ar, sel.ac, sel.er + dr, sel.ec + dc); shScrollTo(Math.max(0, Math.min(sel.er, i.sheet.r - 1)), Math.max(0, Math.min(sel.ec, i.sheet.c - 1))); }
+/* ---- typing into a cell ---- */
+function shStartEdit(i, r, c, init){
+  if(MOBILE) return; if(shEdit) shEndEdit(true);
+  const td = shTd(r, c); if(!td) return;
+  const raw = i.sheet.cells[shKey(r, c)] || '';
+  td.classList.add('ed'); td.innerHTML = '<input class="shin" spellcheck="false" autocomplete="off">';
+  const inp = td.firstChild; inp.value = init !== undefined ? init : raw;
+  shEdit = {id:i.id, r, c, td, inp, entry: init !== undefined};
+  inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+}
+function shEndEdit(commit){
+  const e = shEdit; if(!e) return; shEdit = null; shAcHide(); shPointHide();
+  const i = byId(e.id), val = e.inp.value, k = shKey(e.r, e.c);
+  e.td.classList.remove('ed'); e.td.textContent = shShown.get(k) || '';
+  if(commit && i && i.sheet && $('#detail').dataset.item === e.id) shCommitCell(i, e.r, e.c, val);
+}
+
+/* ---- writing formulas: Tab completes a function name, clicking or dragging over cells types their reference, Enter closes the bracket ---- */
+const SH_FNS = [['IF', 'test, if_true, if_false', 'one answer or the other'], ['IFERROR', 'value, if_error', 'a fallback when there is an error'], ['AND', 'test, test, …', 'TRUE if all are true'], ['OR', 'test, test, …', 'TRUE if any is true'], ['NOT', 'test', 'flips TRUE and FALSE'],
+  ['SUM', 'numbers', 'adds them up'], ['SUMIF', 'range, criteria, sum_range', 'adds up only the matching rows'], ['COUNTIF', 'range, criteria', 'how many cells match'], ['AVERAGE', 'numbers', 'the average'], ['AVG', 'numbers', 'the average (same as AVERAGE)'], ['MIN', 'numbers', 'the smallest'], ['MAX', 'numbers', 'the biggest'], ['MEDIAN', 'numbers', 'the middle value'],
+  ['COUNT', 'range', 'how many cells hold a number'], ['COUNTA', 'range', 'how many cells are not empty'], ['PRODUCT', 'numbers', 'multiplies them'], ['ABS', 'number', 'without its minus sign'], ['ROUND', 'number, digits', 'rounds'], ['ROUNDUP', 'number, digits', 'rounds away from zero'], ['ROUNDDOWN', 'number, digits', 'rounds toward zero'],
+  ['SQRT', 'number', 'square root'], ['POWER', 'number, power', 'raises to a power'], ['MOD', 'number, divisor', 'the remainder'], ['LARGE', 'range, k', 'the k-th biggest'], ['SMALL', 'range, k', 'the k-th smallest'], ['RANK', 'value, range', 'its place in the range, 1 = biggest'],
+  ['CONCAT', 'text, text, …', 'joins text together'], ['LEFT', 'text, count', 'the first letters'], ['RIGHT', 'text, count', 'the last letters'], ['UPPER', 'text', 'CAPITALS'], ['LEN', 'text', 'how many characters'], ['TRIM', 'text', 'removes extra spaces'],
+  ['TEXTBEFORE', 'text, delimiter', 'what comes before it'], ['TEXTAFTER', 'text, delimiter', 'what comes after it'], ['TEXTSPLIT', 'text, delimiter', 'splits into cells to the right'],
+  ['XLOOKUP', 'find, look_in, return_from, if_not_found', 'look up and give back the match'], ['INDEX', 'range, row, column', 'the value at that place in the range'], ['MATCH', 'find, range, 0', 'the position of a value in a list (0 = exact)'], ['SEQUENCE', 'rows, columns, start, step', 'a run of numbers, filling cells'], ['TODAY', '', 'today’s date'], ['DAYS', 'end, start', 'days between two dates'], ['EDATE', 'date, months', 'a date some months later']];
+let shAcIdx = 0, shAcFor = null, shPoint = null;
+function shClose(f){                                       // =SUM(B2:B6  ->  =SUM(B2:B6)
+  let q = false, open = 0;
+  for(const ch of f){ if(ch === '"') q = !q; else if(!q){ if(ch === '(') open++; else if(ch === ')' && open > 0) open--; } }
+  return open > 0 && !q ? f + ')'.repeat(open) : f;
+}
+function shAcMatches(inp){                                 // the function names that start with the word just before the cursor
+  const v = inp.value; if(v[0] !== '=' || inp.selectionStart !== inp.selectionEnd) return null;
+  const before = v.slice(0, inp.selectionStart); if((before.match(/"/g) || []).length % 2) return null;
+  const m = /[=(,+\-*\/^&\s]([A-Za-z]{2,10})$/.exec(before); if(!m) return null;
+  const tok = m[1].toUpperCase(), list = SH_FNS.filter(f => f[0].startsWith(tok));
+  return list.length ? {start: before.length - m[1].length, end: before.length, list} : null;
+}
+function shAcHide(){ const a = document.querySelector('#detail .shac'); if(a) a.remove(); shAcFor = null; }
+function shAcShow(inp){
+  const m = shAcMatches(inp), host = document.getElementById('sheet');
+  if(!m || !host){ shAcHide(); return; }
+  if(shAcFor !== inp) shAcIdx = 0; shAcFor = inp; shAcIdx = Math.min(shAcIdx, m.list.length - 1);
+  let box = host.querySelector('.shac'); if(!box){ box = document.createElement('div'); box.className = 'shac'; host.appendChild(box); }
+  box.innerHTML = m.list.map((f, k) => `<div class="shaci ${k === shAcIdx ? 'on' : ''}" data-fn="${f[0]}"><b>${f[0]}(</b><span>${esc(f[1])}) ${esc(f[2])}</span></div>`).join('') + '<div class="shacn">Tab fills it in</div>';
+  const r = inp.getBoundingClientRect(), hr = host.getBoundingClientRect();
+  box.style.left = Math.max(0, r.left - hr.left) + 'px'; box.style.top = (r.bottom - hr.top + 2) + 'px';
+}
+function shAcAccept(inp, name){
+  const m = shAcMatches(inp); if(!m) return;
+  inp.value = inp.value.slice(0, m.start) + name + '(' + inp.value.slice(m.end);
+  const pos = m.start + name.length + 1; inp.setSelectionRange(pos, pos); shAcHide(); shMirror(inp);
+}
+function shMirror(inp){ if(shEdit && inp === shEdit.inp){ const fx = document.querySelector('#detail .shfxin'); if(fx) fx.value = inp.value; } }
+const shPointTarget = () => { if(shEdit && shEdit.inp.isConnected) return shEdit.inp; const a = document.activeElement; return a && a.classList && a.classList.contains('shfxin') ? a : null; };
+function shWantsRef(inp){                                  // is a cell reference expected at the cursor? (after =, an opening bracket, a comma or an operator, or right after one just picked)
+  const v = inp.value; if(v[0] !== '=' || inp.selectionStart !== inp.selectionEnd) return false;
+  const pos = inp.selectionStart; if(shPoint && shPoint.inp === inp && pos === shPoint.end) return true;
+  const before = v.slice(0, pos).replace(/\s+$/, ''); if((before.match(/"/g) || []).length % 2) return false;
+  return /[=(,+\-*\/^&]$/.test(before);
+}
+function shPointBox(r1, c1, r2, c2){
+  const box = document.querySelector('#detail .shpt'), a = shTd(r1, c1), b = shTd(r2, c2); if(!box) return;
+  if(!a || !b){ box.style.display = 'none'; return; }
+  box.style.cssText = `display:block;left:${a.offsetLeft}px;top:${a.offsetTop}px;width:${b.offsetLeft + b.offsetWidth - a.offsetLeft}px;height:${b.offsetTop + b.offsetHeight - a.offsetTop}px`;
+}
+function shPointHide(){ shPoint = null; const box = document.querySelector('#detail .shpt'); if(box) box.style.display = 'none'; }
+function shPointSet(er, ec){                               // type the reference for the cell or block from the starting cell to here
+  const pt = shPoint; if(!pt) return;
+  const r1 = Math.min(pt.ar, er), c1 = Math.min(pt.ac, ec), r2 = Math.max(pt.ar, er), c2 = Math.max(pt.ac, ec);
+  const txt = r1 === r2 && c1 === c2 ? shKey(r1, c1) : shKey(r1, c1) + ':' + shKey(r2, c2), v = pt.inp.value;
+  pt.inp.value = v.slice(0, pt.start) + txt + v.slice(pt.end); pt.end = pt.start + txt.length; pt.inp.setSelectionRange(pt.end, pt.end);
+  shMirror(pt.inp); shPointBox(r1, c1, r2, c2); shAcHide();
+}
+function shPointStart(inp, r, c){
+  const again = shPoint && shPoint.inp === inp && inp.selectionStart === shPoint.end, start = again ? shPoint.start : inp.selectionStart;
+  shPoint = {inp, start, end: again ? shPoint.end : start, ar: r, ac: c}; shPointSet(r, c);
+}
+/* ---- clipboard, import, export ---- */
+function shPutBlock(i, r0, c0, rows, o){                   // rows of raw cell text, placed with their top left corner at r0, c0
+  o = o || {}; let h = rows.length, w = rows.reduce((m, r) => Math.max(m, r.length), 0);
+  if(!h || !w) return false;
+  if(r0 + h > SH_MAX_R || c0 + w > SH_MAX_C){
+    const fr = Math.max(0, Math.min(h, SH_MAX_R - r0)), fc = Math.max(0, Math.min(w, SH_MAX_C - c0));
+    if(!fr || !fc){ toast(SH_FULL); return false; }
+    if(!confirm(`That is ${h.toLocaleString()} rows by ${w} columns. A sheet holds at most ${SH_MAX_R.toLocaleString()} rows by ${SH_MAX_C} columns, counting from the cell you are on. For tables this big, use Excel.\n\nOK puts in just the first ${fr.toLocaleString()} rows${fc < w ? ' and ' + fc + ' columns' : ''}. Cancel puts in nothing.`)) return false;
+    rows = rows.slice(0, fr).map(r => r.slice(0, fc)); h = fr; w = fc;
+  }
+  if(o.confirmReplace){ let n = 0; for(let r = 0; r < h; r++) for(let c = 0; c < w; c++) if(i.sheet.cells[shKey(r0 + r, c0 + c)]) n++; if(n && !confirm(`This replaces ${n.toLocaleString()} filled cell${n === 1 ? '' : 's'} in this sheet. You can undo it afterwards. Continue?`)) return false; }
+  const ok = shDo(i, s => {
+    s.r = Math.max(s.r, r0 + h); s.c = Math.max(s.c, c0 + w);
+    for(let r = 0; r < h; r++) for(let c = 0; c < w; c++){ const k = shKey(r0 + r, c0 + c), v = String(rows[r][c] === undefined ? '' : rows[r][c]).slice(0, 2000), f = o.fm && o.fm[r] && o.fm[r][c];
+      if(v === '') delete s.cells[k]; else s.cells[k] = v; if(f) s.f[k] = f; else if(o.fm) delete s.f[k]; }
+  });
+  if(ok){ shSetSel(i, r0, c0, r0 + h - 1, c0 + w - 1); toast(`Put in ${h.toLocaleString()} row${h === 1 ? '' : 's'} × ${w} column${w === 1 ? '' : 's'}.`, () => { const j = byId(i.id); if(j) shUndoStep(j, -1); }); }
+  return ok;
+}
+function shCopy(e, cut){
+  if(!e.target.closest || !e.target.closest('.shgrid') || e.target.classList.contains('shin')) return;
+  const i = shItem(); if(!i) return; const s = i.sheet, sel = shSelOf(i);
+  e.preventDefault();
+  const text = shToText(shRect(s, sel.r1, sel.c1, sel.r2, sel.c2), '\t'), raw = [], fm = [];
+  for(let r = sel.r1; r <= sel.r2; r++){ const a = [], b = []; for(let c = sel.c1; c <= sel.c2; c++){ const k = shKey(r, c); a.push(s.cells[k] || ''); b.push(s.f[k] || ''); } raw.push(a); fm.push(b); }
+  shClip = {text, raw, fm, r:sel.r1, c:sel.c1};
+  e.clipboardData.setData('text/plain', text);
+  if(cut) shClearSel(i);
+}
+function shPaste(e){
+  if(!e.target.closest || !e.target.closest('.shgrid') || e.target.classList.contains('shin')) return;
+  const i = shItem(); if(!i || MOBILE) return; e.preventDefault();
+  const text = (e.clipboardData.getData('text/plain') || '').replace(/\r\n?/g, '\n'), sel = shSelOf(i);
+  if(!text.trim()) return;
+  let rows, fm = null;
+  if(shClip && shClip.text.replace(/\r\n?/g, '\n') === text){          // copied from this app: formulas follow, like in Excel
+    const dr = sel.r1 - shClip.r, dc = sel.c1 - shClip.c;
+    rows = shClip.raw.map(r => r.map(v => shMoveRefs(v, dr, dc))); fm = shClip.fm;
+  } else { rows = shParseDelim(text.replace(/\n$/, ''), '\t'); }
+  if(rows.length === 1 && rows[0].length === 1 && (sel.r2 > sel.r1 || sel.c2 > sel.c1)){          // one value onto a selected block fills it
+    const v = rows[0][0], f = fm && fm[0][0]; rows = []; fm = fm ? [] : null;
+    for(let r = sel.r1; r <= sel.r2; r++){ rows.push(Array(sel.c2 - sel.c1 + 1).fill(v)); if(fm) fm.push(Array(sel.c2 - sel.c1 + 1).fill(f)); }
+  }
+  shPutBlock(i, sel.r1, sel.c1, rows, {fm});
+}
+function shClearSel(i){
+  const sel = shSelOf(i);
+  shDo(i, s => { let n = 0; for(const k of Object.keys(s.cells)){ const p = shPos(k); if(p.r >= sel.r1 && p.r <= sel.r2 && p.c >= sel.c1 && p.c <= sel.c2){ delete s.cells[k]; n++; } } if(!n) return false; });
+}
+function shExportCsv(i){
+  const s = i.sheet, x = shExtent(s, shValues(s)); if(!x.r){ toast('This sheet is empty. There is nothing to export yet.'); return; }
+  downloadFile(fileSlug(i) + '.csv', '﻿' + shToText(shRect(s, 0, 0, x.r - 1, x.c - 1), ','), 'text/csv');
+  toast(`Saved ${fileSlug(i)}.csv to your downloads. It holds the values you see, not the formulas.`);
+}
+async function shImportFile(i, file){
+  if(file.size > 25e6){ toast('That file is very large. For tables this big, use Excel.'); return; }
+  let text = ''; try { text = await file.text(); } catch { toast('Could not read that file.'); return; }
+  if(!shItem() || shItem().id !== i.id) return;                         // you moved to another note while it was reading
+  text = text.replace(/^﻿/, ''); const rows = shParseDelim(text, shDelim(text));
+  if(!rows.length){ toast('That file has no cells in it.'); return; }
+  const sel = shSelOf(i); shPutBlock(i, sel.r1, sel.c1, rows, {confirmReplace:true});
+}
+/* ---- buttons: insert and delete, totals, fill, formats ---- */
+function shFill(i, dir){
+  const sel = shSelOf(i), down = dir === 'd';
+  shDo(i, s => {
+    let src, r1 = sel.r1, r2 = sel.r2, c1 = sel.c1, c2 = sel.c2;
+    if(down){ if(r1 === r2){ if(r1 === 0) return false; src = r1 - 1; } else { src = r1; r1++; } }
+    else { if(c1 === c2){ if(c1 === 0) return false; src = c1 - 1; } else { src = c1; c1++; } }
+    for(let r = r1; r <= r2; r++) for(let c = c1; c <= c2; c++){
+      const sr = down ? src : r, sc = down ? c : src, k = shKey(r, c), from = shKey(sr, sc), raw = s.cells[from];
+      if(raw === undefined) delete s.cells[k]; else s.cells[k] = shMoveRefs(raw, r - sr, c - sc);
+      if(s.f[from]) s.f[k] = s.f[from]; else delete s.f[k];
+      if(s.wr && s.wr[from]) s.wr[k] = 1; else if(s.wr) delete s.wr[k];
+    }
+  });
+}
+function shWrap(i){                                        // wrapped text on or off for the selected cells
+  const sel = shSelOf(i), area = (sel.r2 - sel.r1 + 1) * (sel.c2 - sel.c1 + 1), keys = [];
+  if(area <= 5000){ for(let r = sel.r1; r <= sel.r2; r++) for(let c = sel.c1; c <= sel.c2; c++) keys.push(shKey(r, c)); }
+  else for(const k of Object.keys(i.sheet.cells)){ const p = shPos(k); if(p.r >= sel.r1 && p.r <= sel.r2 && p.c >= sel.c1 && p.c <= sel.c2) keys.push(k); }
+  const on = !keys.every(k => i.sheet.wr[k]);
+  shDo(i, s => { if(!s.wr) s.wr = {}; for(const k of keys){ if(on) s.wr[k] = 1; else delete s.wr[k]; } }, {redraw:true});
+}
+function shFreezeSet(i, how){
+  const sel = shSelOf(i); let r = 0, c = 0;
+  if(how === 'r1') r = 1; else if(how === 'c1') c = 1; else if(how === 'rc'){ r = 1; c = 1; } else if(how === 'sel'){ r = sel.ar; c = sel.ac; if(!r && !c){ toast('Click the cell just below and to the right of what you want to keep in view, then choose this again.'); return; } }
+  r = Math.min(r, SH_FZ_R, i.sheet.r - 1); c = Math.min(c, SH_FZ_C, i.sheet.c - 1);
+  shDo(i, s => { if(r || c) s.fz = {r, c}; else delete s.fz; }, {redraw:true});
+}
+function shFreeze(i){                                      // frozen rows and columns stay in view: sticky cells, placed from the real heights and widths
+  const g = document.querySelector('#detail .shgrid'); if(!g || !i || !i.sheet) return;
+  g.querySelectorAll('.fzr,.fzc,.fzh,.fzlr,.fzlc').forEach(e => { e.classList.remove('fzr', 'fzc', 'fzh', 'fzlr', 'fzlc'); e.style.top = ''; e.style.left = ''; });
+  const s = i.sheet, fr = s.fz ? Math.min(s.fz.r, s.r - 1) : 0, fc = s.fz ? Math.min(s.fz.c, s.c - 1) : 0; if(!fr && !fc) return;
+  const cols = g.querySelectorAll('col'), left = [46]; for(let c = 0; c < fc; c++) left.push(left[c] + (parseFloat(cols[c + 1].style.width) || SH_W));
+  const rows = g.tBodies[0].rows, hh = g.tHead.offsetHeight;
+  for(let c = 0; c < fc; c++){ const th = g.tHead.rows[0].cells[c + 1]; if(th){ th.classList.add('fzh'); th.style.left = left[c] + 'px'; if(c === fc - 1) th.classList.add('fzlc'); } }
+  let top = hh;
+  for(let r = 0; r < rows.length; r++){
+    const tr = rows[r], frozenRow = r < fr, h = tr.offsetHeight;
+    if(!frozenRow && !fc) break;
+    for(let c = 0; c < tr.cells.length; c++){
+      const cell = tr.cells[c], fcol = c > 0 && c - 1 < fc;
+      if(!frozenRow && !fcol) continue;
+      if(frozenRow){ cell.classList.add('fzr'); cell.style.top = top + 'px'; if(r === fr - 1) cell.classList.add('fzlr'); }
+      if(fcol){ cell.classList.add('fzc'); cell.style.left = left[c - 1] + 'px'; if(c - 1 === fc - 1) cell.classList.add('fzlc'); }
+    }
+    if(frozenRow) top += h;
+  }
+}
+function shSetFormat(i, f){
+  const sel = shSelOf(i), area = (sel.r2 - sel.r1 + 1) * (sel.c2 - sel.c1 + 1);
+  shDo(i, s => {
+    const each = k => { if(f === 'g') delete s.f[k]; else s.f[k] = f; };
+    if(area <= 5000){ for(let r = sel.r1; r <= sel.r2; r++) for(let c = sel.c1; c <= sel.c2; c++) each(shKey(r, c)); }
+    else for(const k of Object.keys(s.cells)){ const p = shPos(k); if(p.r >= sel.r1 && p.r <= sel.r2 && p.c >= sel.c1 && p.c <= sel.c2) each(k); }
+  });
+}
+function shOp(i, op){
+  const sel = shSelOf(i), nr = sel.r2 - sel.r1 + 1, nc = sel.c2 - sel.c1 + 1;
+  if(op === 'undo') return shUndoStep(i, -1);
+  if(op === 'redo') return shUndoStep(i, 1);
+  if(op === 'import') return document.getElementById('shfile').click();
+  if(op === 'export') return shExportCsv(i);
+  if(op === 'wrap') return shWrap(i);
+  if(op === 'filld') return shFill(i, 'd');
+  if(op === 'fillr') return shFill(i, 'r');
+  if(op === 'addrow' || op === 'addcol'){
+    const ax = op === 'addrow' ? 'r' : 'c', at = ax === 'r' ? sel.r1 : sel.c1, n = ax === 'r' ? nr : nc;
+    if(!shDo(i, s => shInsert(s, ax, at, n))){ toast(SH_FULL); return; }
+    shSetSel(i, sel.ar, sel.ac, sel.er, sel.ec); shFocus(); return;
+  }
+  if(op === 'delrow' || op === 'delcol'){
+    const ax = op === 'delrow' ? 'r' : 'c', at = ax === 'r' ? sel.r1 : sel.c1, n = ax === 'r' ? nr : nc;
+    if(shDo(i, s => { shDelete(s, ax, at, n); })){ toast(`Deleted ${n} ${ax === 'r' ? 'row' : 'column'}${n === 1 ? '' : 's'}.`, () => { const j = byId(i.id); if(j) shUndoStep(j, -1); }); shSetSel(i, sel.ar, sel.ac, sel.ar, sel.ac); shFocus(); }
+  }
+}
+/* ---- mouse and keyboard ---- */
+$('#detail').addEventListener('mousedown', e => {
+  const ac = e.target.closest && e.target.closest('.shaci');
+  if(ac){ e.preventDefault(); if(shAcFor) shAcAccept(shAcFor, ac.dataset.fn); return; }
+  const g = e.target.closest && e.target.closest('.shgrid'); if(!g || e.button !== 0 || e.target.closest('.shin')) return;
+  const i = shItem(); if(!i) return;
+  const rz = e.target.closest('[data-rz]');
+  if(rz){ e.preventDefault(); const c = +rz.dataset.rz; shResize = {id:i.id, c, x:e.clientX, w:i.sheet.w[c] || SH_W, now:i.sheet.w[c] || SH_W}; return; }
+  { const pin = shPointTarget(), ptd = e.target.closest('td[data-k]');          // writing a formula: a click or drag over cells types their reference
+    if(pin && ptd && shWantsRef(pin)){ e.preventDefault(); const pp = shPos(ptd.dataset.k); shPointStart(pin, pp.r, pp.c); shDragging = 'point'; return; } }
+  if(shEdit) shEndEdit(true);
+  const td = e.target.closest('td[data-k]'), ch = e.target.closest('th[data-ch]'), rh = e.target.closest('th[data-rh]'), co = e.target.closest('.shcorner'), s = i.sheet, sel = shSelOf(i); let a = null;
+  if(td){ const p = shPos(td.dataset.k); a = e.shiftKey ? [sel.ar, sel.ac, p.r, p.c] : [p.r, p.c, p.r, p.c]; shDragging = true; }
+  else if(ch){ const c = +ch.dataset.ch; a = e.shiftKey ? [0, sel.ac, s.r - 1, c] : [0, c, s.r - 1, c]; }
+  else if(rh){ const r = +rh.dataset.rh; a = e.shiftKey ? [sel.ar, 0, r, s.c - 1] : [r, 0, r, s.c - 1]; }
+  else if(co) a = [0, 0, s.r - 1, s.c - 1];
+  if(!a) return;
+  e.preventDefault(); shSetSel(i, ...a); shFocus();
+});
+$('#detail').addEventListener('mouseover', e => {
+  if(!shDragging) return; const td = e.target.closest && e.target.closest('td[data-k]'); if(!td) return;
+  if(shDragging === 'point'){ const q = shPos(td.dataset.k); shPointSet(q.r, q.c); return; }
+  const i = shItem(); if(!i) return; const p = shPos(td.dataset.k), sel = shSelOf(i); shSetSel(i, sel.ar, sel.ac, p.r, p.c);
+});
+document.addEventListener('mousemove', e => {
+  if(!shResize) return; const w = Math.max(40, Math.min(600, Math.round(shResize.w + e.clientX - shResize.x))); shResize.now = w;
+  const g = document.querySelector('#detail .shgrid'), cols = g && g.querySelectorAll('col'); if(!cols || !cols[shResize.c + 1]) return;
+  cols[shResize.c + 1].style.width = w + 'px'; let total = 46; for(let c = 1; c < cols.length; c++) total += parseFloat(cols[c].style.width) || SH_W; g.style.width = total + 'px';
+  const i = shItem(); if(i){ if(i.sheet.fz && i.sheet.fz.c) shFreeze(i); shShowSel(i); }
+});
+document.addEventListener('mouseup', () => {
+  shDragging = false;
+  if(shResize){ const r = shResize; shResize = null; const i = byId(r.id); if(i && i.sheet && r.now !== r.w){ if(r.now === SH_W) delete i.sheet.w[r.c]; else i.sheet.w[r.c] = r.now; edited(i); } }
+});
+$('#detail').addEventListener('dblclick', e => {
+  const td = e.target.closest && e.target.closest('.shgrid td[data-k]'); if(!td || e.target.closest('.shin')) return;
+  const i = shItem(); if(!i) return; const p = shPos(td.dataset.k); shSetSel(i, p.r, p.c, p.r, p.c); shStartEdit(i, p.r, p.c);
+});
+$('#detail').addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-sh]'); if(!b || MOBILE) return;
+  const i = shItem(); if(i) shOp(i, b.dataset.sh);
+});
+$('#detail').addEventListener('change', e => {
+  const t = e.target; if(MOBILE || !t.matches) return;
+  if(t.matches('[data-shfz]')){ const i = shItem(); const v = t.value; t.value = ''; if(i && v) shFreezeSet(i, v); shFocus(); return; }
+  if(t.matches('[data-shfmt]')){ const i = shItem(); if(i){ shSetFormat(i, t.value); shFocus(); } }
+  else if(t.id === 'shfile'){ const i = shItem(), f = t.files && t.files[0]; t.value = ''; if(i && f) shImportFile(i, f); }
+});
+$('#detail').addEventListener('input', e => {
+  const t = e.target; if(!t.classList) return;
+  if(shEdit && t === shEdit.inp){ const fx = document.querySelector('#detail .shfxin'); if(fx) fx.value = shEdit.inp.value; }
+  if(t.classList.contains('shin') || t.classList.contains('shfxin')){ shPoint = null; const box = document.querySelector('#detail .shpt'); if(box) box.style.display = 'none'; shAcShow(t); }
+});
+$('#detail').addEventListener('focusout', e => {
+  const t = e.target; if(!t.classList) return;
+  if(t.classList.contains('shin') && shEdit && shEdit.inp === t) shEndEdit(true);
+  else if(t.classList.contains('shfxin')){ shAcHide(); shPointHide(); const i = shItem(), p = shPos(t.dataset.k || ''); if(i && p && !MOBILE && t.value !== (i.sheet.cells[t.dataset.k] || '')) shCommitCell(i, p.r, p.c, t.value); }          // the cell it was showing when you started typing, even if you clicked another one
+});
+function shInputKey(e, i){
+  const k = e.key; e.stopPropagation();
+  const done = (dr, dc) => { e.preventDefault(); shEndEdit(true); shMove(i, dr, dc); shFocus(); };
+  const inp = e.target, ac = shAcMatches(inp), formula = inp.value[0] === '=';
+  if(ac && k === 'Tab' && !e.shiftKey){ e.preventDefault(); shAcAccept(inp, ac.list[Math.min(shAcIdx, ac.list.length - 1)][0]); return; }
+  if(ac && ac.list.length > 1 && (k === 'ArrowDown' || k === 'ArrowUp')){ e.preventDefault(); shAcIdx = (shAcIdx + (k === 'ArrowDown' ? 1 : ac.list.length - 1)) % ac.list.length; shAcShow(inp); return; }
+  if(k === 'Enter') done(e.shiftKey ? -1 : 1, 0);
+  else if(k === 'Tab') done(0, e.shiftKey ? -1 : 1);
+  else if(k === 'Escape'){ if(ac){ e.preventDefault(); shAcHide(); } else { e.preventDefault(); shEndEdit(false); shFocus(); } }
+  else if(shEdit && shEdit.entry && !formula && k === 'ArrowDown') done(1, 0);
+  else if(shEdit && shEdit.entry && !formula && k === 'ArrowUp') done(-1, 0);
+  else if(shEdit && shEdit.entry && !formula && k === 'ArrowLeft') done(0, -1);
+  else if(shEdit && shEdit.entry && !formula && k === 'ArrowRight') done(0, 1);
+}
+function shGridKey(e, i){
+  const k = e.key, mod = e.ctrlKey || e.metaKey, sh = e.shiftKey, s = i.sheet, sel = shSelOf(i), lk = k.toLowerCase();
+  const nav = (dr, dc) => { if(sh) shExtend(i, dr, dc); else shMove(i, dr, dc); };
+  let hit = true;
+  if(k === 'ArrowDown') nav(1, 0); else if(k === 'ArrowUp') nav(-1, 0); else if(k === 'ArrowLeft') nav(0, -1); else if(k === 'ArrowRight') nav(0, 1);
+  else if(k === 'PageDown') nav(10, 0); else if(k === 'PageUp') nav(-10, 0);
+  else if(k === 'Home'){ if(mod){ shSetSel(i, 0, 0, 0, 0); shScrollTo(0, 0); } else { shSetSel(i, sel.ar, 0, sel.ar, 0); shScrollTo(sel.ar, 0); } }
+  else if(k === 'Tab') shMove(i, 0, sh ? -1 : 1);
+  else if(k === 'Enter' || k === 'F2') shStartEdit(i, sel.ar, sel.ac);
+  else if(k === 'Delete' || k === 'Backspace') shClearSel(i);
+  else if(mod && lk === 'a') shSetSel(i, 0, 0, s.r - 1, s.c - 1);
+  else if(mod && lk === 'd') shFill(i, 'd');
+  else if(mod && lk === 'r') shFill(i, 'r');
+  else if(mod && (lk === 'y' || (lk === 'z' && sh))) shUndoStep(i, 1);
+  else if(mod && lk === 'z') shUndoStep(i, -1);
+  else if(mod && (lk === 'c' || lk === 'x' || lk === 'v')){ hit = false; e.stopPropagation(); return; }          // the browser's copy, cut and paste events do these
+  else if(k.length === 1 && !mod && !e.altKey) shStartEdit(i, sel.ar, sel.ac, k);
+  else hit = false;
+  if(hit){ e.preventDefault(); e.stopPropagation(); }
+}
+$('#detail').addEventListener('keydown', e => {
+  const t = e.target; if(!t.closest) return;
+  if(t.classList.contains('shfxin')){
+    const i = shItem(); if(!i) return; e.stopPropagation(); const p = shPos(t.dataset.k || ''), ac = shAcMatches(t);
+    if(ac && e.key === 'Tab' && !e.shiftKey){ e.preventDefault(); shAcAccept(t, ac.list[Math.min(shAcIdx, ac.list.length - 1)][0]); return; }
+    if(ac && ac.list.length > 1 && (e.key === 'ArrowDown' || e.key === 'ArrowUp')){ e.preventDefault(); shAcIdx = (shAcIdx + (e.key === 'ArrowDown' ? 1 : ac.list.length - 1)) % ac.list.length; shAcShow(t); return; }
+    if(e.key === 'Escape' && ac){ e.preventDefault(); shAcHide(); return; }
+    if(e.key === 'Enter'){ e.preventDefault(); if(p) shCommitCell(i, p.r, p.c, t.value); shMove(i, 1, 0); shFocus(); }
+    else if(e.key === 'Escape'){ e.preventDefault(); t.value = (p && i.sheet.cells[t.dataset.k]) || ''; shFocus(); }
+    return;
+  }
+  if(!t.closest('.shgrid')) return;
+  const i = shItem(); if(!i) return;
+  if(t.classList.contains('shin')) shInputKey(e, i); else if(t.classList.contains('shgrid')) shGridKey(e, i);
+});
+document.addEventListener('copy', e => shCopy(e, false));
+document.addEventListener('cut', e => shCopy(e, true));
+document.addEventListener('paste', shPaste);
+
+function shMdTable(s){                                   // the sheet as a Markdown table (shared pages and .md exports)
+  const x = shExtent(s, shValues(s)); if(!x.r) return '';
+  const rows = shRect(s, 0, 0, x.r - 1, x.c - 1).map(r => r.map(v => v.replace(/\|/g, '\\|').replace(/\s*\n\s*/g, ' '))), head = rows[0];
+  return '| ' + head.join(' | ') + ' |\n| ' + head.map(() => '---').join(' | ') + ' |' + rows.slice(1).map(r => '\n| ' + r.join(' | ') + ' |').join('');
+}
+function shPrintTable(s){
+  const x = shExtent(s, shValues(s)); if(!x.r) return '';
+  return '<table>' + shRect(s, 0, 0, x.r - 1, x.c - 1).map((r, k) => '<tr>' + r.map(v => `<${k ? 'td' : 'th'}>${esc(v)}</${k ? 'td' : 'th'}>`).join('') + '</tr>').join('') + '</table>';
+}
+
+/* ================= sticky note: one note in a small window that floats above other programs ================= */
+/* Uses the browser's "document picture-in-picture" window (Brave, Chrome and Edge on a computer). The note is the same data as the one in
+   the main window: every change is written to the note straight away, and each window shows the other's changes when it is not the one you are typing in. */
+let stickyWin = null, stickyId = '', stickyTimer = null, stickyMsgTimer = null;
+function stickyMsg(t){ if(!stickyOpen()) return; const m = stickyWin.document.querySelector('.stkmsg'); if(!m) return; m.textContent = t; m.hidden = false; clearTimeout(stickyMsgTimer); stickyMsgTimer = setTimeout(() => { try { m.hidden = true; } catch {} }, 5000); }
+const STICKY_OK = () => !MOBILE && 'documentPictureInPicture' in window;
+const stickyOpen = () => !!(stickyWin && !stickyWin.closed);
+function closeSticky(){ const w = stickyWin; stickyWin = null; stickyId = ''; try { if(w && !w.closed) w.close(); } catch {} }
+const stickyBody = () => stickyOpen() ? stickyWin.document.querySelector('.stkr') : null;
+async function openSticky(id){
+  const i = byId(id); if(!i || i.type !== 'note' || i.sheet) return;
+  if(!STICKY_OK()){ toast('This browser cannot open a floating window. Brave, Chrome and Edge on a computer can.'); return; }
+  if(stickyOpen() && stickyId === id){ try { stickyWin.focus(); } catch {} return; }
+  if(stickyOpen()) closeSticky();                                         // one at a time
+  let w;
+  try { w = await documentPictureInPicture.requestWindow({width: 340, height: 440, disallowReturnToOpener: true}); }
+  catch(err){ toast('Could not open the floating window' + (err && err.message ? ': ' + err.message : '.')); return; }
+  stickyWin = w; stickyId = id;
+  const d = w.document, th = document.documentElement.getAttribute('data-theme');
+  if(th) d.documentElement.setAttribute('data-theme', th);
+  document.querySelectorAll('style').forEach(st => d.head.appendChild(st.cloneNode(true)));          // the same look as the app
+  d.title = i.title || 'Sticky note';
+  d.body.innerHTML = `<div class="stk">
+    <input class="stkt" placeholder="Untitled" spellcheck="true" autocomplete="off">
+    <div class="stkbar"><button data-c="bold" title="Bold (Ctrl+B)"><b>B</b></button><button data-c="italic" title="Italic (Ctrl+I)"><i>I</i></button><button data-c="underline" title="Underline (Ctrl+U)"><u>U</u></button><button data-c="insertUnorderedList" title="Bulleted list">•&nbsp;List</button><button data-c="insertOrderedList" title="Numbered list">1.&nbsp;List</button><button data-c="checkbox" title="Checkbox on this line">☐</button><button data-c="hl" title="Highlight the selected text (again to take it off)">🖍</button></div>
+    <div class="rt stkr" contenteditable="true" spellcheck="true" data-ph="Start typing…" data-empty></div><div class="stkmsg" hidden></div></div>`;
+  stickyPull(true);
+  const ed = d.querySelector('.stkr'), ti = d.querySelector('.stkt'), bar = d.querySelector('.stkbar');
+  ed.addEventListener('input', e => {
+    if(e.inputType === 'insertParagraph'){                                // Enter on a checkbox line: the new line is an unchecked checkbox; Enter on an empty one ends the list
+      const sel = w.getSelection(), an = sel.anchorNode, el = an && (an.nodeType === 1 ? an : an.parentElement), cb = el && el.closest('[data-cb]');
+      if(cb && ed.contains(cb)){ const prev = cb.previousElementSibling; if(!cb.textContent.trim() && prev && prev.hasAttribute('data-cb') && !prev.textContent.trim()){ prev.remove(); cb.removeAttribute('data-cb'); } else cb.setAttribute('data-cb', '0'); }
+    }
+    stickyWrite('body');
+    clearTimeout(stickyTimer); stickyTimer = setTimeout(() => { if(stickyWin !== w || !byId(stickyId)) return; const j = byId(stickyId), r = runTagSync(j.id, false, ed); if(r && r.bodyChanged) stickyMain(j); ed.toggleAttribute('data-empty', isBlank(j.body)); }, 900);          // ACTION: lines become items while you type, like in the main window
+  });
+  ti.addEventListener('input', () => stickyWrite('title'));
+  ti.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); ed.focus(); } });
+  ed.addEventListener('click', e => {                                      // click the box to tick it
+    const el = e.target.closest && e.target.closest('[data-cb]'); if(!el) return;
+    const r = el.getBoundingClientRect(), px = parseFloat(w.getComputedStyle(el).fontSize) * 1.6;
+    if(e.clientX >= r.left - 2 && e.clientX - r.left < px){ e.preventDefault(); const on = el.getAttribute('data-cb') !== '1'; el.setAttribute('data-cb', on ? '1' : '0'); if(on) el.setAttribute('data-at', todayStr()); else el.removeAttribute('data-at'); stickyWrite('body'); }
+  });
+  bar.addEventListener('mousedown', e => { if(e.target.closest('button')) e.preventDefault(); });          // clicking a button keeps your selection
+  bar.addEventListener('click', e => { const b = e.target.closest('[data-c]'); if(b) stickyCmd(b.dataset.c); });
+  ed.addEventListener('focusout', () => { clearTimeout(stickyTimer); setTimeout(() => { const j = stickyId && byId(stickyId); if(j){ stickyMain(j, true); runTagSync(j.id, false, ed); stickyMain(j, true); if(stickyOpen() && !w.document.hasFocus()) stickyPull(); } }, 0); });          // ACTION: / RISK: lines become items when you leave the note, like in the main window
+  w.addEventListener('focus', () => stickyPull(true));                         // coming back to this window: show what was changed in the other one
+  w.addEventListener('pagehide', () => { if(stickyWin === w){ const j = byId(stickyId); stickyWin = null; stickyId = ''; if(j){ stickyMain(j, true); runTagSync(j.id, true); } } });
+  ed.focus();
+}
+function stickyPull(force){                                               // the note's current text into the floating window, unless you are typing there
+  if(!stickyOpen()) return;
+  const j = byId(stickyId); if(!j || j.type !== 'note' || j.sheet){ closeSticky(); return; }
+  const d = stickyWin.document, ed = d.querySelector('.stkr'), ti = d.querySelector('.stkt'); if(!ed || !ti) return;
+  if(!force && d.hasFocus()) return;
+  if(ti.value !== j.title && d.activeElement !== ti) ti.value = j.title;
+  if(d.title !== (j.title || 'Sticky note')) d.title = j.title || 'Sticky note';
+  if(cleanHtml(ed.innerHTML) !== j.body){ ed.innerHTML = forEditor(j.body); }
+  ed.toggleAttribute('data-empty', isBlank(j.body));
+}
+function stickyMain(j, force){                                                   // the other way: the main window's editor shows what was typed in the floating one
+  if($('#detail').dataset.item !== j.id || (!force && document.hasFocus())) return;
+  const m = document.querySelector('#detail .rt[data-f=body]'), t = document.querySelector('#detail [data-f=title]');
+  if(m && cleanHtml(m.innerHTML) !== j.body){ m.innerHTML = forEditor(j.body); m.toggleAttribute('data-empty', isBlank(j.body)); }
+  if(t && t.value !== j.title) t.value = j.title;
+}
+function stickyWrite(what){
+  const j = byId(stickyId); if(!j || j.type !== 'note' || j.sheet){ closeSticky(); return; }
+  const d = stickyWin.document, ed = d.querySelector('.stkr'), ti = d.querySelector('.stkt');
+  if(what === 'title'){ j.title = ti.value.replace(/\s*\n\s*/g, ' '); d.title = j.title || 'Sticky note'; }
+  else { j.body = cleanHtml(ed.innerHTML); ed.toggleAttribute('data-empty', isBlank(j.body)); }
+  edited(j); stickyMain(j);
+}
+function stickyCmd(c){
+  if(!stickyOpen()) return;
+  const w = stickyWin, d = w.document, ed = d.querySelector('.stkr'), sel = w.getSelection();
+  const block = () => { let el = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement); while(el && el !== ed){ if(el.tagName === 'LI' || (el.tagName === 'DIV' && el.parentElement === ed)) return el; el = el.parentElement; } return null; };
+  ed.focus();
+  if(c === 'checkbox'){
+    let blk = block(); if(!blk){ d.execCommand('formatBlock', false, 'div'); blk = block(); }
+    if(!blk) return;
+    if(blk.hasAttribute('data-cb')){ blk.removeAttribute('data-cb'); blk.removeAttribute('data-at'); } else blk.setAttribute('data-cb', '0');
+  } else if(c === 'hl'){
+    if(!sel.rangeCount || sel.isCollapsed) return;
+    d.execCommand('hiliteColor', false, highlightAt(ed, sel.getRangeAt(0).startContainer) ? 'transparent' : lastHl);
+  } else d.execCommand(c, false, null);
+  stickyWrite('body');
+}
+function stickyRefresh(){                                                  // after the screen is redrawn: close if the note is gone, otherwise show its latest text
+  if(!stickyOpen()){ if(stickyWin) { stickyWin = null; stickyId = ''; } return; }
+  stickyPull();
+}
+window.addEventListener('focus', () => { if(stickyOpen()){ const j = byId(stickyId); if(j) stickyMain(j, true); } });
 
 /* ================= events ================= */
 $('#items').addEventListener('click', e => {
@@ -6004,6 +7069,7 @@ document.addEventListener('click', e => {
     else if(act === 'qadd') todayAdd(); else if(act === 'padd') personAdd();
     else if(act === 'addraid') addRaid(a.dataset.raid); else if(act === 'scantags') scanAllTags();
     else if(act === 'gotl'){ tlAnchor = todayStr(); goView('timeline'); }
+    else if(act === 'sticky') openSticky($('#detail').dataset.item || selId);
     else if(act === 'export'){ const i = byId(selId); if(i){ const r = a.getBoundingClientRect(); openMenu(r.left, r.bottom + 4, [{hd:'Export this ' + (i.type === 'task' ? 'action' : 'note')}, ...exportEntries(i)], null); } }
     else if(act === 'trestore') restoreItem(a.dataset.id); else if(act === 'tpurge') purgeItem(a.dataset.id); else if(act === 'tempty') emptyTrash();
     else if(act === 'scandates') scanDates();
@@ -6012,6 +7078,7 @@ document.addEventListener('click', e => {
     else if(act === 'toastx') $('#toast').classList.remove('show');
     else if(act === 'togglerail'){ if(isNarrow()) toggleDrawer(); else { railOff = !railOff; saveUi(); applyMode(); } }
     else if(act === 'togglelist'){ listOff = !listOff; saveUi(); applyMode(); }
+    else if(act === 'panels') togglePanels();
     else if(act === 'cknote'){
       const i = byId(selId), id = a.dataset.id; if(openNotes.has(id)) openNotes.delete(id); else openNotes.add(id);
       $('#cklist').innerHTML = ckRows(i); $('#cklist').querySelectorAll('.cknote').forEach(grow);
@@ -6059,6 +7126,7 @@ document.addEventListener('click', e => {
     else if(act === 'delck'){ const i = byId(selId); const c0 = i.checklist.find(c => c.id === a.dataset.id); if(c0 && c0.src === 'tag'){ detachTagLine(i, c0.id); c0.src = ''; } db.plan.forEach(b => { if(b.link && b.link.ck === a.dataset.id) b.link = null; }); i.checklist = i.checklist.filter(c => c.id !== a.dataset.id); $('#cklist').innerHTML = ckRows(i); edited(i); }
     return;
   }
+  if(e.target.id === 'newsheetbtn'){ $('#newmenu').classList.remove('open'); newItem('sheet'); return; }
   if(e.target.id === 'newbtn'){ if(filter === 'note' || filter.startsWith('nb:')){ $('#newmenu').classList.remove('open'); newItem('note'); return; } $('#newmenu').classList.toggle('open'); return; }          // in Notes the + only ever makes a note
   $('#newmenu').classList.remove('open');
 });
@@ -6431,7 +7499,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261116104659';</script>
+<script>window.NB_BUILD = '20261117125711';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
