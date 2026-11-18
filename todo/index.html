@@ -1130,8 +1130,15 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.63.0';
+const APP_VERSION = '1.63.1';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.63.1",
+  "title": "Fix: the live website showed code across the page",
+  "items": [
+   "Fixed a problem that only happened on the website copy (not the local file): the website build inserted its offline-helper lines in the wrong place and part of the program showed as text over the page. The page now builds correctly, and the build itself now checks that the finished page's program is intact before it finishes"
+  ]
+ },
  {
   "v": "1.63.0",
   "title": "Hidden panels disappear completely",
@@ -8064,9 +8071,7 @@ function outlineJump(n){
 
 /* ---- share a page as one HTML file ---- */
 function shareHtmlDoc(i){
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(i.title || 'Untitled')}</title><style>${PRINT_CSS}</style></head><body>${itemPrintBody(i)}<p class="meta" style="margin-top:2em">Shared from My Notebook on ${esc(fmtDay(todayStr()))}. This is a copy: changes made to it do not go back to the notebook.</p><script>window.NB_BUILD = '20261118092241';</script>
-<script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
-</body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(i.title || 'Untitled')}</title><style>${PRINT_CSS}</style></head><body>${itemPrintBody(i)}<p class="meta" style="margin-top:2em">Shared from My Notebook on ${esc(fmtDay(todayStr()))}. This is a copy: changes made to it do not go back to the notebook.</p><\/body><\/html>`;
 }
 function shareAsHtml(id){
   const i = byId(id); if(!i) return; const name = fileSlug(i) + '.html';
@@ -9436,7 +9441,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261118092241';</script>
+<script>window.NB_BUILD = '20261118093245';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

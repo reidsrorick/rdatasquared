@@ -1,4 +1,11 @@
-{"version":"1.63.0","build":"20261118092241","changelog":[
+{"version":"1.63.1","build":"20261118093245","changelog":[
+ {
+  "v": "1.63.1",
+  "title": "Fix: the live website showed code across the page",
+  "items": [
+   "Fixed a problem that only happened on the website copy (not the local file): the website build inserted its offline-helper lines in the wrong place and part of the program showed as text over the page. The page now builds correctly, and the build itself now checks that the finished page's program is intact before it finishes"
+  ]
+ },
  {
   "v": "1.63.0",
   "title": "Hidden panels disappear completely",
