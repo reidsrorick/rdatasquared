@@ -1,4 +1,108 @@
-{"version":"1.55.0","build":"20261117125711","changelog":[
+{"version":"1.63.0","build":"20261118092241","changelog":[
+ {
+  "v": "1.63.0",
+  "title": "Hidden panels disappear completely",
+  "items": [
+   "When you hide the sidebar and the list (⇤ Hide panels, Ctrl+. or Ctrl+\\), they now go away completely instead of leaving a thin strip. A small ☰ tab at the middle of the left edge brings them back (so does clicking the very left edge of the window, or pressing Ctrl+. again). Focus mode still removes everything around the note, including that button. On a narrow window nothing changes"
+  ]
+ },
+ {
+  "v": "1.62.0",
+  "title": "Floating window as tabs, check back snoozes, nicer Process Inbox, @ names in meeting mode",
+  "items": [
+   "Floating window is now two tabs, Actions and Note, so each gets the whole window instead of sharing it. The Actions tab shows how many are pinned (with a red dot if one is overdue); the Note tab shows the note's name, or a New note button when none is open. Opening a note switches to its tab, opening the window from Today or the sidebar shows Actions. The Next: line stays above the tabs",
+   "Check back now snoozes: picking a check-back day hides the action (snoozed) until 8:00 that morning, when it wakes and shows in the Check back section on Today. The dialog has a tick box if you would rather keep it visible, and clearing the check back wakes it again",
+   "Process my Inbox redone: a progress bar, a row of buttons for your notebooks (one click files it, with an optional category), a row for making it an action (Today, Tomorrow, In a week, No date, or a date you pick), and Skip, Open and Delete underneath. A finished screen says how many you sorted",
+   "Meeting mode: typing @ in the ACTION: box (or the agenda box) now suggests your team's names, like Quick add does",
+   "A new note or spreadsheet's date and time now show when you fold the Details caret (it used to say no date)"
+  ]
+ },
+ {
+  "v": "1.61.0",
+  "title": "Snooze any action, tidier bulk edit, separate calendars, outline fix, floating window fixes",
+  "items": [
+   "Snooze works on every action (not only pinned ones): the ⏰ Snooze link on an Actions row, the ⏰ button on an action in a note, or right-click > Snooze… Pick an hour, tomorrow morning, Monday, next week, or an exact day and time. A snoozed action is hidden from Today, the Actions page (tick Show snoozed to see them), the sidebar counts, the floating window, the start screen and due-now alerts until the time comes. Nothing about the action itself changes, and a chip shows when it wakes",
+   "Bulk edit bar redone: one tidy bar with a Select menu (all shown, none, past due, due today, no date, mine, high priority), a menu for each change (Due date, Owner, Category, Priority, Check back, Snooze) where one click applies it, and Done and Delete. Shift-click ticks everything between two rows, and each group heading has a box that ticks the whole group",
+   "Calendars: Settings > Notes > Calendar now lets you make several calendars, each its own .ics file with its own filter: which kinds (actions, risks and the like, Timeline blocks), which categories, and only mine. Each file appears as its own calendar in Outlook or Google, so you can colour or hide them separately. Existing calendar files keep working",
+   "Outline: bold lines are now recognised however they were made (a line with a line break, bold inside a list, bold typed with a style, bold plus italic, lines inside one bold block), and the outline opens by default (it remembers if you fold it)",
+   "Check back is now offered on every action row, not only ones with an owner",
+   "Floating window: a ⇱ Floating window row in the sidebar and on the Actions page opens it any time (no need to re-pin if you missed the message, which now also stays longer); a Next: line inside the window shows the next timed action (the title bar text is not always visible); the pinned rows are one line each so the note has more room, and the list takes a third of the window; typing @ in the add box suggests names like Quick add does",
+   "Process Inbox moved: open the Inbox notebook in Notes and press 📥 Process (with the count) next to its name. A Back to the Inbox link returns",
+   "Meeting mode: the bar now stays at the top while you scroll the note so its boxes are always in reach, and clicking out of the note no longer steals the cursor back from them",
+   "Pin to Today: a pinned note stays on Today until you take it off (it does not reset each day); the button's hint now says so"
+  ]
+ },
+ {
+  "v": "1.60.0",
+  "title": "Floating window with pinned actions and the sticky note, snooze, start-of-day screen, meeting mode, recent changes",
+  "items": [
+   "Floating window: one small window above your other programs, with your pinned actions on top (text, due date, a tick box that marks it done, and a box to add a new action that pins itself) and the sticky note below. Fold either part, drag the line between them to resize, close the note and keep the list. Open it from Today (⇱ Floating window), Ctrl+Shift+L, or the ▭ Sticky note button. The browser allows only one such window, so the list and the note share it",
+   "Pin any action: the ⇱ Float link on an Actions row, the ⇱ button on an action inside a note, or right-click > Keep it in the floating window. Nothing is pinned automatically",
+   "Snooze: the ⏰ on a pinned action hides it for an hour, until tomorrow morning, or until Monday. It comes back by itself, and the list says how many are snoozed (click to show them)",
+   "The window's title bar counts down to the next timed action or dated meeting today (\"in 12 min: Call Bob\"), or shows how many are pinned. After a restart, a message offers to bring the window back",
+   "Start-of-day screen: the first time you open the app each day it lists what is overdue, due today or pinned, with Done, Tomorrow (moves the due date) and Snooze (until tomorrow morning) on each. Turn it off with the tick box on it, or in Settings > Alerts, where you can also show it now",
+   "Meeting mode: ◷ Meeting mode on a note shows a running clock (pause, end), the note's checkboxes as an agenda (tick them there, add items), and an ACTION: box: type an action, press Enter, and the next one is ready (Alt+A comes back to the box from anywhere). Ending adds a line with how long it ran",
+   "Recent changes: Settings > Notes > Recent changes… lists the last 50 changes to single notes and actions (what changed, when) with a Restore button that puts that one item back how it was. It is kept after you close the app",
+   "Timeline: dragging an action to another day to change its due date already works on the Due dates and Both views; the Plan view now says so"
+  ]
+ },
+ {
+  "v": "1.59.0",
+  "title": "Check-back dates, priority, bulk edit, calendar export and import, Excel export",
+  "items": [
+   "Check back: on an action (the ↻ link on an Actions row, the ↻ button on an action in a note, or right-click > Check back on a day…), pick a day. When that day comes and the action is not done and nobody has answered, it shows in a Check back section on Today, with buttons to ask again tomorrow, in 3 days, next week, or clear it. A small chip on the action shows the day",
+   "Priority: right-click an action > Priority > High / Normal / Low. High shows a red ! chip and Low a ↓ chip",
+   "Bulk edit: on the Actions page press ☑ Select several, tick actions (or Select all shown), then set their due date, owner, category or priority, mark them done, or delete them, all at once. The selection stays so you can apply several changes in a row, and an Undo message follows each change",
+   "Calendar export: Settings > Notes > Calendar > Download calendar file makes an .ics file of your open actions with a due date (timed ones last an hour) and your Timeline blocks, with repeats. Or choose a folder and it keeps my-notebook.ics up to date whenever you save; a OneDrive folder can then be subscribed to from Outlook",
+   "Calendar import: Settings > Notes > Calendar > Import events from a calendar file… lists the events in an .ics file. One-off timed events become actions with a date and time; all-day, multi-day and repeating events become Timeline blocks (repeats and skipped days come along). Events you already imported are not ticked again, and there is an Undo",
+   "Excel export: ⬇ Export Excel (File tab of a spreadsheet, or right-click a spreadsheet > Export) saves a real .xlsx with your formulas, number and date formats, colours, bold and italic, alignment, wrapped text, column widths, hidden rows and columns, frozen panes, highlight rules, dropdown lists and names. Cell notes, and formulas that use other spreadsheets, TEXTSPLIT, SEQUENCE, FILTER or SORT, keep their values but not their live formulas"
+  ]
+ },
+ {
+  "v": "1.58.0",
+  "title": "Pin a note to Today, outline, share as HTML, focus mode, stale actions, process the Inbox, install help",
+  "items": [
+   "Pin to Today: press ☀ Pin to Today at the top of a note and it shows at the top of the Today page (with how many of its checkboxes are ticked). Click it to open the note; ✕ takes it off",
+   "Outline: a note with three or more headings (or lines that are one short bold phrase) shows a small Outline above the text. Click a heading to jump to it; it updates as you type",
+   "Share as HTML: 🌐 Share as HTML saves the page, with its formatting, tables and spreadsheet, as one HTML file you can email. The copy is read-only for whoever gets it",
+   "Focus mode: ⛶ Focus (or Ctrl+Shift+F) hides everything except the note or spreadsheet and shows a word count (rows and columns for a spreadsheet). Esc leaves it",
+   "Stale actions: a new 🧹 Stale actions page lists open actions that nothing has touched for a number of days you choose (30 to start) and that are not due in the future. For each: Still relevant (restarts the clock), Done, or Drop (the Undo message brings it back)",
+   "Process my Inbox: when notes are waiting in the Inbox, 📥 Process Inbox shows them one at a time. File it in a notebook (and category), make it an action (with a due date if you like), skip it, open it, or delete it",
+   "Install as an app: Settings > Help now shows whether the offline helper is running and a copy of the page is stored, has an Install button when Brave offers it, and a short how-to. The offline helper now gives up on a slow connection after a few seconds and opens the stored copy"
+  ]
+ },
+ {
+  "v": "1.57.0",
+  "title": "Spreadsheet: fill handle, tidier toolbar, select several columns; Tab list knows every formula and your names; template button in Notes",
+  "items": [
+   "Spreadsheet fill handle: the little square at the bottom right of the selected cell. Drag it down, right, up or left to fill. Numbers, dates and text like Row 1, Row 2 carry on (select two cells first to set the step); anything else repeats. Formulas keep working (their cell references move). Double-click the square to fill down as far as the column beside it goes. Colours, formats and wrapping come along",
+   "Spreadsheet toolbar redone as tabs: Home (font, alignment, colours, number and date format), Rows & columns, Data (sort, filter, rules, dropdowns, names, notes) and File (import, export, print). Undo, redo and Find stay on top. Each group has a small label, and the tab you were on is remembered",
+   "Select several columns or rows at once: drag across the column letters (or row numbers), or click one and Shift-click another",
+   "Typing a formula: the Tab list now includes every formula (AVERAGEIF, SUMIFS, COUNTIFS, VLOOKUP, FILTER, SORT, DATE and the rest), your own names (type =SUM(Sa and Tab fills in Sales), and the other spreadsheets you linked (Budget!)",
+   "In Notes, a new 📄 button next to the + makes a note from a template (the + there only makes a plain note, as before)"
+  ]
+ },
+ {
+  "v": "1.56.0",
+  "title": "Spreadsheet formatting, rules, dropdowns, sort and filter, names; sticky note colours and reopen; page links; templates; backup",
+  "items": [
+   "Spreadsheet number and date formats: Whole number, Percent with no decimals, Currency with no cents, and eight date styles (2026-11-17, 11/17/2026, Nov 17, 2026, 17 Nov 2026, Nov 17, November 2026, Tuesday, November 17, 2026, Tuesday). Typing 11/17/2026, Nov 17, 2026 or 17 Nov 2026 makes a date too",
+   "Spreadsheet dates: DATE, YEAR, MONTH, DAY, WEEKDAY and EOMONTH",
+   "Spreadsheet look: Bold, Italic, Underline, left / centre / right, text colour and fill colour (Ctrl+B, Ctrl+I, Ctrl+U work in the grid). Copying and pasting inside the sheet keeps the look",
+   "Highlight rules: colour cells automatically when they are above, below or equal to a value, between two values, contain some text, are empty, or are duplicates. The colour follows the values",
+   "Dropdown lists: give cells a list to pick from, typed in or read from other cells. A small arrow shows on the cell (Alt+Down also opens it). Typing something that is not on the list is refused",
+   "Sort A→Z / Z→A by the selected column (the heading row stays on top, rows keep their formulas), and Filter to show only some values of a column. Hide row, Hide column, and Show all",
+   "Select several cells and the total, average, count, smallest and biggest show under the grid",
+   "Cell notes (💬 Note): hover a cell with a red corner to read it",
+   "Names: call a block of cells something and use it in formulas, =SUM(Sales). Link another spreadsheet under a short name and use its cells, =SUM(Budget!B2:B9). Both are in the Names… button",
+   "More formulas: AVERAGEIF, SUMIFS, COUNTIFS, AVERAGEIFS, SUMPRODUCT, VLOOKUP, FILTER and SORT. A comparison on a range, such as B2:B9>100, now works inside SUM, SUMPRODUCT, FILTER and the like",
+   "Find in sheet (Ctrl+F in the grid) and a Print button that keeps the colours, column widths and heading row, and prints wide sheets sideways",
+   "Sticky note: pick a colour (yellow, green, blue, pink). After you restart, the note that was floating is offered again with one click. New: Quick sticky note (Ctrl+Shift+S, or + > Quick sticky note) opens a new empty note straight into a floating window. A web page cannot make a window see-through, so there is no opacity setting",
+   "Link pages: type [[ in a note, pick a page, and the link stays right even if the page is renamed. Click a link to open the page. A page shows 'Linked from' the pages that link to it",
+   "Templates: + > From template… starts a note with headings and ACTION: lines (Meeting notes, Weekly review, One-on-one, Project kickoff, Daily plan). Press Save as template on any note to make your own",
+   "Backup copy: Settings > Notes > Backup copy. Choose a folder and press Back up now for a dated copy of your notes, or tick the box to make one a day while the app is open"
+  ]
+ },
  {
   "v": "1.55.0",
   "title": "Spreadsheets: wrap text, freeze panes, INDEX / MATCH / SEQUENCE. Sticky note actions. Hide both panels",
