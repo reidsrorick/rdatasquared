@@ -1,4 +1,127 @@
-{"version":"1.63.1","build":"20261118093245","changelog":[
+{"version":"1.67.3","build":"20261119085017","changelog":[
+ {
+  "v": "1.67.3",
+  "title": "Spreadsheet: mostly grid",
+  "items": [
+   "A spreadsheet page now looks much more like Excel: the title, notebook and buttons share one slim line (category and tags are under the ⋯ button), the toolbar and formula bar are tighter, and the grid takes the rest of the window, with a status bar under it that is always there (count, sum and average when you select cells).",
+   "Export… and Delete moved up to that top line."
+  ]
+ },
+ {
+  "v": "1.67.2",
+  "title": "New spreadsheets start with A to Z",
+  "items": [
+   "A new spreadsheet now starts with columns A to Z (it used to start with A to J). Spreadsheets you already have keep the columns they have; add more with ＋ Column as before."
+  ]
+ },
+ {
+  "v": "1.67.1",
+  "title": "Spreadsheet fills the window",
+  "items": [
+   "A spreadsheet now fills the window like Excel: the page does not scroll, only the grid does. The formula bar, the formula guide and the totals bar (count, sum, average) at the bottom stay in view, and so do the toolbar tabs and the title above."
+  ]
+ },
+ {
+  "v": "1.67.0",
+  "title": "Spreadsheets get their own section",
+  "items": [
+   "Spreadsheets now have their own section in the side rail (⊞ Spreadsheets), separate from Notes. The list is grouped by notebook (click a notebook name to fold its sheets), and + there makes a new spreadsheet in the notebook you last used.",
+   "A spreadsheet opens as a page of its own: the title, which notebook it is in, and the full grid. The note-style Details, Notes heading, action items and Add box are gone from it.",
+   "Notes no longer lists spreadsheets (the phone copy still does, because it has no separate section). Existing spreadsheets are unchanged and keep their notebooks; they just show in the new section. Notebooks are shared by both sections, so a notebook can hold notes and spreadsheets and each section shows its own."
+  ]
+ },
+ {
+  "v": "1.66.4",
+  "title": "Double-click editor tabs; template button removed",
+  "items": [
+   "Double-click any tab above a note (Home, Lists, Insert) to hide the editing tools, and double-click again to bring them back. The small arrow still does the same.",
+   "The 📄 template button next to + in the Notes list is gone. Templates are still under + on other pages and on a note's Save as template button."
+  ]
+ },
+ {
+  "v": "1.66.3",
+  "title": "Spreadsheet: formula guide stays in view",
+  "items": [
+   "Spreadsheets have a formula guide under the formula bar that stays in view. While you write a formula it shows the function you are inside, like SUMIF(range, criteria, sum_range), with the part you are on underlined and what the function does. When you are not typing it shows a reminder, or the function of the selected cell.",
+   "The new “ƒ All functions” button next to it lists every function with what it takes and does."
+  ]
+ },
+ {
+  "v": "1.66.2",
+  "title": "Show snoozed on Today",
+  "items": [
+   "Today now has a “Show snoozed” tick box (it appears when something due is snoozed, with the number). Tick it to see snoozed actions in Today's lists, each marked with its ⏰ label. It is the same switch as on the Actions page, so the two stay in step."
+  ]
+ },
+ {
+  "v": "1.66.1",
+  "title": "Spreadsheet: double-click to fit columns and rows",
+  "items": [
+   "Double-click the edge between two column letters to make the column just wide enough for its longest text, like Excel. Select several columns first and it fits them all.",
+   "Rows can now be made taller: drag the bottom edge of a row number. Double-click that edge to put the row back to fitting its text. Row heights are saved, move with inserted and deleted rows, and go to Excel.",
+   "Both are undoable with Ctrl+Z in the sheet."
+  ]
+ },
+ {
+  "v": "1.66.0",
+  "title": "Spreadsheet: complete what you type",
+  "items": [
+   "Spreadsheets now complete what you type, like Excel. Type the start of a word that is already in the column (in the block of filled cells just above or below) and the rest appears selected; Enter or Tab takes it, Delete or another letter drops it.",
+   "It only suggests when exactly one word starts that way, and never for numbers, dates or formulas."
+  ]
+ },
+ {
+  "v": "1.65.0",
+  "title": "Spreadsheet: merge cells",
+  "items": [
+   "New Merge cells button (Home tab, next to Alignment) joins the selected cells into one, like Excel. Only the top left value is kept; if other cells had values you are asked first, and Undo brings them back.",
+   "Unmerge splits a merged cell again. Selecting any part of a merged cell selects all of it, and the arrow keys step over it.",
+   "Inserting or deleting rows and columns keeps merged cells in step. Sorting is refused across merged cells (unmerge first), and paste and fill never write into the hidden cells of a merge.",
+   "Merged cells come out right in Print and in Export Excel. Copying cells does not carry the merge along; only the values."
+  ]
+ },
+ {
+  "v": "1.64.1",
+  "title": "Quick add boxes wrap long text",
+  "items": [
+   "The Quick add box on Today, the Add box on the Actions page and on a person's page, the add boxes on the risk / issue / decision pages, the Quick add pop-up and the floating window's add box now wrap onto more lines as you type, so you can see everything you wrote. Enter still adds it.",
+   "A pasted paragraph becomes one line of text, so it still makes a single action."
+  ]
+ },
+ {
+  "v": "1.64.0",
+  "title": "Spreadsheet: TEXTSPLIT works like Excel's",
+  "items": [
+   "=TEXTSPLIT now makes the sheet bigger when its result needs more rows or columns, so you no longer get #SPILL! just because the table was too small. You only get #SPILL! when another cell is in the way, or the result would go past 2,000 rows or 50 columns.",
+   "Full TEXTSPLIT(text, column_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]): a column delimiter, a row delimiter (leave the first empty to split only into rows, like =TEXTSPLIT(A1,,\";\")), ignore_empty TRUE to drop blank pieces, match_mode 1 to ignore capitals, and pad_with for the cells that have no piece (the default is #N/A, as in Excel).",
+   "A delimiter can be several choices: type them in curly brackets, like {\",\",\";\"}, or point at a range of cells that holds them.",
+   "Curly-bracket lists work in other formulas too (for example =SUM({1,2;3,4})), and you can leave an argument empty by typing nothing between the commas."
+  ]
+ },
+ {
+  "v": "1.63.4",
+  "title": "Spreadsheet: long text flows into empty cells",
+  "items": [
+   "Text that is too long for its cell now runs on over the empty cells to its right, like Excel, and stops at the next cell that has something in it. Wrapped cells still wrap, and numbers still stay in their own cell.",
+   "Right-aligned and centred text stays inside its own cell."
+  ]
+ },
+ {
+  "v": "1.63.3",
+  "title": "Pop-out window: wrapped actions and a text size",
+  "items": [
+   "Actions in the pinned list of the floating window now wrap onto as many lines as they need, so you can read the whole action.",
+   "Three small buttons under the list: A− and A+ change the text size, and Wrap switches between several lines and one line. The window remembers your choice on this computer."
+  ]
+ },
+ {
+  "v": "1.63.2",
+  "title": "A separate tab for each hidden panel",
+  "items": [
+   "When the sidebar is hidden, a ☰ tab on the left edge brings back just the sidebar. When the list is hidden, a ▤ tab brings back just the list. Hide both and you get both tabs, one above the other.",
+   "Moving the mouse to the very left edge and clicking still brings back everything that is hidden."
+  ]
+ },
  {
   "v": "1.63.1",
   "title": "Fix: the live website showed code across the page",

@@ -78,6 +78,7 @@ a[data-act]{color:var(--accent);cursor:pointer;text-decoration:underline}
 #qadlg{width:min(560px,94vw)}
 #qadlg input{width:100%;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:10px 12px;font:inherit;font-size:15px;outline:none;margin:8px 0 6px}
 #qadlg input:focus{border-color:var(--accent)}
+#qadlg textarea{width:100%;min-height:0;font-size:15px;padding:10px 12px;margin:8px 0 6px;max-height:10em}
 .foot .fbtns{display:flex;gap:8px}
 .foot .fbtns button.plain{color:var(--text)}
 #ctxmenu{position:fixed;z-index:70;min-width:210px;max-width:300px;max-height:calc(100vh - 16px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.35);padding:5px;font-size:13.5px}
@@ -249,11 +250,13 @@ textarea.tx{display:block;resize:none;overflow:hidden;min-height:0;field-sizing:
 .app.rail-off:not(.list-off):not(.actions-mode){grid-template-columns:var(--lw,330px) 1fr}
 .app.list-off:not(.rail-off){grid-template-columns:var(--rw,200px) 1fr}
 .app.rail-off.list-off,.app.rail-off.actions-mode{grid-template-columns:1fr}
-#panelreveal{display:none;position:fixed;left:0;top:50%;margin-top:-32px;z-index:60;width:22px;height:64px;border:1px solid var(--line);border-left:0;border-radius:0 10px 10px 0;padding:0;background:var(--panel);color:var(--text);font-size:17px;line-height:1;cursor:pointer;opacity:.5;align-items:center;justify-content:center;box-shadow:0 2px 8px #0003;transition:opacity .15s}
+#panelrevs{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:60;flex-direction:column;gap:6px}
+#panelrevs button{display:none;width:24px;height:46px;border:1px solid var(--line);border-left:0;border-radius:0 10px 10px 0;padding:0;background:var(--panel);color:var(--text);font-size:16px;line-height:1;cursor:pointer;opacity:.55;align-items:center;justify-content:center;box-shadow:0 2px 8px #0003;transition:opacity .15s}
 #paneledge{display:none;position:fixed;left:0;top:0;bottom:0;width:10px;z-index:59}
-body.panels-hidden #panelreveal,body.panels-hidden #paneledge{display:flex}
-#panelreveal:hover,#paneledge:hover+#panelreveal{opacity:1}
-body.focus #panelreveal,body.focus #paneledge{display:none !important}}
+body.panels-hidden #panelrevs,body.panels-hidden #paneledge{display:flex}
+body.rv-rail #panelreveal,body.rv-list #listreveal{display:flex}
+#panelrevs button:hover,#paneledge:hover+#panelrevs button{opacity:1}
+body.focus #panelrevs,body.focus #paneledge{display:none !important}}
 .app.list-off .list>:not(.top){display:none}
 .app.list-off .top{padding:12px 4px;justify-content:center}
 .app.list-off .top>:not(.sb){display:none}
@@ -404,7 +407,7 @@ input.who:focus{border-color:var(--accent)}
 .flh{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}.flh b{font-weight:600}.flsp{flex:1}.flh small{text-transform:none;letter-spacing:0}
 .flc,.flx{border:0;background:none;color:var(--mute);cursor:pointer;padding:0 4px;font-size:12px}.flc:hover,.flx:hover{color:var(--text)}
 .flb{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}.fllist{flex:1;overflow:auto;min-height:40px}.flempty{color:var(--mute);font-size:12.5px;padding:6px 2px}
-.flr{display:flex;gap:8px;align-items:flex-start;padding:3px 2px;border-bottom:1px solid var(--line)}.flt{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px}.fltext{flex:1 1 0;min-width:40%;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fltext:hover{text-decoration:underline}.fldue{flex:0 0 auto;color:var(--mute);font-size:11px;white-space:nowrap}
+.flr{display:flex;gap:8px;align-items:flex-start;padding:3px 2px;border-bottom:1px solid var(--line)}.flt{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px}.fltext{flex:1 1 0;min-width:40%;font-size:var(--flfz,13px);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stk.flwrap .fltext{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}.flview{display:flex;justify-content:flex-end;gap:4px;margin:2px 0 4px}.flview button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:6px;padding:1px 8px;font-size:11.5px;cursor:pointer;min-width:28px}.flview button.on{background:var(--soft);border-color:var(--accent)}.fltext:hover{text-decoration:underline}.fldue{flex:0 0 auto;color:var(--mute);font-size:11px;white-space:nowrap}
 .fltabs{display:flex;gap:2px;padding:6px 8px 0;border-bottom:1px solid var(--line)}
 .fltab{border:0;background:none;color:var(--mute);font-weight:600;font-size:12.5px;padding:6px 12px;border-radius:7px 7px 0 0;cursor:pointer;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:inset 0 -2px 0 transparent}
 .fltab.on{color:var(--text);box-shadow:inset 0 -2px 0 var(--accent)}.fltab small{font-weight:400;color:var(--mute)}.fldot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c0302a;margin-left:3px;vertical-align:middle}
@@ -416,7 +419,7 @@ input.who:focus{border-color:var(--accent)}
 .flb{position:relative}.flpick{position:absolute;left:0;right:0;bottom:56px;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 14px #0004;overflow:hidden}.flpi{padding:5px 10px;font-size:13px;cursor:pointer}.flpi.on,.flpi:hover{background:var(--soft)}
 .flr.late .fldue{color:#c0302a;font-weight:600}.flbtns{display:flex;gap:2px}.flbtns button{border:0;background:none;cursor:pointer;color:var(--mute);font-size:13px;padding:0 3px}.flbtns button:hover{color:var(--text)}
 .flsno{display:flex;gap:4px;margin-top:3px;flex:0 0 100%}.flsno[hidden]{display:none}.flsno button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:6px;padding:1px 8px;font-size:11.5px;cursor:pointer}
-.fladd{border:1px solid var(--line);border-radius:7px;padding:5px 8px;background:var(--field);color:var(--text);font-size:13px}.flhint{font-size:11.5px;color:var(--mute);min-height:1em}.flsnz{cursor:pointer;color:var(--accent)}
+.fladd{width:100%;min-height:0;border:1px solid var(--line);border-radius:7px;padding:5px 8px;background:var(--field);color:var(--text);font:inherit;font-size:13px;line-height:1.35;resize:none;field-sizing:content;max-height:8em;overflow:auto;box-sizing:border-box}.flhint{font-size:11.5px;color:var(--mute);min-height:1em}.flsnz{cursor:pointer;color:var(--accent)}
 .flsplit{height:8px;cursor:row-resize;flex:0 0 8px;background:linear-gradient(var(--line),var(--line)) center/100% 1px no-repeat}
 .stk[data-col] .flr{color:#1d1d1b}.stk[data-col] .flr.late .fldue{color:#c0302a}.stk[data-col] .fladd{background:#ffffff66;color:#1d1d1b;border-color:#0002}.stk[data-col] .flh,.stk[data-col] .fldue,.stk[data-col] .flhint{color:#4a4a44}
 .startdlg{min-width:480px;max-width:640px}.startlist{max-height:55vh;overflow:auto}.srow{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}.srow small{display:block;color:var(--mute)}.srow.late small{color:#c0302a;font-weight:600}
@@ -456,7 +459,8 @@ details.outline{margin:0 0 8px;border:1px solid var(--line);border-radius:8px;pa
 .procrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}.procrow>span{color:var(--mute);min-width:56px}
 body.focus .rail,body.focus .list,body.focus #banner,body.focus #status,body.focus #narrowbar,body.focus #fmtbar,body.focus #scrim{display:none !important}
 body.focus .app{grid-template-columns:1fr !important}
-body.focus #detail>:not(.title):not(.rt):not(#sheet):not(.shfx):not(.mtgbar){display:none !important}
+body.focus #detail>:not(.title):not(.rt):not(#sheet):not(.shfx):not(.mtgbar):not(.shhead){display:none !important}
+body.focus .shhead>:not(.title){display:none !important}
 body.focus #detail{max-width:860px;margin:0 auto;width:100%}
 body.focus.focus-sheet #detail{max-width:none}
 body.focus #sheet .shrib,body.focus #sheet .shhint{display:none}
@@ -518,6 +522,31 @@ body.mobile .stkbtn,body.mobile .stkmenu{display:none}
 .shfx{display:flex;gap:6px;margin-bottom:8px}
 .shname{min-width:70px;text-align:center;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--hover2);font-size:12.5px;font-variant-numeric:tabular-nums}
 .shfxin{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--field);color:var(--text);font:13px Consolas,"Cascadia Mono",monospace}
+/* a spreadsheet page fills the window like Excel: the page itself does not scroll, only the grid does, so the toolbar and the totals bar stay in view */
+#detail.sheetpage{display:flex;flex-direction:column;overflow:auto;padding:8px 12px}
+#detail.sheetpage>*{flex:none}
+#detail.sheetpage>.sheet{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin:0}
+#detail.sheetpage .sheet>*{flex:none}
+#detail.sheetpage .sheet>.shscroll{flex:1 1 auto;min-height:80px;max-height:none;border-radius:6px 6px 0 0}
+#detail.sheetpage .shhint,#detail.sheetpage .shgl{display:none}
+#detail.sheetpage .shrib{margin-bottom:3px}
+#detail.sheetpage .shtop{margin-bottom:2px}
+#detail.sheetpage .shtab{padding:3px 10px !important}
+#detail.sheetpage .shpane{padding:2px;border-radius:6px}
+#detail.sheetpage .shgrp{padding:0 8px;gap:0}
+#detail.sheetpage .shgb{min-height:26px}
+#detail.sheetpage .shrib button,#detail.sheetpage .shrib select{height:25px;padding:2px 8px}
+#detail.sheetpage .shfx{margin:2px 0}
+#detail.sheetpage .shrib select[data-shfmt]{width:112px}#detail.sheetpage .shrib select[data-shink],#detail.sheetpage .shrib select[data-shfill]{width:118px}
+#detail.sheetpage .shguide{margin:0 0 2px;min-height:18px;font-size:12px}
+#detail.sheetpage .shstat{margin-top:0;padding:2px 10px;min-height:22px;border-radius:0 0 6px 6px}
+.shhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 4px}
+#detail .shhead .title{font:600 17px/1.3 Georgia,serif;flex:1 1 160px;min-width:120px;width:auto;margin:0}
+.shhead .shnb{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 6px;font-size:12.5px;max-width:170px;color-scheme:inherit}
+.shhead .stkbtn{padding:2px 9px}.shhead .stkbtn.del{color:var(--red)}
+.shmore{position:relative}.shmore summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:1px 9px;font-size:13px;color:var(--mute);opacity:.9}.shmore summary::-webkit-details-marker{display:none}
+.shmore .shpop{position:absolute;right:0;top:100%;z-index:30;width:320px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;box-shadow:0 4px 16px #0004;display:flex;flex-direction:column;gap:8px;margin:4px 0 0}
+.shmore .shpop label{display:flex;gap:6px;align-items:center;justify-content:space-between}.shmore .shpop input[type=text]{flex:1}
 .shscroll{overflow:auto;max-height:min(68vh,640px);min-height:120px;border:1px solid var(--line);border-radius:8px;background:var(--field);scroll-padding:30px 50px}
 .shbox{position:relative;width:max-content}
 .shgrid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13px;outline:none;user-select:none;-webkit-user-select:none}
@@ -538,6 +567,7 @@ body.mobile .stkbtn,body.mobile .stkmenu{display:none}
 .shfind{border:1px solid var(--line);border-radius:7px;padding:3px 8px;background:var(--field);color:var(--text);font-size:12.5px;width:120px}
 .shfcount{font-size:11.5px;color:var(--mute);min-width:34px}
 .shgrid .shh{display:none}
+.shgrid td.shm{display:none}.shgrid td.shmg{vertical-align:middle}          /* a merged cell: the covered cells stay in the table but are not drawn */
 .shgrid td.sfh{outline:2px solid #e0b100;outline-offset:-2px}
 .shgrid td.sfc{outline:2px solid var(--accent);outline-offset:-2px}
 .shgrid td.scm{background-image:linear-gradient(225deg,#e0514b 0 6px,transparent 6px)}
@@ -554,7 +584,9 @@ body.mobile .stkbtn,body.mobile .stkmenu{display:none}
 .shfl{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 10px}.shfl small{color:var(--mute)}
 body.mobile .shdvbtn,body.mobile .shstat{display:none}
 .shgrid th .shrz{position:absolute;right:-3px;top:0;width:7px;height:100%;cursor:col-resize;z-index:5}
+.shgrid th .shrzr{position:absolute;left:0;bottom:-3px;width:100%;height:7px;cursor:row-resize;z-index:5}
 .shgrid td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:24px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:cell}
+.shgrid td.so{overflow:visible;text-overflow:clip;position:relative;z-index:0;border-right-color:transparent}.shgrid td.sov{border-right-color:transparent}.shgrid td.so .sot{pointer-events:none}          /* the part that runs over the next cells must not catch the click meant for them */
 .shgrid td.sn{text-align:right;font-variant-numeric:tabular-nums}
 .shgrid td.sbool{text-align:center}
 .shgrid td.se{color:var(--red);text-align:center}
@@ -571,6 +603,14 @@ body.mobile .shdvbtn,body.mobile .shstat{display:none}
 .shacn{padding:3px 10px;font-size:11px;color:var(--mute);border-top:1px solid var(--line)}
 .shpt{display:none;position:absolute;border:2px dashed var(--blue);background:color-mix(in srgb,var(--blue) 10%,transparent);pointer-events:none;z-index:1;box-sizing:border-box}
 .shhint{margin-top:6px;font-size:12px;color:var(--mute)}
+.shguide{display:flex;align-items:center;gap:10px;margin:-3px 0 8px;font-size:12.5px;color:var(--mute);min-height:24px}
+.shgtxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shgtxt b{color:var(--accent);font-family:Consolas,"Cascadia Mono",monospace}
+.shgtxt .cur{color:var(--text);font-weight:700;text-decoration:underline}
+.shgall{flex:none;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:6px;padding:2px 9px;font-size:12px;cursor:pointer}
+.shgall:hover{background:var(--hover2)}
+.shfn{width:100%;border-collapse:collapse;font-size:13px}.shfn td{padding:3px 8px;border-bottom:1px solid var(--line);vertical-align:top}.shfn td:first-child{font-family:Consolas,"Cascadia Mono",monospace;color:var(--accent);white-space:nowrap}.shfn small{color:var(--mute)}
+body.mobile .shguide,body.focus #sheet .shguide{display:none}
 body.mobile .shbar,body.mobile .shrib,body.mobile .shfx,body.mobile .shhint,body.mobile .shfh{display:none}
 .rt .fc-red{color:#e0514b}.rt .fc-orange{color:#e08a1e}.rt .fc-green{color:#3f9b5b}.rt .fc-blue{color:#4b8fd9}.rt .fc-purple{color:#9b6bd3}.rt .fc-gray{color:#8a8a8a}
 .rt span[style*="background-color"]:not([style*="transparent"]){color:#1d1d1b;border-radius:2px}
@@ -718,6 +758,9 @@ body.mobile .bellbtn{display:none !important}
 .addrow{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .addrow input[type=text]{flex:1;min-width:200px;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;outline:none}
 .addrow input[type=text]:focus{border-color:var(--accent)}
+textarea.qawrap{flex:1;width:auto;min-height:0;min-width:200px;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;line-height:1.35;outline:none;resize:none;field-sizing:content;max-height:9em;overflow:auto;box-sizing:border-box}
+textarea.qawrap:focus{border-color:var(--accent)}
+.addrow button{align-self:stretch}
 .addrow button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:0 18px;font-weight:600}
 .afilters{display:flex;gap:20px;color:var(--mute);font-size:13px;flex-wrap:wrap;align-items:center}
 .afilters label{display:flex;gap:6px;align-items:center}
@@ -793,7 +836,7 @@ body.mobile #mobtabs{display:flex;border-top:1px solid var(--line);background:va
 body.mobile #mobtabs a{flex:1;text-align:center;padding:9px 2px 8px;font-size:11.5px;color:var(--mute);cursor:pointer;line-height:1.25}
 body.mobile #mobtabs a i{display:block;font-style:normal;font-size:19px;line-height:1.1}
 body.mobile #mobtabs a.on{color:var(--accent);font-weight:600}
-body.mobile .rail,body.mobile #banner,body.mobile #fmtbar,body.mobile #status,body.mobile .list .top .sb,body.mobile #newbtn,body.mobile #newsheetbtn,body.mobile #newtplbtn,body.mobile #newmenu,body.mobile #nbbar,body.mobile .list .chips,body.mobile .list .opts,body.mobile #detail button,body.mobile #detail .addrow,body.mobile #detail .qapv,body.mobile #detail .addnote,body.mobile #detail .nlink,body.mobile #detail .ckhide,body.mobile #detail a[data-act=scandates],body.mobile .nbhead2 button,body.mobile .nbgo{display:none !important}
+body.mobile .rail,body.mobile #banner,body.mobile #fmtbar,body.mobile #status,body.mobile .list .top .sb,body.mobile #newbtn,body.mobile #newsheetbtn,body.mobile #newmenu,body.mobile #nbbar,body.mobile .list .chips,body.mobile .list .opts,body.mobile #detail button,body.mobile #detail .addrow,body.mobile #detail .qapv,body.mobile #detail .addnote,body.mobile #detail .nlink,body.mobile #detail .ckhide,body.mobile #detail a[data-act=scandates],body.mobile .nbhead2 button,body.mobile .nbgo{display:none !important}
 body.mobile .app,body.mobile .app.actions-mode{grid-template-columns:1fr !important;flex:1;min-height:0}
 body.mobile .list{max-height:none;border:0;min-height:0;flex:1 1 auto}
 body.mobile .list .top{padding:10px 14px 6px}
@@ -845,7 +888,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <div id="banner"></div>
 <div id="mobstrip"></div>
 <div id="narrowbar"><button class="sb" data-nav="drawer" title="Menu">☰</button><h3>My Notebook</h3></div>
-<div id="paneledge" title="Show the sidebar and list"></div><button id="panelreveal" title="Show the sidebar and list (Ctrl+.)" aria-label="Show the sidebar and list">☰</button>
+<div id="paneledge" title="Show the hidden panels"></div><div id="panelrevs"><button id="panelreveal" title="Show the sidebar (Ctrl+\)" aria-label="Show the sidebar">☰</button><button id="listreveal" title="Show the list (Ctrl+,)" aria-label="Show the list">▤</button></div>
 <div id="scrim" data-nav="close"></div>
 <div class="app">
   <nav class="rail">
@@ -868,7 +911,6 @@ body.mobile #mobwelcome .bad{color:var(--red)}
       <input type="search" id="q" placeholder="Search everything…">
       <button class="new" id="newbtn" title="New item">+</button>
       <button class="new alt" id="newsheetbtn" title="New spreadsheet" hidden>▦</button>
-      <button class="new alt" id="newtplbtn" title="New note from a template" hidden>📄</button>
       <div class="menu" id="newmenu">
         <button data-new="task">☐ Action</button>
         <button data-new="note">✎ Note</button>
@@ -1117,7 +1159,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 <dialog id="qadlg">
   <h3>⚡ Quick add</h3>
   <p>Type it the way you'd say it, e.g. “call Sam Friday 3pm” or “timecards every other Friday”. Start with <b>note:</b> to make a note instead, or <b>risk:</b>, <b>issue:</b> or <b>decision:</b> for the RAID log.</p>
-  <input type="text" id="qai" placeholder="What needs doing, and when?" autocomplete="off">
+  <textarea class="qawrap" rows="1" id="qai" placeholder="What needs doing, and when?" autocomplete="off" spellcheck="true"></textarea>
   <div class="qapv" id="qapv2" style="margin:0 0 4px"></div>
   <div class="dfoot"><span></span><span><button data-act="qacancel">Cancel</button> <button class="pri" data-act="qasave">Add</button></span></div>
 </dialog>
@@ -1130,8 +1172,132 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 /* Phone mode: a browser that cannot save to a file (iPhone, iPad, Android) gets a read-only copy of your notes. Add ?mobile=1 to the address to try it on a computer. */
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
-const APP_VERSION = '1.63.1';
+const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
+const APP_VERSION = '1.67.3';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.67.3",
+  "title": "Spreadsheet: mostly grid",
+  "items": [
+   "A spreadsheet page now looks much more like Excel: the title, notebook and buttons share one slim line (category and tags are under the ⋯ button), the toolbar and formula bar are tighter, and the grid takes the rest of the window, with a status bar under it that is always there (count, sum and average when you select cells).",
+   "Export… and Delete moved up to that top line."
+  ]
+ },
+ {
+  "v": "1.67.2",
+  "title": "New spreadsheets start with A to Z",
+  "items": [
+   "A new spreadsheet now starts with columns A to Z (it used to start with A to J). Spreadsheets you already have keep the columns they have; add more with ＋ Column as before."
+  ]
+ },
+ {
+  "v": "1.67.1",
+  "title": "Spreadsheet fills the window",
+  "items": [
+   "A spreadsheet now fills the window like Excel: the page does not scroll, only the grid does. The formula bar, the formula guide and the totals bar (count, sum, average) at the bottom stay in view, and so do the toolbar tabs and the title above."
+  ]
+ },
+ {
+  "v": "1.67.0",
+  "title": "Spreadsheets get their own section",
+  "items": [
+   "Spreadsheets now have their own section in the side rail (⊞ Spreadsheets), separate from Notes. The list is grouped by notebook (click a notebook name to fold its sheets), and + there makes a new spreadsheet in the notebook you last used.",
+   "A spreadsheet opens as a page of its own: the title, which notebook it is in, and the full grid. The note-style Details, Notes heading, action items and Add box are gone from it.",
+   "Notes no longer lists spreadsheets (the phone copy still does, because it has no separate section). Existing spreadsheets are unchanged and keep their notebooks; they just show in the new section. Notebooks are shared by both sections, so a notebook can hold notes and spreadsheets and each section shows its own."
+  ]
+ },
+ {
+  "v": "1.66.4",
+  "title": "Double-click editor tabs; template button removed",
+  "items": [
+   "Double-click any tab above a note (Home, Lists, Insert) to hide the editing tools, and double-click again to bring them back. The small arrow still does the same.",
+   "The 📄 template button next to + in the Notes list is gone. Templates are still under + on other pages and on a note's Save as template button."
+  ]
+ },
+ {
+  "v": "1.66.3",
+  "title": "Spreadsheet: formula guide stays in view",
+  "items": [
+   "Spreadsheets have a formula guide under the formula bar that stays in view. While you write a formula it shows the function you are inside, like SUMIF(range, criteria, sum_range), with the part you are on underlined and what the function does. When you are not typing it shows a reminder, or the function of the selected cell.",
+   "The new “ƒ All functions” button next to it lists every function with what it takes and does."
+  ]
+ },
+ {
+  "v": "1.66.2",
+  "title": "Show snoozed on Today",
+  "items": [
+   "Today now has a “Show snoozed” tick box (it appears when something due is snoozed, with the number). Tick it to see snoozed actions in Today's lists, each marked with its ⏰ label. It is the same switch as on the Actions page, so the two stay in step."
+  ]
+ },
+ {
+  "v": "1.66.1",
+  "title": "Spreadsheet: double-click to fit columns and rows",
+  "items": [
+   "Double-click the edge between two column letters to make the column just wide enough for its longest text, like Excel. Select several columns first and it fits them all.",
+   "Rows can now be made taller: drag the bottom edge of a row number. Double-click that edge to put the row back to fitting its text. Row heights are saved, move with inserted and deleted rows, and go to Excel.",
+   "Both are undoable with Ctrl+Z in the sheet."
+  ]
+ },
+ {
+  "v": "1.66.0",
+  "title": "Spreadsheet: complete what you type",
+  "items": [
+   "Spreadsheets now complete what you type, like Excel. Type the start of a word that is already in the column (in the block of filled cells just above or below) and the rest appears selected; Enter or Tab takes it, Delete or another letter drops it.",
+   "It only suggests when exactly one word starts that way, and never for numbers, dates or formulas."
+  ]
+ },
+ {
+  "v": "1.65.0",
+  "title": "Spreadsheet: merge cells",
+  "items": [
+   "New Merge cells button (Home tab, next to Alignment) joins the selected cells into one, like Excel. Only the top left value is kept; if other cells had values you are asked first, and Undo brings them back.",
+   "Unmerge splits a merged cell again. Selecting any part of a merged cell selects all of it, and the arrow keys step over it.",
+   "Inserting or deleting rows and columns keeps merged cells in step. Sorting is refused across merged cells (unmerge first), and paste and fill never write into the hidden cells of a merge.",
+   "Merged cells come out right in Print and in Export Excel. Copying cells does not carry the merge along; only the values."
+  ]
+ },
+ {
+  "v": "1.64.1",
+  "title": "Quick add boxes wrap long text",
+  "items": [
+   "The Quick add box on Today, the Add box on the Actions page and on a person's page, the add boxes on the risk / issue / decision pages, the Quick add pop-up and the floating window's add box now wrap onto more lines as you type, so you can see everything you wrote. Enter still adds it.",
+   "A pasted paragraph becomes one line of text, so it still makes a single action."
+  ]
+ },
+ {
+  "v": "1.64.0",
+  "title": "Spreadsheet: TEXTSPLIT works like Excel's",
+  "items": [
+   "=TEXTSPLIT now makes the sheet bigger when its result needs more rows or columns, so you no longer get #SPILL! just because the table was too small. You only get #SPILL! when another cell is in the way, or the result would go past 2,000 rows or 50 columns.",
+   "Full TEXTSPLIT(text, column_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]): a column delimiter, a row delimiter (leave the first empty to split only into rows, like =TEXTSPLIT(A1,,\";\")), ignore_empty TRUE to drop blank pieces, match_mode 1 to ignore capitals, and pad_with for the cells that have no piece (the default is #N/A, as in Excel).",
+   "A delimiter can be several choices: type them in curly brackets, like {\",\",\";\"}, or point at a range of cells that holds them.",
+   "Curly-bracket lists work in other formulas too (for example =SUM({1,2;3,4})), and you can leave an argument empty by typing nothing between the commas."
+  ]
+ },
+ {
+  "v": "1.63.4",
+  "title": "Spreadsheet: long text flows into empty cells",
+  "items": [
+   "Text that is too long for its cell now runs on over the empty cells to its right, like Excel, and stops at the next cell that has something in it. Wrapped cells still wrap, and numbers still stay in their own cell.",
+   "Right-aligned and centred text stays inside its own cell."
+  ]
+ },
+ {
+  "v": "1.63.3",
+  "title": "Pop-out window: wrapped actions and a text size",
+  "items": [
+   "Actions in the pinned list of the floating window now wrap onto as many lines as they need, so you can read the whole action.",
+   "Three small buttons under the list: A− and A+ change the text size, and Wrap switches between several lines and one line. The window remembers your choice on this computer."
+  ]
+ },
+ {
+  "v": "1.63.2",
+  "title": "A separate tab for each hidden panel",
+  "items": [
+   "When the sidebar is hidden, a ☰ tab on the left edge brings back just the sidebar. When the list is hidden, a ▤ tab brings back just the list. Hide both and you get both tabs, one above the other.",
+   "Moving the mouse to the very left edge and clicking still brings back everything that is hidden."
+  ]
+ },
  {
   "v": "1.63.1",
   "title": "Fix: the live website showed code across the page",
@@ -2505,6 +2671,7 @@ const curNb = () => nbById(nbView) ? nbView : (nbById(lastNb) ? lastNb : db.note
 let selCk = '';                    // when you open an action item from the list, which one (so it can be highlighted in its note)
 let selId = null, filter = 'today', search = '', sortMode = 'updated', hideDone = false;
 let actGroup = 'due', actCat = '', actDone = false, actTimer = null, autoDates = true, railOff = false, listOff = false;
+const sheetFold = new Set();
 let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '', lastNoteSel = '', hideCkDone = false, metaOff = false, dateField = 'updated', datePreset = '', dateFrom = '', dateTo = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
 const pinFold = new Set();          // where the Pinned strip is collapsed ('' = the notebook list, otherwise a notebook id)
 const nbFold = new Set();          // notebooks folded closed in the Notes list
@@ -2763,11 +2930,12 @@ function bucketOf(e){
   return dueBucket(eDate(e), eDone(e), e.kind === 'ck' || e.item.type === 'task');
 }
 const chipView = () => filter === 'note' ? 'note' : 'all';          // chip choices are remembered separately for "Notes & meetings" and for everything else
-const catChipsShown = () => filter !== 'actions' && filter !== 'note' && !filter.startsWith('cat:') && db.categories.length > 0;          // the Notes list has no category chips: notebooks do that job
+const catChipsShown = () => filter !== 'actions' && filter !== 'note' && filter !== 'sheet' && !filter.startsWith('cat:') && db.categories.length > 0;          // the Notes list has no category chips: notebooks do that job
 function filteredItems(opts = {}){
   let a = db.items.slice();
-  if(['task','note'].includes(filter) && !search.trim()) a = a.filter(i => i.type === filter);          // typing in the search box looks through everything
-  else if(filter.startsWith('nb:') && !(search.trim() && searchAll)) a = a.filter(i => i.type === 'note' && nbKey(i) === filter.slice(3));          // inside a notebook, search stays in it (unless you tick “All notebooks”)
+  if(['task','note'].includes(filter) && !search.trim()) a = a.filter(i => i.type === filter && !(filter === 'note' && SHEETS_APART && i.sheet));          // typing in the search box looks through everything
+  else if(filter === 'sheet') a = a.filter(i => i.sheet);          // the Spreadsheets section only ever lists spreadsheets, searching included
+  else if(filter.startsWith('nb:') && !(search.trim() && searchAll)) a = a.filter(i => i.type === 'note' && !(SHEETS_APART && i.sheet) && nbKey(i) === filter.slice(3));          // inside a notebook, search stays in it (unless you tick “All notebooks”)
   else if(filter.startsWith('tag:')) a = a.filter(i => i.tags.includes(filter.slice(4)));
   else if(filter.startsWith('cat:')) a = a.filter(i => i.category === filter.slice(4));
   if(catChipsShown()){ if(listCat === 'none') a = a.filter(i => !i.category); else if(listCat) a = a.filter(i => i.category === listCat); }
@@ -2782,6 +2950,7 @@ function filteredItems(opts = {}){
 }
 /* action items (checklist lines) show up in tag / category views and in search results; the Tasks and Notes & meetings tabs stay about items */
 function filteredCks(opts = {}){
+  if(filter === 'sheet') return [];
   if(!(filter === 'all' || filter.startsWith('tag:') || filter.startsWith('cat:') || search.trim())) return [];
   const off = chipsOff[chipView()] || [];
   if(!opts.skipChips && off.includes('action')) return [];
@@ -2838,7 +3007,7 @@ function listEntries(opts = {}){
 }
 const visible = opts => listEntries(opts).filter(e => e.kind === 'item').map(e => e.item);        // just the items (used when picking the next one after a delete)
 function renderFilterBar(){
-  const chips = $('#chips'), show = filter !== 'task' && filter !== 'actions' && filter !== 'note' && !filter.startsWith('nb:');
+  const chips = $('#chips'), show = filter !== 'task' && filter !== 'actions' && filter !== 'note' && filter !== 'sheet' && !filter.startsWith('nb:');
   chips.style.display = show ? '' : 'none';
   if(show){
     const view = chipView(), off = chipsOff[view] || [], base = listEntries({skipChips:true});
@@ -2855,7 +3024,7 @@ function renderFilterBar(){
   const opts = document.querySelector('.list .opts'); if(opts) opts.classList.toggle('nblist', filter === 'note' && !nbView && !search.trim());
   $('#datewrap').style.display = filter === 'note' ? '' : 'none'; $('#dfield').value = dateField; $('#dpreset').value = datePreset; $('#dcustom').style.display = datePreset === 'custom' ? '' : 'none'; $('#dfrom').value = dateFrom; $('#dto').value = dateTo;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
-  { const nbtn = $('#newbtn'); if(nbtn) nbtn.title = (filter === 'note' || filter.startsWith('nb:')) ? 'New note' : 'New item'; const tbtn = $('#newtplbtn'); if(tbtn) tbtn.hidden = !(filter === 'note' || filter.startsWith('nb:')); const sbtn = $('#newsheetbtn'); if(sbtn) sbtn.hidden = !(filter === 'note' || filter.startsWith('nb:')); }
+  { const nbtn = $('#newbtn'); if(nbtn) nbtn.title = filter === 'sheet' ? 'New spreadsheet' : (filter === 'note' || filter.startsWith('nb:')) ? 'New note' : 'New item'; const sbtn = $('#newsheetbtn'); if(sbtn) sbtn.hidden = true; }
   $('#qscopewrap').style.display = filter.startsWith('nb:') && search.trim() ? '' : 'none'; $('#qscope').checked = searchAll;
   $('#datedonly').checked = datedOnly; $('#hidedone').checked = hideDone;
 }
@@ -3094,7 +3263,7 @@ function renderRail(){
   const openActions = allActions().filter(x => !x.done && x.text.trim()).length;
   const planned = db.plan.filter(b => b.repeat ? !b.until || b.until >= todayStr() : !b.done && b.end >= todayStr()).length;
   const T0 = todayStr(), dueNow = allEntries().filter(x => !x.done && x.text.trim() && x.due && x.due <= T0 && !snoozed(oOf(x))), overdueN = dueNow.filter(x => x.due < T0).length;
-  const F = [['today','☀ Today',dueNow.length,overdueN ? 'hot' : ''],['actions','⚑ Actions',openActions],['note','✎ Notes',cnt('note')],['timeline','▦ Timeline',planned]];
+  const F = [['today','☀ Today',dueNow.length,overdueN ? 'hot' : ''],['actions','⚑ Actions',openActions],['note','✎ Notes',db.items.filter(i => i.type === 'note' && !(SHEETS_APART && i.sheet)).length],...(SHEETS_APART ? [['sheet','⊞ Spreadsheets',db.items.filter(i => i.sheet).length]] : []),['timeline','▦ Timeline',planned]];
   $('#filters').innerHTML = F.map(([k,l,n,cls]) => `<div class="f ${filter === k || (k === 'actions' && filter === 'task') || (k === 'note' && filter.startsWith('nb:')) ? 'on' : ''}" data-filter="${k}">${l} <small class="${cls || ''}">${n}</small></div>`).join('') + waitingRailHtml() + inboxRailHtml();
   $('#trashrow').innerHTML = `<div class="f trashlink ${filter === 'trash' ? 'on' : ''}" data-filter="trash" title="Deleted items are kept for ${TRASH_DAYS} days (press 8)">🗑 Trash <small>${db.trash.length || ''}</small></div>`;
   try { $('#trashrow').insertAdjacentHTML('afterbegin', reviewRailHtml()); } catch {}
@@ -3165,7 +3334,7 @@ function renderList(){
     if(searching) html = v.map(e => entryHtml(e, true)).join('');
     else if(!nbView){
       html = pinHtml + (pins.length ? '<div class="pinhead">Notebooks</div>' : '') + db.notebooks.map(nb => {
-        const pages = notebookPages(nb.id), last = pages.reduce((mx, pg) => (pg.updated || '') > mx ? pg.updated : mx, '');
+        const pages = notebookPages(nb.id).filter(pg => !(SHEETS_APART && pg.sheet)), last = pages.reduce((mx, pg) => (pg.updated || '') > mx ? pg.updated : mx, '');
         return `<div class="nbgh big" data-nbfold="${esc(nb.id)}" data-nbdrop="${esc(nb.id)}" data-nbmenu="${esc(nb.id)}" draggable="true" title="Click to open. Drag to reorder." style="--nbc:${esc(nb.color)}"><div class="nbtxt"><b>${esc(nb.name)}${nb.shared && nb.shared.on ? ` <span title="Shared to a folder${shareState === 'paused' ? ' (paused: the browser needs you to allow the folder again)' : ''}" style="color:var(--accent);font-weight:400">⇪${shareState === 'paused' ? ' paused' : ''}</span>` : ''}</b><small>${pages.length} page${pages.length === 1 ? '' : 's'}${last ? ' · edited ' + esc(fmtDay(dstr(new Date(last)))) : ''}</small></div><span class="nbgo">›</span></div>`;
       }).join('');
     } else {
@@ -3173,6 +3342,10 @@ function renderList(){
       html = `<div class="nbhead2" data-nbmenu="${esc(nb.id)}" style="--nbc:${esc(nb.color)}"><a data-act="nball" title="Back to all notebooks">‹ Notebooks</a><span class="nbn">${esc(nb.name)}</span><small>${all.length} page${all.length === 1 ? '' : 's'}</small>${nb.id === inboxIdQuiet() && procQueue().length ? `<button data-act="goproc" class="procbtn" title="Go through these notes one at a time: file, make an action, or delete">📥 Process ${procQueue().length}</button>` : ''}<button data-act="nbnewpage" data-id="${esc(nb.id)}" title="New page in ${esc(nb.name)}">＋</button></div>`
         + pinHtml + (pins.length && rows.length ? '<div class="pinhead">Pages</div>' : '') + (rows.length ? rows.map(e => entryHtml(e)).join('') : (all.length ? '' : `<div class="nbempty">No pages yet. Press ＋ to add one.</div>`));
     }
+  } else if(filter === 'sheet'){                  // Spreadsheets: grouped by notebook, each group can be folded away
+    const items = v.filter(e => e.kind === 'item');
+    html = db.notebooks.map(nb => { const rows = items.filter(e => nbKey(e.item) === nb.id); if(!rows.length) return ''; const folded = sheetFold.has(nb.id);
+      return `<div class="pinhead pinfold" data-sheetfold="${esc(nb.id)}" title="Click to ${folded ? 'show' : 'hide'} these spreadsheets">${folded ? '▸' : '▾'} <i class="cdot" style="background:${esc(nb.color)};margin:0 4px 0 0"></i>${esc(nb.name)} <small>${rows.length}</small></div>` + (folded ? '' : rows.map(e => entryHtml(e)).join('')); }).join('');
   } else {
     v.forEach(e => { const b = bucketOf(e); counts[b] = (counts[b] || 0) + 1; });
     for(const e of v){
@@ -3185,7 +3358,7 @@ function renderList(){
   }
   const filtered = (chipsOff[chipView()] || []).length || (catChipsShown() && listCat) || hideDone || (sortMode === 'date' && datedOnly);
   if(filter === 'task') html = `<div class="gh2"><a data-filter="actions">‹ Back to all actions</a></div>` + html;
-  $('#items').innerHTML = (filter === 'note' ? html : v.length ? html : '') || `<div class="empty">${search ? 'Nothing matches your search.' : filtered && db.items.length ? 'Nothing matches these filters.<br><a data-act="resetfilters">Reset filters</a>' : 'Nothing here yet.<br>Use + to add something.'}</div>`;
+  $('#items').innerHTML = (filter === 'note' || filter === 'sheet' ? html : v.length ? html : '') || `<div class="empty">${search ? 'Nothing matches your search.' : filter === 'sheet' ? 'No spreadsheets yet.<br>Use + to make one.' : filtered && db.items.length ? 'Nothing matches these filters.<br><a data-act="resetfilters">Reset filters</a>' : 'Nothing here yet.<br>Use + to add something.'}</div>`;
 }
 const ckHead = i => { const n = i.checklist.filter(c => c.done).length; return `<h4>${i.type === 'note' ? esc(raidShort()) : 'Action items'}${n || hideCkDone ? ` <label class="ckhide"><input type="checkbox" id="ckhide" ${hideCkDone ? 'checked' : ''}> Hide completed${n ? (hideCkDone ? ` (${n} hidden)` : ` (${n})`) : ''}</label>` : ''}</h4>`; };
 function ckRows(i){
@@ -3320,7 +3493,7 @@ function renderActions(){
     <h1 class="ptitle">Everything to do</h1>
     <p class="psub">Every action: the standalone ones, plus the action items inside your notes. ${raidKinds().length ? `${esc(capFirst(listAnd(raidKinds().map(k => raidMany(k).toLowerCase()))))} ${raidKinds().length === 1 ? 'has its' : 'have their'} own page${raidKinds().length === 1 ? '' : 's'} under RAID log. ` : ''}${open} open.</p>
     ${pageSearchBox('Filter actions by text, person, category or note…', true)}
-    <div class="addrow"><input type="text" id="anew" placeholder="Add an action…"><input type="date" id="adue" title="Due date"><select id="acat">${catOptions('', 'No category')}</select><button class="plain" data-act="addnotetoggle" title="Write a note on this action while you create it">📝 Note</button><button data-act="addaction">Add</button></div>
+    <div class="addrow"><textarea class="qawrap" rows="1" id="anew" placeholder="Add an action…" spellcheck="true"></textarea><input type="date" id="adue" title="Due date"><select id="acat">${catOptions('', 'No category')}</select><button class="plain" data-act="addnotetoggle" title="Write a note on this action while you create it">📝 Note</button><button data-act="addaction">Add</button></div>
     <textarea id="anotefld" class="addnote" rows="3" hidden placeholder="Note for this action (optional)…"></textarea>
     <div class="qapv" id="apv"></div>
     <div class="afilters">
@@ -3354,7 +3527,7 @@ function renderRaid(kind){
     <h1 class="ptitle">${M.many}</h1>
     <p class="psub">${M.blurb} ${open} open. Write <b>${M.one.toUpperCase()}</b> (in capitals) at the start of a line in any note to add one from there. <a data-act="scantags" style="cursor:pointer;color:var(--accent);text-decoration:underline">Scan my notes now</a></p>
     ${pageSearchBox('Filter by text, owner, category or note…', true)}
-    <div class="addrow"><input type="text" id="rnew" data-raid="${kind}" placeholder="${M.add}" autocomplete="off"><input type="date" id="rdue" title="Date to revisit"><select id="rcat">${catOptions('', 'No category')}</select><button data-act="addraid" data-raid="${kind}">Add</button></div>
+    <div class="addrow"><textarea class="qawrap" rows="1" id="rnew" data-raid="${kind}" placeholder="${M.add}" autocomplete="off" spellcheck="true"></textarea><input type="date" id="rdue" title="Date to revisit"><select id="rcat">${catOptions('', 'No category')}</select><button data-act="addraid" data-raid="${kind}">Add</button></div>
     <div class="afilters">
       <label>Category <select id="acatf">${opt('', 'All', actCat)}${opt('none', 'No category', actCat)}${db.categories.map(c => opt(esc(c.id), esc(c.name), actCat)).join('')}</select></label>
       ${db.notebooks.length > 1 ? `<label>Notebook <select id="anb">${opt('', 'Everywhere', actNb)}${opt('none', 'Not from a note', actNb)}${db.notebooks.map(n => opt(esc(n.id), esc(n.name), actNb)).join('')}</select></label>` : ''}
@@ -3378,7 +3551,7 @@ function renderPerson(){
     <div class="type">People</div>
     <h1 class="ptitle">${esc(name)}</h1>
     <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}</div>
-    <div class="addrow"><input type="text" id="pqa" placeholder="Add for ${esc(name)}: “call the vendor Friday 3pm”${raidKinds().length ? `, “${esc(raidOne(raidKinds()[0]).toLowerCase())}: vendor may slip”` : ''}" autocomplete="off"><button data-act="padd">Add</button></div>
+    <div class="addrow"><textarea class="qawrap" rows="1" id="pqa" placeholder="Add for ${esc(name)}: “call the vendor Friday 3pm”${raidKinds().length ? `, “${esc(raidOne(raidKinds()[0]).toLowerCase())}: vendor may slip”` : ''}" autocomplete="off" spellcheck="true"></textarea><button data-act="padd">Add</button></div>
     <div class="qapv" id="pqapv"></div>
     ${pageSearchBox('Filter this person’s items…', true)}
     <div class="afilters" style="margin-bottom:6px"><label><input type="checkbox" id="adone" ${actDone ? 'checked' : ''}> Show completed</label></div>
@@ -3843,7 +4016,7 @@ function skipOccurrence(){
   tlEdit = null; $('#tldlg').close(); touch(); renderRail(); renderTlGrid();
   toast(`Skipped “${b.title || 'Untitled'}” on ${fmtDay(d)}.`, () => { b.skip = b.skip.filter(y => y !== d); b.updated = now(); touch(); renderTlGrid(); });
 }
-const viewFor = i => i.type === 'task' ? 'task' : 'note';           // which list an item lives in
+const viewFor = i => i.type === 'task' ? 'task' : (i.sheet && SHEETS_APART) ? 'sheet' : 'note';           // which list an item lives in
 function openActionByKey(key){
   const t = findEntry(key); if(!t) return;
   if($('#tldlg').open) $('#tldlg').close();
@@ -4015,12 +4188,23 @@ const matchQ = x => {
   const q = pageQ.trim().toLowerCase(); if(!q) return true;
   return [x.text, x.assignee, (catById(x.cat) || {}).name, x.item && x.item.title, x.due, x.due ? fmtDay(x.due) : '', RAID_META[x.raid] ? RAID_META[x.raid].one : '', htmlText(x.note || '')].join('\n').toLowerCase().includes(q);
 };
+function sheetPageHtml(i){
+  const nbs = db.notebooks.map(n => `<option value="${esc(n.id)}" ${nbKey(i) === n.id ? 'selected' : ''}>${esc(n.name)}</option>`).join('');
+  return `${replyBanner(i)}
+    <div class="shhead"><textarea class="title" rows="1" data-f="title" placeholder="Untitled spreadsheet">${esc(i.title)}</textarea>
+      <select class="shnb" data-f="notebook" title="Notebook">${nbs}</select>
+      <details class="shmore"><summary title="Category and tags">⋯</summary><div class="shpop"><label>Category <select data-f="category">${catOptions(i.category, 'None')}</select></label><label>Tags <input type="text" data-f="tags" value="${esc(i.tags.join(', '))}" placeholder="acme, q4-planning"></label></div></details>
+      <button class="stkbtn" data-act="panels" title="Hide the sidebar and the list so the sheet has the whole window (Ctrl+.)">${panelsHidden() ? '⇥ Panels' : '⇤ Panels'}</button><button class="stkbtn" data-act="focus" title="Hide everything but the sheet (Ctrl+Shift+F)">⛶ Focus</button><button class="stkbtn" data-act="todaypin" title="Keep this spreadsheet at the top of Today until you take it off.">${i.todayPin ? '☀ On Today' : '☀ Today'}</button>
+      ${(i.replies || []).length ? `<button class="stkbtn" data-act="replies" title="Replies to this shared page, and what you decided">💬${pendingOf(i) ? ' ' + pendingOf(i) : ''}</button>` : ''}<button class="stkbtn" id="sharebtn" data-act="sharepage" title="${esc(shareBadge(i).tip)}">${esc(shareBadge(i).label)}</button><button class="stkbtn" data-act="export" title="Download this spreadsheet as Excel or CSV, or print it">Export…</button><button class="stkbtn del" data-act="delete" title="Delete this spreadsheet">Delete</button></div>
+    ${shHtml(i)}
+    ${i.checklist.length ? `${ckHead(i)}<div id="cklist">${ckRows(i)}</div>` : ''}`;
+}
 function renderDetail(){
   if(shEdit) shEndEdit(true);                              // a cell you were typing in is kept before the screen is redrawn
   if(dropEmptyNew()) touch();                              // an empty note you moved away from
   $('#detail').dataset.item = '';                         // while it is being redrawn, nothing in it belongs to any note
   if(FULL_PAGES.includes(filter)) pageQFor();
-  $('#detail').classList.toggle('tl', filter === 'timeline');
+  $('#detail').classList.toggle('tl', filter === 'timeline'); $('#detail').classList.remove('sheetpage');
   if(filter === 'timeline'){ renderTimeline(); return; }
   if(filter === 'actions'){ renderActions(); return; }
   if(filter === 'today'){ renderToday(); return; }
@@ -4043,6 +4227,12 @@ function renderDetail(){
   if(i.type === 'task') meta += `<label>Assigned to <input type="text" class="who" autocomplete="off" data-f="assignee" value="${esc(i.assignee || '')}" placeholder="Nobody"></label>`;
   meta += `<label class="grow">Tags <input type="text" data-f="tags" value="${esc(i.tags.join(', '))}" placeholder="acme, q4-planning"></label>`;
   const bodyLabel = i.type === 'task' ? 'Details' : i.sheet ? 'Spreadsheet' : 'Notes';
+  if(i.sheet && SHEETS_APART){                              // a spreadsheet is a page of its own: title, where it lives, and the grid
+    const shOld2 = document.querySelector('#sheet[data-id="' + i.id + '"] .shscroll'), pos2 = shOld2 ? [shOld2.scrollTop, shOld2.scrollLeft] : null;
+    el.innerHTML = sheetPageHtml(i); el.dataset.item = i.id; el.classList.toggle('sheetpage', !i.checklist.length);
+    shAfterRender(i); const sc2 = document.querySelector('#sheet .shscroll'); if(sc2 && pos2){ sc2.scrollTop = pos2[0]; sc2.scrollLeft = pos2[1]; }
+    return;
+  }
   const shOld = i.sheet && document.querySelector('#sheet[data-id="' + i.id + '"] .shscroll'), shPos0 = shOld ? [shOld.scrollTop, shOld.scrollLeft] : null;          // redrawing the same sheet keeps where you were scrolled to
   el.innerHTML = `
     ${i.type === 'task' && proposalOf(i) ? propLine(i, i.id) : ''}
@@ -4083,10 +4273,12 @@ function applyMode(){
   r.textContent = railOff ? '»' : '«'; r.title = railOff ? 'Show sidebar (Ctrl+\\)' : 'Hide sidebar (Ctrl+\\)';
   l.textContent = listOff ? '»' : '«'; l.title = listOff ? 'Show the list (Ctrl+,)' : 'Hide the list (Ctrl+,)';
   document.querySelectorAll('[data-act=panels]').forEach(b => { b.textContent = panelsHidden() ? '⇥ Show panels' : '⇤ Hide panels'; });
-  document.body.classList.toggle('panels-hidden', !isNarrow() && (railOff || (listOff && !FULL_PAGES.includes(filter))));          // hidden panels leave no strip: a small ☰ (or the left edge) brings them back
+  const showRail = !isNarrow() && railOff, showList = !isNarrow() && listOff && !FULL_PAGES.includes(filter);
+  document.body.classList.toggle('panels-hidden', showRail || showList);          // hidden panels leave no strip: one small tab per hidden panel (☰ sidebar, ▤ list); the left edge brings back whatever is hidden
+  document.body.classList.toggle('rv-rail', showRail); document.body.classList.toggle('rv-list', showList);
 }
 function showPanelsAgain(){ railOff = false; listOff = false; saveUi(); applyMode(); }
-['panelreveal', 'paneledge'].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('click', showPanelsAgain); });
+[['panelreveal', () => { railOff = false; saveUi(); applyMode(); }], ['listreveal', () => { listOff = false; saveUi(); applyMode(); }], ['paneledge', showPanelsAgain]].forEach(([id, fn]) => { const el = document.getElementById(id); if(el) el.addEventListener('click', fn); });
 function renderAll(){
   syncRaidCss();
   if((RAID_BUILTIN.includes(filter) || RAID_ID_RE.test(filter)) && !raidOn(filter)){ filter = 'today'; saveUi(); }          // that RAID page was switched off or deleted
@@ -4120,12 +4312,13 @@ function newItem(kind){                      // kind: 'task', 'note' or 'meeting
   const i = {id:uid(), pinned:false, pinAll:false, type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(kind === 'sheet') i.sheet = shNew();
   let toInbox = false;
-  if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; const nbc = nbById(i.notebook); if(nbc && catById(nbc.category) && !i.category) i.category = nbc.category; }
+  if(kind === 'sheet' && SHEETS_APART){ i.notebook = nbById(lastNb) ? lastNb : inboxId(); toInbox = i.notebook === inboxIdQuiet(); lastNb = i.notebook; const nbc = nbById(i.notebook); if(nbc && catById(nbc.category) && !i.category) i.category = nbc.category; filter = 'sheet'; }
+  else if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; const nbc = nbById(i.notebook); if(nbc && catById(nbc.category) && !i.category) i.category = nbc.category; }
   db.items.push(i); selId = i.id; search = '';
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
-  if(toInbox) toast('New note is in your Inbox. Use the Notebook box to move it when you know where it belongs.');
+  if(toInbox) toast(`New ${kind === 'sheet' ? 'spreadsheet' : 'note'} is in your Inbox notebook. Use the Notebook box to move it when you know where it belongs.`);
 }
 /* ---- export / import notebooks (move a notebook between computers, or keep a copy) ---- */
 const notebookPages = id => db.items.filter(i => i.type === 'note' && nbKey(i) === id);
@@ -5153,14 +5346,16 @@ function emptyTrash(){
 const mtgRow = i => `<div class="mtgrow" data-open="${i.id}"><span class="mi">◷</span><div><b>${esc(i.title || 'Untitled')}</b><small>${esc([i.attendees, i.checklist.length ? i.checklist.filter(c => c.done).length + '/' + i.checklist.length + ' actions done' : ''].filter(Boolean).join(' · ') || 'Note')}</small></div><time>${esc(fmtTime(i.time))}</time></div>`;
 function renderToday(){
   const T = todayStr(), TM = shiftStr(T, 1), tk = x => sortTime(x.time, x.text);
-  const me = (db.me || '').toLowerCase(), acts = allEntries().filter(x => x.text.trim() && x.due && !(!x.done && snoozed(oOf(x))) && (!todayMine || !me || !x.assignee || x.assignee.toLowerCase() === me)).filter(matchQ);
+  const me = (db.me || '').toLowerCase(), base = allEntries().filter(x => x.text.trim() && x.due && (!todayMine || !me || !x.assignee || x.assignee.toLowerCase() === me)).filter(matchQ);
+  const acts = actSnz ? base : base.filter(x => x.done || !snoozed(oOf(x)));          // snoozed actions are left out unless “Show snoozed” is ticked
+  const snzN = base.filter(x => !x.done && snoozed(oOf(x)) && x.due <= TM).length + (fuEntries(true).length - fuEntries().length);
   const overdue = acts.filter(x => !x.done && x.due < T).sort((a, b) => a.due.localeCompare(b.due) || (tk(a) < tk(b) ? -1 : tk(a) > tk(b) ? 1 : 0));
   const day = d => acts.filter(x => x.due === d).map(x => ({k:tk(x), done:x.done, x}))          // Today is for actions, risks, issues, decisions and timeline items: notes live on the Notes tab
     .sort((a, b) => (a.done - b.done) || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));          // open things by time first, finished ones after
   const today = day(T), tomorrow = day(TM), rows = list => list.map(e => actRow(e.x)).join('');
   const blocks = tlExpand(db.plan, T).filter(b => b.start <= T && b.end >= T && !blockDone(b)).filter(b => !pageQ.trim() || ((b.title || '') + ' ' + (b.desc || '')).toLowerCase().includes(pageQ.trim().toLowerCase())).sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || (a.title || '').localeCompare(b.title || ''));
   const openToday = today.filter(e => !e.x.done).length;
-  const fups = fuEntries().filter(matchQ), pinsHtml = pinnedNotesHtml(), none = !overdue.length && !today.length && !blocks.length && !pinsHtml && !fups.length;
+  const fups = fuEntries(actSnz).filter(matchQ), pinsHtml = pinnedNotesHtml(), none = !overdue.length && !today.length && !blocks.length && !pinsHtml && !fups.length;
   $('#detail').innerHTML = `
     <div class="type">Today</div>
     <h1 class="ptitle">${esc(new Date().toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'}))}</h1>
@@ -5168,7 +5363,8 @@ function renderToday(){
     <div class="tdsum"><span class="${overdue.length ? 'bad' : ''}">${overdue.length} past due</span><span class="${openToday ? 'warn' : ''}">${openToday} due today</span><span>${blocks.length} planned</span>${fups.length ? `<span class="warn">${fups.length} to check back</span>` : ''}</div>
     ${pageSearchBox('Filter today’s items…')}
     ${db.me ? `<label class="tdmine"><input type="checkbox" id="tmine" ${todayMine ? 'checked' : ''}> Only mine — assigned to ${esc(db.me)}, or to nobody</label>` : ''}
-    <div class="addrow"><input type="text" id="tqa" placeholder="Quick add: “call Sam Friday 3pm”, “note: ideas”${raidKinds().length ? `, “${esc(raidOne(raidKinds()[0]).toLowerCase())}: vendor may slip @Sam”` : ''}" autocomplete="off"><button data-act="qadd">Add</button></div>
+    ${snzN || actSnz ? `<label class="tdmine" title="Actions you snoozed are hidden until their time comes. Tick this to see them here anyway (they carry an ⏰ label)."><input type="checkbox" id="asnz" ${actSnz ? 'checked' : ''}> Show snoozed${snzN ? ' (' + snzN + ')' : ''}</label>` : ''}
+    <div class="addrow"><textarea class="qawrap" rows="1" id="tqa" placeholder="Quick add: “call Sam Friday 3pm”, “note: ideas”${raidKinds().length ? `, “${esc(raidOne(raidKinds()[0]).toLowerCase())}: vendor may slip @Sam”` : ''}" autocomplete="off" spellcheck="true"></textarea><button data-act="qadd">Add</button></div>
     <div class="qapv" id="tqapv"></div>
     ${pinsHtml}
     ${blocks.length ? `<h4 class="gh">On your timeline <small>${blocks.length}</small></h4><div>${blocks.map(b => `<span class="tdblock" data-act="gotl" title="Open the Timeline"><i class="cdot" style="background:${esc(blockColor(b))};margin:0"></i>${b.repeat ? '↻ ' : ''}${esc(b.title || 'Untitled')}${b.start !== b.end ? ` <small style="color:var(--mute)">${esc(rangeLabel(b))}</small>` : ''}</span>`).join('')}</div>` : ''}
@@ -5208,6 +5404,8 @@ function quickAdd(raw, who){                    // who: the person whose page yo
   return i;
 }
 function openQuickAdd(){ $('#qai').value = ''; $('#qapv2').textContent = qaSummary(qaParse('')); $('#qadlg').showModal(); $('#qai').focus(); }
+const oneLine = el => { const re = /\s*[\r\n]+\s*/g; if(re.test(el.value)){ const at = el.selectionStart, before = el.value.slice(0, at).replace(re, ' ').length; el.value = el.value.replace(re, ' '); try { el.setSelectionRange(before, before); } catch {} } };          // the Quick add boxes wrap on screen but hold one line of text (a pasted paragraph becomes one line)
+document.addEventListener('input', e => { const el = e.target; if(el && el.classList && el.classList.contains('qawrap')) oneLine(el); });
 $('#qai').addEventListener('input', e => { $('#qapv2').textContent = qaSummary(qaParse(e.target.value)); });
 $('#qai').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(quickAdd(e.target.value)) $('#qadlg').close(); } });
 $('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) : ''; if(e.target.id === 'pqa') $('#pqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) + (qaParse(e.target.value).assignee ? '' : ' → ' + actPerson) : ''; });
@@ -5432,7 +5630,7 @@ function todayAdd(){ const el = $('#tqa'); if(!el) return; if(!el.value.trim()){
 /* ---- Guided tour: dims the page, lights up one area at a time, and says what it is for ---- */
 const TOUR = [
   {t:'Welcome to My Notebook', x:'<p>A quick look around, about a minute. Each step lights up one area of the app.</p><p>Use <kbd>→</kbd> and <kbd>←</kbd> or the buttons. <kbd>Esc</kbd> leaves the tour at any time.</p>'},
-  {sel:['#filters'], t:'Your views', x:'<p><b>Today</b> is what is due or past due, plus what is on your timeline today. <b>Actions</b> lists every action, whether it stands alone or sits inside a note. <b>Notes</b> holds your pages, grouped into notebooks along the top of the list. <b>Timeline</b> is a week or month calendar where you can drag across days to plan a block.</p><p>The numbers show what is still open.</p>'},
+  {sel:['#filters'], t:'Your views', x:'<p><b>Today</b> is what is due or past due, plus what is on your timeline today. <b>Actions</b> lists every action, whether it stands alone or sits inside a note. <b>Notes</b> holds your pages, grouped into notebooks along the top of the list. <b>Spreadsheets</b> has its own section, grouped by notebook. <b>Timeline</b> is a week or month calendar where you can drag across days to plan a block.</p><p>The numbers show what is still open.</p>'},
   {sel:['#raid'], get t(){ return raidTitle(); }, get x(){ return `<p>${esc(listAnd(raidKinds().map(k => raidMany(k))))} in one place. Tag a line in any note (the <b>＋ Tag…</b> menu in the editor) and it appears here, with an owner and a due date if you want.</p>`; }},
   {sel:['#cats', '#people', '#tags'], t:'Categories, people and tags', x:'<p><b>Categories</b> colour-code your items. <b>People</b> is your team: type <b>@Sam</b> in an action to give it to Sam, and click a name to see everything assigned to them. <b>Tags</b> are the #words you add to a note.</p>'},
   {sel:['#q'], t:'Search', x:'<p>Searches everything: titles, notes, action items and tags. Press <kbd>/</kbd> from anywhere to jump here.</p>'},
@@ -5736,6 +5934,7 @@ const CMDS = [
   {id:'newaction', g:'Create', l:'New action', icon:'☐', keys:['N'], run:() => { newItem('task'); }},
   {id:'newnote', g:'Create', l:'New note', icon:'✎', keys:['Shift+N'], run:() => { newItem('note'); }},
   {id:'quicksticky', g:'Create', l:'Quick sticky note: a new empty note in a floating window', short:'Quick sticky', icon:'▭', keys:['Ctrl+Shift+S'], dlg:false, run:() => { quickSticky(); }},
+  {id:'gosheets', g:'Go to', l:'Spreadsheets', icon:'⊞', keys:[], run:() => { if(SHEETS_APART) goView('sheet'); }},
   {id:'template', g:'Create', l:'New note from a template', short:'Template', icon:'📄', keys:[], run:() => { openTemplates(); }},
   {id:'focus', g:'Working', l:'Focus mode: only this page, with a count', short:'Focus', icon:'⛶', keys:['Ctrl+Shift+F'], dlg:false, run:() => { toggleFocus(); }},
   {id:'sharehtml', g:'Working', l:'Save this page as one HTML file to send', short:'Share HTML', icon:'🌐', keys:[], run:() => { shareAsHtml(selId); }},
@@ -6248,7 +6447,7 @@ const SH_INK = {r:'#c0302a', o:'#b8650a', g:'#23804a', b:'#2467b8', p:'#7a45b8',
 const SH_RNG_RE = /^[A-Z]{1,2}\d{1,4}(?::[A-Z]{1,2}\d{1,4})?$/, SH_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.]{0,30}$/;
 const SH_CF_OPS = ['>', '<', '>=', '<=', '=', '<>', 'between', 'text', 'empty', 'filled', 'dup'];
 const SH_RW_FULL = /^[A-Za-z]{1,2}\d{1,4}$/;                                  // a name may not look like a cell (Q1)
-const SH_FZ_R = 30, SH_FZ_C = 5;                            // most rows / columns that can be frozen
+const SH_FZ_R = 30, SH_FZ_C = 5, SH_MG_MAX = 200;                            // most rows / columns that can be frozen
 const SH_MAX_R = 2000, SH_MAX_C = 50, SH_KEY_RE = /^([A-Z]{1,2})(\d{1,4})$/;
 const SH_FULL = 'This sheet is at its size limit. For tables this big, use Excel, and import the CSV here if you only need a part of it.';
 const shColName = n => { let s = ''; for(n++; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };      // 0 -> A, 26 -> AA
@@ -6256,10 +6455,10 @@ const shColNum = s => { let n = 0; for(const ch of s) n = n * 26 + ch.charCodeAt
 const shKey = (r, c) => shColName(c) + (r + 1);                                                                                                     // zero-based row and column -> "B3"
 const shPos = k => { const m = SH_KEY_RE.exec(k); return m ? {r: +m[2] - 1, c: shColNum(m[1])} : null; };
 const SH_FMT_OK = /^(n|i|p|p0|c|c0|d[2-7w]?)$/;                 // number and date formats a cell can have (General has none)
-const shNew = () => ({r:30, c:10, cells:{}, f:{}, w:{}, wr:{}, st:{}, cm:{}, cf:[], dv:[], nm:{}, ln:{}});
+const shNew = () => ({r:30, c:26, cells:{}, f:{}, w:{}, wr:{}, st:{}, cm:{}, cf:[], dv:[], nm:{}, ln:{}});
 function cleanSheet(s){                                  // a sheet as read from a file: only valid cells, formats and widths, inside the size limit
   if(!s || typeof s !== 'object' || Array.isArray(s)) return null;
-  const out = {r:30, c:10, cells:{}, f:{}, w:{}, wr:{}, st:{}, cm:{}, cf:[], dv:[], nm:{}, ln:{}}; let mr = 0, mc = 0;
+  const out = {r:30, c:26, cells:{}, f:{}, w:{}, wr:{}, st:{}, cm:{}, cf:[], dv:[], nm:{}, ln:{}}; let mr = 0, mc = 0;
   if(s.cells && typeof s.cells === 'object') for(const [k, v] of Object.entries(s.cells)){
     const p = shPos(k); if(!p || p.r >= SH_MAX_R || p.c >= SH_MAX_C) continue;
     const t = typeof v === 'number' && isFinite(v) ? String(v) : typeof v === 'string' ? v.slice(0, 2000) : ''; if(t === '') continue;
@@ -6267,6 +6466,7 @@ function cleanSheet(s){                                  // a sheet as read from
   }
   if(s.f && typeof s.f === 'object') for(const [k, v] of Object.entries(s.f)){ const p = shPos(k); if(p && p.r < SH_MAX_R && p.c < SH_MAX_C && SH_FMT_OK.test(v)) out.f[k] = v; }
   if(s.w && typeof s.w === 'object') for(const [k, v] of Object.entries(s.w)){ const c = +k; if(Number.isInteger(c) && c >= 0 && c < SH_MAX_C && typeof v === 'number' && v >= 40 && v <= 600) out.w[c] = Math.round(v); }
+  if(s.rh && typeof s.rh === 'object'){ const rh = {}; for(const [k, v] of Object.entries(s.rh)){ const r = +k; if(Number.isInteger(r) && r >= 0 && r < SH_MAX_R && typeof v === 'number' && v >= 20 && v <= 600) rh[r] = Math.round(v); } if(Object.keys(rh).length) out.rh = rh; }
   if(s.wr && typeof s.wr === 'object') for(const k of Object.keys(s.wr)){ const p = shPos(k); if(p && p.r < SH_MAX_R && p.c < SH_MAX_C && s.wr[k]) out.wr[k] = 1; }
   const inBox = k => { const p = shPos(k); return p && p.r < SH_MAX_R && p.c < SH_MAX_C; }, cleanSt = v => {
     const o = {}; if(v && typeof v === 'object'){ if(v.b) o.b = 1; if(v.i) o.i = 1; if(v.u) o.u = 1; if(SH_INK[v.c]) o.c = v.c; if(SH_FILL[v.bg]) o.bg = v.bg; if(v.al === 'l' || v.al === 'c' || v.al === 'r') o.al = v.al; } return o; };
@@ -6279,12 +6479,49 @@ function cleanSheet(s){                                  // a sheet as read from
   if(s.ln && typeof s.ln === 'object') for(const [k, v] of Object.entries(s.ln).slice(0, 30)){ if(SH_NAME_RE.test(k) && typeof v === 'string' && v.length <= 80) out.ln[k] = v; }
   const intList = (a, lim) => Array.isArray(a) ? [...new Set(a.filter(v => Number.isInteger(v) && v >= 0 && v < lim))].sort((x, y) => x - y) : [];
   const hr = intList(s.hr, SH_MAX_R), hc = intList(s.hc, SH_MAX_C); if(hr.length) out.hr = hr; if(hc.length) out.hc = hc;
+  if(Array.isArray(s.mg)){                                  // merged cells: "A1:C2", at least two cells, never overlapping
+    const used = [], mgl = [];
+    for(const t of s.mg.slice(0, SH_MG_MAX)){ if(typeof t !== 'string') continue; const q = t.split(':').map(shPos); if(q.length !== 2 || !q[0] || !q[1]) continue;
+      const g = {r1: Math.min(q[0].r, q[1].r), r2: Math.max(q[0].r, q[1].r), c1: Math.min(q[0].c, q[1].c), c2: Math.max(q[0].c, q[1].c)};
+      if(g.r2 >= SH_MAX_R || g.c2 >= SH_MAX_C || (g.r1 === g.r2 && g.c1 === g.c2)) continue;
+      if(used.some(u => u.r1 <= g.r2 && u.r2 >= g.r1 && u.c1 <= g.c2 && u.c2 >= g.c1)) continue;
+      used.push(g); mr = Math.max(mr, g.r2 + 1); mc = Math.max(mc, g.c2 + 1); mgl.push(shKey(g.r1, g.c1) + ':' + shKey(g.r2, g.c2)); }
+    if(mgl.length) out.mg = mgl;
+  }
   if(s.fl && typeof s.fl === 'object' && Number.isInteger(s.fl.c) && s.fl.c >= 0 && s.fl.c < SH_MAX_C && Array.isArray(s.fl.hide) && s.fl.hide.length) out.fl = {c: s.fl.c, h: Number.isInteger(s.fl.h) && s.fl.h > 0 && s.fl.h < 30 ? s.fl.h : 0, hide: s.fl.hide.filter(v => typeof v === 'string').slice(0, 500).map(v => v.slice(0, 200))};
-  out.r = Math.min(SH_MAX_R, Math.max(1, Number.isInteger(s.r) ? s.r : 30, mr)); out.c = Math.min(SH_MAX_C, Math.max(1, Number.isInteger(s.c) ? s.c : 10, mc));
+  out.r = Math.min(SH_MAX_R, Math.max(1, Number.isInteger(s.r) ? s.r : 30, mr)); out.c = Math.min(SH_MAX_C, Math.max(1, Number.isInteger(s.c) ? s.c : 26, mc));
   if(s.fz && typeof s.fz === 'object'){ const fr = Math.max(0, Math.min(SH_FZ_R, Math.min(out.r - 1, Number.isInteger(s.fz.r) ? s.fz.r : 0))), fc = Math.max(0, Math.min(SH_FZ_C, Math.min(out.c - 1, Number.isInteger(s.fz.c) ? s.fz.c : 0))); if(fr || fc) out.fz = {r: fr, c: fc}; }
   return out;
 }
 const shHas = s => !!s && Object.keys(s.cells).length > 0;
+/* ---- merged cells: s.mg = ["A1:C2"]. The top left cell is the one that shows and holds the value; the others are covered (kept in the table, but not drawn) ---- */
+const SH_NOMG = {list: [], of: new Map()}; let shMgCache = {sig: '', val: SH_NOMG};
+function shMerges(s){                                       // {list: [{r1,c1,r2,c2,a}], of: Map(cell key -> its merge)}
+  if(!s || !s.mg || !s.mg.length) return SH_NOMG;
+  const sig = s.mg.join('|'); if(shMgCache.sig === sig) return shMgCache.val;
+  const list = [], of = new Map();
+  for(const t of s.mg){ const q = String(t).split(':').map(shPos); if(q.length !== 2 || !q[0] || !q[1]) continue;
+    const m = {r1: Math.min(q[0].r, q[1].r), r2: Math.max(q[0].r, q[1].r), c1: Math.min(q[0].c, q[1].c), c2: Math.max(q[0].c, q[1].c)}; m.a = shKey(m.r1, m.c1); list.push(m);
+    for(let r = m.r1; r <= m.r2; r++) for(let c = m.c1; c <= m.c2; c++) of.set(shKey(r, c), m); }
+  shMgCache = {sig, val: {list, of}}; return shMgCache.val;
+}
+const shMgAt = (s, r, c) => shMerges(s).of.get(shKey(r, c)) || null;
+const shAnchorOf = (s, r, c) => { const m = shMgAt(s, r, c); return m ? {r: m.r1, c: m.c1} : {r, c}; };
+const shCovered = (s, r, c) => { const m = shMgAt(s, r, c); return !!m && (m.r1 !== r || m.c1 !== c); };          // inside a merged cell but not its top left: nothing is typed or pasted there
+function shExpandSel(s, r1, c1, r2, c2){                   // a selection that touches a merged cell takes all of it
+  const mg = shMerges(s); if(!mg.list.length) return [r1, c1, r2, c2];
+  for(let g = 0; g < 60; g++){ let ch = false;
+    for(const m of mg.list) if(m.r1 <= r2 && m.r2 >= r1 && m.c1 <= c2 && m.c2 >= c1 && (m.r1 < r1 || m.r2 > r2 || m.c1 < c1 || m.c2 > c2)){ r1 = Math.min(r1, m.r1); r2 = Math.max(r2, m.r2); c1 = Math.min(c1, m.c1); c2 = Math.max(c2, m.c2); ch = true; }
+    if(!ch) break; }
+  return [r1, c1, r2, c2];
+}
+function shFit(s){                                         // a formula that fills several cells may need more rows or columns than are drawn: grow the sheet to hold them (never past the limit)
+  let has = false; for(const k in s.cells){ const v = s.cells[k]; if(v[0] === '=' && /(?<![A-Za-z])(TEXTSPLIT|SEQUENCE|FILTER|SORT)\s*\(/i.test(v)){ has = true; break; } }
+  if(!has) return false;
+  const ex = shExtent(s, shValues(s)); let grew = false;
+  if(ex.r > s.r){ s.r = Math.min(SH_MAX_R, ex.r); grew = true; } if(ex.c > s.c){ s.c = Math.min(SH_MAX_C, ex.c); grew = true; }
+  return grew;
+}
 function shExtent(s, vals){                              // rows and columns that hold something (with `vals`, cells filled in by TEXTSPLIT count too)
   let r = 0, c = 0;
   for(const k of Object.keys(s.cells)){ const p = shPos(k); if(p){ r = Math.max(r, p.r + 1); c = Math.max(c, p.c + 1); } }
@@ -6350,6 +6587,11 @@ function shParse(src){
   function prim(){
     ws(); const ch = s[i]; if(ch === undefined) bad();
     if(ch === '('){ i++; const a = cmp(); ws(); if(s[i] !== ')') bad(); i++; return a; }
+    if(ch === '{'){                                                  // an array constant: {"a","b";"c","d"} (commas across, semicolons down)
+      i++; const rows = [[]];
+      for(;;){ rows[rows.length - 1].push(cmp()); ws(); if(s[i] === ','){ i++; continue; } if(s[i] === ';'){ i++; rows.push([]); continue; } if(s[i] === '}'){ i++; break; } bad(); }
+      if(rows.some(r => r.length !== rows[0].length)) bad(); return {t:'arr', rows};
+    }
     if(ch === '"'){ let v = ''; i++; for(;;){ if(i >= s.length) bad(); if(s[i] === '"'){ if(s[i + 1] === '"'){ v += '"'; i += 2; } else { i++; break; } } else v += s[i++]; } return {t:'str', v}; }
     if(s.startsWith('#REF!', i)){ i += 5; return {t:'err', v:'#REF!'}; }
     let m = /^(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/.exec(s.slice(i));
@@ -6364,7 +6606,7 @@ function shParse(src){
     if(m){
       i += m[0].length; const args = []; ws();
       if(s[i] === ')') i++;
-      else for(;;){ args.push(cmp()); ws(); if(s[i] === ','){ i++; continue; } if(s[i] === ')'){ i++; break; } bad(); }
+      else for(;;){ ws(); args.push(s[i] === ',' || s[i] === ')' ? {t:'empty'} : cmp()); ws(); if(s[i] === ','){ i++; continue; } if(s[i] === ')'){ i++; break; } bad(); }
       return {t:'fn', n:m[1].toUpperCase(), args};
     }
     return bad();
@@ -6431,6 +6673,8 @@ function shRun(src, cellAt, rangeAt, gridAt){          // cellAt(r, c, sheetName
       case 'err': throw E(n.v);
       case 'ref': return cellAt(n.a.r, n.a.c, n.a.sh);
       case 'rng': throw E('#VALUE!');
+      case 'empty': return null;
+      case 'arr': return new ShArr(n.rows.map(r => r.map(e => elem(() => ev(e)))));
       case 'neg': return lift(opd(n.a), 0, x => -num(x));
       case 'pct': return lift(opd(n.a), 0, x => num(x) / 100);
       case 'cat': return lift(opd(n.a), opd(n.b), (x, y) => txt(x) + txt(y));
@@ -6533,10 +6777,26 @@ function shRun(src, cellAt, rangeAt, gridAt){          // cellAt(r, c, sheetName
         else { at = t.length; for(let k = 0; k < -n; k++){ at = at - 1 < 0 ? -1 : t.lastIndexOf(d, at - 1); if(at < 0) throw E('#N/A'); } }
         return f === 'TEXTBEFORE' ? t.slice(0, at) : t.slice(at + d.length);
       }
-      case 'TEXTSPLIT': {
-        argc(A, 2, 3); const t = txt(ev(A[0])), cd = txt(ev(A[1])), rd = A.length > 2 ? txt(ev(A[2])) : ''; if(cd === '') throw E('#VALUE!');
-        const rows = (rd ? t.split(rd) : [t]).map(r => r.split(cd)), w = rows.reduce((m, r) => Math.max(m, r.length), 0);
-        rows.forEach(r => { while(r.length < w) r.push(''); });
+      case 'TEXTSPLIT': {                                               // TEXTSPLIT(text, col_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]); a delimiter may be a list: {",",";"} or a range
+        argc(A, 2, 6); const t = txt(ev(A[0]));
+        const dl = a => { if(!a || a.t === 'empty') return []; const v = opd(a), vs = v instanceof ShArr ? flat(v.rows) : [v]; return vs.map(x => txt(x)); };
+        const cds = dl(A[1]), rds = A.length > 2 ? dl(A[2]) : [];
+        if((!cds.length && !rds.length) || cds.concat(rds).some(x => x === '')) throw E('#VALUE!');
+        const given = k => A.length > k && A[k].t !== 'empty';
+        const ign = given(3) ? bool(ev(A[3])) : false, mm = given(4) ? num(ev(A[4])) : 0; if(mm !== 0 && mm !== 1) throw E('#VALUE!');
+        const pad = given(5) ? ev(A[5]) : E('#N/A');
+        const splitBy = (str, ds) => {
+          if(!ds.length) return [str];
+          const hay = mm ? str.toLowerCase() : str, nd = ds.map(d => mm ? d.toLowerCase() : d).sort((x, y) => y.length - x.length), out = [];
+          let start = 0, k = 0;
+          while(k < str.length){ const d = nd.find(x => hay.startsWith(x, k)); if(d){ out.push(str.slice(start, k)); k += d.length; start = k; } else k++; }
+          out.push(str.slice(start)); return out;
+        };
+        let rows = splitBy(t, rds); if(ign) rows = rows.filter(r => r !== '');
+        rows = rows.map(r => { const c = splitBy(r, cds); return ign ? c.filter(x => x !== '') : c; });
+        if(ign) rows = rows.filter(r => r.length); if(!rows.length) rows = [['']];
+        const w = rows.reduce((m, r) => Math.max(m, r.length), 0);
+        rows.forEach(r => { while(r.length < w) r.push(pad); });
         return rows.length === 1 && w === 1 ? rows[0][0] : new ShArr(rows);
       }
       case 'XLOOKUP': {
@@ -6626,7 +6886,7 @@ function shValues(s, chain){                                    // every filled 
           (r1, c1, r2, c2, sh) => { const g = []; for(let r = r1; r <= r2; r++){ const row = []; for(let c = c1; c <= c2; c++){ if(sh){ const x = extOf(sh); if(x instanceof ShErr) throw x; if(r < 0 || c < 0 || r >= SH_MAX_R || c >= SH_MAX_C) row.push(new ShErr('#REF!')); else { const v = x.memo.get(shKey(r, c)); row.push(v === undefined ? null : v); } } else row.push(cell(r, c)); } g.push(row); } return g; });
         if(v instanceof ShArr){
           const p = shPos(k), rows = v.rows; let blocked = false;
-          for(let r = 0; r < rows.length && !blocked; r++) for(let c = 0; c < rows[r].length; c++){ if(!r && !c) continue; const rr = p.r + r, cc = p.c + c; if(rr >= s.r || cc >= s.c || s.cells[shKey(rr, cc)] !== undefined || spill.has(shKey(rr, cc))){ blocked = true; break; } }
+          for(let r = 0; r < rows.length && !blocked; r++) for(let c = 0; c < rows[r].length; c++){ if(!r && !c) continue; const rr = p.r + r, cc = p.c + c; if(rr >= SH_MAX_R || cc >= SH_MAX_C || s.cells[shKey(rr, cc)] !== undefined || spill.has(shKey(rr, cc))){ blocked = true; break; } }
           if(blocked) v = new ShErr('#SPILL!');
           else { for(let r = 0; r < rows.length; r++) for(let c = 0; c < rows[r].length; c++){ if(!r && !c) continue; const kk = shKey(p.r + r, p.c + c); memo.set(kk, rows[r][c]); spill.add(kk); } v = rows[0][0]; }
         }
@@ -6699,10 +6959,12 @@ function shRelocate(s, axis, at, n, del){
   s.cells = cells;
   for(const m of ['f', 'wr', 'st', 'cm']) s[m] = shShiftMap(s[m], axis, at, n, del);
   if(axis === 'c'){ const w = {}; for(const [k, v] of Object.entries(s.w)){ const c = +k; if(del){ if(c >= at && c < at + n) continue; w[c >= at + n ? c - n : c] = v; } else w[c >= at ? c + n : c] = v; } s.w = w; }
+  if(axis === 'r' && s.rh){ const h = {}; for(const [k, v] of Object.entries(s.rh)){ const r = +k; if(del){ if(r >= at && r < at + n) continue; h[r >= at + n ? r - n : r] = v; } else h[r >= at ? r + n : r] = v; } if(Object.keys(h).length) s.rh = h; else delete s.rh; }
   const hk = axis === 'r' ? 'hr' : 'hc'; if(s[hk]){ const l = s[hk].map(x => del ? (x >= at && x < at + n ? -1 : x >= at + n ? x - n : x) : (x >= at ? x + n : x)).filter(x => x >= 0); if(l.length) s[hk] = l; else delete s[hk]; }
   s.cf = (s.cf || []).map(x => { const r = shAdjRng(x.rng, axis, at, n, del); return r ? {...x, rng: r} : null; }).filter(Boolean);
   s.dv = (s.dv || []).map(x => { const r = shAdjRng(x.rng, axis, at, n, del), q = x.src ? shAdjRng(x.src, axis, at, n, del) : null; if(!r || (x.src && !q)) return null; return x.src ? {...x, rng: r, src: q} : {...x, rng: r}; }).filter(Boolean);
   const nm = {}; for(const [k, v] of Object.entries(s.nm || {})){ const r = shAdjRng(v, axis, at, n, del); if(r) nm[k] = r; } s.nm = nm;
+  if(s.mg){ const l = s.mg.map(t => shAdjRng(t, axis, at, n, del)).filter(t => { if(!t) return false; const q = t.split(':').map(shPos); return q.length === 2 && q[0] && q[1] && (q[0].r !== q[1].r || q[0].c !== q[1].c); }); if(l.length) s.mg = l; else delete s.mg; }
   if(s.fl && axis === 'c'){ if(del && s.fl.c >= at && s.fl.c < at + n) delete s.fl; else s.fl.c = del ? (s.fl.c >= at + n ? s.fl.c - n : s.fl.c) : (s.fl.c >= at ? s.fl.c + n : s.fl.c); }
 }
 function shInsert(s, axis, at, n){                       // false when the sheet would get past its size limit
@@ -6761,10 +7023,10 @@ function shToText(rows, delim){ return rows.map(r => r.map(v => shQuote(v, delim
 /* ================= spreadsheet notes: the grid on screen ================= */
 const SH_W = 110;                                          // default column width in px
 const shSelMap = new Map(), shHist = new Map(), shWarned = new Set();
-let shHdrAnchor = 0, shEdit = null, shDragging = false, shResize = null, shClip = null, shShown = new Map();
+let shHdrAnchor = 0, shEdit = null, shDragging = false, shResize = null, shResizeR = null, shClip = null, shShown = new Map();
 const shItem = () => { const id = $('#detail').dataset.item; const i = id ? byId(id) : null; return i && i.sheet ? i : null; };          // the sheet the screen was drawn for
 const shSelOf = i => { let s = shSelMap.get(i.id); if(!s){ s = {ar:0, ac:0, er:0, ec:0, r1:0, c1:0, r2:0, c2:0}; shSelMap.set(i.id, s); } return s; };
-const shTd = (r, c) => document.querySelector(`#detail .shgrid td[data-k="${shKey(r, c)}"]`);
+const shTd = (r, c) => { const j = shItem(), a = j && j.sheet.mg ? shAnchorOf(j.sheet, r, c) : null; return document.querySelector(`#detail .shgrid td[data-k="${a ? shKey(a.r, a.c) : shKey(r, c)}"]`); };          // a cell inside a merged cell gives the merged cell
 const shFocus = () => { const g = document.querySelector('#detail .shgrid'); if(g) g.focus({preventScroll:true}); };
 const shCls = (v, wrapped) => ((typeof v === 'number' ? 'sn' : typeof v === 'boolean' ? 'sbool' : v instanceof ShErr ? 'se' : '') + (wrapped ? ' sw' : '')).trim();
 const shSummary = s => { const x = shExtent(s); return x.r ? `Spreadsheet · ${x.r} row${x.r === 1 ? '' : 's'} × ${x.c} column${x.c === 1 ? '' : 's'}` : 'Spreadsheet · empty'; };
@@ -6772,10 +7034,14 @@ const shSearchText = s => Object.values(s.cells).filter(v => v[0] !== '=').join(
 const shSizeLine = s => `${s.r.toLocaleString()} rows × ${s.c} columns · limit ${SH_MAX_R.toLocaleString()} × ${SH_MAX_C}`;
 function shRowHtml(s, r, vals, ctx){
   ctx = ctx || shCtx(s, vals);
-  let h = `<tr${ctx.hidR.has(r) ? ' class="shh"' : ''}><th class="shrh" data-rh="${r}">${r + 1}</th>`;
+  let h = `<tr${ctx.hidR.has(r) ? ' class="shh"' : ''}${s.rh && s.rh[r] ? ` style="height:${s.rh[r]}px"` : ''}><th class="shrh" data-rh="${r}">${r + 1}<i class="shrzr" data-rzr="${r}" title="Drag to change the height. Double-click to fit the text."></i></th>`;
   for(let c = 0; c < s.c; c++){
-    const k = shKey(r, c), raw = s.cells[k], v = vals.get(k), cm = s.cm[k], hid = ctx.hidC.has(c) ? ' shh' : '';
-    const css = shCssText(shMergedStyle(s, k, r, c, v, ctx.rules)), attrs = (css ? ` style="${css}"` : '') + (cm ? ` title="${esc(cm)}"` : '');
+    const k = shKey(r, c), raw = s.cells[k], v = vals.get(k), cm = s.cm[k]; let hid = ctx.hidC.has(c) ? ' shh' : '', mat = '';
+    const m = ctx.mg.of.get(k);
+    if(m){ if(m.r1 !== r || m.c1 !== c){ h += `<td data-k="${k}" class="shm"></td>`; continue; }          // covered by a merged cell: there, but not drawn
+      let cs = 0, rs = 0; for(let x = m.c1; x <= m.c2; x++) if(!ctx.hidC.has(x)) cs++; for(let y = m.r1; y <= m.r2; y++) if(!ctx.hidR.has(y)) rs++;
+      hid += ' shmg'; mat = (cs > 1 ? ` colspan="${cs}"` : '') + (rs > 1 ? ` rowspan="${rs}"` : ''); }
+    const css = shCssText(shMergedStyle(s, k, r, c, v, ctx.rules)), attrs = (css ? ` style="${css}"` : '') + (cm ? ` title="${esc(cm)}"` : '') + mat;
     if(raw === undefined && (v === undefined || v === null)){ const cl = ((s.wr[k] ? 'sw' : '') + (cm ? ' scm' : '') + hid).trim(); h += `<td data-k="${k}"${cl ? ` class="${cl}"` : ''}${attrs}></td>`; continue; }
     const t = shShow(v, shFmtOf(s, k, raw)), cl = (shCls(v, s.wr[k]) + (cm ? ' scm' : '') + hid).trim(); shShown.set(k, t);
     h += `<td data-k="${k}"${cl ? ` class="${cl}"` : ''}${attrs}>${esc(t)}</td>`;
@@ -6790,9 +7056,9 @@ function shTabSet(t, save){
 }
 const SH_FMT_OPTS = '<option value="g">General</option><optgroup label="Numbers"><option value="n">Number 1,234.50</option><option value="i">Whole number 1,235</option><option value="p">Percent 12.5%</option><option value="p0">Percent, no decimals 13%</option><option value="c">Currency $1,234.50</option><option value="c0">Currency, no cents $1,235</option></optgroup><optgroup label="Dates"><option value="d">2026-11-17</option><option value="d3">11/17/2026</option><option value="d2">Nov 17, 2026</option><option value="d4">17 Nov 2026</option><option value="d6">Nov 17</option><option value="d7">November 2026</option><option value="d5">Tuesday, November 17, 2026</option><option value="dw">Tuesday</option></optgroup>';
 function shHtml(i){
-  const s = i.sheet, vals = shValues(s), w = c => s.w[c] || SH_W; shShown = new Map();
+  const s = i.sheet; shFit(s); const vals = shValues(s), w = c => s.w[c] || SH_W; shShown = new Map();
   const ctx = shCtx(s, vals); let total = 46, cols = '', ths = '';
-  for(let c = 0; c < s.c; c++){ const hid = ctx.hidC.has(c); if(!hid) total += w(c); cols += `<col style="width:${w(c)}px${hid ? ';display:none' : ''}">`; ths += `<th data-ch="${c}"${hid ? ' class="shh"' : ''}>${shColName(c)}<i class="shrz" data-rz="${c}" title="Drag to change the width"></i></th>`; }
+  for(let c = 0; c < s.c; c++){ const hid = ctx.hidC.has(c); if(!hid) total += w(c); cols += `<col style="width:${w(c)}px${hid ? ';display:none' : ''}">`; ths += `<th data-ch="${c}"${hid ? ' class="shh"' : ''}>${shColName(c)}<i class="shrz" data-rz="${c}" title="Drag to change the width. Double-click to fit the text."></i></th>`; }
   let rows = ''; for(let r = 0; r < s.r; r++) rows += shRowHtml(s, r, vals, ctx);
   return `<div class="sheet" id="sheet" data-id="${esc(i.id)}">
     <div class="shrib">
@@ -6803,6 +7069,7 @@ function shHtml(i){
       <div class="shpane" data-shpane="home">
         <div class="shgrp"><div class="shgb"><button data-sh="bold" title="Bold (Ctrl+B)"><b>B</b></button><button data-sh="italic" title="Italic (Ctrl+I)"><i>I</i></button><button data-sh="underline" title="Underline (Ctrl+U)"><u>U</u></button></div><div class="shgl">Font</div></div>
         <div class="shgrp"><div class="shgb"><button data-sh="alignl" title="Align left">⇤</button><button data-sh="alignc" title="Centre">↔</button><button data-sh="alignr" title="Align right">⇥</button><button data-sh="wrap" title="Show long text on several lines in the selected cells (again to turn it off)">↵ Wrap text</button></div><div class="shgl">Alignment</div></div>
+        <div class="shgrp"><div class="shgb"><button data-sh="merge" title="Join the selected cells into one cell. Only the top left value is kept.">⊞ Merge cells</button><button data-sh="unmerge" title="Split a merged cell back into separate cells">Unmerge</button></div><div class="shgl">Merge</div></div>
         <div class="shgrp"><div class="shgb"><select data-shink title="Text colour"><option value="">A  Text colour</option><option value="none">Automatic</option><option value="r">Red</option><option value="o">Orange</option><option value="g">Green</option><option value="b">Blue</option><option value="p">Purple</option><option value="k">Gray</option></select>
           <select data-shfill title="Fill colour"><option value="">▨  Fill colour</option><option value="none">No fill</option><option value="y">Yellow</option><option value="g">Green</option><option value="b">Blue</option><option value="r">Red</option><option value="o">Orange</option><option value="p">Purple</option><option value="k">Gray</option></select></div><div class="shgl">Colour</div></div>
         <div class="shgrp"><div class="shgb"><select data-shfmt title="How the selected cells show numbers and dates">${SH_FMT_OPTS}</select></div><div class="shgl">Number and date format</div></div>
@@ -6823,12 +7090,32 @@ function shHtml(i){
       </div>
     </div>
     <div class="shfx"><span class="shname">A1</span><input class="shfxin" spellcheck="false" autocomplete="off" placeholder="Type a value or a formula, like =SUM(B2:B6)"></div>
+    <div class="shguide" id="shguide"><span class="shgtxt"></span><button class="shgall" data-sh="funcs" title="List every function with what it takes and what it does">ƒ All functions</button></div>
     <div class="shscroll"><div class="shbox"><table class="shgrid" tabindex="0" style="width:${total}px"><colgroup><col style="width:46px">${cols}</colgroup><thead><tr><th class="shcorner" title="Select everything"></th>${ths}</tr></thead><tbody>${rows}</tbody></table><div class="shsel"></div><div class="shpt"></div><div class="shfp"></div><div class="shfh" hidden title="Drag to fill the cells. Double-click to fill down."></div><button class="shdvbtn" hidden tabindex="-1" title="Pick from the list (Alt+Down)">▾</button><div class="shdvmenu" hidden></div></div></div>
     <div class="shstat" hidden></div>
     <div class="shhint">Click a cell and type. Formulas start with =: type =SUM then Tab, drag over the cells, press Enter. Select several cells to see their total and average here. Paste cells from Excel straight in. Arrow keys move, Tab and Enter finish a cell, Delete clears, Ctrl+F finds.</div>
   </div>`;
 }
-function shAfterRender(i){ const s = shSelOf(i); shTabSet(shTabNow()); shFreeze(i); shSetSel(i, s.ar, s.ac, s.er, s.ec); shFindReapply(i); }
+let shOverQ = 0;
+function shOverSoon(){ if(shOverQ) return; shOverQ = requestAnimationFrame(() => { shOverQ = 0; shOverflow(); }); }
+function shOverflow(){                                      // like Excel: text that is too long for its cell runs on into the empty cells to its right and stops at the next filled one. Only left-aligned, unwrapped text; a number never spills.
+  const g = document.querySelector('#detail .shgrid'); if(!g) return;
+  g.querySelectorAll('td.so, td.sov').forEach(td => { if(td.classList.contains('so') && td.firstElementChild) td.textContent = td.textContent; td.classList.remove('so', 'sov'); td.style.clipPath = ''; });
+  const jobs = [];
+  for(const tr of g.tBodies[0].rows){
+    const cells = tr.cells;
+    for(let k = 1; k < cells.length - 1; k++){
+      const td = cells[k]; if(!td.firstChild || td.classList.contains('sn') || td.classList.contains('sbool') || td.classList.contains('se') || td.classList.contains('sw') || td.classList.contains('ed') || td.classList.contains('fzr') || td.classList.contains('fzc') || td.classList.contains('shmg')) continue;
+      const al = td.style.textAlign; if(al === 'right' || al === 'center') continue;
+      if(td.scrollWidth <= td.clientWidth + 1) continue;
+      let extra = 0; const gone = [];
+      for(let m = k + 1; m < cells.length; m++){ const nx = cells[m]; if(nx.classList.contains('shh')) continue; if(nx.classList.contains('shm') || nx.classList.contains('shmg')) break; if(nx.textContent !== '' || nx.querySelector('.shin')) break; extra += nx.offsetWidth; gone.push(nx); }
+      if(extra > 0) jobs.push([td, extra, gone]);
+    }
+  }
+  for(const [td, extra, gone] of jobs){ td.innerHTML = '<span class="sot">' + esc(td.textContent) + '</span>'; td.classList.add('so'); td.style.clipPath = `inset(-1px -${extra}px -1px 0)`; gone.slice(0, -1).forEach(x => x.classList.add('sov')); }
+}
+function shAfterRender(i){ const s = shSelOf(i); shTabSet(shTabNow()); shFreeze(i); shOverflow(); shSetSel(i, s.ar, s.ac, s.er, s.ec); shFindReapply(i); }
 function shShowSel(i){
   const sel = shSelOf(i), box = document.querySelector('#detail .shsel'), a = shTd(sel.r1, sel.c1), b = shTd(sel.r2, sel.c2); if(!box || !a || !b) return;
   box.style.cssText = `left:${a.offsetLeft}px;top:${a.offsetTop}px;width:${b.offsetLeft + b.offsetWidth - a.offsetLeft}px;height:${b.offsetTop + b.offsetHeight - a.offsetTop}px`;
@@ -6838,13 +7125,16 @@ function shShowSel(i){
   if(fx && document.activeElement !== fx){ fx.value = i.sheet.cells[k] || ''; fx.dataset.k = k; }
   if(fm) fm.value = i.sheet.f[k] || (i.sheet.cells[k] ? shLiteral(i.sheet.cells[k]).auto : '') || 'g';
   const wb = document.querySelector('#detail [data-sh=wrap]'); if(wb) wb.classList.toggle('on', !!i.sheet.wr[k]);
-  shToolbarState(i);
+  shToolbarState(i); shGuideIdle(i);
   const fz = document.querySelector('#detail [data-shfz]'), z = i.sheet.fz; if(fz){ fz.options[0].textContent = z ? 'Frozen: ' + [z.r ? z.r + (z.r === 1 ? ' row' : ' rows') : '', z.c ? z.c + (z.c === 1 ? ' column' : ' columns') : ''].filter(Boolean).join(', ') : 'Freeze: off'; fz.value = ''; }
 }
 function shSetSel(i, ar, ac, er, ec){
   const s = i.sheet, cl = (v, m) => Math.max(0, Math.min(v, m - 1)), sel = shSelOf(i);
   ar = cl(ar, s.r); ac = cl(ac, s.c); er = cl(er, s.r); ec = cl(ec, s.c);
-  Object.assign(sel, {ar, ac, er, ec, r1: Math.min(ar, er), r2: Math.max(ar, er), c1: Math.min(ac, ec), c2: Math.max(ac, ec)});
+  let r1 = Math.min(ar, er), r2 = Math.max(ar, er), c1 = Math.min(ac, ec), c2 = Math.max(ac, ec);
+  if(s.mg && s.mg.length){ const a = shAnchorOf(s, ar, ac); ar = a.r; ac = a.c; r1 = Math.min(ar, er); r2 = Math.max(ar, er); c1 = Math.min(ac, ec); c2 = Math.max(ac, ec);
+    [r1, c1, r2, c2] = shExpandSel(s, r1, c1, r2, c2); er = er >= ar ? r2 : r1; ec = ec >= ac ? c2 : c1; }          // the moving corner is the far one, so Shift+arrows go on from there
+  Object.assign(sel, {ar, ac, er, ec, r1, r2, c1, c2});
   shShowSel(i);
 }
 const shScrollTo = (r, c) => { const td = shTd(r, c); if(td) td.scrollIntoView({block:'nearest', inline:'nearest'}); };
@@ -6857,7 +7147,7 @@ function shPaint(i){                                       // after a change: up
   for(const k of [...shShown.keys()]) if(!seen.has(k)){ const td = document.querySelector(`#detail .shgrid td[data-k="${k}"]`); if(td){ td.textContent = ''; td.classList.remove('sn', 'sbool', 'se'); } shShown.delete(k); }
   const sz = document.querySelector('#detail .shsize'); if(sz) sz.textContent = shSizeLine(s);
   if(s.fz && s.fz.r) shFreeze(i);
-  shShowSel(i); shFindReapply(i);
+  shOverflow(); shShowSel(i); shFindReapply(i);
 }
 function shRedraw(i){                                      // the shape of the sheet changed: draw the grid again, keeping the scroll position
   const old = document.getElementById('sheet'); if(!old) return;
@@ -6874,6 +7164,7 @@ function shDo(i, fn, o){                                   // every change goes 
   if(MOBILE || !i || !i.sheet) return false;
   const s = i.sheet, before = JSON.stringify(s), rb = s.r, cb = s.c;
   if(fn(s) === false) return false;
+  shFit(s);
   if(JSON.stringify(s) === before) return true;
   let h = shHist.get(i.id); if(!h){ h = {u:[], r:[]}; shHist.set(i.id, h); }
   h.u.push(before); h.r = []; shTrim(h);
@@ -6905,11 +7196,13 @@ function shGrow(i, axis){                                  // one more row or co
 }
 function shMove(i, dr, dc){
   const s = i.sheet, sel = shSelOf(i); let r = sel.ar + dr, c = sel.ac + dc;
+  const mm = shMgAt(s, sel.ar, sel.ac); if(mm){ if(dr > 0) r = mm.r2 + dr; if(dc > 0) c = mm.c2 + dc; }          // leave a merged cell from its far edge
   if(r >= s.r && dr > 0 && !shGrow(i, 'r')) r = s.r - 1;
   if(c >= s.c && dc > 0 && !shGrow(i, 'c')) c = s.c - 1;
   r = Math.max(0, Math.min(r, s.r - 1)); c = Math.max(0, Math.min(c, s.c - 1));
   const hid = (rr, cc) => { const td = shTd(rr, cc); return !!td && td.offsetParent === null; };          // skip over hidden rows and columns
   for(let g = 0; g < 3000 && (dr || dc) && hid(r, c); g++){ const nr = r + Math.sign(dr), nc = c + Math.sign(dc); if(nr < 0 || nc < 0 || nr >= s.r || nc >= s.c){ r = sel.ar; c = sel.ac; break; } r = nr; c = nc; }
+  const an = shAnchorOf(s, r, c); r = an.r; c = an.c;
   shSetSel(i, r, c, r, c); shScrollTo(r, c);
 }
 function shExtend(i, dr, dc){ const sel = shSelOf(i); shSetSel(i, sel.ar, sel.ac, sel.er + dr, sel.ec + dc); shScrollTo(Math.max(0, Math.min(sel.er, i.sheet.r - 1)), Math.max(0, Math.min(sel.ec, i.sheet.c - 1))); }
@@ -6922,12 +7215,25 @@ function shStartEdit(i, r, c, init){
   const inp = td.firstChild; inp.value = init !== undefined ? init : raw;
   shEdit = {id:i.id, r, c, td, inp, entry: init !== undefined};
   inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+  if(init !== undefined) shAutoFill(shEdit);
+  shGuide(inp);
+}
+function shAutoFill(ed){                                   // like Excel: typing the start of a word that is already in this column offers the rest, selected. Enter or Tab takes it, Delete or another letter drops it.
+  const inp = ed.inp, v = inp.value; if(!v || v[0] === '=' || v[0] === "'" || inp.selectionStart !== v.length || inp.selectionEnd !== v.length) return;
+  if(typeof shLiteral(v).v === 'number') return;                                    // a number or a date is not completed
+  const i = byId(ed.id); if(!i || !i.sheet) return; const s = i.sheet, low = v.toLowerCase(), seen = new Map();
+  const scan = dir => { for(let r = ed.r + dir; r >= 0 && r < s.r; r += dir){ const raw = s.cells[shKey(r, ed.c)]; if(raw === undefined || raw === '') break;          // the block of filled cells above and below, up to the first gap
+    if(raw[0] === '=' || typeof shLiteral(raw).v !== 'string') continue; const l = raw.toLowerCase(); if(raw.length > v.length && l.startsWith(low) && !seen.has(l)) seen.set(l, raw); } };
+  scan(-1); scan(1);
+  if(seen.size !== 1) return;                                                       // two different words start the same way: wait until it is clear which
+  const full = [...seen.values()][0]; inp.value = full; inp.setSelectionRange(v.length, full.length); shMirror(inp);
 }
 function shEndEdit(commit){
   const e = shEdit; if(!e) return; shEdit = null; shAcHide(); shPointHide();
   const i = byId(e.id), val = e.inp.value, k = shKey(e.r, e.c);
   e.td.classList.remove('ed'); e.td.textContent = shShown.get(k) || '';
   if(commit && i && i.sheet && $('#detail').dataset.item === e.id) shCommitCell(i, e.r, e.c, val);
+  if(i) shGuideIdle(i);
 }
 
 /* ---- writing formulas: Tab completes a function name, clicking or dragging over cells types their reference, Enter closes the bracket ---- */
@@ -6936,10 +7242,43 @@ const SH_FNS = [['IF', 'test, if_true, if_false', 'one answer or the other'], ['
   ['COUNT', 'range', 'how many cells hold a number'], ['COUNTA', 'range', 'how many cells are not empty'], ['PRODUCT', 'numbers', 'multiplies them'], ['ABS', 'number', 'without its minus sign'], ['ROUND', 'number, digits', 'rounds'], ['ROUNDUP', 'number, digits', 'rounds away from zero'], ['ROUNDDOWN', 'number, digits', 'rounds toward zero'],
   ['SQRT', 'number', 'square root'], ['POWER', 'number, power', 'raises to a power'], ['MOD', 'number, divisor', 'the remainder'], ['LARGE', 'range, k', 'the k-th biggest'], ['SMALL', 'range, k', 'the k-th smallest'], ['RANK', 'value, range', 'its place in the range, 1 = biggest'],
   ['CONCAT', 'text, text, …', 'joins text together'], ['LEFT', 'text, count', 'the first letters'], ['RIGHT', 'text, count', 'the last letters'], ['UPPER', 'text', 'CAPITALS'], ['LEN', 'text', 'how many characters'], ['TRIM', 'text', 'removes extra spaces'],
-  ['TEXTBEFORE', 'text, delimiter', 'what comes before it'], ['TEXTAFTER', 'text, delimiter', 'what comes after it'], ['TEXTSPLIT', 'text, delimiter', 'splits into cells to the right'],
+  ['TEXTBEFORE', 'text, delimiter', 'what comes before it'], ['TEXTAFTER', 'text, delimiter', 'what comes after it'], ['TEXTSPLIT', 'text, column_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]', 'splits into cells to the right and below'],
   ['XLOOKUP', 'find, look_in, return_from, if_not_found', 'look up and give back the match'], ['INDEX', 'range, row, column', 'the value at that place in the range'], ['AVERAGEIF', 'range, criteria, average_range', 'average of the matching cells'], ['AVERAGEIFS', 'average_range, range, criteria, …', 'average with several conditions'], ['SUMIFS', 'sum_range, range, criteria, …', 'add up with several conditions'], ['COUNTIFS', 'range, criteria, …', 'count with several conditions'], ['SUMPRODUCT', 'range, range, …', 'multiply, then add up'], ['VLOOKUP', 'find, table, column, 0', 'look up in the first column of a table'], ['FILTER', 'range, test, if_empty', 'only the rows that pass a test (fills cells)'], ['SORT', 'range, column, order', 'the rows sorted (fills cells)'], ['DATE', 'year, month, day', 'a date'], ['YEAR', 'date', 'the year'], ['MONTH', 'date', 'the month, 1 to 12'], ['DAY', 'date', 'the day of the month'], ['WEEKDAY', 'date, type', 'day of the week, 1 to 7'], ['EOMONTH', 'date, months', 'the last day of a month'],
   ['MATCH', 'find, range, 0', 'the position of a value in a list (0 = exact)'], ['SEQUENCE', 'rows, columns, start, step', 'a run of numbers, filling cells'], ['TODAY', '', 'today’s date'], ['DAYS', 'end, start', 'days between two dates'], ['EDATE', 'date, months', 'a date some months later']];
 let shAcIdx = 0, shAcFor = null, shPoint = null;
+/* ---- the formula guide: a line under the formula bar that stays in view. While you write a formula it shows the function you are inside and which part comes next; otherwise a reminder, or the function of the selected cell ---- */
+const SH_GUIDE_INTRO = 'Formulas start with =. Type a function name and press Tab to fill it in; click or drag over cells to add them.';
+function shGuideCtx(v, pos){                               // the innermost known function the cursor is inside, and which argument it is in (0 is the first)
+  const st = []; let q = false;
+  for(let k = 0; k < pos; k++){ const ch = v[k];
+    if(ch === '"'){ q = !q; continue; } if(q) continue;
+    if(ch === '('){ const m = /([A-Za-z][A-Za-z0-9_.]*)\s*$/.exec(v.slice(0, k)); st.push({name: m ? m[1].toUpperCase() : '', arg: 0}); }
+    else if(ch === ',' && st.length) st[st.length - 1].arg++;
+    else if(ch === ')' && st.length) st.pop(); }
+  for(let k = st.length - 1; k >= 0; k--) if(SH_FNS.some(f => f[0] === st[k].name)) return st[k];
+  return null;
+}
+function shGuideHtml(name, arg){
+  const f = SH_FNS.find(x => x[0] === name); if(!f) return '';
+  const args = f[1] ? f[1].split(',').map(x => x.trim()) : [], cur = args.length ? Math.min(arg, args.length - 1) : -1;
+  return `<b>${name}</b>(${args.map((a, k) => k === cur ? `<span class="cur">${esc(a)}</span>` : esc(a)).join(', ')}) — ${esc(f[2])}`;
+}
+function shGuideSet(html){ const el = document.querySelector('#detail .shgtxt'); if(el) el.innerHTML = html; }
+function shGuide(inp){                                     // while typing in a cell or in the formula bar
+  if(!inp || !document.getElementById('shguide')) return;
+  const v = inp.value; if(v[0] !== '='){ shGuideSet(esc(SH_GUIDE_INTRO)); return; }
+  const c = shGuideCtx(v, inp.selectionStart); shGuideSet(c ? shGuideHtml(c.name, c.arg) : esc(SH_GUIDE_INTRO));
+}
+function shGuideIdle(i){                                   // nothing is being typed
+  if(!i || !i.sheet || !document.getElementById('shguide')) return;
+  const a = document.activeElement; if(shEdit || (a && a.classList && a.classList.contains('shfxin'))) return;
+  const sel = shSelOf(i), raw = i.sheet.cells[shKey(sel.ar, sel.ac)] || '', m = /^=\s*([A-Za-z][A-Za-z0-9_.]*)\s*\(/.exec(raw), f = m && SH_FNS.find(x => x[0] === m[1].toUpperCase());
+  shGuideSet(f ? 'This cell: ' + shGuideHtml(f[0], -1) : esc(SH_GUIDE_INTRO));
+}
+function shFuncsDialog(){
+  const rows = SH_FNS.slice().sort((a, b) => a[0].localeCompare(b[0])).map(f => `<tr><td>${f[0]}(${esc(f[1])})</td><td>${esc(f[2])}</td></tr>`).join('');
+  shDialog('All functions', `<p>Type = in a cell, then the first letters of a name and press Tab. Names you gave to cells, and spreadsheets you linked, are offered too.</p><table class="shfn">${rows}</table>`, {close: 'Close'});
+}
 function shClose(f){                                       // =SUM(B2:B6  ->  =SUM(B2:B6)
   let q = false, open = 0;
   for(const ch of f){ if(ch === '"') q = !q; else if(!q){ if(ch === '(') open++; else if(ch === ')' && open > 0) open--; } }
@@ -6970,7 +7309,7 @@ function shAcAccept(inp, name){
   inp.value = inp.value.slice(0, m.start) + name + tail + inp.value.slice(m.end);
   const pos = m.start + name.length + tail.length; inp.setSelectionRange(pos, pos); shAcHide(); shMirror(inp);
 }
-function shMirror(inp){ if(shEdit && inp === shEdit.inp){ const fx = document.querySelector('#detail .shfxin'); if(fx) fx.value = inp.value; } }
+function shMirror(inp){ shGuide(inp); if(shEdit && inp === shEdit.inp){ const fx = document.querySelector('#detail .shfxin'); if(fx) fx.value = inp.value; } }
 const shPointTarget = () => { if(shEdit && shEdit.inp.isConnected) return shEdit.inp; const a = document.activeElement; return a && a.classList && a.classList.contains('shfxin') ? a : null; };
 function shWantsRef(inp){                                  // is a cell reference expected at the cursor? (after =, an opening bracket, a comma or an operator, or right after one just picked)
   const v = inp.value; if(v[0] !== '=' || inp.selectionStart !== inp.selectionEnd) return false;
@@ -7008,7 +7347,7 @@ function shPutBlock(i, r0, c0, rows, o){                   // rows of raw cell t
   if(o.confirmReplace){ let n = 0; for(let r = 0; r < h; r++) for(let c = 0; c < w; c++) if(i.sheet.cells[shKey(r0 + r, c0 + c)]) n++; if(n && !confirm(`This replaces ${n.toLocaleString()} filled cell${n === 1 ? '' : 's'} in this sheet. You can undo it afterwards. Continue?`)) return false; }
   const ok = shDo(i, s => {
     s.r = Math.max(s.r, r0 + h); s.c = Math.max(s.c, c0 + w);
-    for(let r = 0; r < h; r++) for(let c = 0; c < w; c++){ const k = shKey(r0 + r, c0 + c), v = String(rows[r][c] === undefined ? '' : rows[r][c]).slice(0, 2000), f = o.fm && o.fm[r] && o.fm[r][c];
+    for(let r = 0; r < h; r++) for(let c = 0; c < w; c++){ if(shCovered(s, r0 + r, c0 + c)) continue; const k = shKey(r0 + r, c0 + c), v = String(rows[r][c] === undefined ? '' : rows[r][c]).slice(0, 2000), f = o.fm && o.fm[r] && o.fm[r][c];
       if(v === '') delete s.cells[k]; else s.cells[k] = v; if(f) s.f[k] = f; else if(o.fm) delete s.f[k];
       const m = o.sm && o.sm[r] && o.sm[r][c]; if(m){ if(m.st) s.st[k] = {...m.st}; else delete s.st[k]; if(m.wr) s.wr[k] = 1; else delete s.wr[k]; } }
   });
@@ -7066,6 +7405,7 @@ function shFill(i, dir){
     if(down){ if(r1 === r2){ if(r1 === 0) return false; src = r1 - 1; } else { src = r1; r1++; } }
     else { if(c1 === c2){ if(c1 === 0) return false; src = c1 - 1; } else { src = c1; c1++; } }
     for(let r = r1; r <= r2; r++) for(let c = c1; c <= c2; c++){
+      if(shCovered(s, r, c)) continue;
       const sr = down ? src : r, sc = down ? c : src, k = shKey(r, c), from = shKey(sr, sc), raw = s.cells[from];
       if(raw === undefined) delete s.cells[k]; else s.cells[k] = shMoveRefs(raw, r - sr, c - sc);
       if(s.f[from]) s.f[k] = s.f[from]; else delete s.f[k];
@@ -7115,6 +7455,28 @@ function shSetFormat(i, f){
     else for(const k of Object.keys(s.cells)){ const p = shPos(k); if(p.r >= sel.r1 && p.r <= sel.r2 && p.c >= sel.c1 && p.c <= sel.c2) each(k); }
   });
 }
+function shMergeSel(i){
+  const s = i.sheet, sel = shSelOf(i), n = (sel.r2 - sel.r1 + 1) * (sel.c2 - sel.c1 + 1);
+  if(n < 2){ toast('Select two or more cells first, then merge them.'); return; }
+  const inside = shMerges(s).list.filter(m => m.r1 >= sel.r1 && m.r2 <= sel.r2 && m.c1 >= sel.c1 && m.c2 <= sel.c2);
+  if(inside.length === 1 && inside[0].r1 === sel.r1 && inside[0].r2 === sel.r2 && inside[0].c1 === sel.c1 && inside[0].c2 === sel.c2){ toast('Those cells are already merged. “Unmerge” splits them again.'); return; }
+  if((s.mg ? s.mg.length : 0) - inside.length >= SH_MG_MAX){ toast('A sheet can hold up to ' + SH_MG_MAX + ' merged cells.'); return; }
+  let lost = 0; for(const k of Object.keys(s.cells)){ const p = shPos(k); if(p.r >= sel.r1 && p.r <= sel.r2 && p.c >= sel.c1 && p.c <= sel.c2 && !(p.r === sel.r1 && p.c === sel.c1)) lost++; }
+  if(lost && !confirm(`Merging keeps only the value in the top left cell. ${lost.toLocaleString()} other filled cell${lost === 1 ? '' : 's'} in the selection will be emptied. You can undo it afterwards. Continue?`)) return;
+  const R1 = sel.r1, C1 = sel.c1, R2 = sel.r2, C2 = sel.c2;
+  shDo(i, s2 => {
+    s2.mg = (s2.mg || []).filter(t => { const g = shRectOf(t); return !(g && g.r1 >= R1 && g.r2 <= R2 && g.c1 >= C1 && g.c2 <= C2); });
+    s2.mg.push(shKey(R1, C1) + ':' + shKey(R2, C2));
+    for(const m of ['cells', 'cm']) for(const k of Object.keys(s2[m] || {})){ const p = shPos(k); if(p.r >= R1 && p.r <= R2 && p.c >= C1 && p.c <= C2 && !(p.r === R1 && p.c === C1)) delete s2[m][k]; }
+  }, {redraw: true});
+  shSetSel(i, R1, C1, R2, C2); shFocus();
+}
+function shUnmergeSel(i){
+  const s = i.sheet, sel = shSelOf(i), hit = shMerges(s).list.filter(m => m.r1 <= sel.r2 && m.r2 >= sel.r1 && m.c1 <= sel.c2 && m.c2 >= sel.c1);
+  if(!hit.length){ toast('There is no merged cell in the selection.'); return; }
+  shDo(i, s2 => { s2.mg = (s2.mg || []).filter(t => { const g = shRectOf(t); return !(g && hit.some(m => m.r1 === g.r1 && m.c1 === g.c1 && m.r2 === g.r2 && m.c2 === g.c2)); }); if(!s2.mg.length) delete s2.mg; }, {redraw: true});
+  shSetSel(i, sel.r1, sel.c1, sel.r2, sel.c2); shFocus();
+}
 function shOp(i, op){
   const sel = shSelOf(i), nr = sel.r2 - sel.r1 + 1, nc = sel.c2 - sel.c1 + 1;
   if(op === 'undo') return shUndoStep(i, -1);
@@ -7123,6 +7485,8 @@ function shOp(i, op){
   if(op === 'export') return shExportCsv(i);
   if(op === 'xlsx') return shExportXlsx(i);
   if(op === 'wrap') return shWrap(i);
+  if(op === 'funcs') return shFuncsDialog();
+  if(op === 'merge') return shMergeSel(i); if(op === 'unmerge') return shUnmergeSel(i);
   if(op === 'bold') return shToggle(i, 'b'); if(op === 'italic') return shToggle(i, 'i'); if(op === 'underline') return shToggle(i, 'u');
   if(op === 'alignl') return shAlign(i, 'l'); if(op === 'alignc') return shAlign(i, 'c'); if(op === 'alignr') return shAlign(i, 'r');
   if(op === 'hiderow') return shHide(i, 'r'); if(op === 'hidecol') return shHide(i, 'c'); if(op === 'showall') return shShowAll(i);
@@ -7148,6 +7512,8 @@ $('#detail').addEventListener('mousedown', e => {
   const g = e.target.closest && e.target.closest('.shgrid'); if(!g || e.button !== 0 || e.target.closest('.shin')) return;
   const i = shItem(); if(!i) return;
   const rz = e.target.closest('[data-rz]');
+  const rzr = e.target.closest('[data-rzr]');
+  if(rzr){ e.preventDefault(); const r = +rzr.dataset.rzr, tr = rzr.closest('tr'); shResizeR = {id:i.id, r, y:e.clientY, h:tr.offsetHeight, now:tr.offsetHeight, tr}; return; }
   if(rz){ e.preventDefault(); const c = +rz.dataset.rz; shResize = {id:i.id, c, x:e.clientX, w:i.sheet.w[c] || SH_W, now:i.sheet.w[c] || SH_W}; return; }
   { const pin = shPointTarget(), ptd = e.target.closest('td[data-k]');          // writing a formula: a click or drag over cells types their reference
     if(pin && ptd && shWantsRef(pin)){ e.preventDefault(); const pp = shPos(ptd.dataset.k); shPointStart(pin, pp.r, pp.c); shDragging = 'point'; return; } }
@@ -7169,16 +7535,34 @@ $('#detail').addEventListener('mouseover', e => {
   const i = shItem(); if(!i) return; const p = shPos(td.dataset.k), sel = shSelOf(i); shSetSel(i, sel.ar, sel.ac, p.r, p.c);
 });
 document.addEventListener('mousemove', e => {
+  if(shResizeR){ const q = shResizeR, h = Math.max(20, Math.min(600, Math.round(q.h + e.clientY - q.y))); q.tr.style.height = h + 'px'; q.now = Math.round(q.tr.offsetHeight); const i = shItem(); if(i){ if(i.sheet.fz) shFreeze(i); shShowSel(i); } return; }
   if(!shResize) return; const w = Math.max(40, Math.min(600, Math.round(shResize.w + e.clientX - shResize.x))); shResize.now = w;
   const g = document.querySelector('#detail .shgrid'), cols = g && g.querySelectorAll('col'); if(!cols || !cols[shResize.c + 1]) return;
   cols[shResize.c + 1].style.width = w + 'px'; let total = 46; for(let c = 1; c < cols.length; c++) if(cols[c].style.display !== 'none') total += parseFloat(cols[c].style.width) || SH_W; g.style.width = total + 'px';
-  const i = shItem(); if(i){ if(i.sheet.fz && i.sheet.fz.c) shFreeze(i); shShowSel(i); }
+  const i = shItem(); if(i){ if(i.sheet.fz && i.sheet.fz.c) shFreeze(i); shShowSel(i); shOverSoon(); }
 });
 document.addEventListener('mouseup', () => {
   shDragging = false;
+  if(shResizeR){ const q = shResizeR; shResizeR = null; const i = byId(q.id); if(i && i.sheet && q.now !== q.h){ const was = i.sheet.rh && i.sheet.rh[q.r]; q.tr.style.height = was ? was + 'px' : ''; shDo(i, s => { if(!s.rh) s.rh = {}; if(q.now <= 26) delete s.rh[q.r]; else s.rh[q.r] = q.now; if(!Object.keys(s.rh).length) delete s.rh; }, {redraw:true}); } else if(i && i.sheet && q.tr.isConnected && !(i.sheet.rh && i.sheet.rh[q.r])) q.tr.style.height = ''; }
   if(shResize){ const r = shResize; shResize = null; const i = byId(r.id); if(i && i.sheet && r.now !== r.w){ if(r.now === SH_W) delete i.sheet.w[r.c]; else i.sheet.w[r.c] = r.now; edited(i); } }
 });
+function shFitWidths(i, cols){                              // widest shown text in each column (not wrapped cells, not merged ones), like double-clicking the edge in Excel
+  const s = i.sheet, cv = document.createElement('canvas').getContext('2d'), td0 = document.querySelector('#detail .shgrid td'), cs = td0 ? getComputedStyle(td0) : null; if(!cs) return null;
+  const vals = shValues(s), ctx = shCtx(s, vals), out = {}, mgs = ctx.mg.of;
+  for(const c of cols) out[c] = 0;
+  for(const [k, t] of shShown){ const p = shPos(k); if(!p || !(p.c in out) || t === '' || s.wr[k] || mgs.has(k) || ctx.hidR.has(p.r)) continue; const st = s.st[k] || {};
+    cv.font = `${st.i ? 'italic ' : ''}${st.b ? '700' : '400'} ${cs.fontSize} ${cs.fontFamily}`; out[p.c] = Math.max(out[p.c], cv.measureText(String(t)).width); }
+  const res = {}; for(const c of cols) res[c] = out[c] ? Math.max(40, Math.min(600, Math.ceil(out[c]) + 16)) : 0; return res;
+}
 $('#detail').addEventListener('dblclick', e => {
+  const hc = e.target.closest && e.target.closest('[data-rz]'), hr = e.target.closest && e.target.closest('[data-rzr]'); if((hc || hr) && !MOBILE){
+    const i = shItem(); if(!i) return; e.preventDefault(); e.stopPropagation(); const sel = shSelOf(i);
+    if(hc){ const c = +hc.dataset.rz, cols = []; const many = sel.c1 <= c && c <= sel.c2 && sel.c2 > sel.c1 && sel.r1 === 0 && sel.r2 >= i.sheet.r - 1; for(let x = many ? sel.c1 : c; x <= (many ? sel.c2 : c); x++) cols.push(x);
+      const w = shFitWidths(i, cols); if(!w) return; shDo(i, s => { for(const x of cols){ if(!w[x] || w[x] === SH_W) delete s.w[x]; else s.w[x] = w[x]; } }, {redraw:true}); }
+    else { const r = +hr.dataset.rzr, many = sel.r1 <= r && r <= sel.r2 && sel.r2 > sel.r1 && sel.c1 === 0 && sel.c2 >= i.sheet.c - 1, rows = []; for(let x = many ? sel.r1 : r; x <= (many ? sel.r2 : r); x++) rows.push(x);
+      shDo(i, s => { for(const x of rows) if(s.rh) delete s.rh[x]; if(s.rh && !Object.keys(s.rh).length) delete s.rh; }, {redraw:true}); }
+    return;
+  }
   const td = e.target.closest && e.target.closest('.shgrid td[data-k]'); if(!td || e.target.closest('.shin')) return;
   const i = shItem(); if(!i) return; const p = shPos(td.dataset.k); shSetSel(i, p.r, p.c, p.r, p.c); shStartEdit(i, p.r, p.c);
 });
@@ -7195,13 +7579,13 @@ $('#detail').addEventListener('change', e => {
 });
 $('#detail').addEventListener('input', e => {
   const t = e.target; if(!t.classList) return;
-  if(shEdit && t === shEdit.inp){ const fx = document.querySelector('#detail .shfxin'); if(fx) fx.value = shEdit.inp.value; }
-  if(t.classList.contains('shin') || t.classList.contains('shfxin')){ shPoint = null; const box = document.querySelector('#detail .shpt'); if(box) box.style.display = 'none'; shAcShow(t); }
+  if(shEdit && t === shEdit.inp){ const fx = document.querySelector('#detail .shfxin'); if(fx) fx.value = shEdit.inp.value; if(e.inputType === 'insertText') shAutoFill(shEdit); }
+  if(t.classList.contains('shin') || t.classList.contains('shfxin')){ shPoint = null; const box = document.querySelector('#detail .shpt'); if(box) box.style.display = 'none'; shAcShow(t); shGuide(t); }
 });
 $('#detail').addEventListener('focusout', e => {
   const t = e.target; if(!t.classList) return;
   if(t.classList.contains('shin') && shEdit && shEdit.inp === t) shEndEdit(true);
-  else if(t.classList.contains('shfxin')){ shAcHide(); shPointHide(); const i = shItem(), p = shPos(t.dataset.k || ''); if(i && p && !MOBILE && t.value !== (i.sheet.cells[t.dataset.k] || '')) shCommitCell(i, p.r, p.c, t.value); }          // the cell it was showing when you started typing, even if you clicked another one
+  else if(t.classList.contains('shfxin')){ shAcHide(); shPointHide(); setTimeout(() => { const j = shItem(); if(j) shGuideIdle(j); }, 0); const i = shItem(), p = shPos(t.dataset.k || ''); if(i && p && !MOBILE && t.value !== (i.sheet.cells[t.dataset.k] || '')) shCommitCell(i, p.r, p.c, t.value); }          // the cell it was showing when you started typing, even if you clicked another one
 });
 function shInputKey(e, i){
   const k = e.key; e.stopPropagation();
@@ -7258,6 +7642,7 @@ $('#detail').addEventListener('keydown', e => {
   const i = shItem(); if(!i) return;
   if(t.classList.contains('shin')) shInputKey(e, i); else if(t.classList.contains('shgrid')) shGridKey(e, i);
 });
+['keyup', 'mouseup', 'focusin'].forEach(ev => $('#detail').addEventListener(ev, e => { const t = e.target; if(t && t.classList && (t.classList.contains('shin') || t.classList.contains('shfxin'))) shGuide(t); }));          // the cursor moved: the guide follows it
 document.addEventListener('copy', e => shCopy(e, false));
 document.addEventListener('cut', e => shCopy(e, true));
 document.addEventListener('paste', shPaste);
@@ -7309,7 +7694,7 @@ function shCssText(m){
   if(m.al) c += 'text-align:' + ({l:'left', c:'center', r:'right'})[m.al] + ';';
   return c;
 }
-const shCtx = (s, vals) => ({hidR: shHiddenRows(s, vals), hidC: new Set(s.hc || []), rules: shRules(s, vals)});
+const shCtx = (s, vals) => ({hidR: shHiddenRows(s, vals), hidC: new Set(s.hc || []), rules: shRules(s, vals), mg: shMerges(s)});
 
 /* ---- toolbar: bold, italic, colours, alignment ---- */
 function shEachSel(i, limit){ const sel = shSelOf(i), n = (sel.r2 - sel.r1 + 1) * (sel.c2 - sel.c1 + 1); if(n > limit){ toast('Select a smaller block first (up to ' + limit.toLocaleString() + ' cells).'); return null; } const ks = []; for(let r = sel.r1; r <= sel.r2; r++) for(let c = sel.c1; c <= sel.c2; c++) ks.push(shKey(r, c)); return ks; }
@@ -7324,7 +7709,7 @@ function shAlign(i, a){ const ks = shEachSel(i, 20000); if(!ks) return; const on
 function shToolbarState(i){
   const s = i.sheet, sel = shSelOf(i), k = shKey(sel.ar, sel.ac), st = s.st[k] || {};
   const on = (a, v) => { const b = document.querySelector('#detail [data-sh=' + a + ']'); if(b) b.classList.toggle('on', !!v); };
-  on('bold', st.b); on('italic', st.i); on('underline', st.u); on('alignl', st.al === 'l'); on('alignc', st.al === 'c'); on('alignr', st.al === 'r'); on('cm', s.cm[k]); on('filter', s.fl);
+  on('bold', st.b); on('italic', st.i); on('underline', st.u); on('alignl', st.al === 'l'); on('alignc', st.al === 'c'); on('alignr', st.al === 'r'); on('cm', s.cm[k]); on('filter', s.fl); on('merge', shMgAt(s, sel.ar, sel.ac));
   const sa = document.querySelector('#detail [data-sh=showall]'); if(sa) sa.hidden = !((s.hr && s.hr.length) || (s.hc && s.hc.length) || s.fl);
   shFhPlace(i);
   const btn = document.querySelector('#detail .shdvbtn'), rule = shDvRule(s, sel.ar, sel.ac), td = shTd(sel.ar, sel.ac);
@@ -7339,7 +7724,7 @@ function shStatSoon(i){ clearTimeout(shStatTimer); shStatTimer = setTimeout(() =
 function shStat(i){
   const el = document.querySelector('#detail .shstat'); if(!el) return;
   const s = i.sheet, sel = shSelOf(i), n = (sel.r2 - sel.r1 + 1) * (sel.c2 - sel.c1 + 1);
-  if(n < 2){ el.textContent = ''; el.hidden = true; return; }
+  if(n < 2){ el.textContent = 'Ready · select several cells to see their count, sum and average'; el.hidden = false; return; }
   const vals = shValues(s); let cnt = 0, num = 0, sum = 0, min = Infinity, max = -Infinity;
   for(let r = sel.r1; r <= sel.r2; r++) for(let c = sel.c1; c <= sel.c2; c++){ const v = vals.get(shKey(r, c)); if(shBlank(v)) continue; cnt++; if(typeof v === 'number'){ num++; sum += v; if(v < min) min = v; if(v > max) max = v; } }
   const ak = shKey(sel.ar, sel.ac), f = shFmtOf(s, ak, s.cells[ak]), nf = f && f[0] !== 'd' ? f : '', fmt = x => shNumText(+x.toPrecision(12), nf);
@@ -7480,6 +7865,7 @@ function shSortCmd(i, dir){
   const s = i.sheet, sel = shSelOf(i), vals = shValues(s); let r1, r2, c1, c2, col = sel.ac;
   if(sel.r1 === sel.r2 && sel.c1 === sel.c2){ const x = shExtent(s, vals); if(!x.r){ toast('There is nothing to sort yet.'); return; } r1 = 0; r2 = x.r - 1; c1 = 0; c2 = x.c - 1; }
   else { r1 = sel.r1; r2 = sel.r2; c1 = sel.c1; c2 = sel.c2; if(col < c1 || col > c2) col = c1; }
+  if(shMerges(s).list.some(m => m.r2 >= r1 && m.r1 <= r2)){ toast('Sorting does not work across merged cells. Unmerge them first.'); return; }
   const h = shHeaderRows(s, vals, r1, r2, c1, c2); r1 += h;
   if(r2 <= r1){ toast('Select a column with some rows under it to sort.'); return; }
   let moved = false;
@@ -7528,8 +7914,12 @@ function shPrintTable(s){
   for(let r = 0; r < x.r; r++){
     if(ctx.hidR.has(r)) continue;
     let tr = '';
-    for(let c of cols){ const k = shKey(r, c), v = vals.get(k), css = shCssText(shMergedStyle(s, k, r, c, v, ctx.rules)), t = shShow(v, shFmtOf(s, k, s.cells[k])), num = typeof v === 'number' ? 'text-align:right;' : '', tag = r < h ? 'th' : 'td';
-      tr += `<${tag} style="${num}${css}${s.wr[k] ? 'white-space:pre-wrap;' : ''}">${esc(t)}</${tag}>`; }
+    for(let c of cols){ const k = shKey(r, c), mm = ctx.mg.of.get(k); let span = '';
+      if(mm){ const lim = (r < h) ? h - 1 : x.r - 1;
+        if(mm.a === k){ const cs = cols.filter(z => z >= mm.c1 && z <= mm.c2).length; let rs = 0; for(let y = mm.r1; y <= Math.min(mm.r2, lim); y++) if(!ctx.hidR.has(y)) rs++; span = (cs > 1 ? ` colspan="${cs}"` : '') + (rs > 1 ? ` rowspan="${rs}"` : ''); }
+        else if((mm.r1 < h) === (r < h) && mm.r1 <= lim) continue; }
+      const v = vals.get(k), css = shCssText(shMergedStyle(s, k, r, c, v, ctx.rules)), t = shShow(v, shFmtOf(s, k, s.cells[k])), num = typeof v === 'number' ? 'text-align:right;' : '', tag = r < h ? 'th' : 'td';
+      tr += `<${tag}${span} style="${num}${css}${s.wr[k] ? 'white-space:pre-wrap;' : ''}">${esc(t)}</${tag}>`; }
     if(r < h) head += '<tr>' + tr + '</tr>'; else body += '<tr>' + tr + '</tr>';
   }
   return `${tw > 640 ? '<style>@page{size:landscape}</style>' : ''}<table class="shprint" style="table-layout:fixed;width:100%"><colgroup>${cols.map(c => `<col style="width:${(wd(c) / tw * 100).toFixed(2)}%">`).join('')}</colgroup>${head ? '<thead>' + head + '</thead>' : ''}<tbody>${body}</tbody></table>`;
@@ -7591,6 +7981,7 @@ function shFillBy(i, g, dir, n){                          // fill n more rows or
       for(let m = 1; m <= n; m++){
         const tr = vert ? (fwd ? g.r2 + m : g.r1 - m) : g.r1 + ln, tc = vert ? g.c1 + ln : (fwd ? g.c2 + m : g.c1 - m);
         if(tr < 0 || tc < 0 || tr >= SH_MAX_R || tc >= SH_MAX_C) return did ? undefined : false;
+        if(shCovered(s, tr, tc)) continue;
         const k0 = fwd ? (m - 1) % len : len - 1 - ((m - 1) % len), from = ks[k0], p0 = shPos(from), to = shKey(tr, tc), raw = raws[k0];
         let out = raw === undefined ? undefined : shMoveRefs(raw, tr - p0.r, tc - p0.c);
         if(series){ const v = series(m, fwd); if(v !== null) out = v; }
@@ -7677,12 +8068,20 @@ const stickyBody = () => stickyOpen() ? stickyWin.document.querySelector('.stkr'
 const openSticky = id => openFloat({note: id});
 const flcGet = () => { try { return JSON.parse(localStorage.getItem('notebook-flc') || 'null') || {}; } catch { return {}; } };
 let flTab = 'list';
+const flvGet = () => { let v = {}; try { v = JSON.parse(localStorage.getItem('notebook-flview') || 'null') || {}; } catch {} return {fz: Math.min(20, Math.max(11, +v.fz || 13)), wrap: v.wrap !== false}; };          // text size and wrapping of the pinned list: per computer, wrapped unless turned off
+function floatView(change){                                          // change: 'fz-' / 'fz+' / 'wrap' / undefined (just apply)
+  const v = flvGet(); if(change === 'fz-') v.fz = Math.max(11, v.fz - 1); else if(change === 'fz+') v.fz = Math.min(20, v.fz + 1); else if(change === 'wrap') v.wrap = !v.wrap;
+  if(change){ try { localStorage.setItem('notebook-flview', JSON.stringify(v)); } catch {} }
+  if(!stickyOpen()) return; const d = stickyWin.document, root = d.querySelector('.stk');
+  if(root){ root.classList.toggle('flwrap', v.wrap); root.style.setProperty('--flfz', v.fz + 'px'); }
+  const w = d.querySelector('[data-fl=wrap]'); if(w) w.classList.toggle('on', v.wrap);
+}
 function floatTab(t, save){                                          // the window shows one thing at a time: the pinned actions, or the note
   if(!stickyOpen()) return; const d = stickyWin.document; flTab = t === 'note' ? 'note' : 'list';
   d.querySelectorAll('.fltab').forEach(b => b.classList.toggle('on', b.dataset.tab === flTab));
   d.querySelectorAll('.flpane').forEach(p => { p.hidden = p.dataset.pane !== flTab; });
   if(save) try { localStorage.setItem('notebook-fltab', flTab); } catch {}
-  const want = flTab === 'note' ? (stickyId ? d.querySelector('.stkr') : d.querySelector('[data-fl=newnote]')) : d.querySelector('.fladd'); if(want && !d.activeElement.matches('input, [contenteditable]')) try { want.focus(); } catch {}
+  const want = flTab === 'note' ? (stickyId ? d.querySelector('.stkr') : d.querySelector('[data-fl=newnote]')) : d.querySelector('.fladd'); if(want && !d.activeElement.matches('input, textarea, [contenteditable]')) try { want.focus(); } catch {}
 }
 function floatLayout(){                                             // the tab labels, and what the Note tab shows when no note is open
   if(!stickyOpen()) return; const d = stickyWin.document, box = d.getElementById('fl'); if(!box) return;
@@ -7770,13 +8169,13 @@ async function openFloat(o){
   d.body.innerHTML = `<div class="stk fl" id="fl">
     <div class="flnext" hidden></div>
     <div class="fltabs"><button class="fltab" data-tab="list">⇱ Actions <small class="flcount"></small></button><button class="fltab" data-tab="note">✎ Note</button></div>
-    <div class="flpane" data-pane="list"><div class="flb"><div class="fllist"></div><div class="flsnrow"></div><div class="flpick" hidden></div><input class="fladd" placeholder="Add an action to keep in sight…  (@name assigns)" autocomplete="off"><div class="flhint"></div></div></div>
+    <div class="flpane" data-pane="list"><div class="flb"><div class="fllist"></div><div class="flsnrow"></div><div class="flview"><button data-fl="fz-" title="Smaller text">A−</button><button data-fl="fz+" title="Larger text">A+</button><button data-fl="wrap" title="Show the whole action on several lines, or on one line">Wrap</button></div><div class="flpick" hidden></div><textarea class="fladd" rows="1" placeholder="Add an action to keep in sight…  (@name assigns)" autocomplete="off"></textarea><div class="flhint"></div></div></div>
     <div class="flpane" data-pane="note" hidden>
       <div class="flnoteempty" hidden><p>No note is open here.</p><button class="pri" data-fl="newnote">＋ New note</button><p class="flhint">Or open one in the notebook and press ▭ Sticky note.</p></div>
       <div class="flnote flb"><div class="flnh"><input class="stkt" placeholder="Untitled" spellcheck="true" autocomplete="off"><button class="flx" data-fl="closenote" title="Close this note (the window stays)">✕</button></div>
         <div class="stkbar"><button data-c="bold" title="Bold (Ctrl+B)"><b>B</b></button><button data-c="italic" title="Italic (Ctrl+I)"><i>I</i></button><button data-c="underline" title="Underline (Ctrl+U)"><u>U</u></button><button data-c="insertUnorderedList" title="Bulleted list">•&nbsp;List</button><button data-c="insertOrderedList" title="Numbered list">1.&nbsp;List</button><button data-c="checkbox" title="Checkbox on this line">☐</button><button data-c="hl" title="Highlight the selected text (again to take it off)">🖍</button><span class="stkdots" title="Colour of the window"><button class="stkdot" data-col="" title="Like the app"></button><button class="stkdot" data-col="y" style="background:#fff3a8" title="Yellow"></button><button class="stkdot" data-col="g" style="background:#d3f0d8" title="Green"></button><button class="stkdot" data-col="b" style="background:#d4e7fb" title="Blue"></button><button class="stkdot" data-col="p" style="background:#f9d6e6" title="Pink"></button></span></div>
         <div class="rt stkr" contenteditable="true" spellcheck="true" data-ph="Start typing…" data-empty></div><div class="stkmsg" hidden></div></div></div></div>`;
-  floatLayout(); floatList(); if(id) stickyPull(true);
+  floatLayout(); floatList(); floatView(); if(id) stickyPull(true);
   floatTab(id ? 'note' : 'list');
   { let c = ''; try { c = localStorage.getItem('notebook-stkcolor') || ''; } catch {} stickyColor(c); }
   const ed = d.querySelector('.stkr'), ti = d.querySelector('.stkt'), bar = d.querySelector('.stkbar');
@@ -7785,6 +8184,7 @@ async function openFloat(o){
   d.addEventListener('click', e => {
     const t = e.target, row = t.closest && t.closest('.flr'), f = t.closest && t.closest('[data-fl]'), tab = t.closest && t.closest('.fltab');
     if(tab){ floatTab(tab.dataset.tab, true); return; }
+    if(f && ['fz-', 'fz+', 'wrap'].includes(f.dataset.fl)){ floatView(f.dataset.fl); return; }
     if(f && f.dataset.fl === 'newnote'){ newItem('note'); const j = byId(selId); if(j) floatSetNote(j.id); return; }
     if(t.closest && t.closest('.flsnz')){ flShowSnoozed = !flShowSnoozed; floatList(); return; }
     if(f && f.dataset.fl === 'closenote'){ floatNoNote(); return; }
@@ -7801,7 +8201,7 @@ async function openFloat(o){
     pickBox.innerHTML = items.map((n, k) => `<div class="flpi ${k === pk.at ? 'on' : ''}" data-n="${esc(n)}">@${esc(n)}</div>`).join(''); pickBox.hidden = false;
   };
   const pickTake = n => { const v = addBox.value, end = addBox.selectionStart; addBox.value = v.slice(0, pk.start) + '@' + n + ' ' + v.slice(end); const pos = pk.start + n.length + 2; addBox.setSelectionRange(pos, pos); pickHide(); addBox.focus(); };
-  addBox.addEventListener('input', pickShow);
+  addBox.addEventListener('input', () => { oneLine(addBox); pickShow(); });
   pickBox.addEventListener('mousedown', e => { const it = e.target.closest('.flpi'); if(it){ e.preventDefault(); pickTake(it.dataset.n); } });
   addBox.addEventListener('blur', () => setTimeout(pickHide, 120));
   addBox.addEventListener('keydown', e => {
@@ -8195,9 +8595,9 @@ function chipsFor(o, key){
   if(o.fu) h += `<span class="fuchip ${o.fu <= todayStr() && !o.done ? 'due' : ''}" title="You plan to check back on this">↻ check back ${esc(fmtDay(o.fu))}</span>`;
   return h;
 }
-function fuEntries(){                                         // actions you handed over and wanted to check on, when that day has come and no answer is waiting
+function fuEntries(withSnoozed){                              // actions you handed over and wanted to check on, when that day has come and no answer is waiting (snoozed ones only when asked for)
   const T = todayStr();
-  return allEntries().filter(x => !x.done && x.text.trim() && oOf(x).fu && oOf(x).fu <= T && !proposalOf(oOf(x)) && !snoozed(oOf(x))).sort((a, b) => oOf(a).fu.localeCompare(oOf(b).fu));
+  return allEntries().filter(x => !x.done && x.text.trim() && oOf(x).fu && oOf(x).fu <= T && !proposalOf(oOf(x)) && (withSnoozed || !snoozed(oOf(x)))).sort((a, b) => oOf(a).fu.localeCompare(oOf(b).fu));
 }
 function fuHtml(x){
   const o = oOf(x);
@@ -8434,6 +8834,7 @@ function xlsxBuild(i){
   const keys = new Set(Object.keys(s.cells)); for(const [k, v] of vals) if(v !== null && v !== undefined) keys.add(k);
   for(const k of Object.keys(s.st)) keys.add(k); for(const k of Object.keys(s.wr)) keys.add(k);
   const byRow = new Map(); for(const k of keys){ const p = shPos(k); if(!p) continue; (byRow.get(p.r) || byRow.set(p.r, []).get(p.r)).push([p.c, k]); }
+  for(const r0 of Object.keys(s.rh || {})) if(!byRow.has(+r0)) byRow.set(+r0, []);
   const rowXml = [];
   for(const r of [...byRow.keys()].sort((a, b) => a - b)){
     const cs = byRow.get(r).sort((a, b) => a[0] - b[0]).map(([c, k]) => {
@@ -8448,7 +8849,7 @@ function xlsxBuild(i){
       if(fx){ const fe = xlEsc(fx); return `<c r="${ref}"${sa}${t}>${xlIsArray(fx) ? `<f t="array" ref="${ref}">${fe}</f>` : `<f>${fe}</f>`}${val}</c>`; }
       return `<c r="${ref}"${sa}${t}>${val}</c>`;
     }).join('');
-    rowXml.push(`<row r="${r + 1}"${ctx.hidR.has(r) ? ' hidden="1"' : ''}>${cs}</row>`);
+    rowXml.push(`<row r="${r + 1}"${s.rh && s.rh[r] ? ` ht="${(s.rh[r] * .75).toFixed(2)}" customHeight="1"` : ''}${ctx.hidR.has(r) ? ' hidden="1"' : ''}>${cs}</row>`);
   }
   // ---- widths, panes ----
   const maxC = Math.max(x.c, s.c, 1); let cols = '';
@@ -8484,7 +8885,7 @@ function xlsxBuild(i){
   const names = Object.entries(s.nm || {}).filter(([k]) => /^[A-Za-z_][A-Za-z0-9_.]*$/.test(k)).map(([k, v]) => `<definedName name="${xlEsc(k)}">'${xlEsc(sheetName.replace(/'/g, "''"))}'!${absRef(v)}</definedName>`).join('');
   const NS = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"', RNS = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
   const head = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
-  const sheet = `${head}<worksheet ${NS}><dimension ref="A1:${shKey(Math.max(x.r, 1) - 1, maxC - 1)}"/><sheetViews><sheetView workbookViewId="0">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>${cols ? `<cols>${cols}</cols>` : ''}<sheetData>${rowXml.join('')}</sheetData>${cfXml}${dvXml}<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`;
+  const sheet = `${head}<worksheet ${NS}><dimension ref="A1:${shKey(Math.max(x.r, 1) - 1, maxC - 1)}"/><sheetViews><sheetView workbookViewId="0">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>${cols ? `<cols>${cols}</cols>` : ''}<sheetData>${rowXml.join('')}</sheetData>${s.mg && s.mg.length ? `<mergeCells count="${s.mg.length}">${s.mg.map(t => `<mergeCell ref="${t}"/>`).join('')}</mergeCells>` : ''}${cfXml}${dvXml}<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`;
   const styles = `${head}<styleSheet ${NS}>${nfs.length ? `<numFmts count="${nfs.length}">${nfs.map((c, k) => `<numFmt numFmtId="${164 + k}" formatCode="${xlEsc(c)}"/>`).join('')}</numFmts>` : ''}<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>${dxfs.length ? `<dxfs count="${dxfs.length}">${dxfs.join('')}</dxfs>` : ''}</styleSheet>`;
   const workbook = `${head}<workbook ${NS} ${RNS}><bookViews><workbookView/></bookViews><sheets><sheet name="${xlEsc(sheetName)}" sheetId="1" r:id="rId1"/></sheets>${names ? `<definedNames>${names}</definedNames>` : ''}</workbook>`;
   const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -8897,6 +9298,7 @@ document.addEventListener('click', e => {
   const lcat = e.target.closest('[data-lcat]'); if(lcat){ listCat = listCat === lcat.dataset.lcat ? '' : lcat.dataset.lcat; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const ch = e.target.closest('[data-chip]');
   if(ch){ const v = chipView(), s = new Set(chipsOff[v]); if(s.has(ch.dataset.chip)) s.delete(ch.dataset.chip); else s.add(ch.dataset.chip); chipsOff[v] = [...s]; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
+  const sf = e.target.closest('[data-sheetfold]'); if(sf){ const id = sf.dataset.sheetfold; if(sheetFold.has(id)) sheetFold.delete(id); else sheetFold.add(id); renderList(); return; }
   const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbById(id)){ nbView = id; lastNb = id; saveUi(); fixSelection(); renderList(); renderDetail(); } return; }
   const pp = e.target.closest('[data-person]'); if(pp){ filter = 'person'; actPerson = pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
   const f = e.target.closest('[data-filter]'); if(f){ filter = f.dataset.filter; if(filter === 'note') enterNotes(); saveUi(); fixSelection(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
@@ -9067,8 +9469,7 @@ document.addEventListener('click', e => {
     return;
   }
   if(e.target.id === 'newsheetbtn'){ $('#newmenu').classList.remove('open'); newItem('sheet'); return; }
-  if(e.target.id === 'newtplbtn'){ $('#newmenu').classList.remove('open'); openTemplates(); return; }
-  if(e.target.id === 'newbtn'){ if(filter === 'note' || filter.startsWith('nb:')){ $('#newmenu').classList.remove('open'); newItem('note'); return; } $('#newmenu').classList.toggle('open'); return; }          // in Notes the + only ever makes a note
+  if(e.target.id === 'newbtn'){ if(filter === 'sheet'){ $('#newmenu').classList.remove('open'); newItem('sheet'); return; } if(filter === 'note' || filter.startsWith('nb:')){ $('#newmenu').classList.remove('open'); newItem('note'); return; } $('#newmenu').classList.toggle('open'); return; }          // in Notes the + only ever makes a note
   $('#newmenu').classList.remove('open');
 });
 $('#q').addEventListener('input', e => { search = e.target.value; fixSelection(); renderList(); renderDetail(); });
@@ -9260,7 +9661,7 @@ function runCmd(cmd, arg){
   ed.dispatchEvent(new Event('input', {bubbles:true})); fmtState();
 }
 $('#fmtbar').addEventListener('mousedown', e => { if(e.target.closest('button')) e.preventDefault(); });        // clicking a button keeps your selection
-let rtab = 'home', rtabBack = 'home', rtabOff = false, inTblPrev = false;
+let rtab = 'home', rtabBack = 'home', rtabOff = false, rtabWas = false, inTblPrev = false;
 try { const r = JSON.parse(localStorage.getItem('notebook-rtab') || '{}'); if(['home', 'lists', 'insert'].includes(r.tab)) rtab = rtabBack = r.tab; rtabOff = !!r.off; } catch {}
 function rtabSet(t, save){                                   // show one tab's tools (or none, when the bar is hidden away); remembered between visits (never the Table tab)
   rtab = t;
@@ -9270,10 +9671,11 @@ function rtabSet(t, save){                                   // show one tab's t
   if(save){ if(t !== 'table') rtabBack = t; try { localStorage.setItem('notebook-rtab', JSON.stringify({tab:rtabBack, off:rtabOff})); } catch {} }
 }
 $('#fmtbar').addEventListener('click', e => {
-  const tb = e.target.closest('[data-rtab]'); if(tb){ rtabOff = false; rtabSet(tb.dataset.rtab, true); return; }
+  const tb = e.target.closest('[data-rtab]'); if(tb){ if(e.detail < 2) rtabWas = rtabOff; rtabOff = false; rtabSet(tb.dataset.rtab, true); return; }
   if(e.target.closest('[data-rcollapse]')){ rtabOff = !rtabOff; rtabSet(rtab, true); return; }
   const b = e.target.closest('[data-cmd]'); if(b) runCmd(b.dataset.cmd);
 });
+$('#fmtbar').addEventListener('dblclick', e => { const tb = e.target.closest('[data-rtab]'); if(!tb) return; e.preventDefault(); rtabOff = !rtabWas; rtabSet(tb.dataset.rtab, true); });          // double-click a tab: hide the tools, or bring them back if they were hidden
 rtabSet(rtab);
 $('#fmtblock').addEventListener('change', e => runCmd('formatBlock', e.target.value));
 for(const [id, cmd] of [['fmthl', 'hilite'], ['fmtfc', 'fcolor'], ['fmtsize', 'size'], ['fmttag', 'tag']]) $('#' + id).addEventListener('change', e => { const v = e.target.value; e.target.value = ''; if(v) runCmd(cmd, cmd === 'hilite' && v === 'none' ? '' : v); });
@@ -9441,7 +9843,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261118093245';</script>
+<script>window.NB_BUILD = '20261119085017';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
