@@ -1,4 +1,11 @@
-{"version":"1.67.6","build":"20261119102303","changelog":[
+{"version":"1.67.7","build":"20261119103411","changelog":[
+ {
+  "v": "1.67.7",
+  "title": "Keep a feed opens the folder window at once",
+  "items": [
+   "Ticking Keep a feed now opens the folder window straight away, from your click (before, a short delay could make the browser refuse it, and nothing seemed to happen). While it is open the box shows “Waiting for you to choose a folder”, and if the window opens behind the app that note tells you to look for it. Cancelling or an error now always says so and unticks the box."
+  ]
+ },
  {
   "v": "1.67.6",
   "title": "Feed status and Write now",
