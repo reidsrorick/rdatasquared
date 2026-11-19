@@ -1184,8 +1184,23 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.67.9';
+const APP_VERSION = '1.67.11';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.67.11",
+  "title": "Feeds no longer wait for the shared folder",
+  "items": [
+   "Found why a feed could write nothing at all in the installed app: before writing any person's feed, the app first checked the one shared folder used for shared pages and notebooks, and if that folder was stale or not answering it waited forever (no message). A person's own feed folder no longer depends on it: Keep a feed and Write now write just that person's feed straight away, shared pages and notebooks are written alongside with time limits, and a problem with the shared folder is reported on its own.",
+   "Write now says “Writing…” at once and then whether it worked."
+  ]
+ },
+ {
+  "v": "1.67.10",
+  "title": "Forget folders of removed people",
+  "items": [
+   "A folder that was once chosen for someone you have since removed no longer gets in the way. Choosing a folder used to ask “… is already <removed person>’s folder. Move it?” because the app still remembered the link; it now forgets links to people who are not on the team and have no running feed, so that question only appears for people who really use the folder."
+  ]
+ },
  {
   "v": "1.67.9",
   "title": "One slow feed folder cannot block the others",
@@ -3149,6 +3164,7 @@ function guestRowsHtml(){
   }).join('');
 }
 function renderSettings(){
+  try { if(personDirsLoaded) pruneOrphanDirs(); } catch {}
   const ok = fileState === 'ready' && !writeError;
   $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
@@ -3295,7 +3311,7 @@ async function setFeed(person, on){
       else if(!(await hasFolder(person))) await pickPersonDir(person);
       const h = personDirs.get(k); if(h) f.folder = h.name;
       f.on = true; touch(); feedStep(k, 'Writing the first feed file…');
-      await runShareWrites(true);
+      await runShareWrites(true, k); scheduleShareWrite();          // their own feed first, on its own; everything else follows
       const mine = feedStat.get(k);
       toast(mine && !mine.ok ? `The feed is on, but writing ${person}’s file failed: ${mine.err}` : shareState === 'error' ? 'The feed is on, but writing failed: ' + shareErr : `Keeping a feed for ${person} in “${h ? h.name : 'the shared folder'}”.`);
     } catch(e){ f.on = false; toast(e && e.name === 'AbortError' ? `No folder was chosen for ${person}, so the feed stays off. Tick the box again and pick the folder their files should go in.` : 'Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
@@ -4734,7 +4750,8 @@ function feedPayload(f){
 const personDirs = new Map(), personState = new Map();
 const personKey = n => String(n || '').trim().toLowerCase();
 async function loadPersonDirs(){ try { const l = await withTimeout(idbGet('personDirs'), 3000); (Array.isArray(l) ? l : []).forEach(x => { if(x && x.person && x.handle) personDirs.set(personKey(x.person), x.handle); }); } catch {} }
-const personDirsReady = loadPersonDirs();
+let personDirsLoaded = false;
+const personDirsReady = loadPersonDirs().then(() => { personDirsLoaded = true; });
 async function savePersonDirs(){ try { await withTimeout(idbSet('personDirs', [...personDirs].map(([person, handle]) => ({person, handle}))), 4000); } catch {} }
 async function personPerm(person, request){
   const h = personDirs.get(personKey(person)); if(!h) return '';
@@ -4756,9 +4773,19 @@ async function personRoot(person, sub){                    // that person's fold
 async function personDirReady(person, sub){ try { return await personRoot(person, sub); } catch { return null; } }
 async function legacyDirExists(person){ const d = await shareReady(false); if(!d) return false; try { const sub = await d.getDirectoryHandle('shared'); await sub.getDirectoryHandle(feedDirName(person)); return true; } catch { return false; } }
 async function hasFolder(person){ await personDirsReady; return personDirs.has(personKey(person)) || await legacyDirExists(person); }
+function pruneOrphanDirs(){                                  // a folder link kept for someone who is no longer on the team and has no running feed (left over from before removing a person also dropped it)
+  let changed = false;
+  for(const k of [...personDirs.keys()]){
+    const onTeam = db.people.some(p => personKey(p) === k) || (db.guests || []).some(p => personKey(p) === k), fd = (db.feeds || []).find(f => personKey(f.person) === k);
+    if(!onTeam && !(fd && fd.on)){ personDirs.delete(k); personState.delete(k); changed = true; }
+  }
+  if(changed) savePersonDirs();
+  return changed;
+}
 async function pickPersonDir(person, step){
   if(!shareOk()) throw new Error('This browser can’t open folders (turn on the File System Access flag in Brave).');
   const h = await showDirectoryPicker({mode:'readwrite', id:'nb-' + feedSlug(person)});
+  pruneOrphanDirs();
   if(step) step('Folder chosen. Checking it is not another person’s folder…');
   for(const [k, o] of [...personDirs]) if(k !== personKey(person)){
     let same = false; try { same = await withTimeout(o.isSameEntry(h), 2500); } catch {}          // a folder that was deleted or moved can answer slowly: do not wait for it
@@ -4874,28 +4901,34 @@ async function writeSharedNotebook(nb, sub, force){
   }
   nb.shared.dir = dirName; nb.shared.files = [...wanted]; nb.shared.last = now();
 }
-async function runShareWrites(force, first){
-  const pages = db.items.filter(i => i.shared && i.shared.on && (force || shareWritten.get(i.id) !== shareStamp(i))), nbs = db.notebooks.filter(n => n.shared && n.shared.on), feeds = (db.feeds || []).filter(f => f.on);
+async function runShareWrites(force, only){                 // only: a person's key, to write just that person's feed (Write now, Keep a feed)
+  let pages = db.items.filter(i => i.shared && i.shared.on && (force || shareWritten.get(i.id) !== shareStamp(i))), nbs = db.notebooks.filter(n => n.shared && n.shared.on), feeds = (db.feeds || []).filter(f => f.on);
+  if(only){ pages = []; nbs = []; feeds = feeds.filter(f => personKey(f.person) === only); }
   if(!pages.length && !nbs.length && !feeds.length) return;
   await personDirsReady;
   const hardGlobal = nbs.length > 0 || pages.some(i => i.shared.global || i.shared.root);          // these really need the one shared folder
   const softGlobal = feeds.some(f => !personDirs.has(personKey(f.person))) || pages.some(i => (i.shared.with || []).some(w => !personDirs.has(personKey(w))));          // these only use it for the old shared/for-name folders
-  let sub = null;
-  if(hardGlobal || softGlobal){
-    const d = await shareReady(false);
-    if(!d){ if(hardGlobal){ shareState = 'paused'; renderShareBadge(); return; } }
-    else { try { sub = await d.getDirectoryHandle('shared', {create:hardGlobal}); } catch(e){ if(hardGlobal){ shareState = 'error'; shareErr = (e && e.message) || String(e); renderShareBadge(); return; } } }
+  let sub = null, globalProblem = '';
+  if(hardGlobal || softGlobal){          // the one shared folder: a stale or unreachable one must never stop a person's own feed folder from being written
+    try {
+      const d = await withTimeout(shareReady(false), 5000);
+      if(!d){ if(hardGlobal) globalProblem = 'paused'; }
+      else { try { sub = await withTimeout(d.getDirectoryHandle('shared', {create:hardGlobal}), 5000); } catch(e){ if(hardGlobal) globalProblem = (e && e.message) || String(e); } }
+    } catch(e){ if(hardGlobal) globalProblem = 'The shared folder is not answering. Choose it again in the Share window.'; }
   }
   const SLOW = 'timed out: the folder may have been deleted, moved or be on a drive that is not connected. Choose it again (or Remove the person if it is no longer used).';
-  const errs = [], run = async fn => { try { await withTimeout(fn(), 10000); } catch(e){ let msg = (e && e.message) || String(e); if(msg === 'timed out') msg = SLOW; if(!/has no folder yet/.test(msg)) errs.push(msg); } };          // one slow or missing folder must not hold up the others          // a person with no folder on THIS device is written by the device that has one
-  for(const i of pages) await run(() => writeSharedPage(i, sub));
-  for(const nb of nbs) await run(() => writeSharedNotebook(nb, sub, force));
-  await Promise.all(feeds.map(async f => { const k = personKey(f.person);          // every feed on its own, each with a time limit
-    try { if(await withTimeout(writeFeed(f, sub, force), 8000)) feedStat.set(k, {ok:true, at:Date.now()}); }
-    catch(e){ let msg = (e && e.message) || String(e); if(msg === 'timed out') msg = SLOW;
-      if(/has no folder yet/.test(msg)) feedStat.set(k, {ok:false, at:Date.now(), err:'No folder is set on this device for them (another device may write this feed). Choose a folder here to write it from this one.'});
-      else { errs.push(f.person + ': ' + msg); feedStat.set(k, {ok:false, at:Date.now(), err:msg}); } } }));
-  shareState = errs.length ? 'error' : 'ok'; shareErr = errs.join(' · ');
+  const errs = [], run = async (fn, ms) => { try { await withTimeout(fn(), ms || 10000); } catch(e){ let msg = (e && e.message) || String(e); if(msg === 'timed out') msg = SLOW; if(!/has no folder yet/.test(msg)) errs.push(msg); } };          // one slow or missing folder must not hold up the others
+  if(globalProblem){ pages = pages.filter(i => !(i.shared.global || i.shared.root)); nbs = []; if(globalProblem !== 'paused') errs.push(globalProblem); }
+  await Promise.all([
+    ...pages.map(i => run(() => writeSharedPage(i, sub))),
+    ...nbs.map(nb => run(() => writeSharedNotebook(nb, sub, force), 60000)),
+    ...feeds.map(async f => { const k = personKey(f.person);          // every feed on its own, each with a time limit
+      try { if(await withTimeout(writeFeed(f, sub, force), 8000)) feedStat.set(k, {ok:true, at:Date.now()}); }
+      catch(e){ let msg = (e && e.message) || String(e); if(msg === 'timed out') msg = SLOW;
+        if(/has no folder yet/.test(msg)) feedStat.set(k, {ok:false, at:Date.now(), err:'No folder is set on this device for them (another device may write this feed). Choose a folder here to write it from this one.'});
+        else { errs.push(f.person + ': ' + msg); feedStat.set(k, {ok:false, at:Date.now(), err:msg}); } } })
+  ]);
+  if(!only || errs.length){ shareState = errs.length ? 'error' : globalProblem === 'paused' ? 'paused' : 'ok'; shareErr = errs.join(' · '); }          // a one-person write does not clear what is known about the shared folder
   renderShareBadge(); try { renderFeedStatus(); } catch {}
 }
 function scheduleShareWrite(){ if(!db.items.some(i => i.shared && i.shared.on) && !db.notebooks.some(n => n.shared && n.shared.on) && !(db.feeds || []).some(f => f.on)) return; clearTimeout(shareTimer); shareTimer = setTimeout(() => runShareWrites(false), 1200); }
@@ -9447,7 +9480,7 @@ document.addEventListener('click', e => {
     else if(act === 'inback'){ sharedView = null; renderDetail(); }
     else if(act === 'inreply'){ const ib = inboxes.find(x => x.id === a.dataset.id), box = a.closest('.insugg2'); if(ib && box){ const msg = box.querySelector('.sgmsg').value.trim(); if(!msg){ toast('Write your suggestion first.'); return; } inboxReply(ib, a.dataset.file, msg, box.querySelector('.sgappend').checked).then(() => { toast(`Sent to ${inboxOwner(ib)}.`); box.querySelector('.sgmsg').value = ''; }).catch(e => toast('Couldn’t send: ' + ((e && e.message) || e))); } }
     else if(act === 'sugyes') decideSuggestion(a.dataset.id, true);
-    else if(act === 'feeddir'){ (async () => { const pn = a.dataset.p; try { await pickPersonDir(pn); toast(`${pn}’s files will go to “${personDirs.get(personKey(pn)).name}”.`); await runShareWrites(true); } catch(e){ if(!(e && e.name === 'AbortError')) toast((e && e.message) || String(e)); } renderSettings(); if($('#sharedlg').open) refreshShareRows(); })(); }
+    else if(act === 'feeddir'){ (async () => { const pn = a.dataset.p; try { await pickPersonDir(pn); toast(`${pn}’s files will go to “${personDirs.get(personKey(pn)).name}”.`); await runShareWrites(true, personKey(pn)); } catch(e){ if(!(e && e.name === 'AbortError')) toast((e && e.message) || String(e)); } renderSettings(); if($('#sharedlg').open) refreshShareRows(); })(); }
     else if(act === 'feedallow'){ refreshPersonStates(true).then(() => { renderSettings(); runShareWrites(true); }); }
     else if(act === 'sharego') applyShare(); else if(act === 'shareclose') $('#sharedlg').close();
     else if(act === 'sharestop'){ const si = byId(shareDlgItem); $('#sharedlg').close(); if(si) stopSharing(si, false); }
@@ -9466,7 +9499,7 @@ document.addEventListener('click', e => {
     else if(act === 'teamadd'){ const inp = $('#teamadd'), v = inp ? inp.value.trim() : ''; if(v){ if(teamName(v)) toast(`${teamName(v)} is already on the team.`); else { addPerson(capFirst(v)); touch(); renderRail(); } renderSettings(); } }
     else if(act === 'teammerge') mergePerson(a.dataset.from, a.dataset.to);
     else if(act === 'feedremove') removePerson(a.dataset.p);
-    else if(act === 'feedwrite'){ feedWritten.delete(a.dataset.p); runShareWrites(true).then(() => { const st = feedStat.get(personKey(a.dataset.p)); toast(st && st.ok ? `Wrote ${a.dataset.p}’s feed.` : `Couldn’t write ${a.dataset.p}’s feed: ${(st && st.err) || 'unknown reason'}`); }); }
+    else if(act === 'feedwrite'){ feedWritten.delete(a.dataset.p); toast(`Writing ${a.dataset.p}’s feed…`); runShareWrites(true, personKey(a.dataset.p)).then(() => { const st = feedStat.get(personKey(a.dataset.p)); toast(st && st.ok ? `Wrote ${a.dataset.p}’s feed.` : `Couldn’t write ${a.dataset.p}’s feed: ${(st && st.err) || 'unknown reason'}`); }); }
     else if(act === 'teamremove'){ removePerson(a.dataset.id); renderSettings(); }
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
@@ -9947,7 +9980,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261119105051';</script>
+<script>window.NB_BUILD = '20261119110033';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

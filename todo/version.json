@@ -1,4 +1,19 @@
-{"version":"1.67.9","build":"20261119105051","changelog":[
+{"version":"1.67.11","build":"20261119110033","changelog":[
+ {
+  "v": "1.67.11",
+  "title": "Feeds no longer wait for the shared folder",
+  "items": [
+   "Found why a feed could write nothing at all in the installed app: before writing any person's feed, the app first checked the one shared folder used for shared pages and notebooks, and if that folder was stale or not answering it waited forever (no message). A person's own feed folder no longer depends on it: Keep a feed and Write now write just that person's feed straight away, shared pages and notebooks are written alongside with time limits, and a problem with the shared folder is reported on its own.",
+   "Write now says “Writing…” at once and then whether it worked."
+  ]
+ },
+ {
+  "v": "1.67.10",
+  "title": "Forget folders of removed people",
+  "items": [
+   "A folder that was once chosen for someone you have since removed no longer gets in the way. Choosing a folder used to ask “… is already <removed person>’s folder. Move it?” because the app still remembered the link; it now forgets links to people who are not on the team and have no running feed, so that question only appears for people who really use the folder."
+  ]
+ },
  {
   "v": "1.67.9",
   "title": "One slow feed folder cannot block the others",
