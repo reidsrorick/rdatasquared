@@ -467,6 +467,16 @@ body.focus #sheet .shrib,body.focus #sheet .shhint{display:none}
 #focusbar{position:fixed;right:14px;bottom:12px;z-index:80;display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:5px 8px 5px 14px;font-size:12.5px;color:var(--mute);box-shadow:0 2px 10px #0003}
 #focusbar button{border:1px solid var(--line);background:none;color:var(--text);border-radius:99px;padding:3px 10px;font-size:12px}
 .okc{color:#3f9b5b}
+.tmh{margin:16px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}.tmh small{text-transform:none;letter-spacing:0;font-weight:400;margin-left:6px}
+.tmcard{border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:6px 0;background:var(--field);display:flex;flex-direction:column;gap:6px}
+.tmhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.tmhead .grow{flex:1}
+.tmopen{color:var(--mute)}.tmchip{color:var(--amber);background:var(--amberbg);border-radius:99px;padding:1px 8px}
+.tmrow{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;font-size:13px}.tmrow small{color:var(--mute)}.tmrow label{display:flex;gap:6px;align-items:center}
+.tmbtns{display:flex;gap:6px;flex-wrap:wrap}#setdlg .tmbtns button,#setdlg .tmrow button,#setdlg .tmadd button,#setdlg .tmwarn button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:7px;padding:2px 9px;font-size:12px;height:auto;min-height:0;line-height:1.5;cursor:pointer}
+#setdlg .tmbtns button:hover,#setdlg .tmrow button:hover,#setdlg .tmadd button:hover,#setdlg .tmwarn button:hover{background:var(--hover2)}#setdlg .tmbtns .dangerbtn{color:var(--red)}
+.tmwarn{display:flex;flex-direction:column;gap:6px;background:var(--amberbg);color:var(--amber);border-radius:10px;padding:9px 12px;margin:6px 0;font-size:13px}.tmwarn small{opacity:.85}
+.tmadd{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;margin:8px 0 2px;font-size:13px}.tmadd label{display:flex;gap:6px;align-items:center;color:var(--mute)}.tmadd input[type=text]{width:150px;border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:4px 8px;font:inherit;outline:none}
+.tmaddg{display:flex;gap:6px;align-items:center}.tmnone{color:var(--mute);font-size:13px;margin:4px 0}.tmguest{padding:6px 12px}
 .typebtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .rt a.notelink{color:var(--accent);text-decoration:underline;cursor:pointer}.rt a.notelink.gone{opacity:.5;text-decoration:line-through}
 .linkpick{position:fixed;z-index:70;min-width:230px;max-width:360px;max-height:260px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px #0004;font-size:13px}
@@ -667,6 +677,7 @@ a.nlink{font-size:12px;color:var(--mute);text-decoration:none;cursor:pointer;whi
 a.nlink:hover,a.nlink.has{color:var(--accent)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#2b2a27;color:#fff;padding:9px 10px 9px 16px;border-radius:12px;display:none;gap:12px;align-items:center;box-shadow:0 8px 24px #0005;max-width:80vw;font-size:13px;z-index:20}
 #toast.show{display:flex}
+#toast[popover]{inset:auto auto 18px 50%;margin:0;border:0;width:auto;height:auto;overflow:visible}          /* a popover sits above an open dialog, so a message from Settings is no longer hidden behind it */
 .rqat{display:flex;align-items:center;gap:2px;padding:3px 8px;border-bottom:1px solid var(--line);flex-wrap:wrap;min-height:36px}
 .rqat[hidden]{display:none}
 .rqat .rqhint{color:var(--mute);font-size:12px;padding:0 6px}
@@ -1089,7 +1100,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 </div><div class="setpane" role="tabpanel" data-spane="look" hidden>
   <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
 </div><div class="setpane" role="tabpanel" data-spane="team" hidden>
-  <div class="setsec"><h4>Team and assigned-action feeds</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Your team is the list of people you can assign to. A feed is a file in a folder you choose for that person (share that folder with them) listing the actions assigned to them, so they can see them and answer “done?”. You always confirm. It holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
+  <div class="setsec"><h4>Team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">The people and Claude projects you can assign actions to. Turn on <b>Keep a feed</b> for one and the app writes a file, in a folder you choose and share with them, listing their actions, so they can answer “done?”. You always confirm. A feed holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
   <div class="setsec"><h4>From the team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">If someone shared a folder with you, connect it here. Then you see what is assigned to you and the pages shared with you, and can send “done?” requests and suggestions back.</div><div id="setinbox"></div></div>
 </div><div class="setpane" role="tabpanel" data-spane="setup" hidden>
   <div class="setsec"><h4>Set-up guide</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Nothing to install: this is one web page. Each step ticks itself when it is done.</div><div id="setsetup"></div></div>
@@ -1164,7 +1175,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
   <div class="dfoot"><span></span><span><button data-act="qacancel">Cancel</button> <button class="pri" data-act="qasave">Add</button></span></div>
 </dialog>
 <dialog id="kbdlg"><h3>⌨ Keyboard shortcuts &amp; tips</h3><p>Press <kbd>?</kbd> any time to open this. Shortcuts that are single keys work when you're not typing in a box.</p><div id="kbbody"></div><div class="dfoot"><span></span><button class="pri" data-act="kbclose">Close</button></div></dialog>
-<div id="toast"></div>
+<div id="toast" popover="manual"></div>
 <div id="status"></div>
 
 <script>
@@ -1173,8 +1184,18 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.67.4';
+const APP_VERSION = '1.67.5';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.67.5",
+  "title": "Team page tidied: remove, merge both ways, messages above Settings",
+  "items": [
+   "The Team page in Settings is tidier: Claude projects and People are listed separately, each as a card with its feed switch, folder and options together. Names that look like the same person or project are listed once at the top with a merge button in each direction. Adding a person or a Claude project, the file label and the team-only switch are grouped at the top and bottom.",
+   "Team settings: you can now Remove a team member or a leftover feed from the Team list (a Remove button on its row), and removing a person from the People list also removes their feed, after asking. Files already in their folder are left alone.",
+   "When two names are the same project, the Team list now offers the merge in both directions (old into new, or new into old). The project's feed and folder move with it.",
+   "Messages shown while Settings is open (like why a feed could not be turned on) used to be hidden behind the Settings window. They now appear above it. Cancelling the folder picker when you tick Keep a feed now says so, instead of quietly doing nothing."
+  ]
+ },
  {
   "v": "1.67.4",
   "title": "Remove page type icons",
@@ -3094,9 +3115,9 @@ function renderFileInfo(){
 }
 function guestRowsHtml(){
   const g = db.guests || []; if(!g.length) return '';
-  return '<div class="feedrow guesthd"><b>Guests</b> <small>assigned by name; not on the team; no feed</small></div>' + g.slice().sort((a, b) => a.localeCompare(b)).map(n => {
+  return `<h5 class="tmh">Guests <small>${g.length} · assigned by name, not on the team, no feed</small></h5>` + g.slice().sort((a, b) => a.localeCompare(b)).map(n => {
     const sim = nearNames(n)[0], openN = allEntries().filter(x => !x.done && (x.assignee || '').toLowerCase() === n.toLowerCase()).length;
-    return `<div class="feedrow guestrow"><span>${esc(n)} <small>${openN} open</small></span><span class="feedmerge"><button data-act="guestteam" data-n="${esc(n)}">Add to team</button>${sim ? `<button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button>` : ''}<button data-act="guestremove" data-n="${esc(n)}">Remove</button></span></div>`;
+    return `<div class="tmcard tmguest"><div class="tmhead"><b>${esc(n)}</b><small class="tmopen">${openN} open</small><span class="grow"></span><span class="tmbtns"><button data-act="guestteam" data-n="${esc(n)}">Add to team</button>${sim ? `<button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button>` : ''}<button data-act="guestremove" data-n="${esc(n)}">Remove</button></span></div></div>`;
   }).join('');
 }
 function renderSettings(){
@@ -3105,13 +3126,25 @@ function renderSettings(){
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
   $('#settheme').value = theme; try { renderBackupSettings(); } catch {} try { renderCalSettings(); } catch {} try { renderInstallHelp(); } catch {} renderInboxSettings(); renderRaidSettings(); renderAlertSettings(); renderKeySettings(); try { renderSetup(); } catch {}
   const hasClaude = [...db.people, ...(db.feeds || []).map(f => f.person)].some(n => /^claude/i.test(n) || claudeStem(n)) || (db.feeds || []).some(f => f.claude), names = [...new Set([...(hasClaude ? [] : ['Claude']), ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
-  const sl = srcSlug();
-  $('#setfeeds').innerHTML = `<div class="feedrow srclabelrow"><label>Label my files as <input type="text" id="srclabel" value="${esc(db.label || '')}" placeholder="${esc(db.me || 'e.g. Reid')}" maxlength="40" autocomplete="off" style="width:150px"></label><small>${sl ? `Your feeds are written as <b>assigned.${esc(sl)}.json</b>${db.label ? '' : ' (taken from your “I am” name)'}` : 'No label, so the files are named assigned.json'}. People you share with can see where actions came from, and two notebooks can use one folder without overwriting each other. Leave it empty to use your “I am” name.</small></div>` + names.map(n => { const f = (db.feeds || []).find(x => x.person.toLowerCase() === n.toLowerCase()), openN = feedItems({person:n, titles:false}).filter(x => !x.done).length;
-    const kin = kinNames(n), kinOpen = kin.map(k => [k, allEntries().filter(x => !x.done && (x.assignee || '').toLowerCase() === k.toLowerCase()).length]).filter(o => o[1]);
-    const kinBtn = kin.map(k => { const aff = !!claudeStem(n); return aff === !!claudeStem(k) ? '' : aff ? `<button data-act="teammerge" data-from="${esc(k)}" data-to="${esc(n)}">Merge ${esc(k)} into ${esc(n)}</button>` : `<button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(k)}">Merge into ${esc(k)}</button>`; }).join('');
-    const sim = kin.length ? '' : db.people.includes(n) ? nearNames(n).filter(m => db.people.includes(m))[0] : '';
-    return `<div class="feedrow"><label><input type="checkbox" data-feed="${esc(n)}" ${f && f.on ? 'checked' : ''}> Keep a feed for <b>${esc(n)}</b>${f && f.claude ? ' <small class="cpchip">Claude project</small>' : ''} <small>${openN} open now${db.people.includes(n) ? '' : ' · not on the team yet'}${kinOpen.map(o => ` · <b class="bad">${o[1]} more under “${esc(o[0])}”</b>`).join('')}</small></label><span class="feedmerge"><button data-act="feedrename" data-p="${esc(n)}" title="Rename this person. Their feed, folder and shared pages move with the name">Rename…</button></span>${kinBtn ? `<span class="feedmerge"><small>same project</small> ${kinBtn}</span>` : ''}${sim ? `<span class="feedmerge"><small>looks like ${esc(sim)}</small> <button data-act="teammerge" data-from="${esc(n)}" data-to="${esc(sim)}">Merge into ${esc(sim)}</button></span>` : ''}${f && f.on ? `<label class="feedt"><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><label class="feedt"><input type="checkbox" data-feedc="${esc(n)}" ${f.claude ? 'checked' : ''}> this is a Claude project <small>(adds start-here notes to the feed and a Markdown copy of each page you share)</small></label>${f.claude ? `<span class="feedp"><small>${esc(claudeStatus(n))}</small> <button data-act="feedcopy" data-p="${esc(n)}" title="A paragraph to paste into that project’s CLAUDE.md so every session checks the feed">Copy line for CLAUDE.md</button></span>` : ''}<span class="feedp">${folderLine(n)}</span>` : ''}</div>`; }).join('')
-    + guestRowsHtml() + `<div class="feedrow teamadd"><input type="text" id="cpadd" placeholder="Add a Claude project, e.g. Website…" autocomplete="off"><button data-act="cpadd" title="Makes a team member called Website_Claude and asks which folder is that project’s">Add Claude project</button></div><div class="feedrow teamadd"><input type="text" id="teamadd" placeholder="Add a team member…" autocomplete="off"><button data-act="teamadd">Add</button></div><label class="feedrow"><input type="checkbox" id="teamstrict" ${db.strict ? 'checked' : ''}> Only assign to people on the team (ask me before adding a new name)</label>`;
+  const sl = srcSlug(), onTeam = n => db.people.some(p => personKey(p) === personKey(n)), feedOf = n => (db.feeds || []).find(x => personKey(x.person) === personKey(n));
+  const openOf = n => feedItems({person:n, titles:false}).filter(x => !x.done).length, openUnder = n => allEntries().filter(x => !x.done && (x.assignee || '').toLowerCase() === n.toLowerCase()).length;
+  const pairs = [], seenPair = new Set();          // names that look like one person or one project: offered together, merged either way
+  const addPair = (a2, b2, why) => { const key = [personKey(a2), personKey(b2)].sort().join('|'); if(seenPair.has(key)) return; seenPair.add(key); pairs.push({a:a2, b:b2, why}); };
+  for(const n of names){ const kin = kinNames(n); for(const k of kin) addPair(k, n, 'the same project'); if(!kin.length && db.people.includes(n)){ const sim = nearNames(n).filter(m => db.people.includes(m))[0]; if(sim) addPair(n, sim, 'a similar name'); } }
+  const pairHtml = pairs.map(p => `<div class="tmwarn"><span>⚠ <b>${esc(p.a)}</b> and <b>${esc(p.b)}</b> look like ${p.why}.${openUnder(p.a) || openUnder(p.b) ? ` <small>${openUnder(p.a)} open under ${esc(p.a)}, ${openUnder(p.b)} under ${esc(p.b)}.</small>` : ''}</span><span class="tmbtns"><button data-act="teammerge" data-from="${esc(p.a)}" data-to="${esc(p.b)}" title="Everything of ${esc(p.a)} moves to ${esc(p.b)}; a project's feed and folder come along">Merge ${esc(p.a)} into ${esc(p.b)}</button><button data-act="teammerge" data-from="${esc(p.b)}" data-to="${esc(p.a)}" title="Everything of ${esc(p.b)} moves to ${esc(p.a)}; a project's feed and folder come along">Merge ${esc(p.b)} into ${esc(p.a)}</button></span></div>`).join('');
+  const card = n => { const f = feedOf(n), on = !!(f && f.on), team = onTeam(n);
+    return `<div class="tmcard">
+      <div class="tmhead"><b>${esc(n)}</b>${f && f.claude ? '<small class="cpchip">Claude project</small>' : ''}${team ? '' : '<small class="tmchip">not on the team yet</small>'}<small class="tmopen">${openOf(n)} open</small><span class="grow"></span><span class="tmbtns"><button data-act="feedrename" data-p="${esc(n)}" title="Rename. The feed, folder and shared pages move with the name">Rename…</button>${team || f ? `<button data-act="feedremove" data-p="${esc(n)}" class="dangerbtn" title="Take them off the team and stop their feed">Remove</button>` : ''}</span></div>
+      <div class="tmrow"><label><input type="checkbox" data-feed="${esc(n)}" ${on ? 'checked' : ''}> Keep a feed</label>${on ? `<span>${folderLine(n)}</span>` : '<small>Off: no file is written for them.</small>'}</div>
+      ${on ? `<div class="tmrow"><label><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><label title="Adds start-here notes to the feed and a Markdown copy of each page you share"><input type="checkbox" data-feedc="${esc(n)}" ${f.claude ? 'checked' : ''}> this is a Claude project</label></div>${f.claude ? `<div class="tmrow"><small>${esc(claudeStatus(n))}</small><button data-act="feedcopy" data-p="${esc(n)}" title="A paragraph to paste into that project’s CLAUDE.md so every session checks the feed">Copy line for CLAUDE.md</button></div>` : ''}` : ''}
+    </div>`; };
+  const isCp = n => { const f = feedOf(n); return !!(f && f.claude) || !!claudeStem(n); }, cps = names.filter(isCp), ppl = names.filter(n => !isCp(n));
+  $('#setfeeds').innerHTML = pairHtml
+    + `<div class="tmadd"><span class="tmaddg"><label>Person <input type="text" id="teamadd" placeholder="Name" autocomplete="off"></label><button data-act="teamadd">Add</button></span><span class="tmaddg"><label>Claude project <input type="text" id="cpadd" placeholder="e.g. Website" autocomplete="off"></label><button data-act="cpadd" title="Makes a team member called Website_Claude and asks which folder is that project’s">Add</button></span></div>`
+    + `<h5 class="tmh">Claude projects <small>${cps.length}</small></h5>` + (cps.map(card).join('') || '<p class="tmnone">None yet. Add one above to give a Claude project its own feed.</p>')
+    + `<h5 class="tmh">People <small>${ppl.length}</small></h5>` + (ppl.map(card).join('') || '<p class="tmnone">No one yet.</p>')
+    + guestRowsHtml()
+    + `<h5 class="tmh">Options</h5><div class="tmcard"><label class="tmrow">Label my files as <input type="text" id="srclabel" value="${esc(db.label || '')}" placeholder="${esc(db.me || 'e.g. Reid')}" maxlength="40" autocomplete="off" style="width:150px"></label><small>${sl ? `Feeds are written as <b>assigned.${esc(sl)}.json</b>${db.label ? '' : ' (from your “I am” name)'}` : 'No label, so the files are named assigned.json'}. The label shows people where actions came from, and lets two notebooks share one folder without overwriting each other.</small><label class="tmrow"><input type="checkbox" id="teamstrict" ${db.strict ? 'checked' : ''}> Only assign to people on the team (ask me before adding a new name)</label></div>`;
 }
 function renderRaidSettings(){
   const all = allRaid(), cfg = raidCfgNow(), live = raidLive(cfg), dead = RAID_BUILTIN.filter(k => cfg[k] && cfg[k].del);
@@ -3226,7 +3259,7 @@ async function setFeed(person, on){
       const h = personDirs.get(personKey(person)); if(h) f.folder = h.name;
       f.on = true; touch(); await runShareWrites(true);
       toast(shareState === 'error' ? 'The feed is on, but writing failed: ' + shareErr : `Keeping a feed for ${person} in “${h ? h.name : 'the shared folder'}”.`);
-    } catch(e){ f.on = false; if(e && e.name !== 'AbortError') toast('Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
+    } catch(e){ f.on = false; toast(e && e.name === 'AbortError' ? `No folder was chosen for ${person}, so the feed stays off. Tick the box again and pick the folder their files should go in.` : 'Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
   } else { f.on = false; touch(); toast(`Stopped the feed for ${person}. The last file was left in their folder.`); }
   renderSettings(); renderAll();
 }
@@ -3603,6 +3636,7 @@ let toastUndo = null, toastTimer = null, toastOpenId = null;
 function toast(msg, undo, label = 'Undo', openId, ms){
   toastUndo = undo || null; toastOpenId = openId || null; const el = $('#toast');
   el.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button data-act="toastundo">${esc(label)}</button>` : ''}${openId ? '<button data-act="toastopen" title="Go to it, to edit it">Open</button>' : ''}<button data-act="toastx" aria-label="Dismiss">×</button>`;
+  try { if(el.matches(':popover-open')) el.hidePopover(); el.showPopover(); } catch {}          // top layer: above any open dialog, newest on top
   el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms || 9000);
 }
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
@@ -4155,12 +4189,19 @@ function renameFromSettings(pn){
   renamePerson(pn, nu); addPerson(nu);
   toast(exists ? `Merged ${pn} into ${nu}.` : `Renamed ${pn} to ${nu}. Their feed, folder and shared pages moved with the name.`);
 }
+function dropFeed(n){                                       // the feed of this person and the folder chosen for it (files already written in that folder are left alone)
+  const same = x => (x || '').toLowerCase() === n.toLowerCase();
+  db.feeds = (db.feeds || []).filter(f => !same(f.person));
+  const k = personKey(n); if(personDirs.has(k)){ personDirs.delete(k); personState.delete(k); savePersonDirs(); }
+  feedWritten.delete(n);
+}
 function removePerson(n){
-  const same = x => (x || '').toLowerCase() === n.toLowerCase(), used = personUsed(n);
-  if(used && !confirm(`Remove ${n}? Their actions become unassigned.`)) return;
+  const same = x => (x || '').toLowerCase() === n.toLowerCase(), used = personUsed(n), fd = (db.feeds || []).find(f => same(f.person));
+  if((used || fd) && !confirm(`Remove ${n}?${used ? ' Their actions become unassigned.' : ''}${fd ? ` Their feed${fd.claude ? ' (a Claude project)' : ''} and the link to its folder are removed too. Files already in that folder are left alone.` : ''}`)) return;
+  if(fd) dropFeed(n);
   db.items.forEach(i => { for(const o of [i, ...i.checklist]) if(same(o.assignee)){ o.assignee = ''; i.updated = now(); } });
   db.people = db.people.filter(k => !same(k)); if(same(db.me)) db.me = ''; if(same(actPerson)){ actPerson = ''; saveUi(); }
-  touch(); renderPeople(); renderRail();
+  touch(); renderPeople(); renderRail(); if($('#setdlg').open) renderSettings();
 }
 function renderCats(){
   $('#catrows').innerHTML = db.categories.map(c => `<div class="crow"><input type="color" data-kc="${esc(c.id)}" value="${esc(c.color)}"><input type="text" data-kn="${esc(c.id)}" value="${esc(c.name)}"><button class="x" data-act="delcat" data-id="${esc(c.id)}" title="Delete">×</button></div>`).join('') || '<p>No categories yet.</p>';
@@ -9369,6 +9410,7 @@ document.addEventListener('click', e => {
     else if(act === 'feedcopy') copyClaudeLine(a.dataset.p);
     else if(act === 'teamadd'){ const inp = $('#teamadd'), v = inp ? inp.value.trim() : ''; if(v){ if(teamName(v)) toast(`${teamName(v)} is already on the team.`); else { addPerson(capFirst(v)); touch(); renderRail(); } renderSettings(); } }
     else if(act === 'teammerge') mergePerson(a.dataset.from, a.dataset.to);
+    else if(act === 'feedremove') removePerson(a.dataset.p);
     else if(act === 'teamremove'){ removePerson(a.dataset.id); renderSettings(); }
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
     else if(act === 'theme'){ theme = {auto:'light', light:'dark', dark:'auto'}[theme]; applyTheme(); saveUi(); renderFileInfo(); }
@@ -9849,7 +9891,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261119095415';</script>
+<script>window.NB_BUILD = '20261119101007';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

@@ -1,4 +1,14 @@
-{"version":"1.67.4","build":"20261119095415","changelog":[
+{"version":"1.67.5","build":"20261119101007","changelog":[
+ {
+  "v": "1.67.5",
+  "title": "Team page tidied: remove, merge both ways, messages above Settings",
+  "items": [
+   "The Team page in Settings is tidier: Claude projects and People are listed separately, each as a card with its feed switch, folder and options together. Names that look like the same person or project are listed once at the top with a merge button in each direction. Adding a person or a Claude project, the file label and the team-only switch are grouped at the top and bottom.",
+   "Team settings: you can now Remove a team member or a leftover feed from the Team list (a Remove button on its row), and removing a person from the People list also removes their feed, after asking. Files already in their folder are left alone.",
+   "When two names are the same project, the Team list now offers the merge in both directions (old into new, or new into old). The project's feed and folder move with it.",
+   "Messages shown while Settings is open (like why a feed could not be turned on) used to be hidden behind the Settings window. They now appear above it. Cancelling the folder picker when you tick Keep a feed now says so, instead of quietly doing nothing."
+  ]
+ },
  {
   "v": "1.67.4",
   "title": "Remove page type icons",
