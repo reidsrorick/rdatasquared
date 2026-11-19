@@ -1,4 +1,11 @@
-{"version":"1.67.7","build":"20261119103411","changelog":[
+{"version":"1.67.8","build":"20261119104449","changelog":[
+ {
+  "v": "1.67.8",
+  "title": "Keep a feed: no endless waiting",
+  "items": [
+   "Keep a feed no longer waits forever after you choose a folder. Each step has a time limit (checking the folder against other people's, saving the choice, writing the first file), and the box says which step it is on, so if anything is slow you can see where. A deleted or moved folder from a former team member can no longer hold it up."
+  ]
+ },
  {
   "v": "1.67.7",
   "title": "Keep a feed opens the folder window at once",

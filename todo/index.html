@@ -1184,8 +1184,15 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.67.7';
+const APP_VERSION = '1.67.8';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.67.8",
+  "title": "Keep a feed: no endless waiting",
+  "items": [
+   "Keep a feed no longer waits forever after you choose a folder. Each step has a time limit (checking the folder against other people's, saving the choice, writing the first file), and the box says which step it is on, so if anything is slow you can see where. A deleted or moved folder from a former team member can no longer hold it up."
+  ]
+ },
  {
   "v": "1.67.7",
   "title": "Keep a feed opens the folder window at once",
@@ -3149,7 +3156,7 @@ function renderSettings(){
   const card = n => { const f = feedOf(n), on = !!(f && f.on), team = onTeam(n);
     return `<div class="tmcard">
       <div class="tmhead"><b>${esc(n)}</b>${f && f.claude ? '<small class="cpchip">Claude project</small>' : ''}${team ? '' : '<small class="tmchip">not on the team yet</small>'}<small class="tmopen">${openOf(n)} open</small><span class="grow"></span><span class="tmbtns"><button data-act="feedrename" data-p="${esc(n)}" title="Rename. The feed, folder and shared pages move with the name">Rename…</button>${team || f ? `<button data-act="feedremove" data-p="${esc(n)}" class="dangerbtn" title="Take them off the team and stop their feed">Remove</button>` : ''}</span></div>
-      <div class="tmrow"><label><input type="checkbox" data-feed="${esc(n)}" ${on || feedPending.has(personKey(n)) ? 'checked' : ''}> Keep a feed</label>${feedPending.has(personKey(n)) ? '<small>⏳ Waiting for you to choose a folder. The folder window can open behind this one: look for it in the taskbar.</small>' : on ? `<span>${folderLine(n)}</span>` : '<small>Off: no file is written for them.</small>'}</div>
+      <div class="tmrow"><label><input type="checkbox" data-feed="${esc(n)}" ${on || feedPending.has(personKey(n)) ? 'checked' : ''}> Keep a feed</label>${feedPending.has(personKey(n)) ? `<small data-feedpend="${esc(personKey(n))}">⏳ ${esc(feedPending.get(personKey(n)))}</small>` : on ? `<span>${folderLine(n)}</span>` : '<small>Off: no file is written for them.</small>'}</div>
       ${on ? `<div class="tmrow"><span data-feedstat="${esc(n)}">${feedStatHtml(n)}</span><button data-act="feedwrite" data-p="${esc(n)}" title="Write their feed file now">Write now</button></div>` : ''}
       ${on ? `<div class="tmrow"><label><input type="checkbox" data-feedt="${esc(n)}" ${f.titles ? 'checked' : ''}> include the title of the note an action is in</label><label title="Adds start-here notes to the feed and a Markdown copy of each page you share"><input type="checkbox" data-feedc="${esc(n)}" ${f.claude ? 'checked' : ''}> this is a Claude project</label></div>${f.claude ? `<div class="tmrow"><small>${esc(claudeStatus(n))}</small><button data-act="feedcopy" data-p="${esc(n)}" title="A paragraph to paste into that project’s CLAUDE.md so every session checks the feed">Copy line for CLAUDE.md</button></div>` : ''}` : ''}
     </div>`; };
@@ -3264,7 +3271,9 @@ async function addClaudeProject(){
   touch(); if(inp) inp.value = '';
   await setFeed(nm, true);
 }
-const feedPending = new Set();          // people whose folder window is open right now
+const feedPending = new Map();          // person key -> what the app is doing for them right now (folder window open, checking, writing)
+const FEED_WAIT = 'Waiting for you to choose a folder. The folder window can open behind this one: look for it in the taskbar.';
+function feedStep(k, text){ if(!feedPending.has(k)) return; feedPending.set(k, text); document.querySelectorAll('#setfeeds [data-feedpend]').forEach(el => { if(el.dataset.feedpend === k) el.textContent = '⏳ ' + text; }); }
 async function setFeed(person, on){
   let f = (db.feeds || []).find(x => x.person.toLowerCase() === person.toLowerCase());
   if(!f){ f = {person, on:false, titles:false, folder:''}; db.feeds.push(f); }
@@ -3272,13 +3281,14 @@ async function setFeed(person, on){
   if(on){
     addPerson(person);
     let pick = null;
-    try { if(!personDirs.has(k) && shareOk()) pick = pickPersonDir(person); } catch(e){ pick = Promise.reject(e); }          // the folder window is started right here, inside your click, so the browser always allows it
-    if(pick){ feedPending.add(k); renderSettings(); }
+    try { if(!personDirs.has(k) && shareOk()) pick = pickPersonDir(person, t => feedStep(k, t)); } catch(e){ pick = Promise.reject(e); }          // the folder window is started right here, inside your click, so the browser always allows it
+    if(pick){ feedPending.set(k, FEED_WAIT); renderSettings(); }
     try {
       if(pick){ try { await pick; } catch(e){ if(!(await hasFolder(person))) throw e; } }          // cancelled, but an old shared/for-name folder exists: use that
       else if(!(await hasFolder(person))) await pickPersonDir(person);
       const h = personDirs.get(k); if(h) f.folder = h.name;
-      f.on = true; touch(); await runShareWrites(true);
+      f.on = true; touch(); feedStep(k, 'Writing the first feed file…');
+      await withTimeout(runShareWrites(true), 20000);
       toast(shareState === 'error' ? 'The feed is on, but writing failed: ' + shareErr : `Keeping a feed for ${person} in “${h ? h.name : 'the shared folder'}”.`);
     } catch(e){ f.on = false; toast(e && e.name === 'AbortError' ? `No folder was chosen for ${person}, so the feed stays off. Tick the box again and pick the folder their files should go in.` : 'Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
     finally { feedPending.delete(k); }
@@ -4738,17 +4748,19 @@ async function personRoot(person, sub){                    // that person's fold
 async function personDirReady(person, sub){ try { return await personRoot(person, sub); } catch { return null; } }
 async function legacyDirExists(person){ const d = await shareReady(false); if(!d) return false; try { const sub = await d.getDirectoryHandle('shared'); await sub.getDirectoryHandle(feedDirName(person)); return true; } catch { return false; } }
 async function hasFolder(person){ await personDirsReady; return personDirs.has(personKey(person)) || await legacyDirExists(person); }
-async function pickPersonDir(person){
+async function pickPersonDir(person, step){
   if(!shareOk()) throw new Error('This browser can’t open folders (turn on the File System Access flag in Brave).');
   const h = await showDirectoryPicker({mode:'readwrite', id:'nb-' + feedSlug(person)});
+  if(step) step('Folder chosen. Checking it is not another person’s folder…');
   for(const [k, o] of [...personDirs]) if(k !== personKey(person)){
-    let same = false; try { same = await o.isSameEntry(h); } catch {}
+    let same = false; try { same = await withTimeout(o.isSameEntry(h), 2500); } catch {}          // a folder that was deleted or moved can answer slowly: do not wait for it
     if(!same) continue;
     const other = (db.feeds || []).find(f => personKey(f.person) === k), nm = other ? other.person : k;
     if(!confirm(`“${h.name}” is already ${nm}’s folder. Move it to ${person}? ${nm} will stop getting a feed until you choose another folder for them.`)) throw new Error(`That folder is already used for ${nm}. Pick a different one, so each person only sees their own files.`);
     personDirs.delete(k); personState.delete(k); if(other){ other.on = false; other.folder = ''; }
     break;
   }
+  if(step) step('Saving the folder choice…');
   personDirs.set(personKey(person), h); personState.set(personKey(person), 'ok'); await savePersonDirs();
   const f = (db.feeds || []).find(x => personKey(x.person) === personKey(person)); if(f) f.folder = h.name;
   touch(); return h;
@@ -9924,7 +9936,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261119103411';</script>
+<script>window.NB_BUILD = '20261119104449';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
