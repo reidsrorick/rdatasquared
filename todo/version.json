@@ -1,4 +1,11 @@
-{"version":"1.67.8","build":"20261119104449","changelog":[
+{"version":"1.67.9","build":"20261119105051","changelog":[
+ {
+  "v": "1.67.9",
+  "title": "One slow feed folder cannot block the others",
+  "items": [
+   "Turning on a feed no longer fails with “timed out” when another person's folder is missing or slow. Feeds are now written one by one with their own time limit, so a deleted or disconnected folder only affects its own card, which says so (“the folder may have been deleted, moved or be on a drive that is not connected”), and everyone else still gets their file."
+  ]
+ },
  {
   "v": "1.67.8",
   "title": "Keep a feed: no endless waiting",

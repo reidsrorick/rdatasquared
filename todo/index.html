@@ -1184,8 +1184,15 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.67.8';
+const APP_VERSION = '1.67.9';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.67.9",
+  "title": "One slow feed folder cannot block the others",
+  "items": [
+   "Turning on a feed no longer fails with “timed out” when another person's folder is missing or slow. Feeds are now written one by one with their own time limit, so a deleted or disconnected folder only affects its own card, which says so (“the folder may have been deleted, moved or be on a drive that is not connected”), and everyone else still gets their file."
+  ]
+ },
  {
   "v": "1.67.8",
   "title": "Keep a feed: no endless waiting",
@@ -3288,8 +3295,9 @@ async function setFeed(person, on){
       else if(!(await hasFolder(person))) await pickPersonDir(person);
       const h = personDirs.get(k); if(h) f.folder = h.name;
       f.on = true; touch(); feedStep(k, 'Writing the first feed file…');
-      await withTimeout(runShareWrites(true), 20000);
-      toast(shareState === 'error' ? 'The feed is on, but writing failed: ' + shareErr : `Keeping a feed for ${person} in “${h ? h.name : 'the shared folder'}”.`);
+      await runShareWrites(true);
+      const mine = feedStat.get(k);
+      toast(mine && !mine.ok ? `The feed is on, but writing ${person}’s file failed: ${mine.err}` : shareState === 'error' ? 'The feed is on, but writing failed: ' + shareErr : `Keeping a feed for ${person} in “${h ? h.name : 'the shared folder'}”.`);
     } catch(e){ f.on = false; toast(e && e.name === 'AbortError' ? `No folder was chosen for ${person}, so the feed stays off. Tick the box again and pick the folder their files should go in.` : 'Couldn’t turn the feed on: ' + ((e && e.message) || e)); }
     finally { feedPending.delete(k); }
   } else { f.on = false; touch(); toast(`Stopped the feed for ${person}. The last file was left in their folder.`); }
@@ -4866,7 +4874,7 @@ async function writeSharedNotebook(nb, sub, force){
   }
   nb.shared.dir = dirName; nb.shared.files = [...wanted]; nb.shared.last = now();
 }
-async function runShareWrites(force){
+async function runShareWrites(force, first){
   const pages = db.items.filter(i => i.shared && i.shared.on && (force || shareWritten.get(i.id) !== shareStamp(i))), nbs = db.notebooks.filter(n => n.shared && n.shared.on), feeds = (db.feeds || []).filter(f => f.on);
   if(!pages.length && !nbs.length && !feeds.length) return;
   await personDirsReady;
@@ -4878,12 +4886,15 @@ async function runShareWrites(force){
     if(!d){ if(hardGlobal){ shareState = 'paused'; renderShareBadge(); return; } }
     else { try { sub = await d.getDirectoryHandle('shared', {create:hardGlobal}); } catch(e){ if(hardGlobal){ shareState = 'error'; shareErr = (e && e.message) || String(e); renderShareBadge(); return; } } }
   }
-  const errs = [], run = async fn => { try { await fn(); } catch(e){ const msg = (e && e.message) || String(e); if(!/has no folder yet/.test(msg)) errs.push(msg); } };          // a person with no folder on THIS device is written by the device that has one
+  const SLOW = 'timed out: the folder may have been deleted, moved or be on a drive that is not connected. Choose it again (or Remove the person if it is no longer used).';
+  const errs = [], run = async fn => { try { await withTimeout(fn(), 10000); } catch(e){ let msg = (e && e.message) || String(e); if(msg === 'timed out') msg = SLOW; if(!/has no folder yet/.test(msg)) errs.push(msg); } };          // one slow or missing folder must not hold up the others          // a person with no folder on THIS device is written by the device that has one
   for(const i of pages) await run(() => writeSharedPage(i, sub));
   for(const nb of nbs) await run(() => writeSharedNotebook(nb, sub, force));
-  for(const f of feeds){ const k = personKey(f.person);
-    try { if(await writeFeed(f, sub, force)) feedStat.set(k, {ok:true, at:Date.now()}); }
-    catch(e){ const msg = (e && e.message) || String(e); if(/has no folder yet/.test(msg)) feedStat.set(k, {ok:false, at:Date.now(), err:'No folder is set on this device for them (another device may write this feed). Choose a folder here to write it from this one.'}); else { errs.push(msg); feedStat.set(k, {ok:false, at:Date.now(), err:msg}); } } }
+  await Promise.all(feeds.map(async f => { const k = personKey(f.person);          // every feed on its own, each with a time limit
+    try { if(await withTimeout(writeFeed(f, sub, force), 8000)) feedStat.set(k, {ok:true, at:Date.now()}); }
+    catch(e){ let msg = (e && e.message) || String(e); if(msg === 'timed out') msg = SLOW;
+      if(/has no folder yet/.test(msg)) feedStat.set(k, {ok:false, at:Date.now(), err:'No folder is set on this device for them (another device may write this feed). Choose a folder here to write it from this one.'});
+      else { errs.push(f.person + ': ' + msg); feedStat.set(k, {ok:false, at:Date.now(), err:msg}); } } }));
   shareState = errs.length ? 'error' : 'ok'; shareErr = errs.join(' · ');
   renderShareBadge(); try { renderFeedStatus(); } catch {}
 }
@@ -9936,7 +9947,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261119104449';</script>
+<script>window.NB_BUILD = '20261119105051';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
