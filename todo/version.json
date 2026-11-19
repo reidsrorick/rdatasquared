@@ -1,4 +1,48 @@
-{"version":"1.67.11","build":"20261119110033","changelog":[
+{"version":"1.69.2","build":"20261119131441","changelog":[
+ {
+  "v": "1.69.2",
+  "title": "Proposals are read even when a folder link is stale",
+  "items": [
+   "Claude's “done?” answers were not showing up under “to confirm”: the app checks the feed folders for them every few seconds, and when the shared-pages folder link was stale that check waited forever and never reached the proposals file. Reading proposals and replies now has time limits at every folder step and reads each folder on its own, so a stale link only affects itself."
+  ]
+ },
+ {
+  "v": "1.69.1",
+  "title": "Sidebar: Claude projects and People groups",
+  "items": [
+   "The People list in the left bar now has two groups when you have any Claude projects: Claude projects, and People. Click a group's name to fold it away (the choice is remembered on this computer).",
+   "People and projects with nothing open are dimmed, and a link at the bottom hides them until you want them again."
+  ]
+ },
+ {
+  "v": "1.69.0",
+  "title": "Spreadsheet folders",
+  "items": [
+   "Spreadsheets can now be grouped into folders of their own, separate from Notebooks. In the Spreadsheets list, press ＋ Folder to make one; each folder has ✎ to rename and ✕ to delete (its spreadsheets move to Unfiled, none is deleted), and click its name to fold it. A spreadsheet's Folder box (top line) moves it between folders, and a new spreadsheet starts in the folder you used last.",
+   "Existing spreadsheets start under Unfiled; the notebooks they used to sit in no longer show for spreadsheets."
+  ]
+ },
+ {
+  "v": "1.68.1",
+  "title": "Today: one compact toolbar",
+  "items": [
+   "The Today page's controls are now one slim bar under the date and the past-due summary: the filter box, Only mine, Show snoozed and the Floating window button sit side by side, so the lists start higher."
+  ]
+ },
+ {
+  "v": "1.68.0",
+  "title": "Zoom just the spreadsheet",
+  "items": [
+   "Ctrl + mouse wheel over a spreadsheet now zooms just the cells (50% to 200%), not the whole page. There is also a − 100% + control on the formula-guide line; click the percentage to go back to 100%. The zoom is remembered on this computer."
+  ]
+ },
+ {
+  "v": "1.67.12",
+  "title": "Feed time-out names the stuck step",
+  "items": [
+   "When writing a feed takes longer than 20 seconds, the warning now says which step it was stuck on (finding the folder, reading the file already there, opening it, waiting for permission to edit the folder, writing, or saving), so the real blocker can be seen. The time limit for one feed is now 20 seconds."
+  ]
+ },
  {
   "v": "1.67.11",
   "title": "Feeds no longer wait for the shared folder",
