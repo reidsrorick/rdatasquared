@@ -1,4 +1,11 @@
-{"version":"1.67.5","build":"20261119101007","changelog":[
+{"version":"1.67.6","build":"20261119102303","changelog":[
+ {
+  "v": "1.67.6",
+  "title": "Feed status and Write now",
+  "items": [
+   "Each feed card in Settings > Team now shows what the last write did: “Last written 10:32 as assigned.reid.json”, or the exact reason it could not write (for example the folder needs permission, or the folder was deleted). A new Write now button writes the feed straight away."
+  ]
+ },
  {
   "v": "1.67.5",
   "title": "Team page tidied: remove, merge both ways, messages above Settings",
