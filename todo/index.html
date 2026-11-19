@@ -372,7 +372,7 @@ input.who:focus{border-color:var(--accent)}
 .nbgh small{color:var(--mute);font-weight:400}
 .nbgh button{border:0;background:none;color:var(--mute);font-size:16px;line-height:1;padding:0 6px;border-radius:6px;opacity:.55}
 .nbgh button:hover{opacity:1;color:var(--accent);background:var(--hover)}
-.it.noterow{grid-template-columns:22px 1fr}.it small.when{color:var(--mute)}
+.it.noterow{grid-template-columns:1fr}.it small.when{color:var(--mute)}
 .nbgh.big{padding:14px 16px;gap:12px;font-weight:400;border-bottom:1px solid var(--line)}
 .nbgh.big .nbtxt{flex:1;min-width:0}.nbgh.big b{display:block;font-size:15px;font-weight:600}.nbgh.big small{display:block;margin-top:1px}
 .nbgh.big .nbgo{font-size:22px;color:var(--mute);line-height:1}.nbgh.big:hover .nbgo{color:var(--accent)}
@@ -1173,8 +1173,15 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.67.3';
+const APP_VERSION = '1.67.4';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.67.4",
+  "title": "Remove page type icons",
+  "items": [
+   "The pencil, clock-circle and grid icons at the left of pages in the Notes and Spreadsheets lists are gone, so titles line up from the left edge. Pins, the shared sign and the replies mark beside a title are unchanged."
+  ]
+ },
  {
   "v": "1.67.3",
   "title": "Spreadsheet: mostly grid",
@@ -3311,7 +3318,6 @@ function entryHtml(e, withNb){
   if(i.type === 'note'){                                          // a page: the title across the whole row, its date and time on the line below
     const when = sortMode === 'date' && dateField !== 'page' && i.created ? 'Created ' + (() => { const c = new Date(i.created); return fmtDay(dstr(c)) + ', ' + fmtTime(pad(c.getHours()) + ':' + pad(c.getMinutes())); })() : pageWhen(i);
     return `<div draggable="true" data-nbdrop="${esc(nbKey(i))}" class="it noterow ${onRow ? 'on' : ''}" data-id="${i.id}">
-      <span class="ic">${i.sheet ? '▦' : isMeeting(i) ? '◷' : '✎'}</span>
       <div><b>${i.pinAll ? '📍 ' : i.pinned ? '📌 ' : ''}${i.shared && i.shared.on ? '⇪ ' : ''}${pendingOf(i) ? '💬 ' : ''}${catDot(i.category)}${esc(i.title || 'Untitled')}</b><small class="when">${esc(when)}${withNb && nbById(nbKey(i)) ? ' · ' + esc(nbById(nbKey(i)).name) : ''}</small></div></div>`;
   }
   return `<div ${i.type === 'note' ? `draggable="true" data-nbdrop="${esc(nbKey(i))}" ` : ''}class="it ${onRow?'on':''} ${i.type==='task'&&i.done?'done':''} ${openT && dd && i.type === 'task' && dd < todayStr() ? 'late' : openT && dd === todayStr() ? 'todayrow' : ''}" data-id="${i.id}">
@@ -9843,7 +9849,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261119085017';</script>
+<script>window.NB_BUILD = '20261119095415';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

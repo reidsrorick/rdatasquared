@@ -1,4 +1,11 @@
-{"version":"1.67.3","build":"20261119085017","changelog":[
+{"version":"1.67.4","build":"20261119095415","changelog":[
+ {
+  "v": "1.67.4",
+  "title": "Remove page type icons",
+  "items": [
+   "The pencil, clock-circle and grid icons at the left of pages in the Notes and Spreadsheets lists are gone, so titles line up from the left edge. Pins, the shared sign and the replies mark beside a title are unchanged."
+  ]
+ },
  {
   "v": "1.67.3",
   "title": "Spreadsheet: mostly grid",
