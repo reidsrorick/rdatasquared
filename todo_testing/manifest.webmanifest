@@ -1,12 +1,12 @@
-﻿{
-    "name":  "My Notebook",
-    "short_name":  "Notebook",
+{
+    "name":  "My Notebook TEST",
+    "short_name":  "Notebook TEST",
     "description":  "Tasks, meetings, notes and recurring actions, saved to a file on your computer.",
     "start_url":  "./",
     "scope":  "./",
     "display":  "standalone",
     "background_color":  "#faf8f4",
-    "theme_color":  "#c2562d",
+    "theme_color":  "#2b6cb0",
     "icons":  [
                   {
                       "src":  "icons/icon-192.png",

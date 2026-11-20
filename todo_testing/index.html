@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Notebook</title>
+<title>[TEST] Notebook</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#c2562d">
+<meta name="theme-color" content="#2b6cb0">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <script>try{var t=JSON.parse(localStorage.getItem('notebook-ui')||'{}').theme;if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
@@ -901,7 +901,7 @@ body.mobile #mobwelcome p{margin:0 0 12px;color:var(--mute);line-height:1.5}
 body.mobile #mobwelcome button{width:100%;border:0;background:var(--accent);color:#fff;border-radius:12px;padding:14px;font:inherit;font-size:17px;font-weight:600;margin:6px 0 14px}
 body.mobile #mobwelcome .bad{color:var(--red)}
 </style>
-</head>
+<style>body::after{content:"TEST COPY";position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:2147483647;background:#c81e1e;color:#fff;font:700 11px/1 sans-serif;padding:3px 14px;border-radius:0 0 8px 8px;letter-spacing:.12em;pointer-events:none}</style></head>
 <body>
 <div id="banner"></div>
 <div id="mobstrip"></div>
@@ -1191,8 +1191,16 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.69.2';
+const APP_VERSION = '1.69.3';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.69.3",
+  "title": "Folder links are no longer forgotten",
+  "items": [
+   "Fixed: a folder chosen for a person or Claude project could come back as “not set on this device” after you reopened the app. From 1.67.10 the app tidied up folder links when Settings opened, and if that happened before your data file had finished loading it treated every link as left over and forgot them. It no longer tidies up at that moment, and it will not save the list of folders at all unless it has really read the saved list first. If a folder was already lost, choose it again with Choose folder… on that person's card.",
+   "The offline copy of the app is now kept apart per address, so a test copy of the app installed from the same site can no longer delete or replace the real one's stored files."
+  ]
+ },
  {
   "v": "1.69.2",
   "title": "Proposals are read even when a folder link is stale",
@@ -3223,7 +3231,6 @@ function guestRowsHtml(){
   }).join('');
 }
 function renderSettings(){
-  try { if(personDirsLoaded) pruneOrphanDirs(); } catch {}
   const ok = fileState === 'ready' && !writeError;
   $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
@@ -4814,10 +4821,16 @@ function feedPayload(f){
 /* ---- where each person's files go: a folder you choose for them (kept in this browser) ---- */
 const personDirs = new Map(), personState = new Map();
 const personKey = n => String(n || '').trim().toLowerCase();
-async function loadPersonDirs(){ try { const l = await withTimeout(idbGet('personDirs'), 3000); (Array.isArray(l) ? l : []).forEach(x => { if(x && x.person && x.handle) personDirs.set(personKey(x.person), x.handle); }); } catch {} }
-let personDirsLoaded = false;
+let personDirsLoaded = false, personDirsOk = false;          // personDirsOk: the saved folder links were really read (an empty answer counts, a time-out does not)
+async function loadPersonDirs(){
+  try { const l = await withTimeout(idbGet('personDirs'), 8000); (Array.isArray(l) ? l : []).forEach(x => { if(x && x.person && x.handle && !personDirs.has(personKey(x.person))) personDirs.set(personKey(x.person), x.handle); }); personDirsOk = true; }
+  catch { setTimeout(() => { if(!personDirsOk) loadPersonDirs().then(() => { try { if($('#setdlg').open) renderSettings(); } catch {} }); }, 5000); }          // storage was slow: try once more, and never write until it has been read
+}
 const personDirsReady = loadPersonDirs().then(() => { personDirsLoaded = true; });
-async function savePersonDirs(){ try { await withTimeout(idbSet('personDirs', [...personDirs].map(([person, handle]) => ({person, handle}))), 4000); } catch {} }
+async function savePersonDirs(){
+  if(!personDirsOk){ try { await loadPersonDirs(); } catch {} if(!personDirsOk) return; }          // refuse to overwrite links that could not be read: saving a short list would lose the other projects' folders
+  try { await withTimeout(idbSet('personDirs', [...personDirs].map(([person, handle]) => ({person, handle}))), 6000); } catch {}
+}
 async function personPerm(person, request){
   const h = personDirs.get(personKey(person)); if(!h) return '';
   try { let pm = await h.queryPermission({mode:'readwrite'}); if(pm !== 'granted' && request) pm = await h.requestPermission({mode:'readwrite'}); return pm === 'granted' ? 'ok' : 'needs-ok'; } catch { return 'needs-ok'; }
@@ -4838,7 +4851,8 @@ async function personRoot(person, sub){                    // that person's fold
 async function personDirReady(person, sub){ try { return await personRoot(person, sub); } catch { return null; } }
 async function legacyDirExists(person){ const d = await shareReady(false); if(!d) return false; try { const sub = await withTimeout(d.getDirectoryHandle('shared'), 5000); await withTimeout(sub.getDirectoryHandle(feedDirName(person)), 5000); return true; } catch { return false; } }
 async function hasFolder(person){ await personDirsReady; return personDirs.has(personKey(person)) || await legacyDirExists(person); }
-function pruneOrphanDirs(){                                  // a folder link kept for someone who is no longer on the team and has no running feed (left over from before removing a person also dropped it)
+function pruneOrphanDirs(){          // only called when a folder is being chosen, and only once the data file has loaded (before that the team list is empty and every link would look orphaned)
+  if(fileState !== 'ready' || !personDirsOk) return false;                                  // a folder link kept for someone who is no longer on the team and has no running feed (left over from before removing a person also dropped it)
   let changed = false;
   for(const k of [...personDirs.keys()]){
     const onTeam = db.people.some(p => personKey(p) === k) || (db.guests || []).some(p => personKey(p) === k), fd = (db.feeds || []).find(f => personKey(f.person) === k);
@@ -10075,7 +10089,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261119131441';</script>
+<script>window.NB_BUILD = '20261120144449';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

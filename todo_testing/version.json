@@ -1,4 +1,12 @@
-{"version":"1.69.2","build":"20261119131441","changelog":[
+{"version":"1.69.3","build":"20261120144449","changelog":[
+ {
+  "v": "1.69.3",
+  "title": "Folder links are no longer forgotten",
+  "items": [
+   "Fixed: a folder chosen for a person or Claude project could come back as “not set on this device” after you reopened the app. From 1.67.10 the app tidied up folder links when Settings opened, and if that happened before your data file had finished loading it treated every link as left over and forgot them. It no longer tidies up at that moment, and it will not save the list of folders at all unless it has really read the saved list first. If a folder was already lost, choose it again with Choose folder… on that person's card.",
+   "The offline copy of the app is now kept apart per address, so a test copy of the app installed from the same site can no longer delete or replace the real one's stored files."
+  ]
+ },
  {
   "v": "1.69.2",
   "title": "Proposals are read even when a folder link is stale",
