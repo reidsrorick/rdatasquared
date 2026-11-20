@@ -1,4 +1,12 @@
-{"version":"1.69.3","build":"20261120144449","changelog":[
+{"version":"1.70.0","build":"20261120145110","changelog":[
+ {
+  "v": "1.70.0",
+  "title": "Feeds retry by themselves and warn you",
+  "items": [
+   "A feed that cannot be written now shows a red bar at the top of every page: which feed, for how long, the reason (including the step it was stuck on) and “Retry now” / “Team settings” buttons. You also get a message the first time it fails and another when it works again.",
+   "The app now retries failed feeds by itself: after 10 seconds, 30 seconds, a minute, two minutes, then every five minutes, and whenever you come back to the window. It also tries again once a minute for any feed that has not been written since the page opened. The bar goes away as soon as the feed writes."
+  ]
+ },
  {
   "v": "1.69.3",
   "title": "Folder links are no longer forgotten",

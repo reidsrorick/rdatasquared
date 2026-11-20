@@ -1191,8 +1191,16 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.69.3';
+const APP_VERSION = '1.70.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.70.0",
+  "title": "Feeds retry by themselves and warn you",
+  "items": [
+   "A feed that cannot be written now shows a red bar at the top of every page: which feed, for how long, the reason (including the step it was stuck on) and “Retry now” / “Team settings” buttons. You also get a message the first time it fails and another when it works again.",
+   "The app now retries failed feeds by itself: after 10 seconds, 30 seconds, a minute, two minutes, then every five minutes, and whenever you come back to the window. It also tries again once a minute for any feed that has not been written since the page opened. The bar goes away as soon as the feed writes."
+  ]
+ },
  {
   "v": "1.69.3",
   "title": "Folder links are no longer forgotten",
@@ -3201,6 +3209,9 @@ function renderBanner(){
   else if(fileState === 'needs-permission') h = b('red', `⚠ Auto-save is PAUSED — Brave needs your OK to write to “${name}” again.`, btn('reconnect', 'Reconnect') + btn('open', 'Choose another file'));
   else if(writeError) h = b('red', `⚠ Couldn’t save to “${name}”.<small>${esc(writeError)}</small>`, btn('retry', 'Retry') + btn('open', 'Choose another file'));
   else if(externalChange) h = b('amber', `“${name}” was changed outside this page.` + (dirty ? ' You also have unsaved edits here.' : ''), btn('reload', 'Reload from file') + btn('keep', 'Keep my version'));
+  const bad = feedProblems();
+  if(bad.length && !MOBILE){ const st = feedStat.get(personKey(bad[0].person)), mins = Math.max(1, Math.round((Date.now() - (st.since || st.at)) / 60000));
+    h += b('red', `⚠ ${bad.length === 1 ? esc(bad[0].person) + '’s feed is' : bad.map(f => esc(f.person)).join(', ') + ' feeds are'} not updating (for ${mins} min). ${esc(String(st.err || '').slice(0, 260))}<small>The app retries by itself (next try within ${FEED_WAITS[Math.min((st.fails || 1) - 1, FEED_WAITS.length - 1)]} seconds). Until it works, new actions will not reach them.</small>`, btn('feedretry', 'Retry now') + btn('feedteam', 'Team settings')); }
   $('#banner').innerHTML = h;
 }
 let statusTimer = null, statusShown = 0, statusPending = false;
@@ -4770,6 +4781,24 @@ function feedStatHtml(n){
   const t = st.at ? new Date(st.at).toLocaleTimeString([], {hour:'numeric', minute:'2-digit', second:'2-digit'}) : '';
   return st.ok ? `<small>✓ Last written ${esc(t)}${f && f.file ? ' as <b>' + esc(f.file) + '</b>' : ''}</small>` : `<span class="bad">⚠ ${esc(st.err || 'Could not write')}</span>`;
 }
+const feedRetry = new Map(), feedWarned = new Set();          // person key -> retry timer; people already told about (so the message comes once)
+const FEED_WAITS = [10, 30, 60, 120, 300];          // seconds between automatic retries, then every 5 minutes
+function feedFailed(f, msg, soft){
+  const k = personKey(f.person), old = feedStat.get(k) || {}, fails = (old.fails || 0) + 1;
+  feedStat.set(k, {ok:false, at:Date.now(), err:msg, fails, since: old.since || Date.now(), soft: !!soft});
+  if(!soft && !feedWarned.has(k)){ feedWarned.add(k); try { toast(`⚠ ${f.person}’s feed isn’t updating: ${msg.slice(0, 200)} The app keeps retrying and shows a warning until it works.`, null, 'Undo', undefined, 20000); } catch {} }
+  if(soft || /different notebook/.test(msg)) { try { renderBanner(); } catch {} return; }          // nothing a retry can fix
+  clearTimeout(feedRetry.get(k));
+  feedRetry.set(k, setTimeout(() => { feedRetry.delete(k); const g = (db.feeds || []).find(x => personKey(x.person) === k && x.on); if(g) runShareWrites(true, k); }, FEED_WAITS[Math.min(fails - 1, FEED_WAITS.length - 1)] * 1000));
+  try { renderBanner(); } catch {}
+}
+function feedWorked(f){
+  const k = personKey(f.person), old = feedStat.get(k) || {};
+  feedStat.set(k, {ok:true, at:Date.now()}); clearTimeout(feedRetry.get(k)); feedRetry.delete(k);
+  if(feedWarned.delete(k)){ try { toast(`✓ ${f.person}’s feed is working again.`, null, 'Undo', undefined, 6000); } catch {} }
+  try { renderBanner(); } catch {}
+}
+const feedProblems = () => (db.feeds || []).filter(f => f.on && feedStat.get(personKey(f.person)) && !feedStat.get(personKey(f.person)).ok && !feedStat.get(personKey(f.person)).soft);
 function renderFeedStatus(){ document.querySelectorAll('#setfeeds [data-feedstat]').forEach(el => { el.innerHTML = feedStatHtml(el.dataset.feedstat); }); }
 /* The label on the files this notebook writes: assigned.<label>.json (and proposals.<label>.json coming back). It starts as your "I am" name and can be changed in Settings.
    Several people, or several computers, can then write into one folder without overwriting each other. No label at all = the older plain names. */
@@ -5014,10 +5043,10 @@ async function runShareWrites(force, only){                 // only: a person's 
     ...pages.map(i => run(() => writeSharedPage(i, sub))),
     ...nbs.map(nb => run(() => writeSharedNotebook(nb, sub, force), 60000)),
     ...feeds.map(async f => { const k = personKey(f.person);          // every feed on its own, each with a time limit
-      try { if(await withTimeout(writeFeed(f, sub, force), 20000)) feedStat.set(k, {ok:true, at:Date.now()}); }
+      try { if(await withTimeout(writeFeed(f, sub, force), 20000)) feedWorked(f); }
       catch(e){ let msg = (e && e.message) || String(e); if(msg === 'timed out') msg = `Timed out after 20 seconds, while ${feedAt.get(k) || 'starting'}. ` + SLOW.replace(/^timed out: /, '');
-        if(/has no folder yet/.test(msg)) feedStat.set(k, {ok:false, at:Date.now(), err:'No folder is set on this device for them (another device may write this feed). Choose a folder here to write it from this one.'});
-        else { errs.push(f.person + ': ' + msg); feedStat.set(k, {ok:false, at:Date.now(), err:msg}); } } })
+        if(/has no folder yet/.test(msg)) feedFailed(f, 'No folder is set on this device for them (another device may write this feed). Choose a folder here to write it from this one.', true);
+        else { errs.push(f.person + ': ' + msg); feedFailed(f, msg); } } })
   ]);
   if(!only || errs.length){ shareState = errs.length ? 'error' : globalProblem === 'paused' ? 'paused' : 'ok'; shareErr = errs.join(' · '); }          // a one-person write does not clear what is known about the shared folder
   renderShareBadge(); try { renderFeedStatus(); } catch {}
@@ -5291,6 +5320,8 @@ function replyAction(act, rid, cid){
 const replyBanner = i => { const n = pendingOf(i); return n ? `<div class="repbar"><span>💬 <b>${n} item${n === 1 ? '' : 's'}</b> from a reply waiting for your review</span><button data-act="replies">Review</button></div>` : ''; };
 setInterval(() => { if(!document.hidden) checkReplies(false); }, 20000);
 window.addEventListener('focus', () => checkReplies(false));
+window.addEventListener('focus', () => { if(feedProblems().length) runShareWrites(true); });          // coming back to the window is a good time to try again
+setInterval(() => { try { if(fileState === 'ready' && !MOBILE) for(const f of (db.feeds || [])) if(f.on && !feedRetry.has(personKey(f.person))){ const st = feedStat.get(personKey(f.person)); if(!st || (!st.ok && !st.soft)) runShareWrites(true, personKey(f.person)); } renderBanner(); } catch {} }, 60000);          // a feed that has not been written since the page opened, or has no retry waiting, is tried again
 setTimeout(() => checkReplies(false), 3000);
 function moveNotebookTo(id, targetId){                     // put a notebook where another one is (drag a heading onto it)
   const from = db.notebooks.findIndex(n => n.id === id), to = db.notebooks.findIndex(n => n.id === targetId);
@@ -9608,6 +9639,8 @@ document.addEventListener('click', e => {
     else if(act === 'newsf'){ const nm = (prompt('Name the new folder:', '') || '').trim().slice(0, 60); if(nm){ const f = {id: uid(), name: nm}; (db.sfolders = db.sfolders || []).push(f); touch(); renderList(); toast(`Made the folder “${nm}”. Pick it in a spreadsheet’s Folder box, or when you press + while it is the last one used.`); lastSF = f.id; } }
     else if(act === 'sfrename'){ const f = (db.sfolders || []).find(x => x.id === a.dataset.id); if(f){ const nm = (prompt('Rename the folder:', f.name) || '').trim().slice(0, 60); if(nm && nm !== f.name){ f.name = nm; touch(); renderList(); renderDetail(); } } }
     else if(act === 'sfdelete'){ const f = (db.sfolders || []).find(x => x.id === a.dataset.id); if(f){ const n = db.items.filter(i => i.sheet && i.sfolder === f.id).length; if(confirm(`Delete the folder “${f.name}”?${n ? ` Its ${n} spreadsheet${n === 1 ? '' : 's'} move to Unfiled; none is deleted.` : ''}`)){ db.items.forEach(i => { if(i.sheet && i.sfolder === f.id){ i.sfolder = ''; i.updated = now(); } }); db.sfolders = db.sfolders.filter(x => x !== f); if(lastSF === f.id) lastSF = ''; touch(); renderList(); renderDetail(); } } }
+    else if(act === 'feedretry'){ feedProblems().forEach(f => feedRetry.delete(personKey(f.person))); toast('Trying the feeds again…', null, 'Undo', undefined, 3000); runShareWrites(true).then(() => { const bad = feedProblems(); if(!bad.length) toast('✓ The feeds are writing again.', null, 'Undo', undefined, 5000); }); }
+    else if(act === 'feedteam') openSettings('team');
     else if(act === 'feedwrite'){ feedWritten.delete(a.dataset.p); toast(`Writing ${a.dataset.p}’s feed…`); runShareWrites(true, personKey(a.dataset.p)).then(() => { const st = feedStat.get(personKey(a.dataset.p)); toast(st && st.ok ? `Wrote ${a.dataset.p}’s feed.` : `Couldn’t write ${a.dataset.p}’s feed: ${(st && st.err) || 'unknown reason'}`); }); }
     else if(act === 'teamremove'){ removePerson(a.dataset.id); renderSettings(); }
     else if(act === 'settings') openSettings(); else if(act === 'setclose') $('#setdlg').close();
@@ -10089,7 +10122,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261120144449';</script>
+<script>window.NB_BUILD = '20261120145110';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
