@@ -37,7 +37,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=7">
+  <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body data-side="spice">
   <!-- Backdrop -->
@@ -74,7 +74,16 @@
       <p class="greeting" id="greeting" hidden></p>
       <p class="eyebrow"><span class="nw">Dune: Part Three</span> <span class="x">×</span> <span class="nw">Avengers: Doomsday</span></p>
       <h1 class="title" id="title"><button class="t-dune" type="button" data-side="spice" aria-pressed="true" title="Dune theme">DUNE</button><button class="t-sday" type="button" data-side="doom" aria-pressed="false" title="Doomsday theme">SDAY</button></h1>
-      <p class="title-hint">Tap DUNE or SDAY to switch the theme</p>
+      <div class="quote-chips" role="group" aria-label="Hear a line from each movie">
+        <button class="chip chip-dune" type="button" data-side="spice">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Hear Dune
+        </button>
+        <button class="chip chip-doom" type="button" data-side="doom">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Hear Doomsday
+        </button>
+      </div>
       <p class="date">Friday · December 18 · 2026</p>
       <p class="next-up" id="next-up">&nbsp;</p>
 
@@ -149,6 +158,7 @@
     <p class="welcome-lead">You're set for both movies at <span id="welcome-theater"></span>.</p>
     <ul class="welcome-shows" id="welcome-shows"></ul>
     <p class="welcome-note">Both shows start after midnight, so we head out the night before.</p>
+    <p class="welcome-tip">Tap <b class="spice">Hear Dune</b> or <b class="doom">Hear Doomsday</b> under the title for a line from each movie.</p>
     <div class="welcome-actions">
       <button class="btn" id="welcome-cal" type="button">Add to calendar</button>
       <button class="btn btn-primary" id="welcome-go" type="button">Let's go</button>
@@ -172,8 +182,8 @@
     </button>
   </div>
 
-  <script src="js/config.js?v=7"></script>
-  <script src="js/audio.js?v=7"></script>
-  <script src="js/main.js?v=7"></script>
+  <script src="js/config.js?v=8"></script>
+  <script src="js/audio.js?v=8"></script>
+  <script src="js/main.js?v=8"></script>
 </body>
 </html>

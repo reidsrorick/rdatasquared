@@ -226,11 +226,36 @@ main { position: relative; z-index: 3; }
 .t-dune[aria-pressed="true"] { filter: drop-shadow(0 0 22px rgba(242, 155, 56, .55)); }
 .t-sday[aria-pressed="true"] { filter: drop-shadow(0 0 22px rgba(63, 224, 140, .55)); }
 .title button[aria-pressed="false"] { opacity: .6; filter: saturate(.7); }
-.title-hint {
-  margin: 10px 0 0;
-  font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--muted); opacity: .8;
+/* "Hear Dune" / "Hear Doomsday": play each movie's line (same as tapping DUNE / SDAY). */
+.quote-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 16px 0 0; }
+.chip {
+  --cc: var(--spice);
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 15px 8px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--cc) 55%, transparent);
+  background: color-mix(in srgb, var(--cc) 12%, rgba(0, 0, 0, .4));
+  color: var(--cc);
+  font-size: .76rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .15s ease, background .2s ease;
 }
+.chip-doom { --cc: var(--doom); }
+.chip:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--cc) 22%, rgba(0, 0, 0, .4)); }
+.chip:focus-visible { outline: 2px solid var(--cc); outline-offset: 3px; }
+.chip svg { flex: none; }
+/* Pulse until each one has been heard on this device. */
+.chip.unheard { animation: chip-pulse 2.4s ease-in-out infinite; }
+.chip-doom.unheard { animation-delay: 1.2s; }
+@keyframes chip-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cc) 55%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 10px transparent; }
+}
+/* While its line plays, the speaker waves bounce. */
+.chip.playing { background: color-mix(in srgb, var(--cc) 28%, rgba(0, 0, 0, .4)); }
+.chip.playing .wave { animation: wave .45s ease-in-out infinite alternate; transform-origin: 30% 50%; }
+@keyframes wave { from { opacity: .35; } to { opacity: 1; } }
 .title.pulse { animation: pulse .35s ease; }
 @keyframes pulse { 50% { transform: scale(1.04); } }
 
@@ -648,7 +673,10 @@ body.sound-waiting .sound-fab { animation: nudge 1.6s ease-in-out infinite; }
 .welcome-show-title { font-weight: 700; }
 .welcome-show-when { color: var(--tc); font-weight: 700; font-size: .9rem; }
 .welcome-show-seats { color: var(--muted); font-size: .85rem; }
-.welcome-note { margin: 0 0 18px; color: var(--muted); font-size: .88rem; }
+.welcome-note { margin: 0 0 10px; color: var(--muted); font-size: .88rem; }
+.welcome-tip { margin: 0 0 18px; color: var(--ink); font-size: .88rem; }
+.welcome-tip .spice { color: var(--spice); }
+.welcome-tip .doom { color: var(--doom); }
 .welcome-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 /* ---------- Final-minute takeover ---------- */

@@ -338,12 +338,37 @@
     }
   }
 
-  // Tap DUNE for the Dune theme, SDAY for the Doomsday theme. Each tap also plays its voice line.
-  document.querySelectorAll(".title button").forEach((b) =>
+  // Which movie lines this device has heard; the "Hear …" buttons pulse until tapped once.
+  let heard = [];
+  try { heard = JSON.parse(localStorage.getItem("dunesday-heard") || "[]"); } catch (e) { heard = []; }
+  document.querySelectorAll(".chip").forEach((c) => c.classList.toggle("unheard", !heard.includes(c.dataset.side)));
+
+  function markHeard(side) {
+    if (!heard.includes(side)) {
+      heard.push(side);
+      try { localStorage.setItem("dunesday-heard", JSON.stringify(heard)); } catch (e) { /* storage unavailable */ }
+    }
+    const chip = document.querySelector(`.chip[data-side="${side}"]`);
+    chip.classList.remove("unheard");
+    // Bounce its speaker icon while the line plays (clip length plus a moment to load).
+    if (soundWanted) {
+      const c = (C.voiceLines || {})[side] && C.voiceLines[side].clip;
+      const ms = c ? (c.end - c.start) * 1000 + 1200 : 2500;
+      chip.classList.add("playing");
+      clearTimeout(chip._playing);
+      chip._playing = setTimeout(() => chip.classList.remove("playing"), ms);
+    }
+  }
+
+  // Tap DUNE / "Hear Dune" for the Dune theme, SDAY / "Hear Doomsday" for Doomsday.
+  // Each tap also plays that movie's line.
+  document.querySelectorAll(".title button, .chip").forEach((b) =>
     b.addEventListener("click", () => {
-      sayLine(b.dataset.side);
-      if (document.body.dataset.side === b.dataset.side) return;
-      setSide(b.dataset.side);
+      const side = b.dataset.side;
+      sayLine(side);
+      markHeard(side);
+      if (document.body.dataset.side === side) return;
+      setSide(side);
       const r = b.getBoundingClientRect();
       sand.burst(r.left + r.width / 2, r.top + r.height / 2, 50);
     })
