@@ -1,0 +1,65 @@
+<!doctype html>
+<!-- Source for assets/og-image.png (1200x630) and assets/apple-touch-icon.png.
+     Re-render with: node tools/render-images.mjs -->
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Space+Grotesk:wght@500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #120a06; }
+  .card { position: relative; width: 1200px; height: 630px; overflow: hidden;
+    background: linear-gradient(180deg, #0e0806 0%, #3a1a0b 52%, #b4561c 100%); font-family: "Space Grotesk", sans-serif; }
+  .sun { position: absolute; left: 50%; bottom: 60px; width: 1500px; height: 700px; transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 100%, rgba(255,170,80,.55) 0%, transparent 60%); }
+  .doomglow { position: absolute; right: -200px; top: -200px; width: 800px; height: 700px;
+    background: radial-gradient(circle, rgba(63,224,140,.28) 0%, transparent 60%); }
+  .moon { position: absolute; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff 0%, #f5e3c4 45%, #8f8270 100%); box-shadow: 0 0 50px 8px rgba(255,220,170,.35); }
+  .m1 { width: 100px; height: 100px; right: 64px; top: 28px; }
+  .m2 { width: 36px; height: 36px; right: 200px; top: 22px; opacity: .85;
+    background: radial-gradient(circle at 35% 35%, #fff 0%, #d6f5e3 45%, #6c8c7a 100%); box-shadow: 0 0 40px 6px rgba(120,255,180,.4); }
+  svg { position: absolute; left: 0; bottom: 0; width: 1200px; height: 260px; }
+  .content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 70px; text-align: center; color: #f8ead3; }
+  .eyebrow { font-size: 26px; letter-spacing: .26em; text-transform: uppercase; color: #e2c7a4; margin-bottom: 18px; }
+  .eyebrow b { color: #f29b38; font-weight: 500; margin: 0 .35em; }
+  h1 { margin: 0; font-family: "Syncopate", sans-serif; font-weight: 700; font-size: 128px; line-height: 1; letter-spacing: .02em; }
+  .d { background: linear-gradient(180deg, #ffd08a, #f29b38 70%, #b8601c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .s { background: linear-gradient(180deg, #bfffdc, #3fe08c 70%, #148a50); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .date { margin-top: 26px; font-family: "Syncopate", sans-serif; font-weight: 700; font-size: 34px; letter-spacing: .16em; color: #fff3df;
+    padding: 14px 34px; border: 2px solid rgba(248,234,211,.35); border-radius: 999px; background: rgba(18,10,6,.5); }
+  .tag { position: absolute; bottom: 34px; left: 0; right: 0; text-align: center; color: #c5a988; font-size: 24px; letter-spacing: .2em; text-transform: uppercase; }
+
+  /* Square icon variant */
+  body.icon, body.icon .card { width: 512px; height: 512px; }
+  body.icon .content, body.icon .eyebrow, body.icon .date, body.icon .tag, body.icon .doomglow { display: none; }
+  body.icon .m1 { width: 150px; height: 150px; right: 70px; top: 70px; }
+  body.icon .m2 { width: 56px; height: 56px; right: 250px; top: 60px; }
+  body.icon svg { width: 512px; height: 230px; }
+  body.icon .sun { width: 900px; height: 500px; bottom: 40px; }
+  .icon-mark { display: none; }
+  body.icon .icon-mark { display: block; position: absolute; left: 0; right: 0; bottom: 34px; text-align: center;
+    font-family: "Syncopate", sans-serif; font-weight: 700; font-size: 96px; line-height: 1; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="sun"></div>
+    <div class="doomglow"></div>
+    <div class="moon m1"></div>
+    <div class="moon m2"></div>
+    <svg viewBox="0 0 1440 360" preserveAspectRatio="none">
+      <path fill="#7a4219" d="M0 170 C 160 110 300 120 430 150 C 560 180 640 90 800 95 C 960 100 1040 170 1180 160 C 1300 150 1380 120 1440 125 L1440 360 L0 360 Z"/>
+      <path fill="#4a2610" d="M0 235 C 120 200 260 175 400 205 C 540 235 620 250 760 215 C 900 180 1010 165 1150 200 C 1270 230 1360 225 1440 210 L1440 360 L0 360 Z"/>
+      <path fill="#120a06" d="M0 285 C 140 260 280 250 420 270 C 560 290 700 300 860 278 C 1020 256 1160 250 1300 268 C 1370 277 1410 280 1440 278 L1440 360 L0 360 Z"/>
+    </svg>
+    <div class="content">
+      <div class="eyebrow">Dune: Part Three<b>×</b>Avengers: Doomsday</div>
+      <h1><span class="d">DUNE</span><span class="s">SDAY</span></h1>
+      <div class="date">DEC 18 · 2026</div>
+    </div>
+    <div class="tag">AMC NorthPark 15</div>
+    <div class="icon-mark"><span class="d">D</span><span class="s">D</span></div>
+  </div>
+  <script>if (location.hash === "#icon") document.body.classList.add("icon");</script>
+</body>
+</html>
