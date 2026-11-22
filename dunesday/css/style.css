@@ -606,6 +606,51 @@ body.sound-waiting .sound-fab { animation: nudge 1.6s ease-in-out infinite; }
   .map { min-height: 200px; }
 }
 
+/* ---------- Welcome pop-up ---------- */
+
+.welcome {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  padding: 28px 24px 22px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%),
+    color-mix(in srgb, var(--bg) 92%, #000);
+  color: var(--ink);
+  text-align: center;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .8), 0 0 60px -20px var(--glow);
+}
+.welcome::backdrop { background: rgba(0, 0, 0, .65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.welcome[open] { animation: welcome-in .5s cubic-bezier(.2, .8, .2, 1); }
+@keyframes welcome-in { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+.welcome-x {
+  position: absolute; top: 10px; right: 10px;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  font-size: 1.3rem; line-height: 1; cursor: pointer;
+}
+.welcome-kicker { margin: 0; font-size: .7rem; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); }
+.welcome-title {
+  margin: 6px 0 8px;
+  font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+  font-size: clamp(1.3rem, 6vw, 1.8rem); line-height: 1.15;
+  color: var(--accent-hi); text-shadow: 0 0 24px var(--glow);
+}
+.welcome-lead { margin: 0 0 16px; color: var(--ink); }
+.welcome-shows { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; text-align: left; }
+.welcome-shows li {
+  --tc: var(--spice);
+  padding: 10px 14px; border-radius: 12px;
+  background: rgba(0, 0, 0, .3); border: 1px solid var(--line); border-left: 3px solid var(--tc);
+}
+.welcome-shows li.doom { --tc: var(--doom); }
+.welcome-show-title { font-weight: 700; }
+.welcome-show-when { color: var(--tc); font-weight: 700; font-size: .9rem; }
+.welcome-show-seats { color: var(--muted); font-size: .85rem; }
+.welcome-note { margin: 0 0 18px; color: var(--muted); font-size: .88rem; }
+.welcome-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
 /* ---------- Final-minute takeover ---------- */
 
 .takeover {

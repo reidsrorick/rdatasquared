@@ -9,7 +9,7 @@ window.DunesdayAudio = (() => {
 
   const BASE = 0.2; // resting volume
   let ctx = null;
-  let master, filter, voiceGain;
+  let master, filter, voiceGain, out;
   let on = false;
   let swelling = false;
   let lastBoom = 0;
@@ -21,6 +21,7 @@ window.DunesdayAudio = (() => {
 
     const comp = ctx.createDynamicsCompressor();
     comp.connect(ctx.destination);
+    out = comp; // one-shot effects go straight here, so they play even when the hum is silent
     master = ctx.createGain();
     master.gain.value = 0;
     master.connect(comp);
@@ -109,6 +110,59 @@ window.DunesdayAudio = (() => {
     o.stop(t + 1.5);
   }
 
+  // One-shot hits for the title taps (independent of the hum's volume).
+  // "drum": a deep desert drum with a puff of sand. "metal": an iron clang with a long ring.
+  function hit(kind) {
+    if (!ctx && !build()) return;
+    ctx.resume();
+    const t = ctx.currentTime;
+    const env = (node, peak, decay) => {
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+      node.connect(g).connect(out);
+      return g;
+    };
+    // Low body: a sine dropping in pitch.
+    const body = ctx.createOscillator();
+    body.frequency.setValueAtTime(kind === "metal" ? 120 : 95, t);
+    body.frequency.exponentialRampToValueAtTime(kind === "metal" ? 55 : 40, t + 0.8);
+    env(body, 0.9, 1.6);
+    body.start(t);
+    body.stop(t + 1.7);
+    if (kind === "metal") {
+      // Clang: a few out-of-tune square waves through a band-pass, ringing out.
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 1400;
+      bp.Q.value = 3;
+      env(bp, 0.35, 2.4);
+      [287, 431, 659, 893].forEach((f) => {
+        const o = ctx.createOscillator();
+        o.type = "square";
+        o.frequency.value = f;
+        o.connect(bp);
+        o.start(t);
+        o.stop(t + 2.5);
+      });
+    } else {
+      // Sand: a short burst of filtered noise.
+      const len = Math.floor(ctx.sampleRate * 0.6);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const n = ctx.createBufferSource();
+      n.buffer = buf;
+      const nf = ctx.createBiquadFilter();
+      nf.type = "lowpass";
+      nf.frequency.value = 1800;
+      n.connect(nf);
+      env(nf, 0.25, 0.6);
+      n.start(t);
+    }
+  }
+
   function rampTo(param, value, seconds) {
     const t = ctx.currentTime;
     param.cancelScheduledValues(t);
@@ -177,7 +231,7 @@ window.DunesdayAudio = (() => {
   }
 
   return {
-    unlock, enable, disable, update, showtime,
+    unlock, enable, disable, update, showtime, hit,
     isOn: () => on,
     // For debugging: current volume and filter cutoff.
     level: () => (ctx ? { gain: +master.gain.value.toFixed(2), cutoff: Math.round(filter.frequency.value), state: ctx.state } : null),

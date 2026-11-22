@@ -10,6 +10,7 @@ Plain HTML, CSS, and JS. No build step, no dependencies. Made to be hosted free 
 - Ticket cards for each showing (theater, time, "Thu night" style labels for after-midnight shows); a showing flips to "Seen" once it starts
 - Animated desert at dusk: layered dunes, two moons, drifting sand on a canvas
 - **Theme switch in the title:** tap **DUNE** for the Dune theme (desert orange) or **SDAY** for Doomsday (green). The active half glows. It re-themes the whole page and is remembered per device
+- **Voice lines:** tapping DUNE says "Lisan al Gaib!" with a desert drum hit, and tapping SDAY says "VICTOR" with an iron clang. The song dips underneath. The browser's built-in voice speaks them (deepest English voice on the device). To use your own recordings, put them in `assets/sounds/` and set `file` under `voiceLines` in `js/config.js`. Muted means silent
 - **Doomsday extras:** an iron mask appears on the big moon, plus a green **Kneel** button (the page bows, the mask's eyes flare, and each device counts its kneels)
 - **Theater card:** address, Google/Apple Maps directions, and a dark-styled embedded map
 - **Worm meter:** fills from Nov 18 to the first showing. Worms also cross the dunes on their own, about every 3 minutes a month out and every ~15 seconds by the end
@@ -55,7 +56,8 @@ Text each friend their own link:
 https://www.rdatasquared.com/dunesday/?name=Mike&side=doom
 ```
 
-- `name` shows "Hey Mike" at the top. It's remembered on their phone, so it still shows when they open the home-screen app
+- `name` shows "Hey Mike" at the top. Underscores become spaces (`?name=Big_Mike` → "Big Mike"). It's remembered on their phone, so it still shows when they open the home-screen app
+- The first time each person opens their link, a **welcome pop-up** greets them by name, with both showtimes, their seats, and **Add to calendar** / **Let's go** buttons (tapping Let's go also starts the music). It shows once per name per device; add `&welcome` to the link to show it again
 - `side` sets their starting theme: `dune` or `doom`. Once they tap DUNE or SDAY themselves, their own choice wins
 - `?name=` with nothing after it clears a saved name (handy if you test a friend's link on your own phone)
 

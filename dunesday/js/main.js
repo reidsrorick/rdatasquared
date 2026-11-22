@@ -338,9 +338,10 @@
     }
   }
 
-  // Tap DUNE for the Dune theme, SDAY for the Doomsday theme.
+  // Tap DUNE for the Dune theme, SDAY for the Doomsday theme. Each tap also plays its voice line.
   document.querySelectorAll(".title button").forEach((b) =>
     b.addEventListener("click", () => {
+      sayLine(b.dataset.side);
       if (document.body.dataset.side === b.dataset.side) return;
       setSide(b.dataset.side);
       const r = b.getBoundingClientRect();
@@ -435,7 +436,7 @@
 
   // Tap the sky for a puff of sand.
   document.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("button, a, .panel")) return;
+    if (e.target.closest("button, a, .panel, .welcome")) return;
     sand.burst(e.clientX, e.clientY, 40);
   });
 
@@ -667,12 +668,18 @@
       fade(0, fadeMs, () => player.pauseVideo());
     }
 
+    // Dip the song under a voice line, then bring it back.
+    function duck(down) {
+      if (!ready || !wantPlay) return;
+      fade(down ? 20 : 100, down ? 250 : 900);
+    }
+
     const isPlaying = () => ready && player.getPlayerState() === YT.PlayerState.PLAYING;
     const isBuffering = () => !ready || player.getPlayerState() === YT.PlayerState.BUFFERING;
     // For debugging: { state, time, volume }.
     const status = () => (ready ? { state: player.getPlayerState(), time: +player.getCurrentTime().toFixed(1), volume: player.getVolume() } : "loading");
 
-    return { load, play, stop, isPlaying, isBuffering, status };
+    return { load, play, stop, duck, isPlaying, isBuffering, status };
   })();
   window.DunesdayMusic = music;
 
@@ -760,6 +767,61 @@
   }
   ["pointerdown", "keydown"].forEach((t) => document.addEventListener(t, firstGesture, true));
 
+  /* Voice lines for the title taps: "Lisan al Gaib!" for DUNE, "VICTOR" for SDAY.
+     Plays a recording if one is set in config, otherwise the browser speaks it. */
+  const lines = C.voiceLines || {};
+  const recordings = {};
+  let speaking = false;
+  let deepVoice = null;
+
+  // Prefer a deep English voice when the device has one.
+  function pickVoice() {
+    if (!("speechSynthesis" in window)) return;
+    const voices = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
+    const deep = /(male|daniel|guy|davis|andrew|christopher|eric|roger|aaron|arthur|fred|ralph|david|mark|george|james)/i;
+    deepVoice = voices.find((v) => deep.test(v.name) && !/female/i.test(v.name)) || voices[0] || null;
+  }
+  if ("speechSynthesis" in window) {
+    pickVoice();
+    speechSynthesis.addEventListener("voiceschanged", pickVoice);
+  }
+
+  function lineDone() {
+    speaking = false;
+    music.duck(false);
+  }
+
+  function sayLine(side) {
+    const line = lines[side];
+    if (!line || !soundWanted || speaking) return;
+    speaking = true;
+    music.duck(true);
+    window.DunesdayAudio.hit(line.hit);
+    const safety = setTimeout(lineDone, 6000); // never leave the song dipped
+
+    const speak = () => {
+      if (!("speechSynthesis" in window)) { clearTimeout(safety); setTimeout(lineDone, 1200); return; }
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(line.say || line.text);
+      if (deepVoice) u.voice = deepVoice;
+      u.lang = (deepVoice && deepVoice.lang) || "en-US";
+      u.pitch = line.pitch ?? 0.5;
+      u.rate = line.rate ?? 0.8;
+      u.volume = 1;
+      u.onend = u.onerror = () => { clearTimeout(safety); lineDone(); };
+      setTimeout(() => speechSynthesis.speak(u), 120); // let the hit land first
+    };
+
+    if (line.file) {
+      const a = recordings[side] || (recordings[side] = new Audio(line.file));
+      a.currentTime = 0;
+      a.onended = () => { clearTimeout(safety); lineDone(); };
+      a.play().catch(() => speak()); // missing or blocked file: fall back to the browser voice
+    } else {
+      speak();
+    }
+  }
+
   // Called every second by the countdown.
   function soundTick(msLeft) {
     if (!soundWanted || !soundStarted) return;
@@ -835,9 +897,9 @@
 
   // Personal links: ?name=Mike greets them; &side=doom (or dune) picks their starting theme.
   // The name is remembered, so it still shows when they open the home-screen app.
-  // ?name= with nothing after it forgets the saved name.
+  // ?name= with nothing after it forgets the saved name. Underscores become spaces (Big_Mike → Big Mike).
   const params = new URLSearchParams(location.search);
-  let guest = (params.get("name") || "").trim().replace(/\s+/g, " ").slice(0, 24);
+  let guest = (params.get("name") || "").replace(/_/g, " ").trim().replace(/\s+/g, " ").slice(0, 24);
   try {
     if (guest) localStorage.setItem("dunesday-name", guest);
     else if (params.has("name")) localStorage.removeItem("dunesday-name");
@@ -846,6 +908,43 @@
   if (guest) {
     $("#greeting").textContent = `Hey ${guest}`;
     $("#greeting").hidden = false;
+  }
+
+  // Welcome pop-up: the first time each person opens their personal link on a device.
+  // Add &welcome to the link to show it again.
+  const welcome = $("#welcome");
+  function openWelcome(name) {
+    $("#welcome-title").textContent = `Welcome, ${name}`;
+    $("#welcome-theater").textContent = (C.theater && C.theater.name) || SHOWINGS[0].theater;
+    $("#welcome-shows").innerHTML = SHOWINGS.map((s) => {
+      const l = showLabels(s);
+      const when = l.night ? `${l.night}, ${l.time} (${l.date})` : `${l.date}, ${l.time}`;
+      return `<li class="${s.side === "doom" ? "doom" : "spice"}">
+        <div class="welcome-show-title">${esc(s.title)}</div>
+        <div class="welcome-show-when">${esc(when)}</div>
+        ${s.seats && s.seats.length ? `<div class="welcome-show-seats">${esc(seatLabel(s.seats))}</div>` : ""}
+      </li>`;
+    }).join("");
+    // Only mention the after-midnight thing if it's true for every showing.
+    $(".welcome-note").hidden = !SHOWINGS.every((s) => showLabels(s).night);
+    if (typeof welcome.showModal === "function") welcome.showModal();
+    else welcome.setAttribute("open", "");
+  }
+  function closeWelcome() {
+    if (typeof welcome.close === "function") welcome.close();
+    else welcome.removeAttribute("open");
+  }
+  $("#welcome-x").addEventListener("click", closeWelcome);
+  $("#welcome-go").addEventListener("click", closeWelcome); // the tap also starts the sound
+  $("#welcome-cal").addEventListener("click", downloadIcs);
+  welcome.addEventListener("click", (e) => { if (e.target === welcome) closeWelcome(); }); // tap outside to close
+
+  const nameFromLink = (params.get("name") || "").trim() !== "";
+  let welcomedName = null;
+  try { welcomedName = localStorage.getItem("dunesday-welcomed"); } catch (e) { /* storage unavailable */ }
+  if (guest && ((nameFromLink && welcomedName !== guest) || params.has("welcome"))) {
+    openWelcome(guest);
+    try { localStorage.setItem("dunesday-welcomed", guest); } catch (e) { /* storage unavailable */ }
   }
   const linkSide = { dune: "spice", spice: "spice", doom: "doom", doomsday: "doom" }[(params.get("side") || "").toLowerCase()];
 

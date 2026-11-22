@@ -41,6 +41,15 @@ window.DUNESDAY = {
   // start/end are in seconds: change them to play a different part.
   clip: { title: "Dream of Arrakis", artist: "Hans Zimmer", youtubeId: "uTmBeR32GRA", start: 0, end: 90 },
 
+  // What plays when someone taps DUNE or SDAY in the title.
+  // say: spoken by the browser's built-in voice (written the way it should sound).
+  // file: optional recording, e.g. "assets/sounds/lisan-al-gaib.mp3". Record your crew chanting it,
+  // drop the file in assets/sounds/, and put the path here; it plays instead of the browser voice.
+  voiceLines: {
+    spice: { text: "Lisan al Gaib!", say: "Lee-sahn al Gah-eeb!", file: null, pitch: 0.55, rate: 0.72, hit: "drum" },
+    doom: { text: "VICTOR", say: "Victor.", file: null, pitch: 0.1, rate: 0.6, hit: "metal" },
+  },
+
   // Opens the full song in Spotify.
   soundtrackLink: "https://open.spotify.com/search/Dream%20of%20Arrakis%20Hans%20Zimmer",
 

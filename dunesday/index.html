@@ -141,6 +141,20 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <!-- Welcome pop-up, shown the first time someone opens their personal link (?name=) -->
+  <dialog class="welcome" id="welcome" aria-labelledby="welcome-title">
+    <button class="welcome-x" id="welcome-x" type="button" aria-label="Close">×</button>
+    <p class="welcome-kicker">Dunesday</p>
+    <h2 class="welcome-title" id="welcome-title"></h2>
+    <p class="welcome-lead">You're set for both movies at <span id="welcome-theater"></span>.</p>
+    <ul class="welcome-shows" id="welcome-shows"></ul>
+    <p class="welcome-note">Both shows start after midnight, so we head out the night before.</p>
+    <div class="welcome-actions">
+      <button class="btn" id="welcome-cal" type="button">Add to calendar</button>
+      <button class="btn btn-primary" id="welcome-go" type="button">Let's go</button>
+    </div>
+  </dialog>
+
   <!-- Full-screen countdown for the last 60 seconds before each showing -->
   <div class="takeover" id="takeover" role="timer" aria-live="off" hidden>
     <button class="takeover-close" id="takeover-close" type="button" aria-label="Close the full-screen countdown">×</button>
