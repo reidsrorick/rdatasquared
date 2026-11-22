@@ -11,16 +11,19 @@ window.DUNESDAY = {
   // poster: official poster loaded from The Movie Database (TMDB). Find a movie on themoviedb.org,
   // open its poster, and use https://image.tmdb.org/t/p/w342/<file>.jpg. Leave it out for no poster.
   // letterboxd: the film's Letterboxd page (the poster and a small link open it).
+  // seats: e.g. ["K19", "K20"]; shown on the ticket as "Row K · Seats 19–20".
   // format (e.g. "IMAX with Laser") and durationMin are optional; the runtime shows on the ticket
   // when set, and sets the calendar event's end time (3 hours if left out).
   // Don't put ticket links here: this page is public.
   showings: [
     { title: "Dune: Part Three", side: "spice", start: "2026-12-18T00:45:00-06:00", theater: "AMC NorthPark 15", format: "IMAX with Laser", durationMin: 150,
       poster: "https://image.tmdb.org/t/p/w342/gknAq4pAuToh1Aq5CJfVkGQkExT.jpg",
-      letterboxd: "https://letterboxd.com/film/dune-part-three/" },
+      letterboxd: "https://letterboxd.com/film/dune-part-three/",
+      seats: ["K19", "K20", "K21", "K22"] },
     { title: "Avengers: Doomsday", side: "doom", start: "2026-12-20T02:00:00-06:00", theater: "AMC NorthPark 15", format: "Infinity Vision", durationMin: 165,
       poster: "https://image.tmdb.org/t/p/w342/cWXtJhrlruF8CeYuaBGE8vdj3Q9.jpg",
-      letterboxd: "https://letterboxd.com/film/avengers-doomsday/" },
+      letterboxd: "https://letterboxd.com/film/avengers-doomsday/",
+      seats: ["J16", "J17", "J18"] },
   ],
 
   // Where we're watching. Used for the map card and directions links.

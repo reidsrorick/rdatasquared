@@ -176,6 +176,14 @@ main { position: relative; z-index: 3; }
   padding: 72px var(--gutter) calc(var(--dunes-h) * .55);
 }
 
+.greeting {
+  margin: 0 0 14px;
+  font-size: clamp(1rem, 3.6vw, 1.3rem);
+  font-weight: 700;
+  color: var(--accent);
+}
+.greeting[hidden] { display: none; }
+
 .eyebrow {
   margin: 0 0 12px;
   font-size: clamp(.7rem, 2.6vw, .95rem);
@@ -390,6 +398,7 @@ body[data-side="doom"] .btn-primary { color: #021209; }
 .ticket-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(.85rem, 3.2vw, 1.15rem); line-height: 1.25; margin: 4px 0 2px; text-transform: uppercase; letter-spacing: .03em; }
 .ticket-meta { color: var(--muted); font-size: .9rem; }
 .ticket-format { color: var(--ink); font-size: .82rem; font-weight: 500; margin-top: 2px; }
+.ticket-seats { color: var(--tc); font-size: .82rem; font-weight: 700; letter-spacing: .04em; margin-top: 2px; }
 .ticket-status {
   display: inline-block; margin-top: 10px; padding: 3px 10px; border-radius: 999px;
   font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
@@ -596,6 +605,58 @@ body.sound-waiting .sound-fab { animation: nudge 1.6s ease-in-out infinite; }
   .theater { grid-template-columns: 1fr; }
   .map { min-height: 200px; }
 }
+
+/* ---------- Final-minute takeover ---------- */
+
+.takeover {
+  --tc: var(--spice);
+  --shake: 0px;
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; text-align: center;
+  background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--tc) 24%, transparent), rgba(0, 0, 0, .93) 70%);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  animation: takeover-in .6s ease;
+}
+.takeover[hidden] { display: none; }
+.takeover[data-side="doom"] { --tc: var(--doom); }
+@keyframes takeover-in { from { opacity: 0; } }
+.takeover-label {
+  font-size: clamp(.85rem, 3.4vw, 1.3rem); letter-spacing: .22em; text-transform: uppercase;
+  color: var(--ink); opacity: .9;
+}
+.takeover-num {
+  margin: 10px 0 14px;
+  font-family: var(--font-display); font-weight: 700; line-height: 1;
+  font-size: clamp(4rem, min(40vw, 46vh), 22rem); /* fits wide and short screens */
+  color: var(--tc);
+  text-shadow: 0 0 40px var(--tc), 0 0 120px color-mix(in srgb, var(--tc) 50%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.takeover-num.beat { animation: beat .9s ease-out; }
+@keyframes beat { 0% { transform: scale(1.18); filter: brightness(1.6); } 100% { transform: scale(1); filter: none; } }
+.takeover-sub { color: var(--muted); font-size: clamp(.85rem, 3vw, 1rem); }
+.takeover-close {
+  position: absolute; top: calc(14px + env(safe-area-inset-top)); right: 14px;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--line); background: rgba(0, 0, 0, .45); color: var(--ink);
+  font-size: 1.5rem; line-height: 1; cursor: pointer;
+}
+/* Last 10 seconds: the screen shakes harder each second (JS sets --shake). */
+body.final-ten .takeover { animation: screen-shake .45s linear infinite; }
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(calc(var(--shake) * -1), calc(var(--shake) * .5)); }
+  40% { transform: translate(var(--shake), calc(var(--shake) * -.6)); }
+  60% { transform: translate(calc(var(--shake) * -.7), calc(var(--shake) * -.3)); }
+  80% { transform: translate(calc(var(--shake) * .8), calc(var(--shake) * .7)); }
+}
+/* At zero: the number becomes the movie title. */
+.takeover.now .takeover-num { font-size: clamp(2.2rem, 9.5vw, 6.5rem); text-transform: uppercase; padding: 0 8px; animation: beat 1.2s ease-out; }
+body.final-minute { overflow: hidden; }
+/* Keep the mute button and messages usable above the takeover. */
+body.final-minute .sound-dock { z-index: 21; }
+body.final-minute .toast { z-index: 22; }
 
 /* ---------- Motion preferences ---------- */
 

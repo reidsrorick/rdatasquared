@@ -71,6 +71,7 @@
 
   <main>
     <section class="hero">
+      <p class="greeting" id="greeting" hidden></p>
       <p class="eyebrow"><span class="nw">Dune: Part Three</span> <span class="x">×</span> <span class="nw">Avengers: Doomsday</span></p>
       <h1 class="title" id="title"><button class="t-dune" type="button" data-side="spice" aria-pressed="true" title="Dune theme">DUNE</button><button class="t-sday" type="button" data-side="doom" aria-pressed="false" title="Doomsday theme">SDAY</button></h1>
       <p class="title-hint">Tap DUNE or SDAY to switch the theme</p>
@@ -139,6 +140,14 @@
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Full-screen countdown for the last 60 seconds before each showing -->
+  <div class="takeover" id="takeover" role="timer" aria-live="off" hidden>
+    <button class="takeover-close" id="takeover-close" type="button" aria-label="Close the full-screen countdown">×</button>
+    <div class="takeover-label" id="takeover-label"></div>
+    <div class="takeover-num" id="takeover-num"></div>
+    <div class="takeover-sub" id="takeover-sub"></div>
+  </div>
   <div class="doom-flash" aria-hidden="true"></div>
 
   <div class="sound-dock">

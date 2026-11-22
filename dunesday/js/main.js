@@ -67,9 +67,15 @@
     setNum("hours", hours);
     setNum("minutes", mins);
     setNum("seconds", s % 60);
-    document.title = days > 0 ? `${days} days · DUNESDAY` : `${hours}h ${mins}m · DUNESDAY`;
+    const secs = s % 60;
+    document.title = days > 0 ? `${days} days · DUNESDAY`
+      : hours > 0 || mins > 0 ? `${hours}h ${mins}m · DUNESDAY`
+      : `${secs}s · DUNESDAY`;
+    // Tab icon: days left, then hours on the last day, minutes in the last hour, seconds in the last minute.
+    updateFavicon(days > 0 ? String(days) : hours > 0 ? `${hours}h` : mins > 0 ? `${mins}m` : String(secs));
     updateMeter(now);
     soundTick(diff);
+    updateTakeover(SHOWINGS[idx], diff);
     // Fire again right after the next whole second.
     setTimeout(tick, (diff % 1000) + 20);
   }
@@ -83,20 +89,128 @@
 
   function showtime(s) {
     toast(`${s.title} starts now`);
+    takeoverShowtime(s);
     soundShowtime();
     sand.burst(window.innerWidth / 2, window.innerHeight * 0.4, 160);
     setTimeout(() => summonWorm(true), 1200);
   }
 
   function arrive() {
-    if (currentIdx !== -1) soundShowtime(); // the last showing just started
+    if (currentIdx !== -1) {
+      // The last showing just started while the page was open.
+      takeoverShowtime(SHOWINGS[SHOWINGS.length - 1]);
+      soundShowtime();
+    }
     arrived = true;
+    setFavicon("assets/favicon.svg", "image/svg+xml");
+    lastIconKey = "";
     document.body.classList.add("arrived");
     document.title = "DUNESDAY";
     $(".date").textContent = "December 18 – 20 · 2026";
     renderTickets(Infinity);
     setTimeout(() => summonWorm(true), 800);
     setTimeout(() => sand.burst(window.innerWidth / 2, window.innerHeight * 0.4, 160), 300);
+  }
+
+  /* ---------- Final-minute takeover ---------- */
+
+  const takeover = $("#takeover");
+  const takeoverNum = $("#takeover-num");
+  let takeoverFor = null;      // which showing the overlay is currently for
+  let takeoverClosedFor = null; // the viewer closed it for this showing
+  let takeoverHoldUntil = 0;    // keep the "showtime" screen up until this moment
+
+  function showTakeover(s) {
+    if (takeoverFor === s.t) return;
+    takeoverFor = s.t;
+    takeover.dataset.side = s.side === "doom" ? "doom" : "spice";
+    takeover.classList.remove("now");
+    $("#takeover-label").textContent = `${s.title} starts in`;
+    $("#takeover-sub").textContent = [s.theater, seatLabel(s.seats)].filter(Boolean).join(" · ");
+    takeover.hidden = false;
+    document.body.classList.add("final-minute");
+  }
+
+  function hideTakeover() {
+    takeover.hidden = true;
+    takeoverFor = null;
+    document.body.classList.remove("final-minute", "final-ten");
+  }
+
+  // Called every second: full screen for the last 60 seconds, shaking for the last 10.
+  function updateTakeover(s, msLeft) {
+    if (Date.now() < takeoverHoldUntil) return;
+    const inFinalMinute = msLeft > 0 && msLeft <= 60000 && takeoverClosedFor !== s.t;
+    if (!inFinalMinute) {
+      if (!takeover.hidden) hideTakeover();
+      return;
+    }
+    showTakeover(s);
+    const sec = Math.floor(msLeft / 1000);
+    if (takeoverNum.textContent !== String(sec)) {
+      takeoverNum.textContent = String(sec);
+      takeoverNum.classList.remove("beat");
+      void takeoverNum.offsetWidth;
+      takeoverNum.classList.add("beat");
+    }
+    const finalTen = msLeft <= 10500;
+    document.body.classList.toggle("final-ten", finalTen && !reduceMotion);
+    if (finalTen) takeover.style.setProperty("--shake", `${Math.min(10, 11 - sec) * 0.8}px`);
+  }
+
+  // At zero: the number turns into the movie title, then the overlay fades away.
+  function takeoverShowtime(s) {
+    if (takeoverClosedFor === s.t) return;
+    showTakeover(s);
+    takeover.classList.add("now");
+    document.body.classList.remove("final-ten");
+    $("#takeover-label").textContent = "Now showing";
+    takeoverNum.textContent = s.title;
+    takeoverHoldUntil = Date.now() + 8000;
+    setTimeout(() => { takeoverHoldUntil = 0; hideTakeover(); }, 8000);
+  }
+
+  $("#takeover-close").addEventListener("click", () => {
+    takeoverClosedFor = SHOWINGS[currentIdx] ? SHOWINGS[currentIdx].t : null;
+    takeoverHoldUntil = 0;
+    hideTakeover();
+  });
+
+  /* ---------- Tab icon (days left) ---------- */
+
+  const faviconLink = document.querySelector('link[rel="icon"]');
+  let lastIconKey = "";
+  let lastIconLabel = "";
+
+  function setFavicon(href, type) {
+    faviconLink.type = type;
+    faviconLink.href = href;
+  }
+
+  function updateFavicon(label) {
+    lastIconLabel = label;
+    const doom = document.body.dataset.side === "doom";
+    const key = `${label}|${doom}`;
+    if (key === lastIconKey) return;
+    lastIconKey = key;
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const g = c.getContext("2d");
+    // Dark tile with a dune along the bottom, in the current theme's color.
+    g.fillStyle = doom ? "#06120d" : "#1a0d06";
+    if (g.roundRect) { g.beginPath(); g.roundRect(0, 0, 64, 64, 14); g.fill(); } else g.fillRect(0, 0, 64, 64);
+    g.fillStyle = doom ? "rgba(63,224,140,.28)" : "rgba(242,155,56,.3)";
+    g.beginPath();
+    g.moveTo(0, 52); g.bezierCurveTo(18, 42, 36, 46, 64, 44); g.lineTo(64, 64); g.lineTo(0, 64); g.closePath();
+    g.fill();
+    // The number, as big as fits.
+    g.fillStyle = doom ? "#3fe08c" : "#f29b38";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    let size = 46;
+    do { g.font = `800 ${size}px "Arial Black", "Segoe UI", system-ui, sans-serif`; size -= 2; } while (g.measureText(label).width > 58 && size > 16);
+    g.fillText(label, 32, 34);
+    setFavicon(c.toDataURL("image/png"), "image/png");
   }
 
   /* ---------- Worm meter ---------- */
@@ -160,6 +274,20 @@
 
   /* ---------- Tickets ---------- */
 
+  // ["K19","K20","K21","K22"] → "Row K · Seats 19–22"; mixed rows or gaps are listed out.
+  function seatLabel(seats) {
+    if (!seats || !seats.length) return "";
+    const parsed = seats.map((s) => String(s).toUpperCase().match(/^([A-Z]+)\s*(\d+)$/));
+    const rows = [...new Set(parsed.map((p) => p && p[1]))];
+    if (parsed.every(Boolean) && rows.length === 1) {
+      const nums = parsed.map((p) => Number(p[2])).sort((a, b) => a - b);
+      const contiguous = nums.every((n, i) => i === 0 || n === nums[i - 1] + 1);
+      const list = nums.length === 1 ? `Seat ${nums[0]}` : contiguous ? `Seats ${nums[0]}–${nums[nums.length - 1]}` : `Seats ${nums.join(", ")}`;
+      return `Row ${rows[0]} · ${list}`;
+    }
+    return `Seats ${seats.map((s) => String(s).toUpperCase()).join(", ")}`;
+  }
+
   // 150 → "2 hr 30 min"
   const runtime = (min) => [Math.floor(min / 60) && `${Math.floor(min / 60)} hr`, min % 60 && `${min % 60} min`].filter(Boolean).join(" ");
 
@@ -178,6 +306,7 @@
           <div class="ticket-title">${esc(s.title)}</div>
           <div class="ticket-meta">${esc(s.theater)}</div>
           ${s.format || s.durationMin ? `<div class="ticket-format">${esc([s.format, s.durationMin && runtime(s.durationMin)].filter(Boolean).join(" · "))}</div>` : ""}
+          ${s.seats && s.seats.length ? `<div class="ticket-seats">${esc(seatLabel(s.seats))}</div>` : ""}
           <div class="ticket-foot">
             <span class="ticket-status">${seen ? "Seen" : "Booked"}</span>
             ${lb ? `<a class="ticket-lb" href="${lb}" target="_blank" rel="noopener">Letterboxd ↗</a>` : ""}
@@ -203,6 +332,7 @@
     document.querySelectorAll(".title button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.side === side)));
     $('meta[name="theme-color"]').setAttribute("content", side === "doom" ? "#030605" : "#120a06");
     sand.refreshColor();
+    if (lastIconLabel && !arrived) updateFavicon(lastIconLabel); // recolor the tab icon
     if (persist) {
       try { localStorage.setItem("dunesday-side", side); } catch (e) { /* storage unavailable */ }
     }
@@ -703,9 +833,27 @@
 
   /* ---------- Boot ---------- */
 
+  // Personal links: ?name=Mike greets them; &side=doom (or dune) picks their starting theme.
+  // The name is remembered, so it still shows when they open the home-screen app.
+  // ?name= with nothing after it forgets the saved name.
+  const params = new URLSearchParams(location.search);
+  let guest = (params.get("name") || "").trim().replace(/\s+/g, " ").slice(0, 24);
+  try {
+    if (guest) localStorage.setItem("dunesday-name", guest);
+    else if (params.has("name")) localStorage.removeItem("dunesday-name");
+    else guest = localStorage.getItem("dunesday-name") || "";
+  } catch (e) { /* storage unavailable */ }
+  if (guest) {
+    $("#greeting").textContent = `Hey ${guest}`;
+    $("#greeting").hidden = false;
+  }
+  const linkSide = { dune: "spice", spice: "spice", doom: "doom", doomsday: "doom" }[(params.get("side") || "").toLowerCase()];
+
+  // Theme: the viewer's own choice wins; otherwise the link's; otherwise Dune.
   let saved = null;
   try { saved = localStorage.getItem("dunesday-side"); } catch (e) { /* storage unavailable */ }
   if (saved === "doom" || saved === "spice") setSide(saved, false);
+  else if (linkSide) setSide(linkSide);
 
   renderTheater();
 
