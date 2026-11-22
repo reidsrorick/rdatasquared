@@ -54,9 +54,10 @@ window.DUNESDAY = {
       say: "Lee-sahn al Gah-eeb!", pitch: 0.55, rate: 0.72, hit: "drum", file: null,
     },
     doom: {
-      text: "VICTOR",
-      // Marvel Entertainment — Avengers: Doomsday | Special Look
-      clip: { youtubeId: "X1aFkAkFASk", start: 47.9, end: 49.3 },
+      text: "Answer me, VICTOR!",
+      // Marvel Entertainment — Avengers: Doomsday | Special Look. The yelled line at 1:10;
+      // ends just before "Did you do this?" (72.0). For just "VICTOR!", try start: 71.1.
+      clip: { youtubeId: "X1aFkAkFASk", start: 70.3, end: 71.95 },
       say: "Victor.", pitch: 0.1, rate: 0.6, hit: "metal", file: null,
     },
   },
