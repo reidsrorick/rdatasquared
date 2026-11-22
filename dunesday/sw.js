@@ -1,7 +1,7 @@
 /* DUNESDAY service worker: lets the home-screen app open offline.
    Network first (so updates show right away), falling back to the cached copy.
    Bump VERSION when you add or rename files below. */
-const VERSION = "dunesday-v1";
+const VERSION = "dunesday-v2";
 const FILES = [
   "./",
   "index.html",
@@ -31,8 +31,11 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
+  // Ask the server whether files changed instead of trusting the browser's 10-minute cache.
+  // (Page navigations can't take extra options, so they're fetched as-is.)
+  const fresh = req.mode === "navigate" ? fetch(req) : fetch(req, { cache: "no-cache" });
   e.respondWith(
-    fetch(req)
+    fresh
       .then((res) => {
         if (res.ok) {
           const copy = res.clone();

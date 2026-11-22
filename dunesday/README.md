@@ -48,6 +48,8 @@ It's served from the `dunesday/` folder of the `reidsrorick/rdatasquared` repo (
 
 To publish, copy everything in this folder **except `.claude/`** into `dunesday/` in that repo, then commit and push to `master`. It's live a minute or two later.
 
+When you change any CSS or JS, bump the `?v=` number on the `<link>` and `<script>` tags in `index.html`. GitHub Pages lets browsers reuse files for 10 minutes, and the new number makes them load the matching versions right away.
+
 ## Personal links
 
 Text each friend their own link:
