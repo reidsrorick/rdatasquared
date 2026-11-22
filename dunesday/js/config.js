@@ -42,12 +42,23 @@ window.DUNESDAY = {
   clip: { title: "Dream of Arrakis", artist: "Hans Zimmer", youtubeId: "uTmBeR32GRA", start: 0, end: 90 },
 
   // What plays when someone taps DUNE or SDAY in the title.
-  // say: spoken by the browser's built-in voice (written the way it should sound).
-  // file: optional recording, e.g. "assets/sounds/lisan-al-gaib.mp3". Record your crew chanting it,
-  // drop the file in assets/sounds/, and put the path here; it plays instead of the browser voice.
+  // clip: a few seconds of an official trailer, played through the page's YouTube player
+  //   (start/end in seconds, taken from the trailers' own captions).
+  // file: optional recording, e.g. "assets/sounds/our-chant.mp3"; used if there's no clip.
+  // say: the browser's built-in voice, the backup if the clip can't play (written the way it should sound).
   voiceLines: {
-    spice: { text: "Lisan al Gaib!", say: "Lee-sahn al Gah-eeb!", file: null, pitch: 0.55, rate: 0.72, hit: "drum" },
-    doom: { text: "VICTOR", say: "Victor.", file: null, pitch: 0.1, rate: 0.6, hit: "metal" },
+    spice: {
+      text: "I am Paul Muad'Dib Atreides! Duke of Arrakis!",
+      // Warner Bros. — Dune: Part Two | Official Trailer 2
+      clip: { youtubeId: "_YUzQa_1RCE", start: 153.1, end: 160.1 },
+      say: "Lee-sahn al Gah-eeb!", pitch: 0.55, rate: 0.72, hit: "drum", file: null,
+    },
+    doom: {
+      text: "VICTOR",
+      // Marvel Entertainment — Avengers: Doomsday | Special Look
+      clip: { youtubeId: "X1aFkAkFASk", start: 47.9, end: 49.3 },
+      say: "Victor.", pitch: 0.1, rate: 0.6, hit: "metal", file: null,
+    },
   },
 
   // Opens the full song in Spotify.

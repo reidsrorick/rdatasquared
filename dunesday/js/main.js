@@ -612,7 +612,19 @@
             },
             onError: () => useHumInstead(), // e.g. embedding refused, video unavailable
             onStateChange: (e) => {
+              // A title-tap movie clip is playing in the player instead of the song.
+              if (fx) {
+                if (e.data === YT.PlayerState.PLAYING) fx.started = true;
+                if (e.data === YT.PlayerState.ENDED) finishFx();
+                return;
+              }
               if (e.data === YT.PlayerState.ENDED && wantPlay) restart();
+              if (e.data === YT.PlayerState.PLAYING && restoreVolume) {
+                restoreVolume = false;
+                player.unMute();
+                player.setVolume(0);
+                fade(100, 900);
+              }
               if (e.data === YT.PlayerState.PLAYING) {
                 // The song works after all: drop the hum fallback.
                 if (songFailed) { songFailed = false; if (soundMode === "song") window.DunesdayAudio.disable(false); }
@@ -631,8 +643,53 @@
       document.head.appendChild(s);
       // Loop just the chosen section: jump back to the start once it passes the end.
       loopTimer = setInterval(() => {
-        if (ready && wantPlay && player.getCurrentTime && player.getCurrentTime() >= clip.end - 0.25) restart();
+        if (!ready || !player.getCurrentTime) return;
+        if (fx) {
+          if (fx.started && player.getCurrentTime() >= fx.c.end) finishFx();
+          return;
+        }
+        if (wantPlay && player.getCurrentTime() >= clip.end - 0.25) restart();
       }, 250);
+    }
+
+    /* Movie clips for the title taps: a few seconds of an official trailer play in this
+       same (visible) player, then it goes back to the song where it left off. */
+    let fx = null;
+    let restoreVolume = false;
+
+    function playFx(c, onDone) {
+      if (!ready) return false;
+      if (fx) finishFx(true);
+      clearInterval(fadeTimer);
+      fx = { c, onDone, started: false, resumeSong: wantPlay, resumeAt: player.getCurrentTime() || 0 };
+      player.setVolume(100);
+      player.loadVideoById({ videoId: c.youtubeId, startSeconds: c.start, endSeconds: c.end });
+      // If it hasn't started in a few seconds (e.g. a phone blocked it), give up and use the backup.
+      fx.failTimer = setTimeout(() => {
+        if (fx && !fx.started) {
+          const done = fx.onDone;
+          finishFx(true);
+          done && done(false);
+        }
+      }, 3500);
+      return true;
+    }
+
+    function finishFx(silent = false) {
+      if (!fx) return;
+      const f = fx;
+      fx = null;
+      clearTimeout(f.failTimer);
+      const resumeAt = Math.min(Math.max(f.resumeAt, clip.start), clip.end - 1);
+      const song = { videoId: clip.youtubeId, startSeconds: resumeAt, endSeconds: clip.end };
+      if (f.resumeSong && wantPlay) {
+        // YouTube ignores volume changes while a video loads, so set it once the song is playing again.
+        restoreVolume = true;
+        player.loadVideoById(song);
+      } else {
+        player.cueVideoById(song); // put the song back without playing it
+      }
+      if (!silent && f.started && f.onDone) f.onDone(true);
     }
 
     function restart() {
@@ -656,6 +713,7 @@
     function play() {
       wantPlay = true;
       if (!ready) return;
+      if (fx) { fx.resumeSong = true; return; } // the song comes back when the clip ends
       player.setVolume(0);
       if (player.getCurrentTime() < clip.start || player.getCurrentTime() >= clip.end) player.seekTo(clip.start, true);
       player.playVideo();
@@ -665,21 +723,22 @@
     function stop(fadeMs = 600) {
       wantPlay = false;
       if (!ready) return;
+      if (fx) finishFx(true); // cut the clip short too
       fade(0, fadeMs, () => player.pauseVideo());
     }
 
     // Dip the song under a voice line, then bring it back.
     function duck(down) {
-      if (!ready || !wantPlay) return;
+      if (!ready || !wantPlay || fx) return;
       fade(down ? 20 : 100, down ? 250 : 900);
     }
 
     const isPlaying = () => ready && player.getPlayerState() === YT.PlayerState.PLAYING;
     const isBuffering = () => !ready || player.getPlayerState() === YT.PlayerState.BUFFERING;
     // For debugging: { state, time, volume }.
-    const status = () => (ready ? { state: player.getPlayerState(), time: +player.getCurrentTime().toFixed(1), volume: player.getVolume() } : "loading");
+    const status = () => (ready ? { state: player.getPlayerState(), time: +player.getCurrentTime().toFixed(1), volume: player.getVolume(), video: (player.getVideoData() || {}).video_id, clip: fx ? fx.c.youtubeId : null } : "loading");
 
-    return { load, play, stop, duck, isPlaying, isBuffering, status };
+    return { load, play, stop, duck, playFx, isPlaying, isBuffering, status };
   })();
   window.DunesdayMusic = music;
 
@@ -794,6 +853,25 @@
   function sayLine(side) {
     const line = lines[side];
     if (!line || !soundWanted || speaking) return;
+    speaking = true;
+
+    // 1) The real movie clip, through the page's YouTube player.
+    if (line.clip && !songFailed && soundMode === "song") {
+      const clipMs = (line.clip.end - line.clip.start) * 1000;
+      const clipSafety = setTimeout(() => { speaking = false; }, clipMs + 5000);
+      const started = music.playFx(line.clip, (ok) => {
+        clearTimeout(clipSafety);
+        if (ok) speaking = false;
+        else { speaking = false; speakBackup(line); } // clip couldn't play: use the voice instead
+      });
+      if (started) return;
+      clearTimeout(clipSafety);
+    }
+    speakBackup(line);
+  }
+
+  // 2) A recording file if set, otherwise the browser's voice, with a drum or clang hit.
+  function speakBackup(line) {
     speaking = true;
     music.duck(true);
     window.DunesdayAudio.hit(line.hit);
