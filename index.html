@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projects</title>
+  <meta name="description" content="A directory of my projects.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#" id="site-name">Projects</a>
+      <nav class="header-actions">
+        <a class="btn btn-ghost" id="github-link" href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <button class="btn btn-ghost" id="theme-toggle" type="button" aria-label="Toggle light/dark theme">Theme</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1 id="hero-title">My Projects</h1>
+      <p id="hero-tagline" class="tagline"></p>
+    </section>
+
+    <section class="controls" aria-label="Filter projects">
+      <input id="search" class="search" type="search" placeholder="Search projects..." aria-label="Search projects" autocomplete="off">
+      <div id="tags" class="tags" role="group" aria-label="Filter by tag"></div>
+    </section>
+
+    <p id="count" class="count" aria-live="polite"></p>
+    <section id="grid" class="grid" aria-label="Projects"></section>
+    <p id="empty" class="empty" hidden>No projects match your search.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span id="footer-text"></span>
+    </div>
+  </footer>
+
+  <script src="js/projects.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
