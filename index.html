@@ -3,40 +3,77 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Projects</title>
-  <meta name="description" content="A directory of my projects.">
+  <title>R Data Squared | Portfolio</title>
+  <meta name="description" content="A portfolio of small, fast web apps that run right in your browser.">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <div class="blobs" aria-hidden="true">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+  </div>
+
   <header class="site-header">
     <div class="wrap header-inner">
-      <a class="brand" href="#" id="site-name">Projects</a>
-      <nav class="header-actions">
-        <a class="btn btn-ghost" id="github-link" href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <button class="btn btn-ghost" id="theme-toggle" type="button" aria-label="Toggle light/dark theme">Theme</button>
+      <a class="brand" href="#top"><span class="brand-mark" id="brand-mark" aria-hidden="true">⚡</span><span id="site-name">R Data Squared</span></a>
+      <nav class="nav" aria-label="Main">
+        <a href="#work" class="nav-link">Work</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#" class="nav-link" id="github-link" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle light/dark theme">◐</button>
       </nav>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="hero">
-      <h1 id="hero-title">My Projects</h1>
-      <p id="hero-tagline" class="tagline"></p>
+  <main id="top">
+    <section class="hero wrap">
+      <p class="eyebrow" id="hero-eyebrow">Hello, world 👋</p>
+      <h1 class="hero-title">
+        <span id="hero-prefix">I build small apps that</span>
+        <span class="rotator" aria-live="off"><span id="rotator-word" class="rotator-word">run in your browser</span></span>
+      </h1>
+      <p class="tagline" id="hero-tagline"></p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#work">See my work ↓</a>
+        <a class="btn" id="hero-github" href="#" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      </div>
     </section>
 
-    <section class="controls" aria-label="Filter projects">
-      <input id="search" class="search" type="search" placeholder="Search projects..." aria-label="Search projects" autocomplete="off">
-      <div id="tags" class="tags" role="group" aria-label="Filter by tag"></div>
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track" id="ticker"></div>
+    </div>
+
+    <section id="work" class="section wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Selected work</p>
+        <h2>Things I've built</h2>
+      </div>
+      <div id="grid" class="grid"></div>
     </section>
 
-    <p id="count" class="count" aria-live="polite"></p>
-    <section id="grid" class="grid" aria-label="Projects"></section>
-    <p id="empty" class="empty" hidden>No projects match your search.</p>
+    <section id="about" class="section wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">About</p>
+        <h2 id="about-title">How I build</h2>
+        <p class="about-text" id="about-text"></p>
+      </div>
+      <div id="principles" class="principles"></div>
+    </section>
+
+    <section class="section wrap">
+      <div class="outro reveal">
+        <h2 id="outro-title">Want to see more?</h2>
+        <p id="outro-text">There's plenty more where these came from.</p>
+        <a class="btn btn-primary" id="outro-github" href="#" target="_blank" rel="noopener noreferrer">Browse everything on GitHub ↗</a>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
     <div class="wrap">
       <span id="footer-text"></span>
+      <a href="#top" class="to-top">Back to top ↑</a>
     </div>
   </footer>
 

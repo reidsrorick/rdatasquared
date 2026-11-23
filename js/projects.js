@@ -1,6 +1,6 @@
 /*
  * ============================================================
- *  EDIT THIS FILE to control what appears on your landing page.
+ *  EDIT THIS FILE to control what appears on your portfolio page.
  *  Nothing is fetched from GitHub: only what you list here is shown,
  *  so unlisted folders never appear.
  * ============================================================
@@ -8,10 +8,39 @@
 
 window.SITE = {
   name: "R Data Squared",
-  title: "My Projects",
-  tagline: "Small, fast web apps that run right in your browser. No accounts, no servers.",
+  brandEmoji: "⚡",
+  eyebrow: "Hello, world 👋",
+  heroPrefix: "I build small apps that",
+  // These rotate in the headline
+  heroWords: [
+    "run in your browser",
+    "keep your notes",
+    "track your budget",
+    "settle game night",
+    "stay out of your way"
+  ],
+  tagline: "Fast, friendly web apps with no accounts, no servers and no fuss. Pick one and try it.",
   github: "https://github.com/reidsrorick/rdatasquared",
-  footer: "Built with plain HTML, CSS and JS."
+
+  // Scrolling strip under the hero
+  ticker: ["HTML", "CSS", "JavaScript", "PWA", "Local-first", "No build step", "Zero accounts"],
+
+  about: {
+    title: "How I build",
+    text: "I like software that's quick to open, easy to understand and respects your data.",
+    principles: [
+      { icon: "🔒", title: "Your data stays yours", text: "Apps store things in your browser or in a file on your own computer. Nothing gets uploaded." },
+      { icon: "🪶", title: "Plain and fast", text: "Plain HTML, CSS and JavaScript. No heavy frameworks, no build step, no waiting." },
+      { icon: "🚪", title: "No sign-ups", text: "Open the page and start using it. No accounts to create, no hoops to jump through." }
+    ]
+  },
+
+  outro: {
+    title: "Want to see more?",
+    text: "There's plenty more where these came from."
+  },
+
+  footer: "Made with plain HTML, CSS and JS."
 };
 
 /*
@@ -20,83 +49,48 @@ window.SITE = {
  *   description (required) one or two sentences
  *   url         (required) link to the source code
  *   demo        (optional) live app URL
- *   tags        (optional) array of short labels, used for filtering
- *   featured    (optional) true = shows a "Featured" badge and sorts first
+ *   icon        (optional) an emoji shown on the card
+ *   color       (optional) accent color for the card, e.g. "#e2784f"
+ *   tags        (optional) short labels shown on the card
  */
 var REPO = "https://github.com/reidsrorick/rdatasquared/tree/master/";
 var LIVE = "https://www.rdatasquared.com/";
 
 window.PROJECTS = [
   {
-    name: "QR Code Creator",
-    description: "Generate QR codes for links, WiFi, contacts, events and more, with a custom center logo. Runs entirely in your browser.",
-    url: REPO + "qrgen2",
-    demo: LIVE + "qrgen2/",
-    tags: ["tools", "generator"],
-    featured: true
-  },
-  {
     name: "Notebook",
     description: "An installable app for tasks, meeting notes and recurring actions. Your notes are saved to a file on your own computer.",
     url: REPO + "todo",
     demo: LIVE + "todo/",
-    tags: ["productivity", "pwa"],
-    featured: true
-  },
-  {
-    name: "Timesheet / PTO Tracker",
-    description: "Track hours and time off, with JSON backups and Excel export. Everything is stored locally in your browser.",
-    url: REPO + "timesheet",
-    demo: LIVE + "timesheet/",
-    tags: ["productivity", "tools"]
-  },
-  {
-    name: "Rolodex One (RDX1)",
-    description: "A private contact and relationship tracker with reminders and birthdays. No accounts, no server, no tracking.",
-    url: REPO + "rdx1",
-    demo: LIVE + "rdx1/",
-    tags: ["productivity", "pwa"]
+    icon: "📓",
+    color: "#e2784f",
+    tags: ["Productivity", "PWA"]
   },
   {
     name: "Budget",
-    description: "A local, no-build budget app for shared costs, subscriptions and expenses, with Excel export.",
+    description: "A local, no-build budget app for shared costs, subscriptions and expenses, with one-click Excel export.",
     url: REPO + "bud",
     demo: LIVE + "bud/",
-    tags: ["finance", "productivity"]
-  },
-  {
-    name: "Car Tracker",
-    description: "Keep track of your vehicles in a simple, fast web app.",
-    url: REPO + "carz",
-    demo: LIVE + "carz/",
-    tags: ["tools"]
+    icon: "💸",
+    color: "#3fa56b",
+    tags: ["Finance", "Local-first"]
   },
   {
     name: "Daily Game Collection",
-    description: "The ultimate collection of daily games, all in one place.",
+    description: "The ultimate collection of daily games, all in one place. Come back every day for a new challenge.",
     url: REPO + "daily_games",
     demo: LIVE + "daily_games/",
-    tags: ["games"]
-  },
-  {
-    name: "Trivia Host",
-    description: "Run a trivia night: host questions and keep the game moving.",
-    url: REPO + "trivia",
-    demo: LIVE + "trivia/",
-    tags: ["games"]
+    icon: "🎮",
+    color: "#7a5cf0",
+    tags: ["Games"]
   },
   {
     name: "Uno Rules",
-    description: "A quick reference for the rules of Uno.",
+    description: "A quick reference for the rules of Uno, so game night arguments end fast.",
     url: REPO + "uno",
     demo: LIVE + "uno/",
-    tags: ["games"]
-  },
-  {
-    name: "DUNESDAY",
-    description: "A live countdown to December 18, 2026 with an animated desert and switchable Dune / Doomsday themes.",
-    url: REPO + "dunesday",
-    demo: LIVE + "dunesday/",
-    tags: ["fun", "countdown"]
+    icon: "🃏",
+    color: "#e5484d",
+    tags: ["Games", "Reference"]
   }
 ];
