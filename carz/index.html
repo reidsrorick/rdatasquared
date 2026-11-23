@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Car Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">🚗</span>
+      <span class="brand-name">Car Tracker</span>
+    </div>
+    <div class="file-controls">
+      <span class="status-chip" id="statusChip"><span class="dot"></span><span id="fileStatus">No spreadsheet connected</span></span>
+      <button id="btnReconnect" class="btn primary hidden">Reconnect</button>
+      <button id="btnOpen" class="btn">Open spreadsheet</button>
+      <button id="btnNew" class="btn">New spreadsheet</button>
+      <button id="btnReload" class="btn ghost hidden" title="Re-read the file (use after editing it in Excel)">↻ Reload</button>
+      <!-- Fallback for browsers without direct file access (Firefox, Safari) -->
+      <button id="btnImport" class="btn hidden">Import .xlsx</button>
+      <button id="btnDownload" class="btn primary hidden">Download .xlsx</button>
+      <input id="fileInput" type="file" accept=".xlsx,.xls" hidden>
+    </div>
+  </header>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <h2>Vehicles</h2>
+        <button id="btnAdd" class="btn small primary" disabled>+ Add</button>
+      </div>
+      <ul id="carList" class="car-list"></ul>
+    </aside>
+
+    <section class="content">
+      <div id="welcome" class="card welcome">
+        <div class="welcome-icon">📊</div>
+        <h2>Your car data lives in an Excel sheet</h2>
+        <p>Click <strong>New spreadsheet</strong> to create a file (e.g. <code>My Car.xlsx</code>),
+           or <strong>Open spreadsheet</strong> to use one you already have.
+           Every change you make here is saved straight into that file, so you can open it in Excel any time.</p>
+        <p class="muted">Works best in Chrome or Edge. The app remembers which file you picked.</p>
+      </div>
+
+      <div id="carView" class="car-view hidden">
+        <div id="carHeader" class="card car-header"></div>
+        <div id="stats" class="stats"></div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" data-tab="details">Details</button>
+          <button class="tab" role="tab" data-tab="maint">Maintenance <span class="count" id="maintCount"></span></button>
+        </div>
+
+        <div id="tabDetails" class="card panel"></div>
+        <div id="tabMaint" class="card panel hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <datalist id="serviceTypes">
+    <option value="Oil change"><option value="Tire rotation"><option value="Tires (new set)">
+    <option value="Brake pads / rotors"><option value="Air filter"><option value="Cabin filter">
+    <option value="Battery"><option value="Wiper blades"><option value="Coolant flush">
+    <option value="Transmission fluid"><option value="Spark plugs"><option value="Alignment">
+    <option value="State inspection"><option value="Repair"><option value="Recall">
+  </datalist>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="lib/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
