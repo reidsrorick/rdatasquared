@@ -171,6 +171,8 @@ tr.inactive td { opacity: .55; }
 .badge.overdue { background: var(--bad-soft); color: var(--bad); }
 .badge.soon { background: var(--warn-soft); color: var(--warn); }
 .badge.upcoming { background: var(--surface-2); color: var(--muted); }
+.badge.fixed { background: var(--info-soft); color: var(--info); font-weight: 500; font-size: 11px; }
+.badge.variable { background: var(--warn-soft); color: var(--warn); font-weight: 500; font-size: 11px; }
 .badge.billed { background: var(--info-soft); color: var(--info); }
 .tag { display: inline-block; padding: 1px 8px; border-radius: 6px; background: var(--surface-2); color: var(--muted); font-size: 12px; }
 .avatar {

@@ -58,6 +58,17 @@
       ],
     },
     {
+      name: 'ExpenseTypes', key: 'expenseTypes', // your pick-list of common expenses
+      cols: [
+        { h: 'ID', k: 'id', w: 11 },
+        { h: 'Name', k: 'name', w: 28 },
+        { h: 'Category', k: 'category', w: 16 },
+        { h: 'AmountType', k: 'variable', t: 'amounttype', w: 12 }, // Fixed | Variable
+        { h: 'Frequency', k: 'frequency', w: 12 },
+        { h: 'TypicalAmount', k: 'amount', t: 'money', w: 14 },
+      ],
+    },
+    {
       name: 'Expenses', key: 'expenses',
       cols: [
         { h: 'ID', k: 'id', w: 11 },
@@ -73,7 +84,8 @@
         { h: 'PaidByID', k: 'paidById', ref: 'people', w: 11 },
         { h: 'PaidBy', info: 'paidById', w: 18 },
         { h: 'SplitMethod', k: 'splitMethod', w: 12 }, // Equal | Percent | Shares
-        { h: 'Variable', k: 'variable', t: 'bool', w: 9 },
+        { h: 'AmountType', k: 'variable', t: 'amounttype', w: 12 }, // Fixed = same every month | Variable = changes
+        { h: 'Variable', k: 'variableLegacy', t: 'bool', dflt: false, legacy: true }, // older workbooks
         { h: 'Active', k: 'active', t: 'bool', w: 8 },
         { h: 'Notes', k: 'notes', w: 32 },
       ],
@@ -130,7 +142,8 @@
     ['People', 'Everyone who shares expenses.'],
     ['Residences', 'Apartments / houses. Tenure: Renting, Mortgage or Owned.'],
     ['Residents', 'Which people live at which residence (and so default into its splits).'],
-    ['Expenses', 'Recurring (or one-time) costs: rent, mortgage, water, wifi... Frequency: Monthly, Quarterly, Yearly, One-time.'],
+    ['ExpenseTypes', 'Your pick-list of common expenses (pre-fills the Add expense form). Ad hoc expenses do not need to be on it.'],
+    ['Expenses', 'Recurring (or one-time) costs: rent, mortgage, water, wifi... Frequency: Monthly, Quarterly, Yearly, One-time. AmountType: Fixed (same every month) or Variable (changes).'],
     ['Splits', 'Who shares each expense. Value = percent (SplitMethod Percent) or weight (Shares). Ignored for Equal.'],
     ['Payments', 'Actual bills for a month (Period = YYYY-MM). Status Paid counts toward balances; Billed = amount known, not yet paid.'],
     ['Settlements', 'Money one person paid another to settle up.'],
@@ -240,7 +253,8 @@
           }
           switch (c.t) {
             case 'num': case 'money': obj[c.k] = toNum(raw); break;
-            case 'bool': obj[c.k] = toBool(raw, true); break;
+            case 'bool': obj[c.k] = toBool(raw, c.dflt === undefined ? true : c.dflt); break;
+            case 'amounttype': obj[c.k] = /^var/i.test(String(raw)); break;
             case 'date': obj[c.k] = toISODate(raw); break;
             case 'period': obj[c.k] = toPeriod(raw); break;
             default: obj[c.k] = isBlank(raw) ? '' : String(raw).trim();
@@ -260,9 +274,10 @@
     db.settings.currency = (db.settings.currency || 'USD').toUpperCase();
 
     // 3) ids for rows that lack one (e.g. rows typed by hand in Excel)
-    ['people', 'residences', 'expenses', 'payments', 'settlements'].forEach((key) => {
+    if (!findSheet(wb, 'ExpenseTypes')) { db.expenseTypes = defaultTypes(); repaired = true; } // older workbook: seed the pick-list
+    ['people', 'residences', 'expenseTypes', 'expenses', 'payments', 'settlements'].forEach((key) => {
       const taken = new Set(db[key].map((r) => r.id).filter(Boolean));
-      const prefix = { people: 'p', residences: 'r', expenses: 'e', payments: 'pay', settlements: 's' }[key];
+      const prefix = { people: 'p', residences: 'r', expenseTypes: 't', expenses: 'e', payments: 'pay', settlements: 's' }[key];
       db[key].forEach((r) => {
         if (!r.id) { r.id = uid(prefix, taken); repaired = true; }
       });
@@ -304,7 +319,11 @@
       if (r.address && !r.address1) { r.address1 = r.address; repaired = true; } // migrate old single-line address
       delete r.address;
     });
+    db.expenseTypes = db.expenseTypes.filter((t) => t.name);
+    db.expenseTypes.forEach((t) => { t.frequency = normChoice(t.frequency, ['Monthly', 'Quarterly', 'Yearly', 'One-time'], 'Monthly'); });
     db.expenses.forEach((e) => {
+      if (e.variableLegacy) e.variable = true;
+      delete e.variableLegacy;
       e.frequency = normChoice(e.frequency, ['Monthly', 'Quarterly', 'Yearly', 'One-time'], 'Monthly');
       e.splitMethod = normChoice(e.splitMethod, ['Equal', 'Percent', 'Shares'], 'Equal');
     });
@@ -364,6 +383,7 @@
             case 'money': ws[addr] = { t: 'n', v: Math.round(v * 100) / 100, z: '#,##0.00' }; break;
             case 'num': ws[addr] = { t: 'n', v: Number(v) }; break;
             case 'bool': ws[addr] = { t: 's', v: v ? 'Yes' : 'No' }; break;
+            case 'amounttype': ws[addr] = { t: 's', v: v ? 'Variable' : 'Fixed' }; break;
             default: ws[addr] = { t: 's', v: String(v) };
           }
         });
@@ -385,13 +405,30 @@
     return XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
   }
 
+  /* ----------------------------------------------------- expense pick-list */
+
+  // [name, category, variable?, frequency]
+  const DEFAULT_TYPES = [
+    ['Rent', 'Rent', false, 'Monthly'], ['Mortgage', 'Mortgage', false, 'Monthly'], ['Property tax', 'Taxes', false, 'Quarterly'],
+    ['HOA fees', 'Housing', false, 'Monthly'], ['Home / renters insurance', 'Insurance', false, 'Yearly'], ['Parking', 'Housing', false, 'Monthly'],
+    ['Electricity', 'Utilities', true, 'Monthly'], ['Gas', 'Utilities', true, 'Monthly'], ['Water & Sewer', 'Utilities', true, 'Monthly'],
+    ['Trash & recycling', 'Utilities', false, 'Monthly'], ['Wi-Fi / Internet', 'Internet', false, 'Monthly'],
+    ['Streaming & subscriptions', 'Subscriptions', false, 'Monthly'], ['Groceries', 'Groceries', true, 'Monthly'],
+    ['Maintenance & repairs', 'Maintenance', true, 'One-time'],
+  ];
+  function defaultTypes() {
+    const ids = new Set();
+    return DEFAULT_TYPES.map(([name, category, variable, frequency]) => ({ id: uid('t', ids), name, category, variable, frequency, amount: 0 }));
+  }
+  function newDb() { const db = emptyDb(); db.expenseTypes = defaultTypes(); return db; }
+
   /* ----------------------------------------------------------- sample data */
 
   RT.PALETTE = ['#4f7cff', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 
   function sampleDb() {
     const C = RT.calc;
-    const db = emptyDb();
+    const db = newDb();
     const ids = new Set();
     const mk = (p) => uid(p, ids);
     const today = C.todayISO();
@@ -547,6 +584,6 @@
     },
   };
 
-  RT.store = { SHEETS, emptyDb, parseWorkbook, serializeWorkbook, sampleDb, uid, toISODate, toPeriod, isoToSerial };
+  RT.store = { SHEETS, emptyDb, parseWorkbook, serializeWorkbook, sampleDb, newDb, defaultTypes, uid, toISODate, toPeriod, isoToSerial };
   RT.FileLink = FileLink;
 })(typeof window !== 'undefined' ? window : globalThis);

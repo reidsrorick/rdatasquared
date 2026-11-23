@@ -79,6 +79,7 @@
   const initials = (name) => (String(name).trim().split(/\s+/).map((w) => w[0] || '').slice(0, 2).join('') || '?').toUpperCase();
   const avatar = (p, cls = '') => `<span class="avatar ${cls}" style="--c:${esc(p ? p.color : '#999')}" title="${esc(p ? p.name : '')}">${esc(p ? initials(p.name) : '?')}</span>`;
   const personTag = (id) => { const p = person(id); return p ? `<span class="person">${avatar(p)}${esc(p.name)}</span>` : '<span class="muted">—</span>'; };
+  const kindBadge = (e) => (e.variable ? '<span class="badge variable" title="Amount changes each month">Variable</span>' : '<span class="badge fixed" title="Same amount every month">Fixed</span>');
   const chip = (p, text) => `<span class="chip">${avatar(p)}${esc(text)}</span>`;
   /** Address as display lines: street, unit, "City, ST 12345", country. */
   function formatAddress(r) {
@@ -158,7 +159,7 @@
       S.save = 'saved';
       if (db._repaired) { delete db._repaired; saveSoon(); }
     } else {
-      S.db = store.emptyDb();
+      S.db = store.newDb();
       await flush();
     }
     normalizeSelection();
@@ -337,7 +338,7 @@
         <thead><tr><th>Due</th><th>Bill</th><th class="num">Amount</th><th>Split</th><th>Paid by</th><th>Status</th><th></th></tr></thead>
         <tbody>${bills.map((b) => `<tr>
           <td>${esc(fmtDate(b.dueDate))}</td>
-          <td><b>${esc(b.expense.name)}</b><div class="muted">${esc(b.expense.category || '')}${S.residenceId === 'all' && residence(b.expense.residenceId) ? ' · ' + esc(residence(b.expense.residenceId).name) : ''}</div></td>
+          <td><b>${esc(b.expense.name)}</b> ${kindBadge(b.expense)}<div class="muted">${esc(b.expense.category || '')}${S.residenceId === 'all' && residence(b.expense.residenceId) ? ' · ' + esc(residence(b.expense.residenceId).name) : ''}</div></td>
           <td class="num">${money(b.amount)}${!b.payment && b.expense.variable ? '<div class="hint">estimate</div>' : ''}</td>
           <td><div class="chips">${b.split.map((s) => chip(person(s.personId), money(s.amount))).join('')}</div></td>
           <td>${b.paid || b.paidById ? personTag(b.paidById) : '<span class="muted">—</span>'}</td>
@@ -362,7 +363,7 @@
     const groups = d.residences.filter((r) => S.residenceId === 'all' || r.id === S.residenceId);
     return `
       <div class="pagehead"><h1>Expenses</h1>${btn('add-expense', 'Add expense', 'plus', 'primary')}</div>
-      <p class="muted" style="margin:0">Recurring costs and one-time bills, with how each is split. Monthly totals appear in <b>Bills</b>.</p>
+      <p class="muted" style="margin:0">Recurring costs and one-time bills, with how each is split. Pick from <a href="#expense-list" data-act="scroll-list">your expense list</a> or add an ad hoc one. <b>Fixed</b> = same every month, <b>Variable</b> = changes (you enter the actual amount when paying).</p>
       ${!d.residences.length ? '<div class="card"><div class="empty">Add a residence first.</div></div>' : groups.map((r) => {
         const es = list.filter((e) => e.residenceId === r.id);
         const monthly = es.reduce((a, e) => a + C.monthlyEquivalent(e), 0);
@@ -372,12 +373,24 @@
             <thead><tr><th>Expense</th><th class="num">Amount</th><th>Frequency</th><th>Paid by</th><th>Split</th><th></th></tr></thead>
             <tbody>${es.map((e) => `<tr class="${e.active ? '' : 'inactive'}">
               <td><b>${esc(e.name)}</b><div class="muted">${esc(e.category || '')}${e.active ? '' : ' · inactive'}</div></td>
-              <td class="num">${money(e.amount)}${e.variable ? '<div class="hint">varies</div>' : ''}</td>
+              <td class="num">${money(e.amount)}${e.variable ? '<div class="hint">estimate</div>' : ''}<div>${kindBadge(e)}</div></td>
               <td>${esc(e.frequency)}<div class="muted">${e.frequency === 'One-time' ? esc(fmtDate(e.startDate, true)) : 'day ' + (e.dueDay || (e.startDate ? +e.startDate.slice(8) : 1))}</div></td>
               <td>${personTag(e.paidById)}</td>
               <td>${splitSummary(e)}</td>
               <td class="row-actions">${iconBtn('edit-expense', 'edit', 'Edit', `data-id="${esc(e.id)}"`)}${iconBtn('del-expense', 'trash', 'Delete', `data-id="${esc(e.id)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No expenses yet.</div>'}</div></section>`;
-      }).join('')}`;
+      }).join('')}
+      ${expenseListCard()}`;
+  }
+
+  function expenseListCard() {
+    const types = [...S.db.expenseTypes].sort((a, b) => (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name));
+    return `<section class="card" id="expense-list">
+      <div class="group-title"><h2>Your expense list</h2><span class="muted">Quick-pick templates for the Add expense form</span><span class="spacer"></span>${btn('add-type', 'Add to list', 'plus', 'sm')}</div>
+      <div class="tablewrap">${types.length ? `<table>
+        <thead><tr><th>Name</th><th>Category</th><th>Amount</th><th>Frequency</th><th class="num">Typical</th><th></th></tr></thead>
+        <tbody>${types.map((t) => `<tr><td><b>${esc(t.name)}</b></td><td>${esc(t.category)}</td><td>${kindBadge(t)}</td><td>${esc(t.frequency)}</td>
+          <td class="num">${t.amount ? money(t.amount) : '<span class="muted">—</span>'}</td>
+          <td class="row-actions">${btn('use-type', 'Use', 'plus', 'sm', `data-id="${esc(t.id)}"`)}${iconBtn('edit-type', 'edit', 'Edit', `data-id="${esc(t.id)}"`)}${iconBtn('del-type', 'trash', 'Delete', `data-id="${esc(t.id)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Your list is empty. Add common expenses here so you can pick them later.</div>'}</div></section>`;
   }
 
   function balancesView() {
@@ -589,6 +602,7 @@
       residenceId: S.residenceId !== 'all' ? S.residenceId : d.residences[0].id, name: '', category: '', amount: '', frequency: 'Monthly',
       dueDay: '', startDate: S.period + '-01', endDate: '', paidById: '', splitMethod: 'Equal', variable: false, active: true, notes: '',
     }, preset);
+    if (!e.amount) e.amount = '';
     const existing = new Map(d.splits.filter((s) => s.expenseId === id).map((s) => [s.personId, s.value]));
     const categories = [...new Set(['Rent', 'Mortgage', 'Utilities', 'Internet', 'Insurance', 'Taxes', 'Maintenance', 'Subscriptions', 'Groceries', 'Other', ...d.expenses.map((x) => x.category).filter(Boolean)])];
 
@@ -609,17 +623,19 @@
       title: id ? 'Edit expense' : (preset.frequency === 'One-time' ? 'Add one-time bill' : 'Add expense'),
       wide: true,
       body: `<div class="form-grid">
+        ${id ? '' : field('Start from', `<select name="templateId"><option value="">Ad hoc — type your own</option>${options(d.expenseTypes.slice().sort((a, b) => a.name.localeCompare(b.name)).map((t) => [t.id, t.name + (t.category ? ' · ' + t.category : '')]), e.templateId || '')}</select>`, 'full', 'Pick from your expense list to pre-fill, or leave as ad hoc.')}
         ${field('Name', `<input name="name" required value="${esc(e.name)}" placeholder="e.g. Rent, Water, Wi-Fi">`)}
         ${field('Residence', `<select name="residenceId" required>${residenceOptions(e.residenceId)}</select>`)}
         ${field('Category', `<input name="category" list="catlist" value="${esc(e.category)}"><datalist id="catlist">${categories.map((c) => `<option value="${esc(c)}">`).join('')}</datalist>`)}
-        ${field('Amount', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(e.amount)}">`)}
-        <label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="variable" ${e.variable ? 'checked' : ''}> Amount varies each month (estimate)</label>
+        ${field('Amount type', `<select name="amountType">${options([['Fixed', 'Fixed — same every month'], ['Variable', 'Variable — changes each month']], e.variable ? 'Variable' : 'Fixed')}</select>`)}
+        ${field('Amount', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(e.amount)}">`, '', 'For variable expenses this is an estimate; enter the real amount when you pay.')}
         ${field('Frequency', `<select name="frequency">${options(['Monthly', 'Quarterly', 'Yearly', 'One-time'].map((x) => [x, x]), e.frequency)}</select>`)}
         ${field('Due day of month', `<input name="dueDay" type="number" min="1" max="31" value="${esc(e.dueDay || '')}">`, '', 'Blank = day of the start date')}
         ${field('Start date', `<input type="date" name="startDate" required value="${esc(e.startDate)}">`, '', 'First bill. Quarterly/yearly repeat from here.')}
         ${field('End date (optional)', `<input type="date" name="endDate" value="${esc(e.endDate)}">`)}
         ${field('Usually paid by', `<select name="paidById">${personOptions(e.paidById, '— choose —')}</select>`, '', 'Default payer. You can change it per bill.')}
         ${field('Split method', `<select name="splitMethod">${options([['Equal', 'Equal'], ['Percent', 'By percent'], ['Shares', 'By shares / weight']], e.splitMethod)}</select>`)}
+        ${id ? '<div></div>' : `<label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="saveToList"> Save to my expense list</label>`}
         <div class="field full"><span class="lbl">Who shares this expense</span><div id="participants"></div></div>
         ${field('Notes', `<textarea name="notes">${esc(e.notes)}</textarea>`, 'full')}
         <label class="check full"><input type="checkbox" name="active" ${e.active ? 'checked' : ''}> Active (inactive expenses stop generating bills)</label>
@@ -653,7 +669,15 @@
         };
         draw();
         form.addEventListener('change', (ev) => {
-          if (ev.target.name === 'residenceId') { current = new Map(); draw(); }
+          if (ev.target.name === 'templateId') {
+            const t = d.expenseTypes.find((x) => x.id === ev.target.value);
+            if (t) {
+              form.name.value = t.name; form.category.value = t.category || ''; form.amountType.value = t.variable ? 'Variable' : 'Fixed';
+              form.frequency.value = t.frequency; if (t.amount) form.amount.value = t.amount;
+              preview();
+            }
+          }
+          else if (ev.target.name === 'residenceId') { current = new Map(); draw(); }
           else if (ev.target.name === 'splitMethod') { current = readCurrent(); if (form.splitMethod.value !== 'Equal') current.forEach((v, k) => { if (!v) current.set(k, form.splitMethod.value === 'Percent' ? 0 : 1); }); draw(); }
           else preview();
         });
@@ -668,11 +692,36 @@
           Object.assign(rec, {
             residenceId: fd.get('residenceId'), name: fd.get('name').trim(), category: fd.get('category').trim(), amount: round2(num(fd.get('amount'))),
             frequency: fd.get('frequency'), dueDay: Math.round(num(fd.get('dueDay'))) || 0, startDate: fd.get('startDate'), endDate: fd.get('endDate'),
-            paidById: fd.get('paidById'), splitMethod: method, variable: fd.get('variable') === 'on', active: fd.get('active') === 'on', notes: fd.get('notes').trim(),
+            paidById: fd.get('paidById'), splitMethod: method, variable: fd.get('amountType') === 'Variable', active: fd.get('active') === 'on', notes: fd.get('notes').trim(),
           });
           if (!id) db.expenses.push(rec);
+          if (!id && fd.get('saveToList') === 'on' && !db.expenseTypes.some((t) => t.name.toLowerCase() === rec.name.toLowerCase())) {
+            db.expenseTypes.push({ id: store.uid('t'), name: rec.name, category: rec.category, variable: rec.variable, frequency: rec.frequency, amount: rec.amount });
+          }
           db.splits = db.splits.filter((s) => s.expenseId !== rec.id);
           chosen.forEach((pid) => db.splits.push({ expenseId: rec.id, personId: pid, value: method === 'Equal' ? 1 : num(fd.get('val_' + pid)) }));
+        });
+      },
+    });
+  }
+
+  function openTypeForm(id) {
+    const t = id ? S.db.expenseTypes.find((x) => x.id === id) : { name: '', category: '', variable: false, frequency: 'Monthly', amount: '' };
+    const categories = [...new Set([...S.db.expenseTypes, ...S.db.expenses].map((x) => x.category).filter(Boolean))].sort();
+    openModal({
+      title: id ? 'Edit list item' : 'Add to expense list',
+      body: `<div class="form-grid">
+        ${field('Name', `<input name="name" required value="${esc(t.name)}" placeholder="e.g. Pest control">`, 'full')}
+        ${field('Category', `<input name="category" list="typecats" value="${esc(t.category)}"><datalist id="typecats">${categories.map((c) => `<option value="${esc(c)}">`).join('')}</datalist>`)}
+        ${field('Amount type', `<select name="amountType">${options([['Fixed', 'Fixed — same every month'], ['Variable', 'Variable — changes each month']], t.variable ? 'Variable' : 'Fixed')}</select>`)}
+        ${field('Usual frequency', `<select name="frequency">${options(['Monthly', 'Quarterly', 'Yearly', 'One-time'].map((x) => [x, x]), t.frequency)}</select>`)}
+        ${field('Typical amount (optional)', `<input name="amount" type="number" step="0.01" min="0" value="${esc(t.amount || '')}">`)}</div>
+        <p class="hint" style="margin:0">List items only pre-fill the Add expense form; changing one does not alter expenses you already added.</p>`,
+      onSubmit: (fd) => {
+        commit((db) => {
+          const rec = id ? db.expenseTypes.find((x) => x.id === id) : { id: store.uid('t') };
+          Object.assign(rec, { name: fd.get('name').trim(), category: fd.get('category').trim(), variable: fd.get('amountType') === 'Variable', frequency: fd.get('frequency'), amount: round2(num(fd.get('amount'))) });
+          if (!id) db.expenseTypes.push(rec);
         });
       },
     });
@@ -773,11 +822,11 @@
     try {
       if (FileLink.supported()) {
         await FileLink.pickCreate();
-        S.db = sample ? store.sampleDb() : store.emptyDb();
+        S.db = sample ? store.sampleDb() : store.newDb();
         S.fileName = FileLink.name; S.demo = false; S.needsPermission = false;
         await flush();
       } else {
-        S.db = sample ? store.sampleDb() : store.emptyDb();
+        S.db = sample ? store.sampleDb() : store.newDb();
         S.fileName = 'Residence Tracker.xlsx'; S.demo = false;
         setSave('dirty');
       }
@@ -796,6 +845,11 @@
     'add-onetime': () => openExpenseForm(null, { frequency: 'One-time', startDate: (S.period === C.todayISO().slice(0, 7) ? C.todayISO() : S.period + '-01') }),
     'edit-expense': (el) => openExpenseForm(el.dataset.id),
     'del-expense': (el) => deleteExpense(el.dataset.id),
+    'add-type': () => openTypeForm(),
+    'edit-type': (el) => openTypeForm(el.dataset.id),
+    'del-type': (el) => confirmBox('Remove from list', 'Remove this item from your expense list? Expenses you already added are not affected.', 'Remove', () => commit((db) => { db.expenseTypes = db.expenseTypes.filter((t) => t.id !== el.dataset.id); })),
+    'use-type': (el) => { const t = S.db.expenseTypes.find((x) => x.id === el.dataset.id); if (t) openExpenseForm(null, { templateId: t.id, name: t.name, category: t.category, variable: t.variable, frequency: t.frequency, amount: t.amount || '' }); },
+    'scroll-list': (el, ev) => { ev.preventDefault(); const t = $('#expense-list'); if (t) t.scrollIntoView({ behavior: 'smooth' }); },
     'add-person': () => openPersonForm(),
     'edit-person': (el) => openPersonForm(el.dataset.id),
     'del-person': (el) => deletePerson(el.dataset.id),
@@ -821,7 +875,7 @@
     const el = e.target.closest('[data-act]');
     if (!el || el.closest('dialog') && !el.closest('#app')) return;
     const fn = actions[el.dataset.act];
-    if (fn) fn(el);
+    if (fn) fn(el, e);
   });
 
   document.addEventListener('change', (e) => {

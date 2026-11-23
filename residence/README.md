@@ -21,6 +21,8 @@ Then **Create new workbook** (or **Open workbook…** for an existing one). The 
 | Balances | Net position per person, suggested settle-up, history of settlements |
 | People / Residences | Who is in the group; each home, its tenure (Renting/Mortgage/Owned) and residents |
 
+**Expense list:** the Expenses screen has *Your expense list* (rent, electricity, Wi-Fi… editable, stored in the `ExpenseTypes` sheet). In **Add expense** pick one under *Start from* to pre-fill it, or leave it as **Ad hoc** and type your own (tick *Save to my expense list* to keep it). Every expense is labelled **Fixed** (same every month) or **Variable** (changes; the amount is an estimate until you record the real bill).
+
 **Splitting** is per expense: *Equal*, *By percent*, or *By shares* (weights, e.g. 2:1). Amounts are cent-exact.
 **Balances** = what each person paid out − their share of every bill marked Paid, adjusted by recorded settlements. Use the residence picker (top bar) to scope everything to one home.
 
