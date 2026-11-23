@@ -349,6 +349,9 @@
   function splitSummary(e) {
     const parts = C.participants(S.db, e);
     if (!parts.length) return '<span class="muted">nobody</span>';
+    if (e.splitMethod === 'Fixed' || e.splitMethod === 'Offset') {
+      return `<div class="chips">${C.splitAmounts(S.db, e, e.amount).map((s) => chip(person(s.personId), ((person(s.personId) || { name: '?' }).name.split(' ')[0]) + ' ' + money(s.amount))).join('')}</div>`;
+    }
     const total = parts.reduce((a, p) => a + (e.splitMethod === 'Equal' ? 1 : Math.max(0, p.value)), 0) || parts.length;
     return `<div class="chips">${parts.map((p) => {
       const w = e.splitMethod === 'Equal' ? 1 : Math.max(0, p.value);
@@ -610,11 +613,12 @@
       const resMembers = new Set(d.residents.filter((x) => x.residenceId === resId).map((x) => x.personId));
       const people = d.people.filter((p) => p.active || checkedMap.has(p.id)).sort((a, b) => (resMembers.has(b.id) - resMembers.has(a.id)) || a.name.localeCompare(b.name));
       const useDefault = !checkedMap.size;
-      return `<table class="split-table"><thead><tr><th>Include</th><th>Person</th><th class="valcol num">${method === 'Percent' ? 'Percent' : 'Weight'}</th><th class="num">≈ per bill</th></tr></thead><tbody>${people.map((p) => {
+      return `<table class="split-table"><thead><tr><th>Include</th><th>Person</th><th class="valcol num">${{ Percent: 'Percent', Shares: 'Weight', Fixed: 'Pays exactly ($)', Offset: 'Pays more / less ($)' }[method] || ''}</th><th class="num">≈ per bill</th></tr></thead><tbody>${people.map((p) => {
         const on = useDefault ? resMembers.has(p.id) : checkedMap.has(p.id);
-        const val = checkedMap.has(p.id) ? checkedMap.get(p.id) : (method === 'Percent' ? '' : 1);
+        let val = checkedMap.has(p.id) ? checkedMap.get(p.id) : (method === 'Percent' ? '' : 1);
+        if ((method === 'Fixed' || method === 'Offset') && !val) val = '';
         return `<tr><td><input type="checkbox" name="inc_${esc(p.id)}" ${on ? 'checked' : ''}></td><td>${personTag(p.id)}</td>
-          <td class="valcol num"><input type="number" step="any" min="0" name="val_${esc(p.id)}" value="${esc(val)}"></td><td class="num preview" data-pid="${esc(p.id)}"></td></tr>`;
+          <td class="valcol num"><input type="number" step="any" ${method === 'Offset' ? '' : 'min="0"'} name="val_${esc(p.id)}" value="${esc(val)}" placeholder="${method === 'Fixed' ? 'the rest' : method === 'Offset' ? '0' : ''}"></td><td class="num preview" data-pid="${esc(p.id)}"></td></tr>`;
       }).join('')}</tbody></table>
       <div class="hint split-note"></div>`;
     };
@@ -634,7 +638,7 @@
         ${field('Start date', `<input type="date" name="startDate" required value="${esc(e.startDate)}">`, '', 'First bill. Quarterly/yearly repeat from here.')}
         ${field('End date (optional)', `<input type="date" name="endDate" value="${esc(e.endDate)}">`)}
         ${field('Usually paid by', `<select name="paidById">${personOptions(e.paidById, '— choose —')}</select>`, '', 'Default payer. You can change it per bill.')}
-        ${field('Split method', `<select name="splitMethod">${options([['Equal', 'Equal'], ['Percent', 'By percent'], ['Shares', 'By shares / weight']], e.splitMethod)}</select>`)}
+        ${field('Split method', `<select name="splitMethod">${options([['Equal', 'Equal'], ['Percent', 'By percent'], ['Shares', 'By shares / weight'], ['Fixed', 'Fixed $ amounts — others split the rest'], ['Offset', 'Equal, but some pay $ more / less']], e.splitMethod)}</select>`)}
         ${id ? '<div></div>' : `<label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="saveToList"> Save to my expense list</label>`}
         <div class="field full"><span class="lbl">Who shares this expense</span><div id="participants"></div></div>
         ${field('Notes', `<textarea name="notes">${esc(e.notes)}</textarea>`, 'full')}
@@ -643,6 +647,7 @@
       onOpen: (form) => {
         const box = $('#participants', form);
         let current = existing;
+        let prevMethod = form.splitMethod.value;
         const draw = () => {
           // preserve what the user typed when only the method/amount changes
           box.innerHTML = participantRows(form.residenceId.value, form.splitMethod.value, current);
@@ -665,6 +670,15 @@
           if (method === 'Percent') {
             const tot = ids.reduce((a, pid) => a + num(form['val_' + pid].value), 0);
             note.innerHTML = Math.abs(tot - 100) < 0.01 ? `<span class="good">Total ${tot}% ✓</span>` : `<span class="bad">Total ${round2(tot)}% — percentages will be scaled to add up to 100%.</span>`;
+          } else if (method === 'Fixed') {
+            const vals = ids.map((pid) => num(form['val_' + pid].value));
+            const fixed = round2(vals.reduce((a, b) => a + b, 0)), nFree = vals.filter((v) => !v).length;
+            const rest = round2(amount - fixed);
+            note.innerHTML = fixed > amount + 0.004 ? `<span class="bad">Fixed amounts (${esc(money(fixed))}) are more than the bill — they will be scaled down to fit.</span>`
+              : nFree ? `Fixed ${esc(money(fixed))}; the remaining ${esc(money(rest))} ${nFree === 1 ? 'goes to the person left blank.' : `is split equally between the ${nFree} people left blank.`}`
+              : Math.abs(rest) < 0.005 ? '<span class="good">Fixed amounts add up to the bill ✓</span>' : `<span class="bad">Fixed amounts are ${esc(money(Math.abs(rest)))} ${rest > 0 ? 'short of' : 'over'} the bill — they will be scaled to fit.</span>`;
+          } else if (method === 'Offset') {
+            note.innerHTML = 'Start from an equal split, then enter how much <b>more</b> (+) or <b>less</b> (−) someone pays. The difference comes off (or goes onto) everyone left blank. E.g. +75 on one of two people: they pay $75 more than half, the other pays $75 less.';
           } else note.textContent = method === 'Shares' ? 'Weights are relative: 2 and 1 means a 2/3 – 1/3 split.' : '';
         };
         draw();
@@ -678,7 +692,14 @@
             }
           }
           else if (ev.target.name === 'residenceId') { current = new Map(); draw(); }
-          else if (ev.target.name === 'splitMethod') { current = readCurrent(); if (form.splitMethod.value !== 'Equal') current.forEach((v, k) => { if (!v) current.set(k, form.splitMethod.value === 'Percent' ? 0 : 1); }); draw(); }
+          else if (ev.target.name === 'splitMethod') {
+            const m = form.splitMethod.value, amountMode = (x) => x === 'Fixed' || x === 'Offset';
+            current = readCurrent();
+            if (amountMode(m)) current.forEach((v, k) => current.set(k, 0));
+            else if (m === 'Percent' || m === 'Shares') current.forEach((v, k) => { if (amountMode(prevMethod) || !v) current.set(k, m === 'Percent' ? 0 : 1); });
+            prevMethod = m;
+            draw();
+          }
           else preview();
         });
         form.addEventListener('input', (ev) => { if (ev.target.name === 'amount' || ev.target.name.startsWith('val_')) preview(); });

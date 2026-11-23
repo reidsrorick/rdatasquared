@@ -23,7 +23,10 @@ Then **Create new workbook** (or **Open workbook…** for an existing one). The 
 
 **Expense list:** the Expenses screen has *Your expense list* (new workbooks start with just Rent, Water, Electric and Wi-Fi; add, edit or remove items freely — stored in the `ExpenseTypes` sheet). In **Add expense** pick one under *Start from* to pre-fill it, or leave it as **Ad hoc** and type your own (tick *Save to my expense list* to keep it). Every expense is labelled **Fixed** (same every month) or **Variable** (changes; the amount is an estimate until you record the real bill).
 
-**Splitting** is per expense: *Equal*, *By percent*, or *By shares* (weights, e.g. 2:1). Amounts are cent-exact.
+**Splitting** is per expense, and amounts are cent-exact:
+- *Equal*, *By percent*, or *By shares* (weights, e.g. 2:1).
+- *Fixed $ amounts* — type what a person pays exactly; anyone left blank splits the rest. Rent $1,957 with you at $1,053.50 → the other person pays $903.50. If the rent changes, your amount stays put.
+- *Equal, but some pay $ more / less* — start from an equal split and enter the extra (+) or reduction (−), e.g. +75 → you pay $75 more than half ($1,053.50) and the other person $75 less ($903.50). If the rent changes, you still pay $75 over half.
 **Balances** = what each person paid out − their share of every bill marked Paid, adjusted by recorded settlements. Use the residence picker (top bar) to scope everything to one home.
 
 ## The workbook

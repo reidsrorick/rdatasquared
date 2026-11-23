@@ -62,26 +62,61 @@
   /** [{personId, value}] who shares this expense. */
   function participants(db, e) {
     const known = new Set(db.people.map((p) => p.id));
+    const dflt = isAmountMethod(e.splitMethod) ? 0 : 1;
     let rows = db.splits.filter((s) => s.expenseId === e.id && known.has(s.personId));
-    if (!rows.length) rows = db.residents.filter((r) => r.residenceId === e.residenceId && known.has(r.personId)).map((r) => ({ personId: r.personId, value: 1 }));
-    if (!rows.length) rows = db.people.filter((p) => p.active).map((p) => ({ personId: p.id, value: 1 }));
+    if (!rows.length) rows = db.residents.filter((r) => r.residenceId === e.residenceId && known.has(r.personId)).map((r) => ({ personId: r.personId, value: dflt }));
+    if (!rows.length) rows = db.people.filter((p) => p.active).map((p) => ({ personId: p.id, value: dflt }));
     return rows;
   }
 
-  /** Split `amount` across the expense's participants → [{personId, amount}] (cent-exact). */
-  function splitAmounts(db, e, amount) {
-    const parts = participants(db, e);
-    if (!parts.length) return [];
-    let weights = parts.map((p) => (e.splitMethod === 'Equal' ? 1 : Math.max(0, Number(p.value) || 0)));
-    let sum = weights.reduce((a, b) => a + b, 0);
-    if (sum <= 0) { weights = parts.map(() => 1); sum = parts.length; }
-    const total = Math.round(amount * 100);
-    const raw = weights.map((w) => (total * w) / sum);
+  /** Give each raw (fractional-cent) amount whole cents so the total is exact. */
+  function roundToCents(raw, total) {
     const cents = raw.map(Math.floor);
     let left = total - cents.reduce((a, b) => a + b, 0);
     raw.map((r, i) => ({ i, frac: r - cents[i] }))
       .sort((a, b) => b.frac - a.frac)
       .forEach(({ i }) => { if (left > 0) { cents[i]++; left--; } });
+    return cents;
+  }
+
+  const isAmountMethod = (m) => m === 'Fixed' || m === 'Offset';
+
+  /**
+   * Split `amount` across the expense's participants -> [{personId, amount}] (cent-exact).
+   *   Equal / Percent / Shares : proportional to weights.
+   *   Fixed  : people with a $ value pay exactly that; everyone else splits the rest equally.
+   *   Offset : equal split, then people with a +/- $ value pay that much more/less than their
+   *            equal share; the difference is taken from (or given to) everyone without a value.
+   */
+  function splitAmounts(db, e, amount) {
+    const parts = participants(db, e);
+    if (!parts.length) return [];
+    const total = Math.round(amount * 100);
+    const n = parts.length;
+    let cents;
+
+    if (isAmountMethod(e.splitMethod)) {
+      const vals = parts.map((p) => Math.round((Number(p.value) || 0) * 100));
+      const free = vals.map((v) => v === 0);
+      const nFree = free.filter(Boolean).length;
+      const sum = vals.reduce((a, b) => a + b, 0);
+      let raw;
+      if (e.splitMethod === 'Fixed') {
+        const rest = total - sum;
+        if (nFree > 0 && rest >= 0) raw = vals.map((v, i) => (free[i] ? rest / nFree : v));
+        else if (sum > 0) raw = vals.map((v) => (v * total) / sum);   // over-allocated or all fixed: scale to the bill
+        else raw = vals.map(() => total / n);
+      } else {
+        const base = total / n;
+        raw = vals.map((v, i) => base + v + (nFree > 0 ? (free[i] ? -sum / nFree : 0) : -sum / n));
+      }
+      cents = roundToCents(raw, total);
+    } else {
+      let weights = parts.map((p) => (e.splitMethod === 'Equal' ? 1 : Math.max(0, Number(p.value) || 0)));
+      let wsum = weights.reduce((a, b) => a + b, 0);
+      if (wsum <= 0) { weights = parts.map(() => 1); wsum = n; }
+      cents = roundToCents(weights.map((w) => (total * w) / wsum), total);
+    }
     return parts.map((p, i) => ({ personId: p.personId, amount: cents[i] / 100 }));
   }
 

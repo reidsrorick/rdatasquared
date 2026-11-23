@@ -144,7 +144,7 @@
     ['Residents', 'Which people live at which residence (and so default into its splits).'],
     ['ExpenseTypes', 'Your pick-list of common expenses (pre-fills the Add expense form). Ad hoc expenses do not need to be on it.'],
     ['Expenses', 'Recurring (or one-time) costs: rent, mortgage, water, wifi... Frequency: Monthly, Quarterly, Yearly, One-time. AmountType: Fixed (same every month) or Variable (changes).'],
-    ['Splits', 'Who shares each expense. Value = percent (SplitMethod Percent) or weight (Shares). Ignored for Equal.'],
+    ['Splits', 'Who shares each expense. Value depends on SplitMethod: Percent = percent, Shares = weight, Fixed = exact $ that person pays (blank/0 = splits the rest), Offset = $ more (+) or less (-) than an equal share. Ignored for Equal.'],
     ['Payments', 'Actual bills for a month (Period = YYYY-MM). Status Paid counts toward balances; Billed = amount known, not yet paid.'],
     ['Settlements', 'Money one person paid another to settle up.'],
     ['Settings', 'Currency etc.'],
@@ -325,7 +325,7 @@
       if (e.variableLegacy) e.variable = true;
       delete e.variableLegacy;
       e.frequency = normChoice(e.frequency, ['Monthly', 'Quarterly', 'Yearly', 'One-time'], 'Monthly');
-      e.splitMethod = normChoice(e.splitMethod, ['Equal', 'Percent', 'Shares'], 'Equal');
+      e.splitMethod = normChoice(e.splitMethod, ['Equal', 'Percent', 'Shares', 'Fixed', 'Offset'], 'Equal');
     });
     db.payments.forEach((p) => { p.status = normChoice(p.status, ['Paid', 'Billed'], 'Paid'); });
 
