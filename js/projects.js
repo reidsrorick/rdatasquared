@@ -44,7 +44,7 @@ window.SITE = {
  *   url         (required) link to the source code
  *   demo        (optional) live app URL
  *   icon        (optional) an emoji shown on the card
- *   color       (optional) accent color for the card, e.g. "#e2784f"
+ *   color       (optional) override the card accent (default: brand yellow), e.g. "#e2784f"
  *   tags        (optional) short labels shown on the card
  */
 var REPO = "https://github.com/reidsrorick/rdatasquared/tree/master/";
@@ -57,7 +57,6 @@ window.PROJECTS = [
     url: REPO + "todo",
     demo: LIVE + "todo/",
     icon: "📓",
-    color: "#e2784f",
     tags: ["Productivity", "PWA"]
   },
   {
@@ -66,7 +65,6 @@ window.PROJECTS = [
     url: REPO + "bud",
     demo: LIVE + "bud/",
     icon: "💸",
-    color: "#3fa56b",
     tags: ["Finance", "Local-first"]
   },
   {
@@ -75,7 +73,6 @@ window.PROJECTS = [
     url: REPO + "daily_games",
     demo: LIVE + "daily_games/",
     icon: "🎮",
-    color: "#7a5cf0",
     tags: ["Games"]
   },
   {
@@ -84,7 +81,6 @@ window.PROJECTS = [
     url: REPO + "uno",
     demo: LIVE + "uno/",
     icon: "🃏",
-    color: "#e5484d",
     tags: ["Games", "Reference"]
   }
 ];
