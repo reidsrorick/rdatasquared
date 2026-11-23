@@ -35,6 +35,7 @@
     dirty: { data: false }, // unsaved changes vs budget.json
     links: [],
     migrations: {}, // one-time data fixes already applied (stored in budget.json)
+    groups: [], // saved names of expense groups / trips (stored in budget.json)
     autosave: autosavePref,
     saving: false,
     lastSavedAt: null,
@@ -182,6 +183,100 @@
     } catch (e) {
       BB.ui.toast("Could not open receipt: " + (e.message || e), "warn");
     }
+  }
+
+  // ---- groups / trips: a way to batch expenses (a trip, an engagement) ----
+  const groupList = () => BB.model.groupNames(S.rows.thirdparty, S.groups);
+  const rowsIn = (name) => S.rows.thirdparty.filter((r) => BB.model.inGroup(r, name));
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+  // the canonical spelling of a group name, remembering it if it's new
+  function ensureGroup(name) {
+    name = String(name || "").trim();
+    if (!name) return null;
+    const hit = groupList().find((g) => BB.model.sameName(g, name));
+    if (hit) return hit;
+    S.groups.push(name);
+    return name;
+  }
+
+  // create an (empty) group so you can add expenses straight into it
+  function createGroup(name) {
+    name = String(name || "").trim();
+    if (!name) return null;
+    const hit = groupList().find((g) => BB.model.sameName(g, name));
+    if (hit) {
+      BB.ui.toast(`“${hit}” already exists.`, "");
+      return hit;
+    }
+    S.groups.push(name);
+    markDirty("thirdparty");
+    BB.ui.render();
+    return name;
+  }
+
+  // put the given expense rows in a group (name = null takes them out of any group)
+  function assignGroup(rows, name) {
+    if (!rows.length) return;
+    const canon = name ? ensureGroup(name) : null;
+    rows.forEach((r) => {
+      if (canon) r.Group = canon;
+      else delete r.Group;
+    });
+    markDirty("thirdparty");
+    BB.ui.render();
+    BB.ui.toast(
+      canon ? `Added ${plural(rows.length, "expense")} to “${canon}”.` : `Took ${plural(rows.length, "expense")} out of their group.`,
+      "ok"
+    );
+  }
+
+  // rename a group; a name that already exists merges the two
+  function renameGroup(oldName, newName) {
+    newName = String(newName || "").trim();
+    if (!newName || newName === oldName) return;
+    const clash = groupList().find((g) => BB.model.sameName(g, newName) && !BB.model.sameName(g, oldName));
+    const target = clash || newName;
+    rowsIn(oldName).forEach((r) => (r.Group = target));
+    S.groups = S.groups.filter((g) => !BB.model.sameName(g, oldName));
+    if (!S.groups.some((g) => BB.model.sameName(g, target))) S.groups.push(target);
+    markDirty("thirdparty");
+    BB.ui.render();
+    BB.ui.toast(clash ? `Merged into “${target}”.` : `Renamed to “${target}”.`, "ok");
+  }
+
+  // delete the group, not its expenses — they stay in your list, just ungrouped
+  function deleteGroup(name) {
+    const n = rowsIn(name).length;
+    const msg = n
+      ? `Delete the group “${name}”?\n\nIts ${plural(n, "expense")} stay in your list, just no longer grouped.`
+      : `Delete the empty group “${name}”?`;
+    if (!window.confirm(msg)) return;
+    rowsIn(name).forEach((r) => delete r.Group);
+    S.groups = S.groups.filter((g) => !BB.model.sameName(g, name));
+    markDirty("thirdparty");
+    BB.ui.render();
+    BB.ui.toast(`Deleted “${name}”.`, "ok");
+  }
+
+  // Mark a whole group at once. Submitted only moves Pending ones forward; Paid moves
+  // everything that isn't already paid. (Nothing is ever moved backwards.)
+  function setGroupStatus(name, status) {
+    let n = 0;
+    for (const r of rowsIn(name)) {
+      const move = status === "Submitted" ? r.Status === "Pending" : r.Status !== "Paid";
+      if (!move) continue;
+      r.Status = status;
+      BB.model.applyStatusDates(r);
+      n++;
+    }
+    if (!n) {
+      BB.ui.toast(`Nothing to change in “${name}”.`, "");
+      return;
+    }
+    markDirty("thirdparty");
+    BB.ui.render();
+    BB.ui.toast(`${plural(n, "expense")} in “${name}” marked ${status.toLowerCase()}.`, "ok");
   }
 
   // ---- apartment months in the Expense Tracker (Luke's share, driven by Requests) ----
@@ -376,13 +471,14 @@
   }
 
   // replace the in-memory data with what was just read: { rowsBySchema, links, migrations }
-  function ingest({ rowsBySchema, links, migrations }) {
+  function ingest({ rowsBySchema, links, migrations, groups }) {
     S.rows.apartment = rowsBySchema.apartment || [];
     S.rows.requests = (rowsBySchema.requests || []).map(BB.model.normalizeRequest);
     S.rows.subscriptions = rowsBySchema.subscriptions || [];
     S.rows.thirdparty = (rowsBySchema.thirdparty || []).map(BB.model.normalizeExpense);
     S.links = links || [];
     S.migrations = { ...(migrations || {}) };
+    S.groups = [...(groups || [])];
     S.dirty = { data: false };
     S.conflict = { data: false };
     applyMigrations();
@@ -421,7 +517,10 @@
 
   // expense rows get their defaults + status dates filled in before they're stored
   function prepRow(schemaName, row) {
-    if (schemaName === "thirdparty") BB.model.applyStatusDates(BB.model.normalizeExpense(row));
+    if (schemaName === "thirdparty") {
+      BB.model.applyStatusDates(BB.model.normalizeExpense(row));
+      if (row.Group) row.Group = ensureGroup(row.Group); // match an existing group's spelling / remember a new one
+    }
     if (schemaName === "requests") BB.model.normalizeRequest(row);
     return row;
   }
@@ -605,6 +704,7 @@
     setTab, connect, loadFallback, commitRow, commitRows, deleteRow, save, reload,
     setAutosave, setMasked, autosaveOn, canAutosave,
     attachReceipts, unlinkReceipt, openReceiptByName, setExpenseStatus, settleMonth, markMonthPaid,
+    createGroup, assignGroup, renameGroup, deleteGroup, setGroupStatus, groupList,
     resolveConflict, reloadFile, exportExcel, checkExternalChanges, fileMode: () => S.fileMode,
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

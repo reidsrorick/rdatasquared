@@ -23,6 +23,7 @@ All five tables plus the biller links are stored in a single readable JSON file,
   "version": 1,
   "savedAt": "2026-11-13T20:44:53.000Z",
   "migrations": { "settledBeforeFirstRequest": true },
+  "groups": ["Amarillo trip"],
   "apartment": [
     {"Date":"2026-11-01","Item":"Rent","Total Amount":1957}
   ],
@@ -62,6 +63,7 @@ the **Excel** button in the top bar builds a fresh workbook from what's on scree
 | **Subscriptions-Bills** | recurring items |
 | **Expense Tracker** | every reimbursable expense, including status, dates and receipt filenames |
 | **Owed Summary** | pending / submitted / paid / still owed, by who pays you back (including Luke's apartment share), plus Luke's share month by month |
+| **Trips** | one row per group: items, total, paid back, still owed |
 | **Links** | biller portals |
 
 Dates and dollar amounts are real Excel dates and currency, so they sort and sum normally. The
@@ -217,6 +219,34 @@ For anything you paid for that someone else should pay back. Each expense has:
 The top of the page shows how much is **still owed**, how much you haven't requested yet, how much is awaiting payment, and how much has been paid back — plus a breakdown by who pays. Use the filter chips to look at just one category or status (the default view is everything still owed).
 
 **Receipts attach to the expense.** Choose files right in the **Add expense** / **Edit** form (a *Receipts* picker at the bottom), or click the **paperclip** on a row to open its receipts: drop files in or click *Add receipt(s)*. (Bulk add can't take files — attach those afterward with the paperclip.) Receipts need your budget folder connected in Chrome/Edge. Files are saved to a `Receipts/` subfolder of your budget folder as `YYYY-MM-DD_what_filename`, dated by the purchase date, with `-2`, `-3` added if a name repeats. The filenames are stored on the expense (the `Receipt` field), so they travel with it. **✕** unlinks a receipt from the expense but never deletes the file.
+
+## Groups (trips and batches)
+
+Expenses that belong together — a trip, a client engagement, a batch you'll submit as one expense report — can be
+put in a **group**. Each group is its own **floating card** in the Expense Tracker: a header with its name, how many
+expenses it holds, the **total** and how much is **still owed**, a thin progress line showing how much has been
+paid back (it turns calm and grey-named once everything is paid), and its expenses underneath. Click a header to
+fold or unfold the card (remembered on this device); anything not in a group sits in a dashed **Not in a group**
+card. With no groups, the tracker is one plain card holding the list. While rows are ticked, a **floating bar**
+appears at the bottom of the screen.
+
+There are two ways to fill a group:
+
+- **Tick and add.** Tick the box next to any expenses (the box in a group's header ticks everything in it). A bar
+  appears — choose **Add to group…** and pick a group, or **＋ New group…** to name a new one and add them in one
+  go. **Remove from group** takes them back out.
+- **Start a group, then add into it.** Click **New group**, name it, and click **+ Add expense** inside its block —
+  the form opens with the group already filled in. (The add/edit form and bulk add also have a **Trip / group**
+  box that suggests the groups you already have.)
+
+Each block's **More…** menu has **Mark all submitted** (moves every *Pending* expense forward), **Mark all paid**,
+**Rename…** (naming it after another group merges the two) and **Delete group…**. Deleting a group never deletes
+its expenses — they just become ungrouped. Group names ignore case and spacing, so "amarillo trip" joins
+"Amarillo trip". The category and status filters still apply inside groups; a header always shows the group's
+full total, and says "(3 shown)" when a filter is hiding some of its expenses.
+
+Groups are saved in `budget.json` (the list of names under `groups`, and each expense's `Group`), so an empty group
+survives until you use it, and the Excel export has a **Group** column and a **Trips** sheet.
 
 ## Apartment in the Expense Tracker (Luke's share)
 

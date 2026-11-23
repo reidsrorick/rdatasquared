@@ -390,6 +390,100 @@ table.grid td.apt-actions { white-space: normal; min-width: 92px; max-width: 190
 .rc-btn:hover { color: var(--text); background: var(--surface-2); }
 .rc-btn.has { color: var(--accent); font-weight: 600; }
 
+/* ---------- groups / trips: collapsible blocks with a subtotal header ---------- */
+.ex-pickrow { display: flex; align-items: flex-start; gap: 10px; }
+.ex-main { min-width: 0; flex: 1; }
+.ex-pick { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+tr.sel > td { background: var(--accent-soft); }
+
+/* the "add to group" bar floats at the bottom of the screen while rows are ticked */
+.selbar {
+  position: fixed; left: 12px; right: 12px; bottom: 58px; margin: 0 auto; width: fit-content;
+  z-index: 35; max-width: calc(100vw - 24px);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px;
+  padding: 10px 14px 10px 18px; font-size: 13px;
+  background: var(--text); color: var(--surface);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.28), 0 2px 6px rgba(16, 24, 40, 0.18);
+  animation: selbar-in .16s ease-out;
+}
+@keyframes selbar-in { from { opacity: 0; transform: translateY(8px); } }
+.selbar[hidden] { display: none; }
+.selbar-n { margin-right: 2px; }
+.selbar .btn { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--surface) 30%, transparent); }
+.selbar .btn:hover { background: color-mix(in srgb, var(--surface) 14%, transparent); }
+.selbar .btn.ghost { border-color: transparent; opacity: .8; }
+.selbar .grp-menu { background: var(--surface); color: var(--text); border-color: transparent; border-radius: 999px; padding: 5px 12px; max-width: 200px; text-overflow: ellipsis; }
+.grp-menu {
+  font: inherit; font-size: 13px; color: var(--text); cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px;
+}
+.grp-menu:hover { background: var(--surface-2); }
+
+/* the Expenses area: a title row and filters on the page itself, then floating cards */
+.board { margin-bottom: 24px; }
+.board-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 8px; }
+.board-head h3 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.board .filters { padding: 0 0 16px; }
+.grp-stack { display: flex; flex-direction: column; gap: 18px; }
+
+.grp-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -10px rgba(16, 24, 40, 0.14);
+  overflow: hidden;
+  transition: box-shadow .18s, transform .18s;
+}
+.grp-card:hover { box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 14px 32px -12px rgba(16, 24, 40, 0.2); }
+/* a trip that is fully paid back settles into a calmer look */
+.grp-card.settled .grp-name { color: var(--muted); }
+.grp-card.loose { background: transparent; border-style: dashed; box-shadow: none; }
+.grp-card.loose:hover { box-shadow: none; }
+.grp-card.loose .grp-top { background: transparent; }
+.grp-card.plain .grp-empty { margin: 0; }
+
+.grp-top {
+  display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap;
+  padding: 14px 16px 14px 12px; cursor: pointer;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+}
+.grp-toggle { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 8px; display: inline-flex; }
+.grp-toggle:hover { background: var(--surface-2); color: var(--text); }
+.grp-toggle svg { width: 16px; height: 16px; transition: transform .15s; }
+.grp-card.collapsed .grp-toggle svg { transform: rotate(-90deg); }
+.grp-top .ex-pick { margin: 0; }
+.grp-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; min-width: 0; }
+.grp-name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.grp-count { color: var(--muted); font-size: 12.5px; }
+.grp-sum { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.25; }
+.grp-total { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.grp-owed { font-size: 12px; font-weight: 500; color: var(--warn); }
+.grp-owed.done { color: var(--ok); }
+.grp-actions { display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+/* how much of the trip has been paid back */
+.grp-prog { height: 3px; background: var(--border); }
+.grp-prog i { display: block; height: 100%; background: var(--ok); border-radius: 0 3px 3px 0; transition: width .3s; }
+.grp-card.collapsed .table-wrap, .grp-card.collapsed .grp-empty { display: none; }
+.grp-empty { margin: 0; padding: 22px 18px; text-align: center; font-size: 13.5px; }
+.grp-foot { margin: 2px 4px 0; font-size: 12.5px; text-align: right; }
+.grp-card tr.sel > td { background: var(--accent-soft); }
+.grp-card table.expenses thead th { font-size: 12px; background: transparent; position: static; }
+.grp-card table.expenses tbody tr:last-child td { border-bottom: 0; }
+/* all the cards line up on one set of column widths */
+@media (min-width: 721px) {
+  .grp-card table.expenses { table-layout: fixed; }
+  .grp-card table.expenses th:nth-child(1) { width: 92px; }
+  .grp-card table.expenses th:nth-child(3) { width: 96px; }
+  .grp-card table.expenses th:nth-child(4) { width: 132px; }
+  .grp-card table.expenses th:nth-child(5) { width: 80px; }
+  .grp-card table.expenses th:nth-child(6) { width: 108px; }
+  .grp-card table.expenses td.ex-what { max-width: none; }
+}
+
+.name-card { max-width: 420px; }
+
 /* ---------- two column (apartment) ---------- */
 .two-col { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
 /* the entry table gets tighter columns so it fits next to the side panels on a laptop screen */
@@ -604,6 +698,13 @@ table.grid td.apt-actions { white-space: normal; min-width: 92px; max-width: 190
   table.expenses td.ex-status > :not(.ex-note) { justify-self: end; }
   table.expenses td.ex-status .ex-note { grid-column: 2; justify-self: end; padding-left: 0; text-align: right; }
   table.grid td.apt-actions { max-width: none; }
+  .grp-stack { gap: 14px; }
+  .grp-card { border-radius: 14px; }
+  .grp-top { padding: 12px 12px; }
+  .grp-actions { flex-basis: 100%; padding-left: 4px; }
+  .grp-sum { margin-left: auto; }
+  .board-head { flex-wrap: wrap; }
+  .selbar { bottom: 52px; border-radius: 18px; }
   table.grid td::before { font-weight: 400; } /* labels stay light even when the value is bold */
   table.expenses td.ex-status .ex-note:empty { display: none; }
   /* the teal marker on Luke's months marks the whole card, not just one cell */

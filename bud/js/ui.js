@@ -17,6 +17,7 @@
     expenses: svg('<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>'),
     eye: svg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
     eyeOff: svg('<path d="M17.9 17.9A10.1 10.1 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.1-5.1M9.9 5.2A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.2 3.2M3 3l18 18"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
+    chevron: svg('<path d="m6 9 6 6 6-6"/>'),
     paperclip: svg('<path d="m21 11.5-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/>'),
   };
 
@@ -58,6 +59,7 @@
       return;
     }
     const tab = BB.state.activeTab;
+    if (tab !== "thirdparty") selected.clear(); // ticked expenses only matter on the tracker
     if (tab === "dashboard") renderDashboard(view);
     else if (tab === "apartment") renderApartment(view);
     else if (tab === "summary") renderSummaryView(view);
@@ -365,6 +367,60 @@
     renderExpenses(el("view"));
   }
 
+  // ---- groups / trips on the tracker ----
+  // Expenses you've ticked (kept as the row objects, so a reload or an edit naturally clears them)
+  const selected = new Set();
+  // Which group blocks are folded shut — remembered on this device
+  let grpCollapsed = new Set();
+  try {
+    grpCollapsed = new Set(JSON.parse(localStorage.getItem("bb.grpCollapsed")) || []);
+  } catch {}
+  const saveCollapsed = () => {
+    try {
+      localStorage.setItem("bb.grpCollapsed", JSON.stringify([...grpCollapsed]));
+    } catch {}
+  };
+  const LOOSE_KEY = "__loose__"; // collapse key for the "not in a group" block
+
+  // a small dialog asking for one name (new group, rename)
+  function openNameDialog({ title, label, value, confirmLabel, hint, onSave }) {
+    const host = el("modal");
+    host.innerHTML = `
+      <div class="modal-backdrop"></div>
+      <form class="modal-card name-card" id="nameForm">
+        <h3>${esc(title)}</h3>
+        <label class="field"><span>${esc(label)}</span>
+          <input type="text" name="name" value="${esc(value || "")}" maxlength="60" autocomplete="off" required />
+        </label>
+        ${hint ? `<p class="muted rc-sub" style="margin:10px 0 0">${esc(hint)}</p>` : ""}
+        <div class="modal-actions">
+          <button type="button" class="btn" id="nameCancel">Cancel</button>
+          <button type="submit" class="btn primary">${esc(confirmLabel || "Save")}</button>
+        </div>
+      </form>`;
+    host.classList.add("open");
+    const close = () => {
+      host.classList.remove("open");
+      host.innerHTML = "";
+    };
+    host.querySelector(".modal-backdrop").addEventListener("click", close);
+    el("nameCancel").addEventListener("click", close);
+    el("nameForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const v = e.target.elements.name.value.trim();
+      if (!v) return;
+      close();
+      onSave(v);
+    });
+    setTimeout(() => {
+      const i = host.querySelector("input");
+      if (i) {
+        i.focus();
+        i.select();
+      }
+    }, 30);
+  }
+
   const fmtShort = (v) => {
     const d = M.toDate(v);
     return d ? `${d.getMonth() + 1}/${d.getDate()}` : "";
@@ -372,6 +428,7 @@
 
   function renderExpenses(view) {
     const rows = BB.state.rows.thirdparty || [];
+    for (const r of [...selected]) if (!rows.includes(r)) selected.delete(r); // drop ticks for rows that are gone
     // Luke's share of each month of apartment bills, derived from Apartment + Requests
     const lines = M.apartmentOwedLines(BB.state.rows.apartment || [], BB.state.rows.requests || []);
     const sum = M.expenseSummary(rows, lines);
@@ -467,31 +524,125 @@
       </tr>`;
     };
 
-    const body = visible.length
-      ? visible
-          .map((it) => {
-            if (it.kind === "apt") return aptRow(it.l);
-            const { r, i } = it;
-            const n = M.splitReceipts(r.Receipt).length;
-            return `<tr>
-              <td class="nw">${esc(M.fmtDate(r["Date of Original Purchase"]))}</td>
-              <td class="ex-what"><div class="ex-title">${esc(r.Activity)}</div>${
-                r.Description ? `<div class="ex-desc">${esc(r.Description)}</div>` : ""
-              }<div class="ex-meta"><span class="pill ${CAT_CLASS[r.Category] || ""}">${esc(r.Category || "")}</span>${
-                r["Owed By"] ? `<span>${esc(r["Owed By"])}</span>` : ""
-              }</div></td>
-              <td class="num strong">${M.money(r.Amount)}</td>
-              <td class="ex-status">${statusSelect(r, i)}<div class="ex-note">${statusNote(r)}</div></td>
-              <td><button class="rc-btn${n ? " has" : ""}" data-receipts="${i}" title="${
-                n ? "View / add receipts" : "Attach a receipt"
-              }">${ICON.paperclip}${n ? n : "Add"}</button></td>
-              <td class="act"><button class="icon" data-edit="${i}" title="Edit">✎</button><button class="icon danger" data-del="${i}" title="Delete">✕</button></td>
-            </tr>`;
-          })
-          .join("")
-      : `<tr><td class="muted" colspan="6">${
-          items.length ? "Nothing matches these filters." : "No expenses yet — click “Add expense”."
-        }</td></tr>`;
+    // an ordinary expense row, with a tick box for adding it to a group
+    const expenseRow = (it) => {
+      const { r, i } = it;
+      const n = M.splitReceipts(r.Receipt).length;
+      const on = selected.has(r);
+      return `<tr${on ? ' class="sel"' : ""}>
+        <td class="nw">${esc(M.fmtDate(r["Date of Original Purchase"]))}</td>
+        <td class="ex-what"><div class="ex-pickrow"><input type="checkbox" class="ex-pick" data-pick="${i}" aria-label="Select to add to a group"${
+          on ? " checked" : ""
+        }><div class="ex-main"><div class="ex-title">${esc(r.Activity)}</div>${
+          r.Description ? `<div class="ex-desc">${esc(r.Description)}</div>` : ""
+        }<div class="ex-meta"><span class="pill ${CAT_CLASS[r.Category] || ""}">${esc(r.Category || "")}</span>${
+          r["Owed By"] ? `<span>${esc(r["Owed By"])}</span>` : ""
+        }</div></div></div></td>
+        <td class="num strong">${M.money(r.Amount)}</td>
+        <td class="ex-status">${statusSelect(r, i)}<div class="ex-note">${statusNote(r)}</div></td>
+        <td><button class="rc-btn${n ? " has" : ""}" data-receipts="${i}" title="${
+          n ? "View / add receipts" : "Attach a receipt"
+        }">${ICON.paperclip}${n ? n : "Add"}</button></td>
+        <td class="act"><button class="icon" data-edit="${i}" title="Edit">✎</button><button class="icon danger" data-del="${i}" title="Delete">✕</button></td>
+      </tr>`;
+    };
+    const rowHtml = (it) => (it.kind === "apt" ? aptRow(it.l) : expenseRow(it));
+    const emptyNote = items.length ? "Nothing matches these filters." : "No expenses yet — click “Add expense”.";
+    const THEAD = `<thead><tr><th>Purchased</th><th>What</th><th class="num">Amount</th><th>Status</th><th>Receipts</th><th class="act"></th></tr></thead>`;
+    // one floating card's table (every card shares the same column widths so they line up)
+    const tableOf = (rowsHtml, foot) =>
+      `<div class="table-wrap flat"><table class="grid expenses" data-table="thirdparty">${THEAD}<tbody>${rowsHtml}</tbody>${foot || ""}</table></div>`;
+
+    // ---- groups / trips: each one is a collapsible block with a subtotal header ----
+    const names = M.orderGroups(rows, M.groupNames(rows, BB.state.groups));
+    const visibleExpenses = new Set(visible.filter((it) => it.kind === "expense").map((it) => it.r));
+    const count = (n) => `${n} item${n === 1 ? "" : "s"}`;
+
+    const blockHead = (o) => `<header class="grp-top" data-grpbar>
+        <button type="button" class="grp-toggle" data-grptoggle="${esc(o.key)}" aria-expanded="${!o.collapsed}" aria-label="Show or hide">${ICON.chevron}</button>
+        ${o.pick || ""}
+        <div class="grp-title"><span class="grp-name">${esc(o.title)}</span><span class="grp-count">${esc(o.count)}</span></div>
+        <div class="grp-sum">${o.sum}</div>${o.actions ? `<div class="grp-actions">${o.actions}</div>` : ""}
+      </header>${o.prog || ""}`;
+
+    const groupBlock = (g) => {
+      const all = rows.filter((r) => M.inGroup(r, g));
+      const vis = visible.filter((it) => it.kind === "expense" && M.inGroup(it.r, g));
+      const t = M.expenseSummary(all).total;
+      const fronted = t.Pending + t.Submitted + t.Paid;
+      const key = g.toLowerCase();
+      const collapsed = grpCollapsed.has(key);
+      const allSel = vis.length > 0 && vis.every((it) => selected.has(it.r));
+      const hidden = all.length - vis.length;
+      const owed = t.outstanding > 0.005;
+      const pct = fronted > 0 ? Math.max(0, Math.min(100, Math.round((t.Paid / fronted) * 100))) : 0;
+      const sum = all.length
+        ? `<span class="grp-total">${M.money(fronted)}</span><span class="grp-owed${owed ? "" : " done"}">${
+            owed ? M.money(t.outstanding) + " still owed" : "all paid"
+          }</span>`
+        : `<span class="muted">empty</span>`;
+      const menu = `<select class="grp-menu" data-grpmenu="${esc(g)}" aria-label="More actions for ${esc(g)}">
+          <option value="">More…</option><option value="Submitted">Mark all submitted</option><option value="Paid">Mark all paid</option>
+          <option value="rename">Rename…</option><option value="delete">Delete group…</option></select>`;
+      return (
+        `<section class="grp-card${collapsed ? " collapsed" : ""}${all.length && !owed ? " settled" : ""}">` +
+        blockHead({
+          key,
+          title: g,
+          collapsed,
+          count: all.length ? count(all.length) + (hidden > 0 ? ` (${vis.length} shown)` : "") : "no expenses yet",
+          pick: vis.length
+            ? `<input type="checkbox" class="ex-pick" data-grpsel="${esc(g)}" title="Tick every expense in this group"${allSel ? " checked" : ""}>`
+            : "",
+          sum,
+          actions: `<button type="button" class="btn sm" data-grpadd="${esc(g)}">+ Add expense</button>${menu}`,
+          prog: all.length ? `<div class="grp-prog" title="${pct}% paid back"><i style="width:${pct}%"></i></div>` : "",
+        }) +
+        (all.length
+          ? tableOf(vis.map(rowHtml).join(""))
+          : `<p class="grp-empty muted">Nothing in this group yet — click “+ Add expense” above, or tick expenses in the list and choose “Add to group”.</p>`) +
+        `</section>`
+      );
+    };
+
+    const looseBlock = (loose) => {
+      const collapsed = grpCollapsed.has(LOOSE_KEY);
+      const total = loose.reduce((a, it) => a + it.amount, 0);
+      return (
+        `<section class="grp-card loose${collapsed ? " collapsed" : ""}">` +
+        blockHead({ key: LOOSE_KEY, title: "Not in a group", collapsed, count: count(loose.length), sum: `<span class="grp-total">${M.money(total)}</span>` }) +
+        tableOf(loose.map(rowHtml).join("")) +
+        `</section>`
+      );
+    };
+
+    let body;
+    if (!names.length) {
+      // no groups yet: one plain card holding the whole list
+      body = `<section class="grp-card plain">${
+        visible.length
+          ? tableOf(
+              visible.map(rowHtml).join(""),
+              `<tfoot><tr><td colspan="2">Showing ${visible.length} of ${items.length}</td><td class="num strong">${M.money(
+                visibleTotal
+              )}</td><td colspan="3"></td></tr></tfoot>`
+            )
+          : `<p class="grp-empty muted">${emptyNote}</p>`
+      }</section>`;
+    } else {
+      const parts = [];
+      for (const g of names) {
+        const hasAny = rows.some((r) => M.inGroup(r, g));
+        const hasVisible = visible.some((it) => it.kind === "expense" && M.inGroup(it.r, g));
+        if (hasAny && !hasVisible) continue; // everything in it is filtered out
+        parts.push(groupBlock(g));
+      }
+      const loose = visible.filter((it) => it.kind === "apt" || !String(it.r.Group || "").trim());
+      if (loose.length) parts.push(looseBlock(loose));
+      body = parts.length
+        ? parts.join("") + `<p class="grp-foot muted">Showing ${visible.length} of ${items.length} · ${M.money(visibleTotal)}</p>`
+        : `<section class="grp-card plain"><p class="grp-empty muted">${emptyNote}</p></section>`;
+    }
 
     view.innerHTML = `
       <div class="cards">
@@ -510,10 +661,11 @@
     )}</td><td class="num">${M.money(T.Paid)}</td><td class="num strong">${M.money(T.outstanding)}</td></tr></tfoot></table></div>
       </div>
 
-      <div class="panel">
-        <div class="panel-head row">
+      <div class="board">
+        <div class="board-head">
           <h3>Expenses</h3>
           <span class="head-actions">
+            <button class="btn" id="newGroupBtn" title="Start a group (a trip, a batch to submit together)">New group</button>
             <button class="btn" data-bulk="thirdparty">Bulk add</button>
             <button class="btn primary" data-add="thirdparty">+ Add expense</button>
           </span>
@@ -522,19 +674,8 @@
           <div class="chips" aria-label="Filter by who pays">${catChips}</div>
           <div class="chips" aria-label="Filter by status">${stChips}</div>
         </div>
-        <div class="table-wrap flat">
-          <table class="grid expenses" data-table="thirdparty">
-            <thead><tr><th>Purchased</th><th>What</th><th class="num">Amount</th><th>Status</th><th>Receipts</th><th class="act"></th></tr></thead>
-            <tbody>${body}</tbody>
-            ${
-              visible.length
-                ? `<tfoot><tr><td colspan="2">Showing ${visible.length} of ${items.length}</td><td class="num strong">${M.money(
-                    visibleTotal
-                  )}</td><td colspan="3"></td></tr></tfoot>`
-                : ""
-            }
-          </table>
-        </div>
+        <div class="grp-stack">${body}</div>
+        <div class="selbar" id="selbar" hidden></div>
       </div>`;
 
     labelTables(view);
@@ -548,6 +689,121 @@
     view.querySelectorAll("[data-receipts]").forEach((b) =>
       b.addEventListener("click", () => openReceiptModal(Number(b.dataset.receipts)))
     );
+
+    // ---- groups: ticking, the "add to group" bar, and each block's controls ----
+    function refreshSelbar() {
+      const bar = el("selbar");
+      if (!bar) return;
+      const n = selected.size;
+      bar.hidden = n === 0;
+      if (!n) {
+        bar.innerHTML = "";
+        return;
+      }
+      const anyGrouped = [...selected].some((r) => String(r.Group || "").trim());
+      bar.innerHTML = `<span class="selbar-n"><b>${n}</b> selected</span>
+        <select id="selGroup" class="grp-menu" aria-label="Add the selected expenses to a group">
+          <option value="">Add to group…</option>${names.map((g) => `<option value="${esc(g)}">${esc(g)}</option>`).join("")}<option value="__new">＋ New group…</option>
+        </select>
+        ${anyGrouped ? `<button type="button" class="btn sm" id="selUngroup">Remove from group</button>` : ""}
+        <button type="button" class="btn ghost sm" id="selClear">Clear</button>`;
+      const take = () => {
+        const rs = [...selected];
+        selected.clear();
+        return rs;
+      };
+      el("selGroup").addEventListener("change", (e) => {
+        const v = e.target.value;
+        e.target.value = "";
+        if (v === "__new")
+          openNameDialog({
+            title: "New group",
+            label: "Group name",
+            confirmLabel: "Create and add",
+            hint: `The ${n} ticked expense${n === 1 ? "" : "s"} will go into it.`,
+            onSave: (name) => BB.app.assignGroup(take(), name),
+          });
+        else if (v) BB.app.assignGroup(take(), v);
+      });
+      const un = el("selUngroup");
+      if (un) un.addEventListener("click", () => BB.app.assignGroup(take(), null));
+      el("selClear").addEventListener("click", () => {
+        selected.clear();
+        renderExpenses(el("view"));
+      });
+    }
+
+    view.querySelectorAll("[data-pick]").forEach((cb) =>
+      cb.addEventListener("change", () => {
+        const r = rows[Number(cb.dataset.pick)];
+        if (!r) return;
+        if (cb.checked) selected.add(r);
+        else selected.delete(r);
+        cb.closest("tr").classList.toggle("sel", cb.checked);
+        refreshSelbar();
+      })
+    );
+    // the box in a group's header ticks / unticks everything shown in that group
+    view.querySelectorAll("[data-grpsel]").forEach((cb) =>
+      cb.addEventListener("change", () => {
+        rows
+          .filter((r) => M.inGroup(r, cb.dataset.grpsel) && visibleExpenses.has(r))
+          .forEach((r) => (cb.checked ? selected.add(r) : selected.delete(r)));
+        cb.closest(".grp-card")
+          .querySelectorAll("[data-pick]")
+          .forEach((p) => {
+            p.checked = cb.checked;
+            p.closest("tr").classList.toggle("sel", cb.checked);
+          });
+        refreshSelbar();
+      })
+    );
+    // click a header (not its buttons) to fold / unfold the block; remembered per device
+    view.querySelectorAll("[data-grpbar]").forEach((bar) =>
+      bar.addEventListener("click", (e) => {
+        if (e.target.closest("input, select, option, button.btn")) return;
+        const tb = bar.closest(".grp-card");
+        const btn = bar.querySelector("[data-grptoggle]");
+        const shut = tb.classList.toggle("collapsed");
+        btn.setAttribute("aria-expanded", String(!shut));
+        if (shut) grpCollapsed.add(btn.dataset.grptoggle);
+        else grpCollapsed.delete(btn.dataset.grptoggle);
+        saveCollapsed();
+      })
+    );
+    view.querySelectorAll("[data-grpadd]").forEach((b) =>
+      b.addEventListener("click", () => openForm("thirdparty", null, { Status: "Pending", Group: b.dataset.grpadd }))
+    );
+    view.querySelectorAll("[data-grpmenu]").forEach((s) =>
+      s.addEventListener("change", () => {
+        const g = s.dataset.grpmenu;
+        const v = s.value;
+        s.value = "";
+        if (v === "Submitted" || v === "Paid") BB.app.setGroupStatus(g, v);
+        else if (v === "rename")
+          openNameDialog({
+            title: "Rename group",
+            label: "Group name",
+            value: g,
+            confirmLabel: "Rename",
+            hint: "Using the name of another group merges the two.",
+            onSave: (name) => BB.app.renameGroup(g, name),
+          });
+        else if (v === "delete") BB.app.deleteGroup(g);
+      })
+    );
+    const ng = el("newGroupBtn");
+    if (ng)
+      ng.addEventListener("click", () =>
+        openNameDialog({
+          title: "New group",
+          label: "Group name",
+          confirmLabel: "Create",
+          hint: "Then use “+ Add expense” inside it, or tick existing expenses and add them.",
+          onSave: (name) => BB.app.createGroup(name),
+        })
+      );
+    refreshSelbar();
 
     // apartment-month actions
     const lineByKey = (k) => lines.find((l) => l.key === k);
@@ -827,14 +1083,22 @@
     root.querySelectorAll("[data-bulk]").forEach((b) =>
       b.addEventListener("click", () => openBulk(b.dataset.bulk))
     );
-    const t = root.querySelector(`[data-table="${schemaName}"]`);
-    if (!t) return;
-    t.querySelectorAll("[data-edit]").forEach((b) =>
-      b.addEventListener("click", () => openForm(schemaName, Number(b.dataset.edit)))
-    );
-    t.querySelectorAll("[data-del]").forEach((b) =>
-      b.addEventListener("click", () => BB.app.deleteRow(schemaName, Number(b.dataset.del)))
-    );
+    // a page can hold several tables of one kind (one per group card)
+    root.querySelectorAll(`[data-table="${schemaName}"]`).forEach((t) => {
+      t.querySelectorAll("[data-edit]").forEach((b) =>
+        b.addEventListener("click", () => openForm(schemaName, Number(b.dataset.edit)))
+      );
+      t.querySelectorAll("[data-del]").forEach((b) =>
+        b.addEventListener("click", () => BB.app.deleteRow(schemaName, Number(b.dataset.del)))
+      );
+    });
+  }
+
+  // the suggestion list behind a "Trip / group" box: every group you already have
+  function groupDatalist(cols) {
+    if (!cols.some((c) => c.suggest === "groups")) return "";
+    const names = M.groupNames(BB.state.rows.thirdparty, BB.state.groups);
+    return `<datalist id="dl-groups">${names.map((g) => `<option value="${esc(g)}"></option>`).join("")}</datalist>`;
   }
 
   // ---------------- add / edit modal ----------------
@@ -875,7 +1139,7 @@
         } else {
           input = `<input type="text" name="${esc(c.key)}" value="${v == null ? "" : esc(v)}"${
             c.wide ? ' class="wide"' : ""
-          }>`;
+          }${c.suggest === "groups" ? ' list="dl-groups" autocomplete="off" placeholder="e.g. Amarillo trip (optional)"' : ""}>`;
         }
         return `<label class="field ${c.wide ? "wide" : ""}"><span>${esc(c.label)}${
           c.required ? ' <i class="req">*</i>' : ""
@@ -905,6 +1169,7 @@
       <form class="modal-card" id="rowForm">
         <h3>${editing ? "Edit" : "Add"} — ${esc(schema.title)}</h3>
         <div class="form-grid">${fields}${receiptField}</div>
+        ${groupDatalist(formCols)}
         <div class="modal-actions">
           <button type="button" class="btn" id="cancelBtn">Cancel</button>
           <button type="submit" class="btn primary">${editing ? "Save" : "Add"}</button>
@@ -1003,7 +1268,7 @@
       .join("");
 
     const cellInput = (c) => {
-      const list = c.type === "select" ? ` list="dl-${esc(c.key)}"` : "";
+      const list = c.type === "select" ? ` list="dl-${esc(c.key)}"` : c.suggest === "groups" ? ' list="dl-groups"' : "";
       const ph = c.type === "date" ? (c.month ? "mm/yyyy" : "mm/dd/yyyy") : "";
       return `<td><input class="bcell" data-key="${esc(c.key)}"${list} placeholder="${ph}" /></td>`;
     };
@@ -1022,7 +1287,7 @@
         <p class="bulk-hint">Type rows, or <strong>paste straight from Excel</strong> (copy cells, click the first box, Ctrl+V). Computed splits are added automatically.${
           schemaName === "thirdparty" ? " Attach receipts afterward with the paperclip on each row." : ""
         }</p>
-        ${datalists}
+        ${datalists}${groupDatalist(cols)}
         <div class="bulk-wrap">
           <table class="bulk-grid">
             <thead><tr>${header}</tr></thead>

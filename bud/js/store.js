@@ -182,6 +182,8 @@
   function buildData(S) {
     const data = { app: "budget", version: FORMAT_VERSION, savedAt: new Date().toISOString() };
     data.migrations = { ...(S.migrations || {}) }; // one-time data fixes already applied
+    // saved trip/group names (so an empty group survives until you add expenses to it)
+    data.groups = (S.groups || []).map((g) => String(g).trim()).filter(Boolean);
     for (const [name, key] of Object.entries(JSON_KEYS)) data[key] = serializeRows(name, (S.rows && S.rows[name]) || []);
     data.links = (S.links || []).map((l) => ({ ...l }));
     return data;
@@ -223,7 +225,8 @@
     }
     const links = Array.isArray(obj.links) ? obj.links.filter((l) => l && typeof l === "object").map((l) => ({ ...l })) : [];
     const migrations = obj.migrations && typeof obj.migrations === "object" && !Array.isArray(obj.migrations) ? { ...obj.migrations } : {};
-    return { rowsBySchema, links, migrations };
+    const groups = Array.isArray(obj.groups) ? obj.groups.map((g) => String(g).trim()).filter(Boolean) : [];
+    return { rowsBySchema, links, migrations, groups };
   }
 
   // ---------------- load ----------------

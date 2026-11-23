@@ -183,6 +183,22 @@
     return ws;
   }
 
+  // one row per group: how many expenses, the total, how much came back, what's still owed
+  function tripsSheet(rows, saved) {
+    const names = model.orderGroups(rows, model.groupNames(rows, saved));
+    if (!names.length) return null;
+    const aoa = [["Group", "Items", "Total", "Paid back", "Still owed"]];
+    names.forEach((g) => {
+      const rs = rows.filter((r) => model.inGroup(r, g));
+      const t = model.expenseSummary(rs).total;
+      aoa.push([g, rs.length, t.Pending + t.Submitted + t.Paid, t.Paid, t.outstanding]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    formatSheet(ws, ["text", "number", "money", "money", "money"]);
+    ws["!cols"] = widths(aoa[0], aoa);
+    return ws;
+  }
+
   function linksSheet(links) {
     const keys = [];
     links.forEach((l) => Object.keys(l).forEach((k) => keys.includes(k) || keys.push(k)));
@@ -203,6 +219,8 @@
     add("Subscriptions-Bills", buildSheet(schemas.subscriptions, S.rows.subscriptions || []));
     add("Expense Tracker", buildSheet(schemas.thirdparty, S.rows.thirdparty || []));
     add("Owed Summary", owedSheet(S.rows.thirdparty || [], model.apartmentOwedLines(S.rows.apartment || [], S.rows.requests || [])));
+    const trips = tripsSheet(S.rows.thirdparty || [], S.groups || []);
+    if (trips) add("Trips", trips);
     add("Links", linksSheet(S.links || []));
     return wb;
   }

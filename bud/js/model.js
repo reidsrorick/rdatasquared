@@ -225,6 +225,8 @@
         { key: "Purpose", label: "Project / Purpose", type: "text" },
         { key: "Category", label: "Who pays me back", type: "select", options: EXPENSE_CATEGORIES, required: true },
         { key: "Owed By", label: "Owed by (person / client)", type: "text" },
+        // which trip / batch this expense belongs to (suggests the groups you already have)
+        { key: "Group", label: "Trip / group", type: "text", suggest: "groups" },
         // status + its dates are set automatically (new expenses start Pending), so the bulk
         // entry grid leaves them out — they're still in the single add/edit form
         { key: "Status", label: "Status", type: "select", options: EXPENSE_STATUSES, bulk: false },
@@ -245,6 +247,10 @@
 
   // Fill in the fields older rows don't have (the sheet predates these columns).
   function normalizeExpense(r) {
+    if (r.Group != null) {
+      r.Group = String(r.Group).trim();
+      if (!r.Group) delete r.Group;
+    }
     if (!r.Category) r.Category = "Work (internal)";
     if (!r["Owed By"] && r.Purpose) r["Owed By"] = r.Purpose;
     if (!EXPENSE_STATUSES.includes(r.Status)) r.Status = "Pending";
@@ -371,6 +377,37 @@
     return apartmentOwedLines(aptRows, reqRows)
       .filter((l) => l.key < earliest && !covered.has(l.key))
       .map(settledRequest);
+  }
+
+  // ---------- trips / groups ----------
+  // An expense can belong to one group (a trip, a client engagement, a batch you'll submit
+  // together). Names are matched ignoring case and spacing, so "amarillo trip" and
+  // "Amarillo trip " are the same group.
+  const sameName = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+  const inGroup = (r, name) => !!String(r.Group || "").trim() && sameName(r.Group, name);
+
+  // every group in use: the saved list (so an empty group survives) plus any named on an expense
+  function groupNames(rows, saved) {
+    const out = [];
+    const add = (n) => {
+      n = String(n || "").trim();
+      if (n && !out.some((x) => sameName(x, n))) out.push(n);
+    };
+    (saved || []).forEach(add);
+    (rows || []).forEach((r) => add(r.Group));
+    return out;
+  }
+
+  // Display order: brand-new empty groups first (you're about to fill them), then the group
+  // with the most recently bought expense.
+  function orderGroups(rows, names) {
+    const latest = (g) =>
+      Math.max(0, ...rows.filter((r) => inGroup(r, g)).map((r) => (toDate(r["Date of Original Purchase"]) || 0) * 1));
+    const empty = (g) => !rows.some((r) => inGroup(r, g));
+    return names
+      .map((g, i) => ({ g, i, e: empty(g), t: latest(g) }))
+      .sort((a, b) => (b.e - a.e) || (a.e ? b.i - a.i : b.t - a.t))
+      .map((x) => x.g);
   }
 
   // ---------- overall summary (Summary tab) ----------
@@ -520,6 +557,10 @@
     settledRequest,
     catchUpRequests,
     requestState,
+    sameName,
+    inGroup,
+    groupNames,
+    orderGroups,
     summaryYears,
     apartmentByItem,
     recurringBreakdown,
