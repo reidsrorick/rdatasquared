@@ -257,7 +257,7 @@ legend {
 input, textarea {
   font: inherit; color: var(--text);
 }
-.field input, .field textarea {
+.field input, .field textarea, .field select {
   padding: 9px 11px;
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -265,8 +265,8 @@ input, textarea {
   width: 100%;
   transition: border-color .12s, box-shadow .12s, background .12s;
 }
-.field input:hover, .field textarea:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
-.field input:focus, .field textarea:focus {
+.field input:hover, .field textarea:hover, .field select:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.field input:focus, .field textarea:focus, .field select:focus {
   outline: none; background: var(--surface);
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
@@ -324,3 +324,26 @@ table.log { width: 100%; border-collapse: collapse; min-width: 760px; }
   box-shadow: 0 6px 24px rgba(0, 0, 0, .3);
   z-index: 20;
 }
+
+/* ---------- Status pill, sold vehicles ---------- */
+.title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.status-pill {
+  padding: 3px 11px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+}
+.status-pill.sale { background: var(--warn-soft); color: var(--warn); }
+.status-pill.gone { background: var(--danger-soft); color: var(--danger); }
+.car-list li.gone { opacity: .6; }
+.car-list li.gone.active { opacity: 1; }
+.car-list li.gone .car-name { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+/* ---------- Calculated summaries in Details ---------- */
+.kv-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px 18px;
+  margin-top: 16px; padding: 14px 16px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+}
+.kv { display: flex; flex-direction: column; gap: 1px; }
+.kv span { font-size: 12px; color: var(--muted); }
+.kv b { font-size: 16px; }
+.kv-note { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }

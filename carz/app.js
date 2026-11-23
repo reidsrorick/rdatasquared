@@ -9,6 +9,9 @@
   const CARS_SHEET = 'Cars';
   const MAINT_SHEET = 'Maintenance';
   const CURRENCY = '$';
+  const OWNERSHIP = ['Cash', 'Finance', 'Lease'];
+  const DISPOSED = ['Sold', 'Traded In', 'Donated', 'Gifted', 'Scrapped', 'Lease Returned'];
+  const STATUSES = ['For Sale', ...DISPOSED];   // blank = still owned
 
   // ---- Field definitions: this is also the column order in the spreadsheet ----
   const SECTIONS = [
@@ -24,17 +27,42 @@
       { key: 'model', label: 'Model', type: 'text' },
       { key: 'trim',  label: 'Trim',  type: 'text' },
       { key: 'color', label: 'Color', type: 'text' },
-      { key: 'miles', label: 'Miles (odometer)', type: 'number', min: 0 },
+      { key: 'miles', label: 'Miles (odometer)', type: 'number', min: 0, fmt: 'int' },
     ]},
-    { title: 'Ownership & paperwork', fields: [
-      { key: 'purchaseDate',  label: 'Purchase Date',        type: 'date' },
-      { key: 'purchasePrice', label: 'Purchase Price',       type: 'number', min: 0, step: 'any' },
+    // `only` = field is shown just for those ownership types (values are kept when hidden)
+    { title: 'Purchase & payment', summary: 'pay', fields: [
+      { key: 'ownership',      label: 'Ownership Type',          type: 'select', options: OWNERSHIP },
+      { key: 'purchaseDate',   label: 'Purchase / Start Date',   type: 'date' },
+      { key: 'purchasePrice',  label: 'Purchase Price',          type: 'number', min: 0, step: 'any', fmt: 'money' },
+      { key: 'downPayment',    label: 'Down Payment / Due at Signing', type: 'number', min: 0, step: 'any', fmt: 'money', only: ['Finance', 'Lease'] },
+      { key: 'monthlyPayment', label: 'Monthly Payment',         type: 'number', min: 0, step: 'any', fmt: 'money', only: ['Finance', 'Lease'] },
+      { key: 'lender',         label: 'Lender / Leasing Company', type: 'text', only: ['Finance', 'Lease'] },
+      { key: 'accountNo',      label: 'Loan / Lease Account #',  type: 'text', only: ['Finance', 'Lease'] },
+      { key: 'loanAmount',     label: 'Amount Financed',         type: 'number', min: 0, step: 'any', fmt: 'money', only: ['Finance'] },
+      { key: 'apr',            label: 'APR (%)',                 type: 'number', min: 0, step: 'any', fmt: 'dec', only: ['Finance'] },
+      { key: 'termMonths',     label: 'Term (months)',           type: 'number', min: 1, step: 1, fmt: 'int0', only: ['Finance', 'Lease'] },
+      { key: 'firstPayment',   label: 'First Payment Date',      type: 'date', only: ['Finance', 'Lease'] },
+      { key: 'leaseEnd',       label: 'Lease End Date',          type: 'date', only: ['Lease'] },
+      { key: 'milesPerYear',   label: 'Miles Allowed per Year',  type: 'number', min: 0, fmt: 'int', only: ['Lease'] },
+      { key: 'overageFee',     label: 'Overage Fee per Mile',    type: 'number', min: 0, step: 'any', fmt: 'money', only: ['Lease'] },
+      { key: 'residual',       label: 'Residual / Buyout Price', type: 'number', min: 0, step: 'any', fmt: 'money', only: ['Lease'] },
+      { key: 'moneyFactor',    label: 'Money Factor',            type: 'number', min: 0, step: 'any', only: ['Lease'] },
+    ]},
+    { title: 'Status & disposal', summary: 'status', fields: [
+      { key: 'status',         label: 'Status',                  type: 'select', options: STATUSES, blankLabel: 'Active (I own it)' },
+      { key: 'askingPrice',    label: 'Asking Price',            type: 'number', min: 0, step: 'any', fmt: 'money', by: 'status', only: ['For Sale'] },
+      { key: 'disposalDate',   label: 'Date Sold / Disposed',    type: 'date', by: 'status', only: DISPOSED },
+      { key: 'salePrice',      label: 'Sale / Trade-in Value',   type: 'number', min: 0, step: 'any', fmt: 'money', by: 'status', only: DISPOSED },
+      { key: 'buyer',          label: 'Sold / Traded To',        type: 'text', by: 'status', only: DISPOSED },
+      { key: 'disposalMiles',  label: 'Odometer at Disposal',    type: 'number', min: 0, fmt: 'int', by: 'status', only: DISPOSED },
+    ]},
+    { title: 'Paperwork & insurance', fields: [
       { key: 'regExpiry',     label: 'Registration Expires', type: 'date' },
       { key: 'insurer',       label: 'Insurance Provider',   type: 'text' },
       { key: 'policyNo',      label: 'Policy #',             type: 'text' },
     ]},
     { title: 'Reminders & specs', fields: [
-      { key: 'nextServiceMiles', label: 'Next Service At (miles)', type: 'number', min: 0 },
+      { key: 'nextServiceMiles', label: 'Next Service At (miles)', type: 'number', min: 0, fmt: 'int' },
       { key: 'tireSize',         label: 'Tire Size',               type: 'text' },
     ]},
     { title: 'Notes', fields: [
@@ -104,6 +132,7 @@
     const bits = [];
     if (c.nickname && ymm(c)) bits.push(ymm(c));
     if (c.plate) bits.push(c.plate);
+    if (c.status) bits.push(c.status);
     return bits.join(' · ');
   };
   const fmtNum = n => Number(n).toLocaleString();
@@ -117,6 +146,54 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
     const t = new Date(); t.setHours(0, 0, 0, 0);
     return Math.round((parseISO(iso) - t) / 86400000);
+  }
+
+  const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const validISO = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
+  function addMonths(d, k) {
+    const t = new Date(d.getFullYear(), d.getMonth() + k, 1);
+    const dim = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+    t.setDate(Math.min(d.getDate(), dim));
+    return t;
+  }
+  function durationText(aISO, bISO) {
+    if (!validISO(aISO) || !validISO(bISO)) return '';
+    const a = parseISO(aISO), b = parseISO(bISO);
+    const total = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()) - (b.getDate() < a.getDate() ? 1 : 0);
+    if (total < 0) return '';
+    const y = Math.floor(total / 12), m = total % 12;
+    return [y && `${y} yr`, m && `${m} mo`].filter(Boolean).join(' ') || 'under 1 mo';
+  }
+  const isDisposed = c => DISPOSED.includes(c.status);
+  const signedMoney = n => (n < 0 ? '−' : '+') + fmtMoney(Math.abs(n));
+
+  // Loan / lease maths (estimates from the numbers entered)
+  function paymentsMade(firstISO, n) {
+    if (!validISO(firstISO) || !has(n) || n < 1) return null;
+    const first = parseISO(firstISO), t = new Date(); t.setHours(0, 0, 0, 0);
+    let k = 0;
+    while (k < n && addMonths(first, k) <= t) k++;
+    return k;
+  }
+  function loanInfo(c) {
+    const n = has(c.termMonths) && c.termMonths > 0 ? c.termMonths : null;
+    const P = has(c.loanAmount) ? c.loanAmount : null;
+    const r = (has(c.apr) ? c.apr : 0) / 1200;
+    const isFin = c.ownership === 'Finance';
+    let calcM = null;
+    if (isFin && P != null && n) calcM = r ? P * r / (1 - Math.pow(1 + r, -n)) : P / n;
+    const M = has(c.monthlyPayment) ? c.monthlyPayment : calcM;
+    const k = n ? paymentsMade(c.firstPayment, n) : null;
+    let balance = null;
+    if (isFin && P != null && M != null && k != null) {
+      balance = k >= n ? 0 : Math.max(0, r ? P * Math.pow(1 + r, k) - M * (Math.pow(1 + r, k) - 1) / r : P - M * k);
+    }
+    return {
+      n, P, M, calcM, k, balance,
+      remaining: k != null ? n - k : null,
+      payoff: n && validISO(c.firstPayment) ? addMonths(parseISO(c.firstPayment), n - 1) : null,
+      interest: isFin && P != null && M != null && n ? Math.max(0, M * n - P) : null,
+    };
   }
 
   const blankItem = () => Object.fromEntries(MAINT_FIELDS.map(f => [f.key, '']));
@@ -220,10 +297,8 @@
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws['!cols'] = autoWidths(headers, rows);
-    FIELDS.forEach((f, i) => {
-      if (f.key === 'miles' || f.key === 'nextServiceMiles') applyFormat(ws, i, '#,##0', rows.length);
-      if (f.key === 'purchasePrice') applyFormat(ws, i, CURRENCY + '#,##0.00', rows.length);
-    });
+    const FMT = { int: '#,##0', int0: '0', dec: '0.00##', money: CURRENCY + '#,##0.00' };
+    FIELDS.forEach((f, i) => { if (f.fmt) applyFormat(ws, i, FMT[f.fmt], rows.length); });
 
     // Maintenance sheet: one row per line item, grouped by vehicle, oldest first
     const labels = vehicleLabels();
@@ -420,6 +495,7 @@
       li.innerHTML = '<div class="avatar">🚘</div><div class="car-text"><div class="car-name"></div><div class="car-sub"></div></div>';
       li.querySelector('.car-name').textContent = carTitle(c);
       li.querySelector('.car-sub').textContent = carSub(c);
+      li.classList.toggle('gone', isDisposed(c));
       li.addEventListener('click', () => { selected = i; render(); });
       el.list.appendChild(li);
     });
@@ -444,8 +520,16 @@
     // Header
     const sub = [car.year, car.make, car.model, car.trim].filter(has).join(' ');
     const left = document.createElement('div');
+    const titleRow = document.createElement('div'); titleRow.className = 'title-row';
     const h = document.createElement('h2'); h.textContent = carTitle(car);
-    left.appendChild(h);
+    titleRow.appendChild(h);
+    if (car.status) {
+      const pill = document.createElement('span');
+      pill.className = 'status-pill ' + (isDisposed(car) ? 'gone' : 'sale');
+      pill.textContent = car.status.toUpperCase() + (isDisposed(car) && car.disposalDate ? ' · ' + car.disposalDate : '');
+      titleRow.appendChild(pill);
+    }
+    left.appendChild(titleRow);
     const subtitle = [car.nickname ? sub : '', car.color].filter(Boolean).join(' · ');
     if (subtitle) { const s = document.createElement('div'); s.className = 'subtitle'; s.textContent = subtitle; left.appendChild(s); }
     if (car.vin) { const v = document.createElement('div'); v.className = 'vin'; v.innerHTML = '<b>VIN</b>'; v.append(car.vin); left.appendChild(v); }
@@ -461,6 +545,35 @@
     const stats = [];
     stats.push({ label: 'Odometer', value: has(car.miles) ? fmtNum(car.miles) + ' mi' : '—', sub: has(car.miles) ? '' : 'Not set', tone: has(car.miles) ? '' : 'idle' });
 
+    const maintTotal = car.log.reduce((s, it) => s + (Number(it.cost) || 0), 0);
+    const lastMaint = car.log.filter(it => it.date).sort((a, b) => b.date.localeCompare(a.date))[0];
+    const maintStat = {
+      label: 'Maintenance spend', value: fmtMoney(maintTotal),
+      sub: car.log.length ? `${car.log.length} record${car.log.length === 1 ? '' : 's'}${lastMaint ? ' · last ' + lastMaint.date : ''}` : 'No records yet',
+      tone: car.log.length ? '' : 'idle',
+    };
+
+    if (isDisposed(car)) {
+      // Gone: show how it ended rather than reminders
+      const gain = has(car.salePrice) && has(car.purchasePrice) && car.ownership !== 'Lease' ? car.salePrice - car.purchasePrice : null;
+      stats.push({ label: 'Status', value: car.status, sub: car.disposalDate ? car.disposalDate : 'No date entered', tone: 'idle' });
+      stats.push({
+        label: car.status === 'Sold' ? 'Sold for' : 'Value received', value: has(car.salePrice) ? fmtMoney(car.salePrice) : '—',
+        sub: gain == null ? (has(car.salePrice) ? '' : 'No amount entered') : `${signedMoney(gain)} vs purchase price`,
+        tone: gain == null ? 'idle' : gain >= 0 ? 'ok' : 'bad',
+      });
+      stats.push(maintStat);
+      renderStatCards(stats, car);
+      return;
+    }
+    if (car.status === 'For Sale') {
+      const diff = has(car.askingPrice) && has(car.purchasePrice) ? car.askingPrice - car.purchasePrice : null;
+      stats.push({
+        label: 'For sale', value: has(car.askingPrice) ? fmtMoney(car.askingPrice) : 'No price yet',
+        sub: diff == null ? 'Asking price' : `${signedMoney(diff)} vs purchase price`, tone: 'warn',
+      });
+    }
+
     if (has(car.nextServiceMiles) && has(car.miles)) {
       const diff = car.nextServiceMiles - car.miles;
       stats.push(diff < 0
@@ -475,14 +588,33 @@
     else if (d < 0) stats.push({ label: 'Registration', value: car.regExpiry, sub: `Expired ${-d} day${d === -1 ? '' : 's'} ago`, tone: 'bad' });
     else stats.push({ label: 'Registration', value: car.regExpiry, sub: d === 0 ? 'Expires today' : `Expires in ${d} day${d === 1 ? '' : 's'}`, tone: d <= 30 ? 'warn' : 'ok' });
 
-    const total = car.log.reduce((s, it) => s + (Number(it.cost) || 0), 0);
-    const dated = car.log.filter(it => it.date).sort((a, b) => b.date.localeCompare(a.date))[0];
-    stats.push({
-      label: 'Maintenance spend', value: fmtMoney(total),
-      sub: car.log.length ? `${car.log.length} record${car.log.length === 1 ? '' : 's'}${dated ? ' · last ' + dated.date : ''}` : 'No records yet',
-      tone: car.log.length ? '' : 'idle',
-    });
+    stats.push(paymentStat(car));
+    stats.push(maintStat);
+    renderStatCards(stats, car);
+  }
 
+  function paymentStat(car) {
+    if (!car.ownership) return { label: 'Payment', value: '—', sub: 'Set ownership type in Details', tone: 'idle' };
+    if (car.ownership === 'Cash') {
+      return { label: 'Payment', value: has(car.purchasePrice) ? fmtMoney(car.purchasePrice) : 'Paid cash', sub: 'Cash · no monthly payment', tone: '' };
+    }
+    const L = loanInfo(car);
+    const value = L.M != null ? fmtMoney(L.M) + '/mo' : '—';
+    if (car.ownership === 'Lease') {
+      const end = validISO(car.leaseEnd) ? car.leaseEnd : (L.payoff ? isoLocal(L.payoff) : '');
+      const d = end ? daysUntil(end) : null;
+      if (d == null) return { label: 'Lease payment', value, sub: L.k != null ? `${L.k} of ${L.n} paid` : 'Add lease end date', tone: '' };
+      return d < 0
+        ? { label: 'Lease payment', value, sub: `Lease ended ${end}`, tone: 'bad' }
+        : { label: 'Lease payment', value, sub: `Ends in ${d} day${d === 1 ? '' : 's'}`, tone: d <= 60 ? 'warn' : '' };
+    }
+    const bits = [];
+    if (L.k != null) bits.push(`${L.k} of ${L.n} paid`);
+    if (has(car.apr)) bits.push(`${car.apr}% APR`);
+    return { label: 'Loan payment', value, sub: bits.join(' · ') || 'Add APR, term & first payment', tone: L.k != null && L.k >= L.n ? 'ok' : '' };
+  }
+
+  function renderStatCards(stats, car) {
     el.stats.replaceChildren(...stats.map(s => {
       const n = document.createElement('div');
       n.className = 'stat ' + (s.tone || '');
@@ -500,6 +632,84 @@
     if (li && li.querySelector('.car-name')) {
       li.querySelector('.car-name').textContent = carTitle(car);
       li.querySelector('.car-sub').textContent = carSub(car);
+      li.classList.toggle('gone', isDisposed(car));
+    }
+    updateSummaries(car);
+  }
+
+  // Read-only calculation panels inside the Details tab (only exist while that tab is shown)
+  function paymentRows(car) {
+    const rows = [];
+    if (car.ownership === 'Cash') {
+      if (has(car.purchasePrice)) rows.push(['Paid in full', fmtMoney(car.purchasePrice) + (car.purchaseDate ? ' on ' + car.purchaseDate : '')]);
+      return rows;
+    }
+    if (car.ownership !== 'Finance' && car.ownership !== 'Lease') return rows;
+    const L = loanInfo(car);
+    if (L.M != null) rows.push(['Monthly payment', fmtMoney(L.M) + (!has(car.monthlyPayment) ? ' (calculated)' : '')]);
+    if (L.k != null) {
+      rows.push(['Payments made', `${L.k} of ${L.n}`]);
+      rows.push(['Payments remaining', String(L.remaining)]);
+      if (L.M != null && car.ownership === 'Lease') rows.push(['Remaining cost', fmtMoney(L.M * L.remaining)]);
+    }
+    if (car.ownership === 'Finance') {
+      if (L.balance != null) rows.push(['Est. balance remaining', fmtMoney(L.balance)]);
+      if (L.payoff) rows.push(['Final payment', isoLocal(L.payoff)]);
+      if (L.interest != null) rows.push(['Est. total interest', fmtMoney(L.interest)]);
+      if (has(car.monthlyPayment) && L.calcM != null && Math.abs(L.calcM - car.monthlyPayment) > 1) {
+        rows.push(['Payment from APR & term', fmtMoney(L.calcM)]);
+      }
+    } else {
+      if (L.M != null && L.n) rows.push(['Total lease cost', fmtMoney((Number(car.downPayment) || 0) + L.M * L.n)]);
+      if (has(car.milesPerYear) && L.n) rows.push(['Miles allowed (full term)', fmtNum(Math.round(car.milesPerYear * L.n / 12))]);
+      if (has(car.residual)) rows.push(['Buyout price', fmtMoney(car.residual)]);
+    }
+    return rows;
+  }
+
+  function statusRows(car) {
+    const rows = [];
+    if (car.status === 'For Sale') {
+      if (has(car.askingPrice)) rows.push(['Asking price', fmtMoney(car.askingPrice)]);
+      if (has(car.askingPrice) && has(car.purchasePrice)) rows.push(['Vs. purchase price', signedMoney(car.askingPrice - car.purchasePrice)]);
+    } else if (isDisposed(car)) {
+      const held = durationText(car.purchaseDate, car.disposalDate);
+      if (held) rows.push(['Owned for', held]);
+      if (has(car.salePrice)) rows.push(['Value received', fmtMoney(car.salePrice)]);
+      const lease = car.ownership === 'Lease';
+      if (has(car.salePrice) && has(car.purchasePrice) && !lease) rows.push(['Gain / loss vs purchase', signedMoney(car.salePrice - car.purchasePrice)]);
+      const maint = car.log.reduce((s, it) => s + (Number(it.cost) || 0), 0);
+      if (car.log.length) rows.push(['Maintenance spent', fmtMoney(maint)]);
+      if (has(car.purchasePrice) && has(car.salePrice) && !lease) {
+        rows.push(['Net cost (price + maintenance − sale)', fmtMoney(car.purchasePrice + maint - car.salePrice)]);
+      }
+      if (car.ownership === 'Finance') {
+        const L = loanInfo(car);
+        if (L.balance != null && L.balance > 0) rows.push(['Est. loan balance (confirm it was paid off)',fmtMoney(L.balance)]);
+      }
+    }
+    return rows;
+  }
+
+  function updateSummaries(car) {
+    for (const [id, fn, note] of [['pay', paymentRows, 'Estimates from the numbers above — your lender’s statement is the real figure.'], ['status', statusRows, '']]) {
+      const box = document.getElementById('sum_' + id);
+      if (!box) continue;
+      const rows = fn(car);
+      box.classList.toggle('hidden', !rows.length);
+      box.replaceChildren(...rows.map(([k, v]) => {
+        const d = document.createElement('div'); d.className = 'kv';
+        const a = document.createElement('span'); a.textContent = k;
+        const b = document.createElement('b'); b.textContent = v;
+        d.append(a, b); return d;
+      }));
+      if (rows.length && note && car.ownership !== 'Cash') { const n = document.createElement('div'); n.className = 'kv-note'; n.textContent = note; box.appendChild(n); }
+    }
+  }
+
+  function applyVisibility(car) {
+    for (const w of el.tabDetails.querySelectorAll('[data-only]')) {
+      w.classList.toggle('hidden', !w.dataset.only.split('|').includes(car[w.dataset.by]));
     }
   }
 
@@ -514,8 +724,16 @@
       grid.className = 'grid';
       for (const f of section.fields) grid.appendChild(buildField(f, car));
       fs.append(lg, grid);
+      if (section.summary) {
+        const box = document.createElement('div');
+        box.id = 'sum_' + section.summary;
+        box.className = 'kv-grid hidden';
+        fs.appendChild(box);
+      }
       el.tabDetails.appendChild(fs);
     }
+    applyVisibility(car);
+    updateSummaries(car);
     const dz = document.createElement('div');
     dz.className = 'danger-zone';
     const del = document.createElement('button');
@@ -531,10 +749,16 @@
     const label = document.createElement('label');
     label.textContent = f.label;
     label.htmlFor = 'f_' + f.key;
-    const input = document.createElement(f.type === 'textarea' ? 'textarea' : 'input');
+    if (f.only) { wrap.dataset.by = f.by || 'ownership'; wrap.dataset.only = f.only.join('|'); }
+    const isSelect = f.type === 'select';
+    const input = document.createElement(isSelect ? 'select' : f.type === 'textarea' ? 'textarea' : 'input');
     input.id = 'f_' + f.key;
-    input.autocomplete = 'off';
-    if (f.type !== 'textarea') input.type = f.type;
+    if (!isSelect) input.autocomplete = 'off';
+    if (isSelect) {
+      const opts = [['', f.blankLabel || '— Select —'], ...f.options.map(o => [o, o])];
+      if (has(car[f.key]) && !f.options.includes(car[f.key])) opts.push([car[f.key], car[f.key]]);  // value typed in Excel
+      for (const [v, t] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = t; input.appendChild(o); }
+    } else if (f.type !== 'textarea') input.type = f.type;
     if (f.min != null) input.min = f.min;
     if (f.max != null) input.max = f.max;
     if (f.step) input.step = f.step;
@@ -543,12 +767,13 @@
     const hint = document.createElement('div');
     hint.className = 'hint';
 
-    input.addEventListener('input', () => {
+    input.addEventListener(isSelect ? 'change' : 'input', () => {
       let v = input.value;
       if (f.upper) { const pos = input.selectionStart; v = v.toUpperCase(); input.value = v; try { input.setSelectionRange(pos, pos); } catch {} }
       if (f.type === 'number') v = v === '' ? '' : Number(v);
       car[f.key] = v;
       if (f.key === 'vin') hint.textContent = vinHint(v);
+      if (isSelect) applyVisibility(car);
       renderSummary(car);
       scheduleSave();
     });
