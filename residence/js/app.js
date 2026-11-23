@@ -67,11 +67,16 @@
     settings: '<path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/>',
     left: '<path d="m15 18-6-6 6-6"/>',
     right: '<path d="m9 18 6-6-6-6"/>',
+    wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    split: '<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.17-2.83L3 3"/><path d="m15 9 6-6"/>',
+    table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v18"/>',
     external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
   };
   const icon = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
-  const btn = (act, label, ic, cls = '', data = '') => `<button class="btn ${cls}" data-act="${act}" ${data}>${ic ? icon(ic) : ''}${label ? esc(label) : ''}</button>`;
+  const btn = (act, label, ic, cls = '', data = '') => `<button class="btn ${cls}" data-act="${act}" ${label ? `title="${esc(label)}" aria-label="${esc(label)}"` : ''} ${data}>${ic ? icon(ic) : ''}${label ? `<span class="lbl">${esc(label)}</span>` : ''}</button>`;
   const iconBtn = (act, ic, title, data = '', cls = '') => `<button class="icon-btn ${cls}" data-act="${act}" title="${esc(title)}" aria-label="${esc(title)}" ${data}>${icon(ic)}</button>`;
 
   const person = (id) => S.db.people.find((p) => p.id === id);
@@ -91,8 +96,12 @@
   /** "Portal" button that opens the expense's payment website in a new tab (nothing if none is set). */
   function portalLink(e, label = 'Portal') {
     const url = safeUrl(e.portalUrl);
-    return url ? `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(url)}">${icon('external')}${esc(label)}</a>` : '';
+    return url ? `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(url)}">${icon('external')}<span class="lbl">${esc(label)}</span></a>` : '';
   }
+  const CAT_COLORS = ['#5b6cff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#14b8a6'];
+  const hashColor = (str) => { let h = 7; for (const ch of String(str || '?').toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return CAT_COLORS[h % CAT_COLORS.length]; };
+  const catTag = (name) => (name ? `<span class="cat" style="--c:${hashColor(name)}">${esc(name)}</span>` : '');
+  const seg = (name, items, sel) => `<div class="seg" role="radiogroup">${items.map(([v, l]) => `<label><input type="radio" name="${name}" value="${esc(v)}" ${v === sel ? 'checked' : ''}><span>${esc(l)}</span></label>`).join('')}</div>`;
   const chip = (p, text) => `<span class="chip">${avatar(p)}${esc(text)}</span>`;
   /** Address as display lines: street, unit, "City, ST 12345", country. */
   function formatAddress(r) {
@@ -285,12 +294,12 @@
     const tr = C.trend(d, S.period, S.residenceId, 12);
 
     return `
-      <div class="pagehead"><h1>${esc(periodLabel(S.period))}</h1>${monthNav()}</div>
+      <div class="pagehead"><div><div class="eyebrow">Dashboard · ${esc(S.residenceId === 'all' ? 'All residences' : (residence(S.residenceId) || {}).name || '')}</div><h1>${esc(periodLabel(S.period))}</h1></div>${monthNav()}</div>
       <div class="grid cols-4">
-        <div class="card stat"><div class="label">Total bills</div><div class="value">${money(sum.total)}</div><div class="sub">${sum.bills.length} bill${sum.bills.length === 1 ? '' : 's'}</div></div>
-        <div class="card stat"><div class="label">Paid</div><div class="value good">${money(sum.paid)}</div><div class="sub">${paidCount} of ${sum.bills.length} paid</div></div>
-        <div class="card stat"><div class="label">Outstanding</div><div class="value">${money(sum.outstanding)}</div><div class="sub">${sum.bills.length - paidCount} left to pay</div></div>
-        <div class="card stat"><div class="label">Overdue</div><div class="value ${sum.overdueCount ? 'bad' : ''}">${sum.overdueCount}</div><div class="sub">${sum.overdueCount ? 'needs attention' : 'all caught up'}</div></div>
+        <div class="card stat" style="--tone:#5b6cff"><div class="ico">${icon('wallet')}</div><div class="label">Total bills</div><div class="value">${money(sum.total)}</div><div class="sub">${sum.bills.length} bill${sum.bills.length === 1 ? '' : 's'} this month</div></div>
+        <div class="card stat" style="--tone:var(--good)"><div class="ico">${icon('check')}</div><div class="label">Paid</div><div class="value">${money(sum.paid)}</div><div class="sub">${paidCount} of ${sum.bills.length} paid</div><div class="meter"><span style="width:${sum.total ? Math.min(100, (sum.paid / sum.total) * 100) : 0}%"></span></div></div>
+        <div class="card stat" style="--tone:var(--warn)"><div class="ico">${icon('clock')}</div><div class="label">Outstanding</div><div class="value">${money(sum.outstanding)}</div><div class="sub">${sum.bills.length - paidCount} left to pay</div></div>
+        <div class="card stat" style="--tone:${sum.overdueCount ? 'var(--bad)' : 'var(--good)'}"><div class="ico">${icon(sum.overdueCount ? 'alert' : 'check')}</div><div class="label">Overdue</div><div class="value ${sum.overdueCount ? 'bad' : ''}">${sum.overdueCount}</div><div class="sub">${sum.overdueCount ? 'needs attention' : 'all caught up'}</div></div>
       </div>
 
       <div class="grid cols-2">
@@ -310,8 +319,8 @@
 
         <section class="card"><header><h2>By category</h2></header>
           <div class="body">${cats.length ? `<div class="bars">${cats.map(([c, v], i) => `
-            <div class="bar-row"><div class="top"><span>${esc(c)}</span><span class="num">${money(v)}</span></div>
-            <div class="bar"><span style="width:${Math.max(2, (v / catMax) * 100)}%; --c:${palette[i % palette.length]}"></span></div></div>`).join('')}</div>` : '<div class="empty">No bills this month.</div>'}</div></section>
+            <div class="bar-row"><div class="top">${catTag(c)}<span class="num">${money(v)}</span></div>
+            <div class="bar"><span style="width:${Math.max(2, (v / catMax) * 100)}%; --c:${hashColor(c)}"></span></div></div>`).join('')}</div>` : '<div class="empty">No bills this month.</div>'}</div></section>
       </div>
 
       <section class="card"><header><h2>Last 12 months</h2><span class="spacer"></span><span class="hint">darker = paid</span></header>
@@ -323,12 +332,12 @@
     const bw = (W - gap * (n - 1)) / n;
     const max = Math.max(1, ...tr.map((t) => t.total));
     const h = (v) => ((H - padB - padT) * v) / max;
-    return `<svg class="trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly totals">${tr.map((t, i) => {
+    return `<svg class="trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly totals"><defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8e5cf6"/><stop offset="1" stop-color="#5b6cff"/></linearGradient></defs><line class="grid-line" x1="0" x2="${W}" y1="${padT}" y2="${padT}"/><line class="grid-line" x1="0" x2="${W}" y1="${(H - padB + padT) / 2}" y2="${(H - padB + padT) / 2}"/>${tr.map((t, i) => {
       const x = i * (bw + gap), y = H - padB - h(t.total), yp = H - padB - h(t.paid);
       return `<g data-act="set-period" data-period="${t.period}" class="${t.period === S.period ? 't-sel' : ''}">
         <title>${esc(periodLabel(t.period))}: ${esc(money(t.total))} (${esc(money(t.paid))} paid)</title>
-        <rect class="t-total" x="${x}" y="${y}" width="${bw}" height="${Math.max(0, h(t.total))}" rx="4"/>
-        <rect class="t-paid" x="${x}" y="${yp}" width="${bw}" height="${Math.max(0, h(t.paid))}" rx="4"/>
+        <rect class="t-total" x="${x}" y="${y}" width="${bw}" height="${Math.max(0, h(t.total))}" rx="6"/>
+        <rect class="t-paid" x="${x}" y="${yp}" width="${bw}" height="${Math.max(0, h(t.paid))}" rx="6"/>
         <text x="${x + bw / 2}" y="${H - 6}" ${t.period === S.period ? 'style="font-weight:700;fill:var(--text)"' : ''}>${esc(periodLabel(t.period, true))}</text></g>`;
     }).join('')}</svg>`;
   }
@@ -350,8 +359,8 @@
       <div class="card"><div class="tablewrap">${bills.length ? `<table>
         <thead><tr><th>Due</th><th>Bill</th><th class="num">Amount</th><th>Split</th><th>Paid by</th><th>Status</th><th></th></tr></thead>
         <tbody>${bills.map((b) => `<tr>
-          <td>${esc(fmtDate(b.dueDate))}</td>
-          <td><b>${esc(b.expense.name)}</b> ${kindBadge(b.expense)}<div class="muted">${esc(b.expense.category || '')}${S.residenceId === 'all' && residence(b.expense.residenceId) ? ' · ' + esc(residence(b.expense.residenceId).name) : ''}</div></td>
+          <td class="nowrap">${esc(fmtDate(b.dueDate))}</td>
+          <td><b>${esc(b.expense.name)}</b> ${kindBadge(b.expense)}<div class="muted">${catTag(b.expense.category)}${S.residenceId === 'all' && residence(b.expense.residenceId) ? ' · ' + esc(residence(b.expense.residenceId).name) : ''}</div></td>
           <td class="num">${money(b.amount)}${!b.payment && b.expense.variable ? '<div class="hint">estimate</div>' : ''}</td>
           <td><div class="chips">${b.split.map((s) => chip(person(s.personId), money(s.amount))).join('')}</div></td>
           <td>${b.paid || b.paidById ? personTag(b.paidById) : '<span class="muted">—</span>'}</td>
@@ -387,16 +396,16 @@
     const groups = d.residences.filter((r) => S.residenceId === 'all' || r.id === S.residenceId);
     return `
       <div class="pagehead"><h1>Expenses</h1>${btn('add-expense', 'Add expense', 'plus', 'primary')}</div>
-      <p class="muted" style="margin:0">Recurring costs and one-time bills, with how each is split. Pick from <a href="#expense-list" data-act="scroll-list">your expense list</a> or add an ad hoc one. <b>Fixed</b> = same every month, <b>Variable</b> = changes (you enter the actual amount when paying).</p>
+      <p class="lede">Recurring costs and one-time bills, with how each is split. Pick from <a href="#expense-list" data-act="scroll-list">your expense list</a> or add an ad hoc one. <b>Fixed</b> = same every month, <b>Variable</b> = changes (you enter the actual amount when paying).</p>
       ${!d.residences.length ? '<div class="card"><div class="empty">Add a residence first.</div></div>' : groups.map((r) => {
         const es = list.filter((e) => e.residenceId === r.id);
         const monthly = es.reduce((a, e) => a + C.monthlyEquivalent(e), 0);
         return `<section class="card">
-          <div class="group-title"><h2>${esc(r.name)}</h2><span class="tag">${esc(r.tenure)}</span><span class="spacer"></span><span class="muted">≈ ${money(monthly)} / month</span></div>
+          <div class="group-title"><span class="tile" style="--c:${hashColor(r.id)}">${icon('residences')}</span><h2>${esc(r.name)}</h2><span class="tag">${esc(r.tenure)}</span><span class="spacer"></span><span class="pill-total">≈ ${money(monthly)} / month</span></div>
           <div class="tablewrap">${es.length ? `<table>
             <thead><tr><th>Expense</th><th class="num">Amount</th><th>Frequency</th><th>Paid by</th><th>Split</th><th></th></tr></thead>
             <tbody>${es.map((e) => `<tr class="${e.active ? '' : 'inactive'}">
-              <td><b>${esc(e.name)}</b><div class="muted">${esc(e.category || '')}${e.active ? '' : ' · inactive'}</div>${lastPaidNote(e)}</td>
+              <td><b>${esc(e.name)}</b><div class="muted">${catTag(e.category)}${e.active ? '' : ' · inactive'}</div>${lastPaidNote(e)}</td>
               <td class="num">${money(e.amount)}${e.variable ? '<div class="hint">estimate</div>' : ''}<div>${kindBadge(e)}</div></td>
               <td>${esc(e.frequency)}<div class="muted">${e.frequency === 'One-time' ? esc(fmtDate(e.startDate, true)) : 'day ' + (e.dueDay || (e.startDate ? +e.startDate.slice(8) : 1))}</div></td>
               <td>${personTag(e.paidById)}</td>
@@ -409,10 +418,10 @@
   function expenseListCard() {
     const types = [...S.db.expenseTypes].sort((a, b) => (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name));
     return `<section class="card" id="expense-list">
-      <div class="group-title"><h2>Your expense list</h2><span class="muted">Quick-pick templates for the Add expense form</span><span class="spacer"></span>${btn('add-type', 'Add to list', 'plus', 'sm')}</div>
+      <div class="group-title"><span class="tile" style="--c:#8b5cf6">${icon('expenses')}</span><h2>Your expense list</h2><span class="muted">Quick-pick templates for the Add expense form</span><span class="spacer"></span>${btn('add-type', 'Add to list', 'plus', 'sm')}</div>
       <div class="tablewrap">${types.length ? `<table>
         <thead><tr><th>Name</th><th>Category</th><th>Amount</th><th>Frequency</th><th class="num">Typical</th><th></th></tr></thead>
-        <tbody>${types.map((t) => `<tr><td><b>${esc(t.name)}</b></td><td>${esc(t.category)}</td><td>${kindBadge(t)}</td><td>${esc(t.frequency)}</td>
+        <tbody>${types.map((t) => `<tr><td><b>${esc(t.name)}</b></td><td>${catTag(t.category)}</td><td>${kindBadge(t)}</td><td>${esc(t.frequency)}</td>
           <td class="num">${t.amount ? money(t.amount) : '<span class="muted">—</span>'}</td>
           <td class="row-actions">${btn('use-type', 'Use', 'plus', 'sm', `data-id="${esc(t.id)}"`)}${iconBtn('edit-type', 'edit', 'Edit', `data-id="${esc(t.id)}"`)}${iconBtn('del-type', 'trash', 'Delete', `data-id="${esc(t.id)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Your list is empty. Add common expenses here so you can pick them later.</div>'}</div></section>`;
   }
@@ -424,13 +433,13 @@
     const sets = d.settlements.filter((s) => S.residenceId === 'all' || s.residenceId === S.residenceId).sort((a, b) => b.date.localeCompare(a.date));
     return `
       <div class="pagehead"><h1>Balances</h1>${btn('add-settlement', 'Record payment', 'plus', 'primary')}</div>
-      <p class="muted" style="margin:0">Based on every bill marked <b>Paid</b>: whoever paid is owed by the others according to each bill's split.${S.residenceId === 'all' ? '' : ' Showing the selected residence only.'}</p>
+      <p class="lede">Based on every bill marked <b>Paid</b>: whoever paid is owed by the others according to each bill's split.${S.residenceId === 'all' ? '' : ' Showing the selected residence only.'}</p>
       <div class="grid cols-2">
         <section class="card"><header><h2>Per person</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${rows.length ? `<table>
           <thead><tr><th>Person</th><th class="num">Paid out</th><th class="num">Their share</th><th class="num">Settled</th><th class="num">Net</th><th></th></tr></thead>
           <tbody>${rows.map((r) => `<tr class="clickable" data-act="person-ledger" data-id="${esc(r.personId)}" title="Click for the line-item breakdown"><td>${personTag(r.personId)}</td><td class="num">${money(r.paid)}</td><td class="num">${money(r.owed)}</td>
             <td class="num">${money(r.sent - r.received)}</td>
-            <td class="num"><b class="${r.net > 0.004 ? 'good' : r.net < -0.004 ? 'bad' : ''}">${r.net > 0 ? '+' : ''}${money(r.net)}</b><div class="hint">${r.net > 0.004 ? 'is owed' : r.net < -0.004 ? 'owes' : 'settled'}</div></td>
+            <td class="num"><span class="pill ${r.net > 0.004 ? 'good' : r.net < -0.004 ? 'bad' : ''}">${r.net > 0 ? '+' : ''}${money(r.net)}</span><div class="hint">${r.net > 0.004 ? 'is owed' : r.net < -0.004 ? 'owes' : 'settled'}</div></td>
             <td class="row-actions">${btn('person-ledger', 'Details', 'right', 'sm ghost', `data-id="${esc(r.personId)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No paid bills yet.</div>'}</div></div></section>
         <section class="card"><header><h2>Suggested settle-up</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${plan.length ? `<table><tbody>${plan.map((t) => `
           <tr><td>${personTag(t.fromId)}</td><td class="muted">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td>
@@ -453,7 +462,7 @@
           const homes = d.residents.filter((r) => r.personId === p.id).map((r) => residence(r.residenceId)).filter(Boolean);
           return `<tr class="${p.active ? '' : 'inactive'}"><td><span class="person">${avatar(p, 'lg')}<b>${esc(p.name)}</b></span></td><td>${esc(p.email)}</td>
             <td>${homes.map((h) => `<span class="tag">${esc(h.name)}</span>`).join(' ') || '<span class="muted">—</span>'}</td>
-            <td>${p.active ? 'Active' : 'Inactive'}</td>
+            <td>${p.active ? '<span class="badge ok">Active</span>' : '<span class="badge off">Inactive</span>'}</td>
             <td class="row-actions">${iconBtn('edit-person', 'edit', 'Edit', `data-id="${esc(p.id)}"`)}${iconBtn('del-person', 'trash', 'Delete', `data-id="${esc(p.id)}"`)}</td></tr>`;
         }).join('')}</tbody></table>` : '<div class="empty">No people yet.</div>'}</div></div>`;
   }
@@ -465,29 +474,32 @@
       ${d.residences.length ? `<div class="grid cards">${d.residences.map((r) => {
         const members = d.residents.filter((x) => x.residenceId === r.id).map((x) => person(x.personId)).filter(Boolean);
         const monthly = d.expenses.filter((e) => e.residenceId === r.id).reduce((a, e) => a + C.monthlyEquivalent(e), 0);
-        return `<article class="card"><div class="body">
-          <div style="display:flex;gap:8px;align-items:center"><h2 style="font-size:17px">${esc(r.name)}</h2><span class="spacer"></span>${iconBtn('edit-residence', 'edit', 'Edit', `data-id="${esc(r.id)}"`)}${iconBtn('del-residence', 'trash', 'Delete', `data-id="${esc(r.id)}"`)}</div>
-          <div style="margin:6px 0 10px"><span class="tag">${esc(r.type)}</span> <span class="tag">${esc(r.tenure)}</span>${r.endDate ? ' <span class="tag">ended</span>' : ''}</div>
-          ${formatAddress(r).length ? `<div class="muted">${formatAddress(r).map(esc).join('<br>')}</div>` : ''}
-          <div class="muted">${r.startDate ? 'Since ' + esc(fmtDate(r.startDate, true)) : ''}${r.endDate ? ' → ' + esc(fmtDate(r.endDate, true)) : ''}</div>
-          <div style="margin:12px 0 4px" class="chips">${members.map((p) => chip(p, p.name)).join('') || '<span class="muted">No residents yet</span>'}</div>
-          <div style="margin-top:10px"><span class="muted">Recurring costs ≈</span> <b class="num">${money(monthly)}</b> <span class="muted">/ month</span></div>
-          ${r.notes ? `<div class="hint" style="margin-top:8px">${esc(r.notes)}</div>` : ''}
-        </div></article>`;
+        const c = hashColor(r.id);
+        return `<article class="card res-card" style="--c:${c}">
+          <div class="res-banner">${icon('residences')}<span class="tag">${esc(r.type)} · ${esc(r.tenure)}${r.endDate ? ' · ended' : ''}</span></div>
+          <div class="body">
+            <div style="display:flex;gap:8px;align-items:center"><h2 style="font-size:18px">${esc(r.name)}</h2><span class="spacer"></span>${iconBtn('edit-residence', 'edit', 'Edit', `data-id="${esc(r.id)}"`)}${iconBtn('del-residence', 'trash', 'Delete', `data-id="${esc(r.id)}"`)}</div>
+            ${formatAddress(r).length ? `<div class="muted" style="margin-top:4px">${formatAddress(r).map(esc).join('<br>')}</div>` : ''}
+            <div class="hint" style="margin-top:6px">${r.startDate ? 'Since ' + esc(fmtDate(r.startDate, true)) : ''}${r.endDate ? ' → ' + esc(fmtDate(r.endDate, true)) : ''}</div>
+            <div style="margin:14px 0 0" class="chips">${members.map((p) => chip(p, p.name)).join('') || '<span class="muted">No residents yet</span>'}</div>
+            <div class="res-cost"><b class="num">${money(monthly)}</b><span class="muted">/ month in recurring costs</span></div>
+            ${r.notes ? `<div class="hint" style="margin-top:10px">${esc(r.notes)}</div>` : ''}
+          </div></article>`;
       }).join('')}</div>` : '<div class="card"><div class="empty">No residences yet.</div></div>'}`;
   }
 
   /* ----------------------------------------------------------- shell */
 
-  const NAV = [['dashboard', 'Dashboard'], ['bills', 'Bills'], ['expenses', 'Expenses'], ['balances', 'Balances'], ['people', 'People'], ['residences', 'Residences']];
+  const NAV = [['dashboard', 'Dashboard', '#5b6cff'], ['bills', 'Bills', '#10b981'], ['expenses', 'Expenses', '#f59e0b'], ['balances', 'Balances', '#ec4899'], ['people', 'People', '#06b6d4'], ['residences', 'Residences', '#8b5cf6']];
 
   function shell() {
     const d = S.db;
     const views = { dashboard: dashboardView, bills: billsView, expenses: expensesView, balances: balancesView, people: peopleView, residences: residencesView };
     if (!views[S.view]) S.view = 'dashboard';
+    const overdue = C.periodSummary(d, C.todayISO().slice(0, 7), S.residenceId).overdueCount;
     return `
       <header class="topbar">
-        <div class="brand">${icon('home')}Residence Tracker</div>
+        <div class="brand"><span class="logo">${icon('home')}</span><span class="brand-name">Residence Tracker</span></div>
         <select id="resSelect" aria-label="Residence">${options([['all', 'All residences'], ...d.residences.map((r) => [r.id, r.name])], S.residenceId)}</select>
         <span class="spacer"></span>
         ${fileChip()}
@@ -497,9 +509,9 @@
       </header>
       <div class="layout">
         <nav class="nav" aria-label="Sections">
-          ${NAV.map(([k, l]) => `<button class="${S.view === k ? 'active' : ''}" data-act="nav" data-view="${k}">${icon(k)}${l}</button>`).join('')}
+          ${NAV.map(([k, l, tone]) => `<button class="${S.view === k ? 'active' : ''}" data-act="nav" data-view="${k}" style="--tone:${tone}"><span class="ni">${icon(k)}</span>${l}${k === 'bills' && overdue ? `<span class="count" title="${overdue} overdue this month">${overdue}</span>` : ''}</button>`).join('')}
           <hr>
-          <button data-act="settings">${icon('settings')}Settings</button>
+          <button data-act="settings" style="--tone:#697090"><span class="ni">${icon('settings')}</span>Settings</button>
         </nav>
         <main>${views[S.view]()}</main>
       </div>`;
@@ -509,17 +521,26 @@
     const fs = FileLink.supported();
     return `<div class="welcome">
       <div class="card hero">
-        <div class="brand" style="font-size:20px">${icon('home')}Residence Tracker</div>
-        <h1>Your home expenses, kept in an Excel file you own.</h1>
-        <p class="muted" style="margin:0">Track rent or mortgage, utilities, wifi and more across apartments and houses. Split each bill between people and see who owes whom. Every change is saved straight into your <b>.xlsx</b> workbook — and edits you make in Excel show up here.</p>
-        ${S.bootError ? `<div class="callout err">${esc(S.bootError)}</div>` : ''}
-        ${S.needsPermission ? `<div class="callout info">Reconnect to <b>${esc(FileLink.name)}</b>: your browser needs your OK to access it again.<div style="margin-top:8px">${btn('reconnect', 'Reconnect ' + FileLink.name, 'folder', 'primary')}</div></div>` : ''}
-        <div class="actions">
-          ${btn('open-file', 'Open workbook…', 'folder', 'primary')}
-          ${btn('create-file', 'Create new workbook', 'plus')}
-          ${btn('create-sample', 'Start with sample data', '', 'ghost')}
+        <div class="hero-top">
+          <div class="brand"><span class="logo">${icon('home')}</span>Residence Tracker</div>
+          <h1>Your home expenses, kept in an Excel file you own.</h1>
+          <p>Track rent or mortgage, utilities, wifi and more across apartments and houses. Split each bill between people and see who owes whom.</p>
         </div>
-        ${fs ? '' : '<div class="callout">This browser can’t write to files directly. You can still open a workbook, edit, and use <b>Download .xlsx</b> to save. For automatic saving into the file, use Chrome or Edge.</div>'}
+        <div class="hero-body">
+          ${S.bootError ? `<div class="callout err">${esc(S.bootError)}</div>` : ''}
+          ${S.needsPermission ? `<div class="callout info">Reconnect to <b>${esc(FileLink.name)}</b>: your browser needs your OK to access it again.<div style="margin-top:8px">${btn('reconnect', 'Reconnect ' + FileLink.name, 'folder', 'primary')}</div></div>` : ''}
+          <div class="actions">
+            ${btn('open-file', 'Open workbook…', 'folder', 'primary')}
+            ${btn('create-file', 'Create new workbook', 'plus')}
+            ${btn('create-sample', 'Start with sample data', '', 'ghost')}
+          </div>
+          <div class="features">
+            <div class="feature"><span class="tile" style="--c:#10b981">${icon('table')}</span><b>Excel is the database</b><span>Every change is saved straight into your .xlsx — and edits made in Excel show up here.</span></div>
+            <div class="feature"><span class="tile" style="--c:#f59e0b">${icon('split')}</span><b>Split any way</b><span>Equal, percent, shares, fixed dollar amounts, or “$75 more than half”.</span></div>
+            <div class="feature"><span class="tile" style="--c:#ec4899">${icon('balances')}</span><b>See who owes whom</b><span>Log who paid, and balances with a full line-item breakdown update instantly.</span></div>
+          </div>
+          ${fs ? '' : '<div class="callout">This browser can’t write to files directly. You can still open a workbook, edit, and use <b>Download .xlsx</b> to save. For automatic saving into the file, use Chrome or Edge.</div>'}
+        </div>
       </div>
     </div>`;
   }
@@ -649,20 +670,24 @@
       title: id ? 'Edit expense' : (preset.frequency === 'One-time' ? 'Add one-time bill' : 'Add expense'),
       wide: true,
       body: `<div class="form-grid">
+        <div class="form-section">Basics</div>
         ${id ? '' : field('Start from', `<select name="templateId"><option value="">Ad hoc — type your own</option>${options(d.expenseTypes.slice().sort((a, b) => a.name.localeCompare(b.name)).map((t) => [t.id, t.name + (t.category ? ' · ' + t.category : '')]), e.templateId || '')}</select>`, 'full', 'Pick from your expense list to pre-fill, or leave as ad hoc.')}
         ${field('Name', `<input name="name" required value="${esc(e.name)}" placeholder="e.g. Rent, Water, Wi-Fi">`)}
         ${field('Residence', `<select name="residenceId" required>${residenceOptions(e.residenceId)}</select>`)}
         ${field('Category', `<input name="category" list="catlist" value="${esc(e.category)}"><datalist id="catlist">${categories.map((c) => `<option value="${esc(c)}">`).join('')}</datalist>`)}
-        ${field('Amount type', `<select name="amountType">${options([['Fixed', 'Fixed — same every month'], ['Variable', 'Variable — changes each month']], e.variable ? 'Variable' : 'Fixed')}</select>`)}
-        ${field('Amount', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(e.amount)}">`, '', 'For variable expenses this is an estimate; enter the real amount when you pay.')}
+        ${field('Amount', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(e.amount)}" placeholder="0.00">`)}
+        ${field('Amount type', seg('amountType', [['Fixed', 'Fixed'], ['Variable', 'Variable']], e.variable ? 'Variable' : 'Fixed'), 'full', 'Fixed = same every month. Variable = changes; the amount is an estimate until you enter the real bill.')}
+        <div class="form-section">Schedule</div>
         ${field('Frequency', `<select name="frequency">${options(['Monthly', 'Quarterly', 'Yearly', 'One-time'].map((x) => [x, x]), e.frequency)}</select>`)}
         ${field('Due day of month', `<input name="dueDay" type="number" min="1" max="31" value="${esc(e.dueDay || '')}">`, '', 'Blank = day of the start date')}
         ${field('Start date', `<input type="date" name="startDate" required value="${esc(e.startDate)}">`, '', 'First bill. Quarterly/yearly repeat from here.')}
         ${field('End date (optional)', `<input type="date" name="endDate" value="${esc(e.endDate)}">`)}
+        <div class="form-section">Who pays &amp; how it's split</div>
         ${field('Usually paid by', `<select name="paidById">${personOptions(e.paidById, '— choose —')}</select>`, '', 'Default payer. You can change it per bill.')}
         ${field('Split method', `<select name="splitMethod">${options([['Equal', 'Equal'], ['Percent', 'By percent'], ['Shares', 'By shares / weight'], ['Fixed', 'Fixed $ amounts — others split the rest'], ['Offset', 'Equal, but some pay $ more / less']], e.splitMethod)}</select>`)}
         ${id ? '<div></div>' : `<label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="saveToList"> Save to my expense list</label>`}
-        <div class="field full"><span class="lbl">Who shares this expense</span><div id="participants"></div></div>
+        <div id="participants" class="split-wrap full"></div>
+        <div class="form-section">Extras</div>
         ${field('Payment portal / website', `<input name="portalUrl" placeholder="e.g. https://www.mypowercompany.com/pay" value="${esc(e.portalUrl || '')}">`, 'full', 'Adds a Portal button that opens this site in a new tab. Don\'t store passwords here — the workbook is a plain file.')}
         ${field('Notes', `<textarea name="notes">${esc(e.notes)}</textarea>`, 'full')}
         <label class="check full"><input type="checkbox" name="active" ${e.active ? 'checked' : ''}> Active (inactive expenses stop generating bills)</label>
@@ -759,7 +784,7 @@
       body: `<div class="form-grid">
         ${field('Name', `<input name="name" required value="${esc(t.name)}" placeholder="e.g. Pest control">`, 'full')}
         ${field('Category', `<input name="category" list="typecats" value="${esc(t.category)}"><datalist id="typecats">${categories.map((c) => `<option value="${esc(c)}">`).join('')}</datalist>`)}
-        ${field('Amount type', `<select name="amountType">${options([['Fixed', 'Fixed — same every month'], ['Variable', 'Variable — changes each month']], t.variable ? 'Variable' : 'Fixed')}</select>`)}
+        ${field('Amount type', seg('amountType', [['Fixed', 'Fixed'], ['Variable', 'Variable']], t.variable ? 'Variable' : 'Fixed'), '', 'Fixed = same every month')}
         ${field('Usual frequency', `<select name="frequency">${options(['Monthly', 'Quarterly', 'Yearly', 'One-time'].map((x) => [x, x]), t.frequency)}</select>`)}
         ${field('Typical amount (optional)', `<input name="amount" type="number" step="0.01" min="0" value="${esc(t.amount || '')}">`)}</div>
         <p class="hint" style="margin:0">List items only pre-fill the Add expense form; changing one does not alter expenses you already added.</p>`,
@@ -790,7 +815,7 @@
     const dflt = pay || { amount: e.amount, status: 'Paid', paidById: e.paidById, paidDate: C.todayISO(), note: '' };
     openModal({
       title: `${pay ? 'Edit payment' : 'Record payment'} · ${e.name}`,
-      body: `<p class="muted" style="margin:0">${esc(residence(e.residenceId) ? residence(e.residenceId).name : '')} · ${esc(periodLabel(period))}${bill ? ' · due ' + esc(fmtDate(bill.dueDate, true)) : ''}</p>
+      body: `<p class="lede">${esc(residence(e.residenceId) ? residence(e.residenceId).name : '')} · ${esc(periodLabel(period))}${bill ? ' · due ' + esc(fmtDate(bill.dueDate, true)) : ''}</p>
         <div class="form-grid">
           ${field('Amount', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(dflt.amount)}">`, '', e.variable ? 'Variable bill — enter the actual amount.' : '')}
           ${field('Status', `<select name="status">${options([['Paid', 'Paid'], ['Billed', 'Billed — amount known, not paid yet']], dflt.status)}</select>`)}
@@ -851,7 +876,7 @@
     openModal({
       title: `${p.name} · balance breakdown`,
       wide: true,
-      body: `<p class="muted" style="margin:0">Showing ${esc(scope)}. For each bill: <b>effect = what ${esc(first)} paid − ${esc(first)}'s share</b>. Positive means others owe ${esc(first)}; negative means ${esc(first)} owes others.</p>
+      body: `<p class="lede">Showing ${esc(scope)}. For each bill: <b>effect = what ${esc(first)} paid − ${esc(first)}'s share</b>. Positive means others owe ${esc(first)}; negative means ${esc(first)} owes others.</p>
         <div class="grid cols-4" style="gap:10px">
           <div class="card stat"><div class="label">Paid out</div><div class="value" style="font-size:18px">${money(paid)}</div></div>
           <div class="card stat"><div class="label">${esc(first)}'s share</div><div class="value" style="font-size:18px">${money(share)}</div></div>
@@ -882,7 +907,7 @@
     openModal({
       title: `Log a payment · ${e.name}`,
       extra: portalLink(e, 'Open portal to pay'),
-      body: `<p class="muted" style="margin:0">${esc(residence(e.residenceId) ? residence(e.residenceId).name : '')} · ${esc(e.frequency)} ${e.variable ? '(variable)' : '(fixed)'}</p>
+      body: `<p class="lede">${esc(residence(e.residenceId) ? residence(e.residenceId).name : '')} · ${esc(e.frequency)} ${e.variable ? '(variable)' : '(fixed)'}</p>
         <div class="form-grid">
           ${field('Who paid', `<select name="paidById" required>${personOptions(e.paidById, '— choose —')}</select>`)}
           ${field('Amount paid', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(b0 ? b0.amount : e.amount)}">`, '', e.variable ? 'Variable — enter the actual amount.' : '')}
