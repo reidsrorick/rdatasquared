@@ -40,6 +40,8 @@
   }
 }
 
+/* Lets native controls (dropdown lists, date pickers, scrollbars) follow light/dark */
+:root { color-scheme: light dark; }
 * { box-sizing: border-box; }
 html { background: var(--bg); }
 body {
@@ -254,9 +256,10 @@ legend {
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field.wide { grid-column: 1 / -1; }
 .field label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
-input, textarea {
+input, textarea, select {
   font: inherit; color: var(--text);
 }
+select option { background: var(--surface); color: var(--text); }
 .field input, .field textarea, .field select {
   padding: 9px 11px;
   border: 1px solid var(--border);
@@ -347,3 +350,7 @@ table.log { width: 100%; border-collapse: collapse; min-width: 760px; }
 .kv span { font-size: 12px; color: var(--muted); }
 .kv b { font-size: 16px; }
 .kv-note { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+
+/* VIN lookup row */
+.vin-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 28px; }
+.vin-row .hint { flex: 1; }

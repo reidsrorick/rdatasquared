@@ -10,6 +10,9 @@
   const MAINT_SHEET = 'Maintenance';
   const CURRENCY = '$';
   const OWNERSHIP = ['Cash', 'Finance', 'Lease'];
+  const NHTSA = 'https://vpic.nhtsa.dot.gov/api/vehicles';   // free US government VIN / model data, no key needed
+  const COMMON_MAKES = ['Acura', 'Alfa Romeo', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Fiat', 'Ford', 'Genesis', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jaguar', 'Jeep', 'Kia', 'Land Rover', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mercury', 'Mini', 'Mitsubishi', 'Nissan', 'Pontiac', 'Polestar', 'Porsche', 'Ram', 'Rivian', 'Saab', 'Saturn', 'Scion', 'Subaru', 'Suzuki', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'];
+  const COMMON_COLORS = ['Black', 'White', 'Pearl White', 'Silver', 'Gray', 'Charcoal', 'Blue', 'Dark Blue', 'Red', 'Maroon', 'Green', 'Dark Green', 'Brown', 'Beige', 'Tan', 'Gold', 'Orange', 'Yellow', 'Purple'];
   const DISPOSED = ['Sold', 'Traded In', 'Donated', 'Gifted', 'Scrapped', 'Lease Returned'];
   const STATUSES = ['For Sale', ...DISPOSED];   // blank = still owned
 
@@ -23,10 +26,10 @@
     ]},
     { title: 'Vehicle', fields: [
       { key: 'year',  label: 'Year',  type: 'number', min: 1900, max: 2100 },
-      { key: 'make',  label: 'Make',  type: 'text' },
-      { key: 'model', label: 'Model', type: 'text' },
-      { key: 'trim',  label: 'Trim',  type: 'text' },
-      { key: 'color', label: 'Color', type: 'text' },
+      { key: 'make',  label: 'Make',  type: 'text', list: 'dl_make' },
+      { key: 'model', label: 'Model', type: 'text', list: 'dl_model' },
+      { key: 'trim',  label: 'Trim',  type: 'text', list: 'dl_trim' },
+      { key: 'color', label: 'Color', type: 'text', list: 'dl_color' },
       { key: 'miles', label: 'Miles (odometer)', type: 'number', min: 0, fmt: 'int' },
     ]},
     // `only` = field is shown just for those ownership types (values are kept when hidden)
@@ -734,6 +737,7 @@
     }
     applyVisibility(car);
     updateSummaries(car);
+    refreshLists(car);
     const dz = document.createElement('div');
     dz.className = 'danger-zone';
     const del = document.createElement('button');
@@ -763,6 +767,7 @@
     if (f.max != null) input.max = f.max;
     if (f.step) input.step = f.step;
     if (f.maxlength) input.maxLength = f.maxlength;
+    if (f.list) input.setAttribute('list', f.list);
     input.value = car[f.key];
     const hint = document.createElement('div');
     hint.className = 'hint';
@@ -772,14 +777,132 @@
       if (f.upper) { const pos = input.selectionStart; v = v.toUpperCase(); input.value = v; try { input.setSelectionRange(pos, pos); } catch {} }
       if (f.type === 'number') v = v === '' ? '' : Number(v);
       car[f.key] = v;
-      if (f.key === 'vin') hint.textContent = vinHint(v);
+      if (f.key === 'vin') {
+        hint.textContent = vinHint(v);
+        if (isCompleteVin(v)) decodeVin(car, { overwrite: false });   // auto-fill blanks once the VIN is complete
+      }
+      if (f.key === 'make' || f.key === 'year') scheduleModelLoad(car);
       if (isSelect) applyVisibility(car);
       renderSummary(car);
       scheduleSave();
     });
-    wrap.append(label, input);
-    if (f.key === 'vin') { hint.textContent = vinHint(car.vin); wrap.appendChild(hint); }
+
+    if (f.key === 'vin') {
+      vinHintEl = hint;
+      hint.textContent = vinHint(car.vin);
+      const row = document.createElement('div');
+      row.className = 'vin-row';
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'btn small'; btn.textContent = 'Look up make/model';
+      btn.title = 'Fills in year, make, model and trim from the VIN (sends the VIN to the free NHTSA vehicle database)';
+      btn.addEventListener('click', () => {
+        if (!isCompleteVin(car.vin)) { hint.textContent = 'Enter the full 17-character VIN first'; return; }
+        decodeVin(car, { overwrite: true });
+      });
+      row.append(hint, btn);
+      wrap.append(label, input, row);
+    } else {
+      wrap.append(label, input);
+    }
     return wrap;
+  }
+
+  // ---- Auto-fill: VIN decode + suggestion lists (NHTSA vPIC) ----
+  let vinHintEl = null;
+  let modelTimer = null;
+  const modelCache = new Map();
+  const isCompleteVin = v => /^[A-HJ-NPR-Z0-9]{17}$/.test(v || '');
+
+  async function fetchJSON(url) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const r = await fetch(url, { signal: ctl.signal });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } finally { clearTimeout(t); }
+  }
+
+  function setVinHint(text) { if (vinHintEl && vinHintEl.isConnected) vinHintEl.textContent = text; }
+
+  function cleanMake(name) {
+    const n = String(name || '').trim();
+    const known = COMMON_MAKES.find(k => k.toLowerCase() === n.toLowerCase());
+    if (known) return known;
+    return n === n.toUpperCase() ? n.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : n;
+  }
+
+  async function decodeVin(car, { overwrite }) {
+    const vin = car.vin;
+    setVinHint('Looking up VIN…');
+    try {
+      const data = await fetchJSON(`${NHTSA}/DecodeVinValues/${encodeURIComponent(vin)}?format=json`);
+      if (car.vin !== vin) return;                       // VIN changed while waiting
+      const r = data.Results && data.Results[0];
+      if (!r || !r.Make) { setVinHint('No match found for this VIN'); return; }
+      const found = {
+        year: Number(r.ModelYear) || '',
+        make: cleanMake(r.Make),
+        model: String(r.Model || '').trim(),
+        trim: String(r.Trim || r.Series || '').trim(),
+      };
+      const filled = [];
+      for (const [k, v] of Object.entries(found)) {
+        if (v === '' || (!overwrite && has(car[k]))) continue;
+        car[k] = v;
+        filled.push(k);
+        const input = document.getElementById('f_' + k);
+        if (input && car === cars[selected]) input.value = v;
+      }
+      renderSummary(car);
+      refreshLists(car, found.trim);
+      if (filled.length) scheduleSave();
+      setVinHint(filled.length ? `Filled in ${filled.join(', ')} from VIN` : 'Year, make, model and trim already filled in');
+    } catch (e) {
+      if (car.vin === vin) setVinHint("Couldn't reach the VIN lookup (offline?) — you can still type it in");
+    }
+  }
+
+  function fillList(id, values) {
+    const dl = document.getElementById(id);
+    if (!dl) return;
+    const uniq = [...new Set(values.filter(has).map(String))].sort((a, b) => a.localeCompare(b));
+    dl.replaceChildren(...uniq.map(v => { const o = document.createElement('option'); o.value = v; return o; }));
+  }
+
+  // Suggestions = common values + whatever is already in your sheet (+ API models for the chosen make/year)
+  function refreshLists(car, extraTrim) {
+    const used = k => cars.map(c => c[k]);
+    fillList('dl_make', [...COMMON_MAKES, ...used('make')]);
+    fillList('dl_color', [...COMMON_COLORS, ...used('color')]);
+    const sameModel = cars.filter(c => c.make === car.make && c.model === car.model);
+    fillList('dl_trim', [...sameModel.map(c => c.trim), extraTrim]);
+    scheduleModelLoad(car, 0);
+  }
+
+  function scheduleModelLoad(car, delay = 400) {
+    clearTimeout(modelTimer);
+    modelTimer = setTimeout(() => loadModels(car), delay);
+  }
+
+  async function loadModels(car) {
+    const make = String(car.make || '').trim();
+    const local = cars.filter(c => c.make === car.make).map(c => c.model);
+    if (!make) { fillList('dl_model', local); return; }
+    const year = has(car.year) && car.year >= 1900 ? car.year : '';
+    const key = make.toLowerCase() + '|' + year;
+    if (!modelCache.has(key)) {
+      try {
+        const url = year
+          ? `${NHTSA}/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`
+          : `${NHTSA}/GetModelsForMake/${encodeURIComponent(make)}?format=json`;
+        const data = await fetchJSON(url);
+        modelCache.set(key, (data.Results || []).map(r => r.Model_Name));
+      } catch { fillList('dl_model', local); return; }          // offline: fall back to models already in the sheet
+    }
+    // Ignore the answer if the user has since changed make/year
+    if (String(car.make || '').trim().toLowerCase() + '|' + (has(car.year) && car.year >= 1900 ? car.year : '') !== key) return;
+    fillList('dl_model', [...modelCache.get(key), ...local]);
   }
 
   function vinHint(v) {
