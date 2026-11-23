@@ -49,13 +49,6 @@
     $("hero-tagline").textContent = SITE.tagline || "";
     $("footer-text").textContent = SITE.footer || "";
 
-    var ghUrl = SITE.github && safeUrl(SITE.github);
-    ["github-link", "hero-github"].forEach(function (id) {
-      var a = $(id);
-      if (ghUrl) a.href = ghUrl;
-      else a.hidden = true;
-    });
-
     if (SITE.about) {
       $("about-title").textContent = SITE.about.title || "";
       $("about-text").textContent = SITE.about.text || "";
@@ -172,9 +165,7 @@
 
     var links = el("div", "card-links");
     var demo = p.demo ? link("Launch app ↗", p.demo, "btn btn-primary") : null;
-    var repo = link("Source", p.url, "btn");
     if (demo) links.appendChild(demo);
-    if (repo) links.appendChild(repo);
     if (links.childNodes.length) body.appendChild(links);
 
     c.appendChild(body);
