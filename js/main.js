@@ -138,6 +138,70 @@
     }
   }
 
+  /* ---------- Live preview: this week's movie ---------- */
+  function metaContent(doc, prop) {
+    var m = doc.querySelector('meta[property="' + prop + '"]');
+    return m ? (m.getAttribute("content") || "").trim() : "";
+  }
+
+  // Reads the page's public link-preview tags (og:title / og:description / og:image),
+  // which name this week's pick. The page is parsed as inert HTML (no scripts run).
+  // Falls back silently to the normal card if anything goes wrong.
+  function loadMoviePreview(cfg, panel, heading) {
+    var page = safeUrl(cfg && cfg.page);
+    if (!page || !window.fetch || !window.DOMParser) return;
+
+    var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 8000) : null;
+
+    fetch(page, { credentials: "omit", signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) {
+        if (!r.ok) throw new Error("bad status");
+        return r.text();
+      })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, "text/html");
+
+        // Only trust the tags when they describe a weekly pick.
+        var desc = metaContent(doc, "og:description");
+        var prefix = /^This week's pick:\s*/i;
+        if (!prefix.test(desc)) return;
+
+        var title = metaContent(doc, "og:title");
+        var site = metaContent(doc, "og:site_name");
+        if (site && title.slice(-(site.length + 3)) === " - " + site) {
+          title = title.slice(0, -(site.length + 3));
+        }
+        if (!title) return;
+
+        var pick = el("div", "pick");
+        pick.appendChild(el("span", "pick-label", "This week's pick"));
+        pick.appendChild(el("strong", "pick-title", title));
+        var meta = desc.replace(prefix, "");
+        if (meta) pick.appendChild(el("span", "pick-meta", meta));
+        heading.parentNode.insertBefore(pick, heading.nextSibling);
+
+        // Only https images are used.
+        var poster = metaContent(doc, "og:image");
+        poster = /^https:\/\//i.test(poster) ? safeUrl(poster) : null;
+        if (poster) {
+          var img = new Image();
+          img.className = "card-bg";
+          img.alt = "Image from " + title;
+          img.decoding = "async";
+          img.referrerPolicy = "no-referrer";
+          img.onload = function () {
+            panel.classList.add("has-image");
+            panel.insertBefore(img, panel.firstChild);
+            requestAnimationFrame(function () { img.classList.add("show"); });
+          };
+          img.src = poster;
+        }
+      })
+      .catch(function () { /* keep the normal card */ })
+      .then(function () { if (timer) clearTimeout(timer); });
+  }
+
   /* ---------- Project cards ---------- */
   function card(p, index) {
     var c = el("article", "card reveal" + (p.featured ? " card-wide" : ""));
@@ -154,7 +218,8 @@
     c.appendChild(top);
 
     var body = el("div", "card-body");
-    body.appendChild(el("h3", null, p.name || "Untitled"));
+    var heading = el("h3", null, p.name || "Untitled");
+    body.appendChild(heading);
     body.appendChild(el("p", null, p.description || ""));
 
     if (p.tags && p.tags.length) {
@@ -169,6 +234,7 @@
     if (links.childNodes.length) body.appendChild(links);
 
     c.appendChild(body);
+    if (p.preview && p.preview.type === "movie") loadMoviePreview(p.preview, top, heading);
     return c;
   }
 

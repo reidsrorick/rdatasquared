@@ -44,6 +44,7 @@ window.SITE = {
  *   color       (optional) override the card accent (default: brand yellow), e.g. "#e2784f"
  *   tags        (optional) short labels shown on the card
  *   featured    (optional) true = a wide card spanning the full row
+ *   preview     (optional) { type: "movie", page: "<url>" } = show a live preview on the card
  */
 var LIVE = "https://www.rdatasquared.com/";
 
@@ -54,7 +55,9 @@ window.PROJECTS = [
     demo: "https://rmotw.pages.dev/",
     icon: "🎬",
     tags: ["Movies", "Weekly pick"],
-    featured: true
+    featured: true,
+    // Shows this week's actual pick (title, director, genres, image) on the card
+    preview: { type: "movie", page: "https://rmotw.pages.dev/" }
   },
   {
     name: "Notebook",
