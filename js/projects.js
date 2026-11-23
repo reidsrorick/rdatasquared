@@ -43,10 +43,19 @@ window.SITE = {
  *   icon        (optional) an emoji shown on the card
  *   color       (optional) override the card accent (default: brand yellow), e.g. "#e2784f"
  *   tags        (optional) short labels shown on the card
+ *   featured    (optional) true = a wide card spanning the full row
  */
 var LIVE = "https://www.rdatasquared.com/";
 
 window.PROJECTS = [
+  {
+    name: "Movie of the Week",
+    description: "One hand-picked movie every week from the films I've reviewed, with an archive, what's in theaters, stats and an RSS feed.",
+    demo: "https://rmotw.pages.dev/",
+    icon: "🎬",
+    tags: ["Movies", "Weekly pick"],
+    featured: true
+  },
   {
     name: "Notebook",
     description: "An installable app for tasks, meeting notes and recurring actions. Your notes are saved to a file on your own computer.",

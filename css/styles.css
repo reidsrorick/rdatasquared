@@ -296,6 +296,22 @@ main { flex: 1; }
 }
 .card:nth-child(even):hover { transform: translateY(-6px) rotate(.6deg); }
 
+/* Featured card: spans the full row; image panel on the left on wide screens */
+.card-wide { grid-column: 1 / -1; }
+@media (min-width: 760px) {
+  .card-wide { flex-direction: row; }
+  .card-wide .card-top {
+    flex: 0 0 36%;
+    min-height: 220px;
+    border-bottom: 0;
+    border-right: 1px solid var(--border);
+  }
+  .card-wide .card-icon { font-size: 5rem; }
+  .card-wide .card-body { justify-content: center; padding: 28px 32px; }
+  .card-wide .card-body h3 { font-size: 1.75rem; }
+  .card-wide .card-body p { flex: 0 1 auto; font-size: 1.05rem; }
+}
+
 .card-top {
   position: relative;
   display: flex;

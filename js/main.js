@@ -140,7 +140,7 @@
 
   /* ---------- Project cards ---------- */
   function card(p, index) {
-    var c = el("article", "card reveal");
+    var c = el("article", "card reveal" + (p.featured ? " card-wide" : ""));
     var color = safeColor(p.color);
     if (color) c.style.setProperty("--c", color);
 
