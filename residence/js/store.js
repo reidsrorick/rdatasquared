@@ -36,7 +36,13 @@
         { h: 'Name', k: 'name', w: 26 },
         { h: 'Type', k: 'type', w: 12 },       // Apartment, House, Condo, ...
         { h: 'Tenure', k: 'tenure', w: 12 },   // Renting, Mortgage, Owned
-        { h: 'Address', k: 'address', w: 36 },
+        { h: 'AddressLine1', k: 'address1', w: 30 },
+        { h: 'AddressLine2', k: 'address2', w: 16 },
+        { h: 'City', k: 'city', w: 18 },
+        { h: 'State', k: 'state', w: 8 },        // state / province / region
+        { h: 'PostalCode', k: 'postalCode', w: 12 },
+        { h: 'Country', k: 'country', w: 14 },
+        { h: 'Address', k: 'address', legacy: true }, // old single-cell address: read once, never written
         { h: 'StartDate', k: 'startDate', t: 'date', w: 12 },
         { h: 'EndDate', k: 'endDate', t: 'date', w: 12 },
         { h: 'Notes', k: 'notes', w: 36 },
@@ -293,7 +299,11 @@
     db.payments = db.payments.filter((p) => p.expenseId && p.period);
     db.settlements = db.settlements.filter((s) => s.fromId && s.toId && s.amount);
     db.people.forEach((p, i) => { if (!p.color) p.color = RT.PALETTE ? RT.PALETTE[i % RT.PALETTE.length] : '#4f7cff'; });
-    db.residences.forEach((r) => { r.type = r.type || 'Apartment'; r.tenure = r.tenure || 'Renting'; });
+    db.residences.forEach((r) => {
+      r.type = r.type || 'Apartment'; r.tenure = r.tenure || 'Renting';
+      if (r.address && !r.address1) { r.address1 = r.address; repaired = true; } // migrate old single-line address
+      delete r.address;
+    });
     db.expenses.forEach((e) => {
       e.frequency = normChoice(e.frequency, ['Monthly', 'Quarterly', 'Yearly', 'One-time'], 'Monthly');
       e.splitMethod = normChoice(e.splitMethod, ['Equal', 'Percent', 'Shares'], 'Equal');
@@ -326,7 +336,8 @@
       expenses: (id) => (db.expenses.find((x) => x.id === id) || {}).name || '',
     };
 
-    SHEETS.forEach((def) => {
+    SHEETS.forEach((rawDef) => {
+      const def = Object.assign({}, rawDef, { cols: rawDef.cols.filter((c) => !c.legacy) });
       const ws = {};
       const refOf = {};
       def.cols.forEach((c) => { if (c.ref) refOf[c.k] = c.ref; });
@@ -391,8 +402,8 @@
     }));
     db.people.push(alex, jordan, sam, riley);
 
-    const apt = { id: mk('r'), name: 'Maple Street Apartment', type: 'Apartment', tenure: 'Renting', address: '214 Maple St, Unit 3B', startDate: C.addMonthsISO(today, -14).slice(0, 8) + '01', endDate: '', notes: 'Lease renews each August.' };
-    const house = { id: mk('r'), name: 'Lakeview House', type: 'House', tenure: 'Mortgage', address: '88 Lakeview Dr', startDate: C.addMonthsISO(today, -26).slice(0, 8) + '01', endDate: '', notes: '30-year fixed.' };
+    const apt = { id: mk('r'), name: 'Maple Street Apartment', type: 'Apartment', tenure: 'Renting', address1: '214 Maple St', address2: 'Unit 3B', city: 'Portland', state: 'OR', postalCode: '97205', country: 'USA', startDate: C.addMonthsISO(today, -14).slice(0, 8) + '01', endDate: '', notes: 'Lease renews each August.' };
+    const house = { id: mk('r'), name: 'Lakeview House', type: 'House', tenure: 'Mortgage', address1: '88 Lakeview Dr', address2: '', city: 'Lake Oswego', state: 'OR', postalCode: '97034', country: 'USA', startDate: C.addMonthsISO(today, -26).slice(0, 8) + '01', endDate: '', notes: '30-year fixed.' };
     db.residences.push(apt, house);
     [alex, sam, riley].forEach((p) => db.residents.push({ residenceId: apt.id, personId: p.id }));
     [alex, jordan].forEach((p) => db.residents.push({ residenceId: house.id, personId: p.id }));

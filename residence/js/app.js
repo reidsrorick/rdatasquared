@@ -80,6 +80,11 @@
   const avatar = (p, cls = '') => `<span class="avatar ${cls}" style="--c:${esc(p ? p.color : '#999')}" title="${esc(p ? p.name : '')}">${esc(p ? initials(p.name) : '?')}</span>`;
   const personTag = (id) => { const p = person(id); return p ? `<span class="person">${avatar(p)}${esc(p.name)}</span>` : '<span class="muted">—</span>'; };
   const chip = (p, text) => `<span class="chip">${avatar(p)}${esc(text)}</span>`;
+  /** Address as display lines: street, unit, "City, ST 12345", country. */
+  function formatAddress(r) {
+    const cityLine = [[r.city, r.state].filter(Boolean).join(', '), r.postalCode].filter(Boolean).join(' ');
+    return [r.address1, r.address2, cityLine, r.country].filter(Boolean);
+  }
   const activePeople = () => S.db.people.filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name));
   const scoped = (r) => S.residenceId === 'all' || r.residenceId === S.residenceId;
 
@@ -425,7 +430,7 @@
         return `<article class="card"><div class="body">
           <div style="display:flex;gap:8px;align-items:center"><h2 style="font-size:17px">${esc(r.name)}</h2><span class="spacer"></span>${iconBtn('edit-residence', 'edit', 'Edit', `data-id="${esc(r.id)}"`)}${iconBtn('del-residence', 'trash', 'Delete', `data-id="${esc(r.id)}"`)}</div>
           <div style="margin:6px 0 10px"><span class="tag">${esc(r.type)}</span> <span class="tag">${esc(r.tenure)}</span>${r.endDate ? ' <span class="tag">ended</span>' : ''}</div>
-          ${r.address ? `<div class="muted">${esc(r.address)}</div>` : ''}
+          ${formatAddress(r).length ? `<div class="muted">${formatAddress(r).map(esc).join('<br>')}</div>` : ''}
           <div class="muted">${r.startDate ? 'Since ' + esc(fmtDate(r.startDate, true)) : ''}${r.endDate ? ' → ' + esc(fmtDate(r.endDate, true)) : ''}</div>
           <div style="margin:12px 0 4px" class="chips">${members.map((p) => chip(p, p.name)).join('') || '<span class="muted">No residents yet</span>'}</div>
           <div style="margin-top:10px"><span class="muted">Recurring costs ≈</span> <b class="num">${money(monthly)}</b> <span class="muted">/ month</span></div>
@@ -528,7 +533,7 @@
   }
 
   function openResidenceForm(id) {
-    const r = id ? residence(id) : { name: '', type: 'Apartment', tenure: 'Renting', address: '', startDate: '', endDate: '', notes: '' };
+    const r = id ? residence(id) : { name: '', type: 'Apartment', tenure: 'Renting', address1: '', address2: '', city: '', state: '', postalCode: '', country: '', startDate: '', endDate: '', notes: '' };
     const members = new Set(S.db.residents.filter((x) => x.residenceId === id).map((x) => x.personId));
     openModal({
       title: id ? 'Edit residence' : 'Add residence',
@@ -536,7 +541,12 @@
         ${field('Name', `<input name="name" required value="${esc(r.name)}" placeholder="e.g. Maple Street Apartment">`, 'full')}
         ${field('Type', `<select name="type">${options(['Apartment', 'House', 'Condo', 'Townhouse', 'Room', 'Other'].map((x) => [x, x]), r.type)}</select>`)}
         ${field('Tenure', `<select name="tenure">${options(['Renting', 'Mortgage', 'Owned'].map((x) => [x, x]), r.tenure)}</select>`)}
-        ${field('Address', `<input name="address" value="${esc(r.address)}">`, 'full')}
+        ${field('Address line 1', `<input name="address1" autocomplete="address-line1" value="${esc(r.address1)}" placeholder="Street address">`, 'full')}
+        ${field('Address line 2', `<input name="address2" autocomplete="address-line2" value="${esc(r.address2)}" placeholder="Apt, unit, suite (optional)">`, 'full')}
+        ${field('City', `<input name="city" autocomplete="address-level2" value="${esc(r.city)}">`)}
+        ${field('State / Province', `<input name="state" autocomplete="address-level1" value="${esc(r.state)}">`)}
+        ${field('ZIP / Postal code', `<input name="postalCode" autocomplete="postal-code" value="${esc(r.postalCode)}">`)}
+        ${field('Country', `<input name="country" autocomplete="country-name" value="${esc(r.country)}">`)}
         ${field('Start date', `<input type="date" name="startDate" value="${esc(r.startDate)}">`)}
         ${field('End date', `<input type="date" name="endDate" value="${esc(r.endDate)}">`)}
         <div class="field full"><span class="lbl">Residents</span><div class="chips" style="gap:10px">${S.db.people.length ? S.db.people.map((p) => `
@@ -545,7 +555,7 @@
       onSubmit: (fd) => {
         commit((db) => {
           const rec = id ? db.residences.find((x) => x.id === id) : { id: store.uid('r') };
-          Object.assign(rec, { name: fd.get('name').trim(), type: fd.get('type'), tenure: fd.get('tenure'), address: fd.get('address').trim(), startDate: fd.get('startDate'), endDate: fd.get('endDate'), notes: fd.get('notes').trim() });
+          Object.assign(rec, { name: fd.get('name').trim(), type: fd.get('type'), tenure: fd.get('tenure'), address1: fd.get('address1').trim(), address2: fd.get('address2').trim(), city: fd.get('city').trim(), state: fd.get('state').trim(), postalCode: fd.get('postalCode').trim(), country: fd.get('country').trim(), startDate: fd.get('startDate'), endDate: fd.get('endDate'), notes: fd.get('notes').trim() });
           if (!id) db.residences.push(rec);
           db.residents = db.residents.filter((x) => x.residenceId !== rec.id);
           db.people.forEach((p) => { if (fd.get('res_' + p.id) === 'on') db.residents.push({ residenceId: rec.id, personId: p.id }); });

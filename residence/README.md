@@ -30,6 +30,7 @@ Sheets: `People`, `Residences`, `Residents`, `Expenses`, `Splits`, `Payments`, `
 
 - You can edit it in Excel too. In the `*ID` columns you may type a **name** instead of an ID; it is resolved on load. Rows with no ID get one.
 - Columns named `Residence`, `Person`, `Expense`, `PaidBy`, `From`, `To` are read-only helpers for humans and are rewritten on save.
+- `Residences` stores the address as `AddressLine1`, `AddressLine2`, `City`, `State`, `PostalCode`, `Country`. A workbook with the older single `Address` column still opens; its text moves into `AddressLine1` on the next save.
 - `Payments.Period` is `YYYY-MM`. Status `Paid` counts toward balances; `Billed` means the amount is known but not yet paid.
 - **Excel locks open files.** Close the workbook in Excel before using the app (a red "Save failed" chip means the write was blocked; close Excel and click it to retry). Changes saved in Excel while the app is open are picked up within a few seconds.
 
