@@ -163,6 +163,7 @@ tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
 td.num, th.num { text-align: right; }
 tr.inactive td { opacity: .55; }
+tr.clickable { cursor: pointer; }
 .group-title { padding: 14px 16px 4px; display: flex; align-items: center; gap: 8px; }
 
 /* ---------------------------------------------------- badges and chips */

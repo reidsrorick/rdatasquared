@@ -18,7 +18,7 @@ Then **Create new workbook** (or **Open workbook…** for an existing one). The 
 | Dashboard | Month totals, what still needs paying, who owes whom, category + 12-month charts |
 | Bills | Every bill for the chosen month. **Pay** records the actual amount, who paid and when |
 | Expenses | Recurring/one-time costs (Monthly, Quarterly, Yearly, One-time) and how each is split |
-| Balances | Net position per person, suggested settle-up, history of settlements |
+| Balances | Net position per person, suggested settle-up, history of settlements. **Click a person** for the line-item breakdown: every bill they paid or share, each settlement, a running balance, and what they owe (or are owed by) each other person |
 | People / Residences | Who is in the group; each home, its tenure (Renting/Mortgage/Owned) and residents |
 
 **Log a payment:** every row on the Expenses screen has a **Log payment** button. Pick who paid, the amount, and which month it covers; the form shows who owes whom (e.g. you pay the full rent → your roommate owes you their share) and Balances update immediately. You can also record payments from the Bills screen.

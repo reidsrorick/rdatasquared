@@ -199,7 +199,7 @@
         <header><h2>${esc(title)}</h2><button type="button" class="icon-btn" data-close aria-label="Close">✕</button></header>
         <div class="modal-body">${body}</div>
         <footer>${extra}<span class="spacer"></span>
-          <button type="button" class="btn" data-close>Cancel</button>
+          <button type="button" class="btn" data-close>${onSubmit ? 'Cancel' : 'Close'}</button>
           ${onSubmit ? `<button class="btn ${danger ? 'danger solid' : 'primary'}" type="submit">${esc(submit)}</button>` : ''}
         </footer>
       </form>`;
@@ -414,10 +414,11 @@
       <p class="muted" style="margin:0">Based on every bill marked <b>Paid</b>: whoever paid is owed by the others according to each bill's split.${S.residenceId === 'all' ? '' : ' Showing the selected residence only.'}</p>
       <div class="grid cols-2">
         <section class="card"><header><h2>Per person</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${rows.length ? `<table>
-          <thead><tr><th>Person</th><th class="num">Paid out</th><th class="num">Their share</th><th class="num">Settled</th><th class="num">Net</th></tr></thead>
-          <tbody>${rows.map((r) => `<tr><td>${personTag(r.personId)}</td><td class="num">${money(r.paid)}</td><td class="num">${money(r.owed)}</td>
+          <thead><tr><th>Person</th><th class="num">Paid out</th><th class="num">Their share</th><th class="num">Settled</th><th class="num">Net</th><th></th></tr></thead>
+          <tbody>${rows.map((r) => `<tr class="clickable" data-act="person-ledger" data-id="${esc(r.personId)}" title="Click for the line-item breakdown"><td>${personTag(r.personId)}</td><td class="num">${money(r.paid)}</td><td class="num">${money(r.owed)}</td>
             <td class="num">${money(r.sent - r.received)}</td>
-            <td class="num"><b class="${r.net > 0.004 ? 'good' : r.net < -0.004 ? 'bad' : ''}">${r.net > 0 ? '+' : ''}${money(r.net)}</b><div class="hint">${r.net > 0.004 ? 'is owed' : r.net < -0.004 ? 'owes' : 'settled'}</div></td></tr>`).join('')}</tbody></table>` : '<div class="empty">No paid bills yet.</div>'}</div></div></section>
+            <td class="num"><b class="${r.net > 0.004 ? 'good' : r.net < -0.004 ? 'bad' : ''}">${r.net > 0 ? '+' : ''}${money(r.net)}</b><div class="hint">${r.net > 0.004 ? 'is owed' : r.net < -0.004 ? 'owes' : 'settled'}</div></td>
+            <td class="row-actions">${btn('person-ledger', 'Details', 'right', 'sm ghost', `data-id="${esc(r.personId)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No paid bills yet.</div>'}</div></div></section>
         <section class="card"><header><h2>Suggested settle-up</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${plan.length ? `<table><tbody>${plan.map((t) => `
           <tr><td>${personTag(t.fromId)}</td><td class="muted">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td>
           <td class="row-actions">${btn('add-settlement', 'Record', 'check', 'sm', `data-from="${esc(t.fromId)}" data-to="${esc(t.toId)}" data-amount="${t.amount}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Everyone is settled up.</div>'}</div></div></section>
@@ -802,6 +803,53 @@
     });
   }
 
+  /** Line-item breakdown of one person's balance (opened from the Balances screen). */
+  function openLedger(personId) {
+    const p = person(personId);
+    if (!p) return;
+    const L = C.ledger(S.db, personId, S.residenceId);
+    const first = p.name.split(' ')[0];
+    const scope = S.residenceId === 'all' ? 'all residences' : ((residence(S.residenceId) || {}).name || '');
+    const signed = (n) => (n > 0.004 ? '+' : n < -0.004 ? '−' : '') + money(Math.abs(n));
+    const cls = (n) => (n > 0.004 ? 'good' : n < -0.004 ? 'bad' : '');
+    const paid = L.entries.filter((e) => e.kind === 'bill' && e.payerId === personId).reduce((a, e) => a + e.total, 0);
+    const share = L.entries.filter((e) => e.kind === 'bill').reduce((a, e) => a + e.share, 0);
+    const settled = L.entries.filter((e) => e.kind === 'settlement').reduce((a, e) => a + e.delta, 0);
+
+    const lines = L.entries.slice().reverse().map((en) => {
+      if (en.kind === 'settlement') {
+        const s = en.settlement;
+        return `<tr><td>${esc(fmtDate(en.date, true))}</td>
+          <td><b>Settlement</b> <span class="tag">${s.fromId === personId ? 'you sent' : 'you received'}</span>${s.note ? `<div class="muted">${esc(s.note)}</div>` : ''}</td>
+          <td class="num">${money(en.total)}</td><td>${personTag(s.fromId)}</td><td class="num muted">—</td>
+          <td class="num"><b class="${cls(en.delta)}">${signed(en.delta)}</b></td><td class="num muted">${signed(en.running)}</td></tr>`;
+      }
+      const res = residence(en.expense.residenceId);
+      return `<tr><td>${esc(fmtDate(en.date, true))}</td>
+        <td><b>${esc(en.expense.name)}</b> <span class="muted">· ${esc(periodLabel(en.period))}</span>${S.residenceId === 'all' && res ? `<div class="muted">${esc(res.name)}</div>` : ''}
+          <div class="chips" style="margin-top:4px">${en.split.map((s) => chip(person(s.personId), money(s.amount))).join('')}</div></td>
+        <td class="num">${money(en.total)}</td><td>${personTag(en.payerId)}</td><td class="num">${money(en.share)}</td>
+        <td class="num"><b class="${cls(en.delta)}">${signed(en.delta)}</b></td><td class="num muted">${signed(en.running)}</td></tr>`;
+    }).join('');
+
+    openModal({
+      title: `${p.name} · balance breakdown`,
+      wide: true,
+      body: `<p class="muted" style="margin:0">Showing ${esc(scope)}. For each bill: <b>effect = what ${esc(first)} paid − ${esc(first)}'s share</b>. Positive means others owe ${esc(first)}; negative means ${esc(first)} owes others.</p>
+        <div class="grid cols-4" style="gap:10px">
+          <div class="card stat"><div class="label">Paid out</div><div class="value" style="font-size:18px">${money(paid)}</div></div>
+          <div class="card stat"><div class="label">${esc(first)}'s share</div><div class="value" style="font-size:18px">${money(share)}</div></div>
+          <div class="card stat"><div class="label">Settled</div><div class="value" style="font-size:18px">${signed(settled)}</div></div>
+          <div class="card stat"><div class="label">Net</div><div class="value ${cls(L.net)}" style="font-size:18px">${signed(L.net)}</div><div class="sub">${L.net > 0.004 ? 'is owed' : L.net < -0.004 ? 'owes' : 'settled'}</div></div>
+        </div>
+        ${L.pairs.length ? `<div><h2 style="margin-bottom:6px">With each person</h2><div class="tablewrap"><table><tbody>${L.pairs.map((x) => `
+          <tr><td>${personTag(x.personId)}</td><td>${x.amount > 0 ? `owes ${esc(first)}` : `${esc(first)} owes them`}</td><td class="num"><b class="${x.amount > 0 ? 'good' : 'bad'}">${money(Math.abs(x.amount))}</b></td></tr>`).join('')}</tbody></table></div></div>` : ''}
+        <div><h2 style="margin-bottom:6px">Line items (newest first)</h2>${lines ? `<div class="tablewrap"><table>
+          <thead><tr><th>Date</th><th>Line item</th><th class="num">Bill total</th><th>Paid by</th><th class="num">${esc(first)}'s share</th><th class="num">Effect</th><th class="num">Running</th></tr></thead>
+          <tbody>${lines}</tbody></table></div>` : '<div class="empty">No paid bills or settlements involve this person yet.</div>'}</div>`,
+    });
+  }
+
   /** Log a payment straight from an expense: pick the month, who paid, how much. */
   function openLogPaymentForm(expId) {
     const d = S.db, e = expense(expId);
@@ -931,6 +979,7 @@
     pay: (el) => openPayForm(el.dataset.exp, el.dataset.period, el.dataset.pay),
     'add-expense': () => openExpenseForm(),
     'log-payment': (el) => openLogPaymentForm(el.dataset.id),
+    'person-ledger': (el) => openLedger(el.dataset.id),
     'add-onetime': () => openExpenseForm(null, { frequency: 'One-time', startDate: (S.period === C.todayISO().slice(0, 7) ? C.todayISO() : S.period + '-01') }),
     'edit-expense': (el) => openExpenseForm(el.dataset.id),
     'del-expense': (el) => deleteExpense(el.dataset.id),

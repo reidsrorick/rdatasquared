@@ -207,6 +207,51 @@
     return rows;
   }
 
+  /**
+   * Line-item breakdown for one person: every paid bill they paid or share, and every settlement
+   * they sent/received, with a running balance, plus a net position against each other person.
+   * entries[].delta = what they paid - their share (bills), or +sent / -received (settlements).
+   * pairs[].amount > 0 means that person owes `personId`; < 0 means `personId` owes them.
+   */
+  function ledger(db, personId, residenceId) {
+    const entries = [];
+    const pair = {};
+    const addPair = (id, cents) => { pair[id] = (pair[id] || 0) + cents; };
+
+    db.payments.forEach((p) => {
+      if (p.status !== 'Paid') return;
+      const e = db.expenses.find((x) => x.id === p.expenseId);
+      if (!e || !inScope(db, residenceId, e)) return;
+      const payer = p.paidById || e.paidById;
+      if (!payer) return;
+      const split = splitAmounts(db, e, p.amount);
+      const mine = split.find((s) => s.personId === personId);
+      if (payer !== personId && !mine) return; // not involved in this bill
+      const share = mine ? mine.amount : 0;
+      if (payer === personId) split.forEach((s) => { if (s.personId !== personId) addPair(s.personId, Math.round(s.amount * 100)); });
+      else addPair(payer, -Math.round(share * 100));
+      const paid = payer === personId ? p.amount : 0;
+      entries.push({
+        kind: 'bill', date: p.paidDate || p.period + '-01', period: p.period, expense: e, payment: p,
+        total: p.amount, payerId: payer, share, split, delta: (Math.round(paid * 100) - Math.round(share * 100)) / 100,
+      });
+    });
+
+    db.settlements.forEach((s) => {
+      if (residenceId && residenceId !== 'all' && s.residenceId !== residenceId) return;
+      if (s.fromId !== personId && s.toId !== personId) return;
+      const sent = s.fromId === personId;
+      addPair(sent ? s.toId : s.fromId, (sent ? 1 : -1) * Math.round(s.amount * 100));
+      entries.push({ kind: 'settlement', date: s.date, settlement: s, total: s.amount, payerId: s.fromId, toId: s.toId, share: 0, delta: sent ? s.amount : -s.amount });
+    });
+
+    entries.sort((a, b) => a.date.localeCompare(b.date));
+    let run = 0;
+    entries.forEach((en) => { run += Math.round(en.delta * 100); en.running = run / 100; });
+    const pairs = Object.keys(pair).filter((id) => pair[id] !== 0).map((id) => ({ personId: id, amount: pair[id] / 100 })).sort((a, b) => b.amount - a.amount);
+    return { entries, pairs, net: run / 100 };
+  }
+
   /** Minimal "who pays whom" list from net balances. */
   function simplifyDebts(rows) {
     const cr = rows.filter((r) => r.net > 0.004).map((r) => ({ id: r.personId, c: Math.round(r.net * 100) })).sort((a, b) => b.c - a.c);
@@ -248,6 +293,6 @@
   RT.calc = {
     todayISO, isoOf, daysInMonth, addMonths, addMonthsISO, addDaysISO, monthsBetween,
     isScheduled, dueDateFor, participants, splitAmounts,
-    billsForPeriod, periodSummary, balances, simplifyDebts, trend, monthlyEquivalent,
+    billsForPeriod, periodSummary, balances, ledger, simplifyDebts, trend, monthlyEquivalent,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
