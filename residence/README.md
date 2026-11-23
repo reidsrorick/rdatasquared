@@ -21,6 +21,8 @@ Then **Create new workbook** (or **Open workbook…** for an existing one). The 
 | Balances | Net position per person, suggested settle-up, history of settlements |
 | People / Residences | Who is in the group; each home, its tenure (Renting/Mortgage/Owned) and residents |
 
+**Log a payment:** every row on the Expenses screen has a **Log payment** button. Pick who paid, the amount, and which month it covers; the form shows who owes whom (e.g. you pay the full rent → your roommate owes you their share) and Balances update immediately. You can also record payments from the Bills screen.
+
 **Expense list:** the Expenses screen has *Your expense list* (new workbooks start with just Rent, Water, Electric and Wi-Fi; add, edit or remove items freely — stored in the `ExpenseTypes` sheet). In **Add expense** pick one under *Start from* to pre-fill it, or leave it as **Ad hoc** and type your own (tick *Save to my expense list* to keep it). Every expense is labelled **Fixed** (same every month) or **Variable** (changes; the amount is an estimate until you record the real bill).
 
 **Splitting** is per expense, and amounts are cent-exact:

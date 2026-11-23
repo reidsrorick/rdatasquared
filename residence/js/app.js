@@ -346,6 +346,14 @@
           <td class="row-actions">${payBtn(b)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No bills for this month.</div>'}</div></div>`;
   }
 
+  function lastPaidNote(e) {
+    const last = S.db.payments.filter((p) => p.expenseId === e.id && p.status === 'Paid')
+      .sort((a, b) => (b.paidDate || b.period).localeCompare(a.paidDate || a.period))[0];
+    if (!last) return '<div class="hint">No payments logged yet</div>';
+    const who = person(last.paidById);
+    return `<div class="hint">Last paid ${esc(fmtDate(last.paidDate || last.period + '-01', true))}${who ? ' by ' + esc(who.name.split(' ')[0]) : ''} · ${esc(money(last.amount))}</div>`;
+  }
+
   function splitSummary(e) {
     const parts = C.participants(S.db, e);
     if (!parts.length) return '<span class="muted">nobody</span>';
@@ -375,12 +383,12 @@
           <div class="tablewrap">${es.length ? `<table>
             <thead><tr><th>Expense</th><th class="num">Amount</th><th>Frequency</th><th>Paid by</th><th>Split</th><th></th></tr></thead>
             <tbody>${es.map((e) => `<tr class="${e.active ? '' : 'inactive'}">
-              <td><b>${esc(e.name)}</b><div class="muted">${esc(e.category || '')}${e.active ? '' : ' · inactive'}</div></td>
+              <td><b>${esc(e.name)}</b><div class="muted">${esc(e.category || '')}${e.active ? '' : ' · inactive'}</div>${lastPaidNote(e)}</td>
               <td class="num">${money(e.amount)}${e.variable ? '<div class="hint">estimate</div>' : ''}<div>${kindBadge(e)}</div></td>
               <td>${esc(e.frequency)}<div class="muted">${e.frequency === 'One-time' ? esc(fmtDate(e.startDate, true)) : 'day ' + (e.dueDay || (e.startDate ? +e.startDate.slice(8) : 1))}</div></td>
               <td>${personTag(e.paidById)}</td>
               <td>${splitSummary(e)}</td>
-              <td class="row-actions">${iconBtn('edit-expense', 'edit', 'Edit', `data-id="${esc(e.id)}"`)}${iconBtn('del-expense', 'trash', 'Delete', `data-id="${esc(e.id)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No expenses yet.</div>'}</div></section>`;
+              <td class="row-actions">${btn('log-payment', 'Log payment', 'check', 'sm primary', `data-id="${esc(e.id)}"`)}${iconBtn('edit-expense', 'edit', 'Edit', `data-id="${esc(e.id)}"`)}${iconBtn('del-expense', 'trash', 'Delete', `data-id="${esc(e.id)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No expenses yet.</div>'}</div></section>`;
       }).join('')}
       ${expenseListCard()}`;
   }
@@ -794,6 +802,65 @@
     });
   }
 
+  /** Log a payment straight from an expense: pick the month, who paid, how much. */
+  function openLogPaymentForm(expId) {
+    const d = S.db, e = expense(expId);
+    const today = C.todayISO(), cur = today.slice(0, 7);
+    const isPaid = (p) => d.payments.some((x) => x.expenseId === e.id && x.period === p && x.status === 'Paid');
+    // default month: the oldest scheduled month in the last 3 that is still unpaid, else this month
+    let period = e.frequency === 'One-time' && e.startDate ? e.startDate.slice(0, 7) : cur;
+    for (let i = -3; i <= 0 && e.frequency !== 'One-time'; i++) {
+      const p = C.addMonths(cur, i);
+      if (C.isScheduled(e, p) && !isPaid(p)) { period = p; break; }
+    }
+    const billedFor = (p) => d.payments.find((x) => x.expenseId === e.id && x.period === p && x.status === 'Billed');
+    const b0 = billedFor(period);
+    openModal({
+      title: `Log a payment · ${e.name}`,
+      body: `<p class="muted" style="margin:0">${esc(residence(e.residenceId) ? residence(e.residenceId).name : '')} · ${esc(e.frequency)} ${e.variable ? '(variable)' : '(fixed)'}</p>
+        <div class="form-grid">
+          ${field('Who paid', `<select name="paidById" required>${personOptions(e.paidById, '— choose —')}</select>`)}
+          ${field('Amount paid', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(b0 ? b0.amount : e.amount)}">`, '', e.variable ? 'Variable — enter the actual amount.' : '')}
+          ${field('For month', `<input type="month" name="period" required pattern="\\d{4}-\\d{2}" value="${period}">`, '', 'Which month this payment covers.')}
+          ${field('Paid on', `<input type="date" name="paidDate" required value="${today}">`)}
+          ${field('Note', `<input name="note">`, 'full')}</div>
+        <div id="logHint" class="hint"></div>
+        <div id="owes" class="callout info"></div>`,
+      onOpen: (form) => {
+        let touched = false;
+        const upd = () => {
+          const amount = num(form.amount.value), payer = form.paidById.value, p = form.period.value;
+          const lines = C.splitAmounts(d, e, amount).filter((s) => s.personId !== payer && s.amount > 0.004)
+            .map((s) => `<b>${esc((person(s.personId) || { name: '?' }).name)}</b> owes <b>${esc((person(payer) || { name: 'the payer' }).name)}</b> ${esc(money(s.amount))}`);
+          $('#owes', form).innerHTML = payer ? (lines.length ? lines.join('<br>') : 'Nobody else owes anything for this one.') : 'Choose who paid to see who owes whom.';
+          const paid = d.payments.filter((x) => x.expenseId === e.id && x.period === p && x.status === 'Paid');
+          $('#logHint', form).textContent = paid.length ? `Already logged for ${periodLabel(p)}: ${paid.map((x) => money(x.amount)).join(' + ')}. Saving adds another payment.`
+            : billedFor(p) ? 'A billed amount exists for this month; saving marks it as paid.'
+            : (!C.isScheduled(e, p) ? 'This expense is not scheduled for that month; it will be logged anyway.' : '');
+        };
+        form.addEventListener('input', (ev) => { if (ev.target.name === 'amount') touched = true; upd(); });
+        form.addEventListener('change', (ev) => {
+          if (ev.target.name === 'period' && !touched && /^\d{4}-\d{2}$/.test(form.period.value)) { const b = billedFor(form.period.value); form.amount.value = b ? b.amount : e.amount; }
+          upd();
+        });
+        upd();
+      },
+      onSubmit: (fd) => {
+        const p = fd.get('period');
+        if (!/^\d{4}-\d{2}$/.test(p)) { toast('Pick a month like 2026-11.', 'err'); return false; }
+        const amount = round2(num(fd.get('amount'))), payerId = fd.get('paidById');
+        const owedLines = C.splitAmounts(S.db, e, amount).filter((s) => s.personId !== payerId && s.amount > 0.004);
+        commit((db) => {
+          let rec = db.payments.find((x) => x.expenseId === e.id && x.period === p && x.status === 'Billed');
+          if (!rec) { rec = { id: store.uid('pay'), expenseId: e.id, period: p }; db.payments.push(rec); }
+          Object.assign(rec, { amount, status: 'Paid', paidById: payerId, paidDate: fd.get('paidDate'), note: fd.get('note').trim() });
+        });
+        const payerName = (person(payerId) || { name: '?' }).name.split(' ')[0];
+        toast(owedLines.length ? `Logged ${money(amount)} paid by ${payerName}. ` + owedLines.map((s) => `${(person(s.personId) || { name: '?' }).name.split(' ')[0]} owes ${payerName} ${money(s.amount)}`).join('; ') + '.' : `Logged ${money(amount)} paid by ${payerName}.`, 'ok');
+      },
+    });
+  }
+
   function openSettlementForm(pre = {}) {
     const d = S.db;
     if (d.people.length < 2) { toast('You need at least two people to record a settlement.', 'err'); return; }
@@ -863,6 +930,7 @@
     'set-period': (el) => { S.period = el.dataset.period; render(); },
     pay: (el) => openPayForm(el.dataset.exp, el.dataset.period, el.dataset.pay),
     'add-expense': () => openExpenseForm(),
+    'log-payment': (el) => openLogPaymentForm(el.dataset.id),
     'add-onetime': () => openExpenseForm(null, { frequency: 'One-time', startDate: (S.period === C.todayISO().slice(0, 7) ? C.todayISO() : S.period + '-01') }),
     'edit-expense': (el) => openExpenseForm(el.dataset.id),
     'del-expense': (el) => deleteExpense(el.dataset.id),
