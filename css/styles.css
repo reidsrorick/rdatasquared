@@ -124,8 +124,15 @@ main { flex: 1; }
   color: var(--text);
   text-decoration: none;
 }
-.brand-mark { display: inline-block; transition: transform .3s; }
-.brand:hover .brand-mark { transform: rotate(-18deg) scale(1.2); }
+.brand-logo {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  box-shadow: 0 0 0 1px var(--border);
+  transition: transform .3s;
+}
+.brand:hover .brand-logo { transform: rotate(-8deg) scale(1.08); }
 
 .nav { display: flex; align-items: center; gap: 4px; }
 .nav-link {
@@ -392,7 +399,7 @@ main { flex: 1; }
   html { scroll-behavior: auto; }
   .blob, .ticker-track { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
-  .card, .btn, .brand-mark, .rotator-word { transition: none; }
+  .card, .btn, .brand-logo, .rotator-word { transition: none; }
   .card:hover, .card:nth-child(even):hover,
   .card.reveal.in:hover, .card.reveal.in:nth-child(even):hover { transform: none; }
   .card:hover .card-icon { animation: none; }

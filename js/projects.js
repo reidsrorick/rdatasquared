@@ -8,7 +8,6 @@
 
 window.SITE = {
   name: "R Data Squared",
-  brandEmoji: "⚡",
   eyebrow: "Hello, world 👋",
   heroPrefix: "I build small apps that",
   // These rotate in the headline

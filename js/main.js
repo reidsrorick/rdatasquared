@@ -44,7 +44,6 @@
     var name = SITE.name || "Portfolio";
     document.title = name + " | Portfolio";
     $("site-name").textContent = name;
-    $("brand-mark").textContent = SITE.brandEmoji || "⚡";
     $("hero-eyebrow").textContent = SITE.eyebrow || "";
     $("hero-prefix").textContent = SITE.heroPrefix || "";
     $("hero-tagline").textContent = SITE.tagline || "";
