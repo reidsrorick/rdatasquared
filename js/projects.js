@@ -35,11 +35,6 @@ window.SITE = {
     ]
   },
 
-  outro: {
-    title: "Want to see more?",
-    text: "There's plenty more where these came from."
-  },
-
   footer: "Made with plain HTML, CSS and JS."
 };
 

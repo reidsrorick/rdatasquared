@@ -51,16 +51,11 @@
     $("footer-text").textContent = SITE.footer || "";
 
     var ghUrl = SITE.github && safeUrl(SITE.github);
-    ["github-link", "hero-github", "outro-github"].forEach(function (id) {
+    ["github-link", "hero-github"].forEach(function (id) {
       var a = $(id);
       if (ghUrl) a.href = ghUrl;
       else a.hidden = true;
     });
-
-    if (SITE.outro) {
-      $("outro-title").textContent = SITE.outro.title || "";
-      $("outro-text").textContent = SITE.outro.text || "";
-    }
 
     if (SITE.about) {
       $("about-title").textContent = SITE.about.title || "";

@@ -354,18 +354,6 @@ main { flex: 1; }
 .principle h3 { margin: 0 0 6px; font-size: 1.1rem; }
 .principle p { margin: 0; color: var(--muted); font-size: .95rem; }
 
-/* ---------- Outro ---------- */
-.outro {
-  text-align: center;
-  padding: 54px 24px;
-  border-radius: 28px;
-  color: #fff;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
-}
-.outro h2 { margin: 0 0 8px; font-size: clamp(1.7rem, 4.5vw, 2.4rem); letter-spacing: -.02em; }
-.outro p { margin: 0 0 22px; opacity: .92; font-size: 1.1rem; }
-.outro .btn { background: #fff; border-color: #fff; color: #1d1b19; }
-
 /* ---------- Footer ---------- */
 .site-footer {
   margin-top: 72px;
