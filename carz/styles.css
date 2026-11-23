@@ -160,11 +160,7 @@ h1, h2, h3 { margin: 0; }
 }
 .car-list li:hover { border-color: var(--accent); transform: translateY(-1px); }
 .car-list li.active { border-color: var(--accent); background: var(--accent-soft); }
-.car-list .avatar {
-  flex: none; width: 38px; height: 38px; display: grid; place-items: center;
-  border-radius: 10px; background: var(--accent-soft); font-size: 18px;
-}
-.car-list li.active .avatar { background: var(--surface); }
+.car-list .avatar { flex: none; }
 .car-list .car-text { min-width: 0; flex: 1 1 auto; }
 .car-list .car-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .car-list .car-sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -188,6 +184,9 @@ h1, h2, h3 { margin: 0; }
     radial-gradient(900px 200px at 0% 0%, var(--accent-soft), transparent 70%),
     var(--surface);
 }
+.car-header { justify-content: flex-start; }
+.car-header .header-text { flex: 1 1 200px; min-width: 0; }
+.car-header .plate { margin-left: auto; }
 .car-header h2 { font-size: 26px; letter-spacing: -.02em; line-height: 1.2; }
 .car-header .subtitle { color: var(--muted); margin-top: 2px; }
 .car-header .vin { margin-top: 8px; font: 12.5px ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--muted); letter-spacing: .06em; }
@@ -354,3 +353,34 @@ table.log { width: 100%; border-collapse: collapse; min-width: 760px; }
 /* VIN lookup row */
 .vin-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 28px; }
 .vin-row .hint { flex: 1; }
+
+/* ---------- Make logo tiles ---------- */
+.logo {
+  flex: none; width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  background: #ffffff;                       /* white tile so dark logos stay visible in dark mode */
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(20, 30, 60, .08);
+  font-size: 18px; overflow: hidden;
+}
+.logo svg { width: 62%; height: 62%; }
+.logo.mono { background: var(--accent-soft); color: var(--accent); font-weight: 800; font-size: 14px; letter-spacing: .02em; border-color: transparent; }
+.logo.plain { background: var(--accent-soft); border-color: transparent; }
+.logo.lg { width: 64px; height: 64px; border-radius: 16px; font-size: 26px; }
+.logo.lg.mono { font-size: 20px; }
+
+/* ---------- Auto-fill from VIN button ---------- */
+.lookup-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 7px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  padding: 6px 14px 6px 11px; border-radius: 999px;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  cursor: pointer;
+  transition: background .12s, color .12s, transform .05s, box-shadow .12s;
+}
+.lookup-btn:hover { background: var(--accent); color: var(--accent-text); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent); }
+.lookup-btn:active { transform: translateY(1px); }
+.lookup-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lookup-ico { font-size: 13px; line-height: 1; }

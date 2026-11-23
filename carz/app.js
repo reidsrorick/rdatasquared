@@ -13,6 +13,32 @@
   const NHTSA = 'https://vpic.nhtsa.dot.gov/api/vehicles';   // free US government VIN / model data, no key needed
   const COMMON_MAKES = ['Acura', 'Alfa Romeo', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Fiat', 'Ford', 'Genesis', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jaguar', 'Jeep', 'Kia', 'Land Rover', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mercury', 'Mini', 'Mitsubishi', 'Nissan', 'Pontiac', 'Polestar', 'Porsche', 'Ram', 'Rivian', 'Saab', 'Saturn', 'Scion', 'Subaru', 'Suzuki', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'];
   const COMMON_COLORS = ['Black', 'White', 'Pearl White', 'Silver', 'Gray', 'Charcoal', 'Blue', 'Dark Blue', 'Red', 'Maroon', 'Green', 'Dark Green', 'Brown', 'Beige', 'Tan', 'Gold', 'Orange', 'Yellow', 'Purple'];
+  // Common trims by make|model (lowercase) - suggestions only, you can type anything
+  const TRIMS = {
+    'toyota|tacoma': ['SR', 'SR5', 'TRD Sport', 'TRD Off-Road', 'Limited', 'TRD Pro', 'Trail Edition', 'Nightshade', '1794 Edition'],
+    'toyota|tundra': ['SR', 'SR5', 'Limited', 'Platinum', '1794 Edition', 'TRD Pro', 'Capstone'],
+    'toyota|4runner': ['SR5', 'SR5 Premium', 'TRD Sport', 'TRD Off-Road', 'TRD Off-Road Premium', 'Limited', 'TRD Pro', 'Venture'],
+    'toyota|camry': ['L', 'LE', 'SE', 'XLE', 'XSE', 'TRD'],
+    'toyota|corolla': ['L', 'LE', 'SE', 'XSE', 'Nightshade'],
+    'toyota|rav4': ['LE', 'XLE', 'XLE Premium', 'Adventure', 'TRD Off-Road', 'Limited', 'Woodland'],
+    'toyota|highlander': ['L', 'LE', 'XLE', 'Limited', 'Platinum', 'Bronze Edition'],
+    'ford|f-150': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited', 'Tremor', 'Raptor'],
+    'ford|mustang': ['EcoBoost', 'EcoBoost Premium', 'GT', 'GT Premium', 'Mach 1', 'Shelby GT500'],
+    'ford|explorer': ['Base', 'XLT', 'Limited', 'ST', 'Platinum', 'Timberline'],
+    'chevrolet|silverado 1500': ['WT', 'Custom', 'LT', 'RST', 'LTZ', 'High Country', 'ZR2'],
+    'chevrolet|colorado': ['WT', 'LT', 'Z71', 'ZR2'],
+    'honda|civic': ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Si', 'Type R'],
+    'honda|accord': ['LX', 'Sport', 'EX', 'EX-L', 'Touring'],
+    'honda|cr-v': ['LX', 'EX', 'EX-L', 'Sport', 'Touring'],
+    'tesla|model 3': ['Standard Range', 'Long Range', 'Performance', 'Rear-Wheel Drive'],
+    'tesla|model y': ['Standard Range', 'Long Range', 'Performance', 'Rear-Wheel Drive'],
+    'jeep|wrangler': ['Sport', 'Sport S', 'Sahara', 'Rubicon', 'Willys', 'Mojave'],
+    'ram|1500': ['Tradesman', 'Big Horn', 'Laramie', 'Rebel', 'Limited', 'TRX'],
+    'subaru|outback': ['Base', 'Premium', 'Limited', 'Onyx Edition', 'Wilderness', 'Touring'],
+    'subaru|crosstrek': ['Base', 'Premium', 'Sport', 'Limited', 'Wilderness'],
+    'nissan|frontier': ['S', 'SV', 'PRO-4X', 'PRO-X'],
+  };
+  const MAKE_ALIASES = { chevy: 'chevrolet', vw: 'volkswagen', mercedes: 'mercedesbenz', benz: 'mercedesbenz', mb: 'mercedesbenz', rangerover: 'landrover' };
   const DISPOSED = ['Sold', 'Traded In', 'Donated', 'Gifted', 'Scrapped', 'Lease Returned'];
   const STATUSES = ['For Sale', ...DISPOSED];   // blank = still owned
 
@@ -197,6 +223,36 @@
       payoff: n && validISO(c.firstPayment) ? addMonths(parseISO(c.firstPayment), n - 1) : null,
       interest: isFin && P != null && M != null && n ? Math.max(0, M * n - P) : null,
     };
+  }
+
+  // ---- Make logos (window.MAKE_LOGOS from logos.js); falls back to initials, then an emoji ----
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function makeLogo(make, size) {
+    const wrap = document.createElement('div');
+    wrap.className = 'logo' + (size === 'lg' ? ' lg' : '');
+    const name = String(make || '').trim();
+    if (!name) { wrap.classList.add('plain'); wrap.textContent = '🚘'; return wrap; }
+    let key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    key = MAKE_ALIASES[key] || key;
+    const logo = (window.MAKE_LOGOS || {})[key];
+    if (logo) {
+      const svg = document.createElementNS(SVGNS, 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', logo.n);
+      const path = document.createElementNS(SVGNS, 'path');
+      path.setAttribute('d', logo.d);
+      path.setAttribute('fill', logo.c);
+      svg.appendChild(path);
+      wrap.appendChild(svg);
+    } else {
+      wrap.classList.add('mono');
+      const initials = /^[A-Za-z]{2,4}$/.test(name) && name === name.toUpperCase()
+        ? name
+        : name.split(/\s+/).slice(0, 2).map(w => w[0]).join('');
+      wrap.textContent = initials.toUpperCase();
+    }
+    return wrap;
   }
 
   const blankItem = () => Object.fromEntries(MAINT_FIELDS.map(f => [f.key, '']));
@@ -495,7 +551,8 @@
     cars.forEach((c, i) => {
       const li = document.createElement('li');
       if (i === selected) li.classList.add('active');
-      li.innerHTML = '<div class="avatar">🚘</div><div class="car-text"><div class="car-name"></div><div class="car-sub"></div></div>';
+      li.innerHTML = '<div class="avatar"></div><div class="car-text"><div class="car-name"></div><div class="car-sub"></div></div>';
+      li.querySelector('.avatar').appendChild(makeLogo(c.make));
       li.querySelector('.car-name').textContent = carTitle(c);
       li.querySelector('.car-sub').textContent = carSub(c);
       li.classList.toggle('gone', isDisposed(c));
@@ -523,6 +580,7 @@
     // Header
     const sub = [car.year, car.make, car.model, car.trim].filter(has).join(' ');
     const left = document.createElement('div');
+    left.className = 'header-text';
     const titleRow = document.createElement('div'); titleRow.className = 'title-row';
     const h = document.createElement('h2'); h.textContent = carTitle(car);
     titleRow.appendChild(h);
@@ -536,7 +594,7 @@
     const subtitle = [car.nickname ? sub : '', car.color].filter(Boolean).join(' · ');
     if (subtitle) { const s = document.createElement('div'); s.className = 'subtitle'; s.textContent = subtitle; left.appendChild(s); }
     if (car.vin) { const v = document.createElement('div'); v.className = 'vin'; v.innerHTML = '<b>VIN</b>'; v.append(car.vin); left.appendChild(v); }
-    el.header.replaceChildren(left);
+    el.header.replaceChildren(makeLogo(car.make, 'lg'), left);
     if (car.plate) {
       const p = document.createElement('div'); p.className = 'plate';
       if (car.plateState) { const st = document.createElement('div'); st.className = 'plate-state'; st.textContent = car.plateState; p.appendChild(st); }
@@ -636,6 +694,7 @@
       li.querySelector('.car-name').textContent = carTitle(car);
       li.querySelector('.car-sub').textContent = carSub(car);
       li.classList.toggle('gone', isDisposed(car));
+      li.querySelector('.avatar').replaceChildren(makeLogo(car.make));
     }
     updateSummaries(car);
   }
@@ -782,6 +841,7 @@
         if (isCompleteVin(v)) decodeVin(car, { overwrite: false });   // auto-fill blanks once the VIN is complete
       }
       if (f.key === 'make' || f.key === 'year') scheduleModelLoad(car);
+      if (f.key === 'make' || f.key === 'model') updateTrimList(car);
       if (isSelect) applyVisibility(car);
       renderSummary(car);
       scheduleSave();
@@ -793,7 +853,7 @@
       const row = document.createElement('div');
       row.className = 'vin-row';
       const btn = document.createElement('button');
-      btn.type = 'button'; btn.className = 'btn small'; btn.textContent = 'Look up make/model';
+      btn.type = 'button'; btn.className = 'lookup-btn'; btn.innerHTML = '<span class="lookup-ico">🔎</span>Auto-fill from VIN';
       btn.title = 'Fills in year, make, model and trim from the VIN (sends the VIN to the free NHTSA vehicle database)';
       btn.addEventListener('click', () => {
         if (!isCompleteVin(car.vin)) { hint.textContent = 'Enter the full 17-character VIN first'; return; }
@@ -875,9 +935,14 @@
     const used = k => cars.map(c => c[k]);
     fillList('dl_make', [...COMMON_MAKES, ...used('make')]);
     fillList('dl_color', [...COMMON_COLORS, ...used('color')]);
-    const sameModel = cars.filter(c => c.make === car.make && c.model === car.model);
-    fillList('dl_trim', [...sameModel.map(c => c.trim), extraTrim]);
+    updateTrimList(car, extraTrim);
     scheduleModelLoad(car, 0);
+  }
+
+  function updateTrimList(car, extraTrim) {
+    const sameModel = cars.filter(c => c.make === car.make && c.model === car.model);
+    const known = TRIMS[String(car.make || '').trim().toLowerCase() + '|' + String(car.model || '').trim().toLowerCase()] || [];
+    fillList('dl_trim', [...known, ...sameModel.map(c => c.trim), extraTrim]);
   }
 
   function scheduleModelLoad(car, delay = 400) {
@@ -1076,6 +1141,23 @@
   for (const t of document.querySelectorAll('.tab')) {
     t.addEventListener('click', () => { activeTab = t.dataset.tab; renderCarView(); });
   }
+  // Tab on a suggestion box accepts the first matching suggestion (native datalists don't do this)
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement) || !input.getAttribute('list')) return;
+    const typed = input.value.trim().toLowerCase();
+    if (!typed) return;
+    const dl = document.getElementById(input.getAttribute('list'));
+    if (!dl) return;
+    const opts = [...dl.options].map(o => o.value);
+    const match = opts.find(v => v.toLowerCase().startsWith(typed)) || opts.find(v => v.toLowerCase().includes(typed));
+    if (match && match !== input.value) {
+      input.value = match;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+
   window.addEventListener('beforeunload', e => {
     if (saveTimer && fileHandle) { e.preventDefault(); e.returnValue = ''; }
   });
