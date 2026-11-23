@@ -1,0 +1,866 @@
+/*
+ * app.js — UI, state, and wiring between the Excel file and the screen.
+ */
+(function () {
+  'use strict';
+  const { store, calc: C, FileLink } = RT;
+
+  /* ============================================================ state */
+
+  const S = {
+    db: null,
+    view: 'dashboard',
+    period: C.todayISO().slice(0, 7),
+    residenceId: 'all',
+    billFilter: 'all',
+    fileName: '',
+    needsPermission: false,
+    bootError: '',
+    save: 'idle',        // idle | dirty | saving | saved | error
+    saveError: '',
+    demo: false,
+  };
+
+  try {
+    const p = JSON.parse(localStorage.getItem('rt-prefs') || '{}');
+    if (p.view) S.view = p.view;
+    if (p.residenceId) S.residenceId = p.residenceId;
+  } catch (e) { /* storage unavailable */ }
+  const savePrefs = () => { try { localStorage.setItem('rt-prefs', JSON.stringify({ view: S.view, residenceId: S.residenceId })); } catch (e) { /* ignore */ } };
+
+  /* ========================================================== helpers */
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+  const round2 = (n) => Math.round(n * 100) / 100;
+
+  function money(n) {
+    const cur = (S.db && S.db.settings.currency) || 'USD';
+    try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(n); }
+    catch (e) { return cur + ' ' + n.toFixed(2); }
+  }
+  function fmtDate(iso, withYear) {
+    if (!iso) return '';
+    const d = new Date(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+    return d.toLocaleDateString(undefined, withYear ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' });
+  }
+  function periodLabel(p, short) {
+    const d = new Date(+p.slice(0, 4), +p.slice(5, 7) - 1, 1);
+    return d.toLocaleDateString(undefined, short ? { month: 'short' } : { month: 'long', year: 'numeric' });
+  }
+
+  const ICONS = {
+    dashboard: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
+    bills: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>',
+    expenses: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+    balances: '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+    people: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    residences: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>',
+    plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    edit: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+    trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+    refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    folder: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+    settings: '<path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/>',
+    left: '<path d="m15 18-6-6 6-6"/>',
+    right: '<path d="m9 18 6-6-6-6"/>',
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
+  };
+  const icon = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+  const btn = (act, label, ic, cls = '', data = '') => `<button class="btn ${cls}" data-act="${act}" ${data}>${ic ? icon(ic) : ''}${label ? esc(label) : ''}</button>`;
+  const iconBtn = (act, ic, title, data = '', cls = '') => `<button class="icon-btn ${cls}" data-act="${act}" title="${esc(title)}" aria-label="${esc(title)}" ${data}>${icon(ic)}</button>`;
+
+  const person = (id) => S.db.people.find((p) => p.id === id);
+  const residence = (id) => S.db.residences.find((r) => r.id === id);
+  const expense = (id) => S.db.expenses.find((e) => e.id === id);
+  const initials = (name) => (String(name).trim().split(/\s+/).map((w) => w[0] || '').slice(0, 2).join('') || '?').toUpperCase();
+  const avatar = (p, cls = '') => `<span class="avatar ${cls}" style="--c:${esc(p ? p.color : '#999')}" title="${esc(p ? p.name : '')}">${esc(p ? initials(p.name) : '?')}</span>`;
+  const personTag = (id) => { const p = person(id); return p ? `<span class="person">${avatar(p)}${esc(p.name)}</span>` : '<span class="muted">—</span>'; };
+  const chip = (p, text) => `<span class="chip">${avatar(p)}${esc(text)}</span>`;
+  const activePeople = () => S.db.people.filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name));
+  const scoped = (r) => S.residenceId === 'all' || r.residenceId === S.residenceId;
+
+  function toast(msg, kind = '') {
+    const el = document.createElement('div');
+    el.className = 'toast ' + kind;
+    el.textContent = msg;
+    $('#toasts').appendChild(el);
+    setTimeout(() => el.remove(), kind === 'err' ? 7000 : 3200);
+  }
+
+  /* ===================================================== persistence */
+
+  let saveTimer = null, saving = false, pending = false;
+
+  function setSave(state, err) {
+    S.save = state; S.saveError = err || '';
+    const el = $('#filechip');
+    if (el) el.outerHTML = fileChip();
+  }
+
+  function fileChip() {
+    let text, cls = S.save, click = '';
+    const nm = esc(S.fileName || 'Workbook');
+    if (S.demo) { text = 'Demo data — not saved'; cls = 'idle'; }
+    else if (!FileLink.linked) { text = S.save === 'dirty' ? `Unsaved changes · ${nm}` : `${nm} (not linked — download to save)`; cls = S.save === 'dirty' ? 'dirty' : 'idle'; }
+    else if (S.save === 'saving') text = 'Saving…';
+    else if (S.save === 'dirty') text = 'Unsaved changes…';
+    else if (S.save === 'error') { text = 'Save failed — click to retry'; click = 'data-act="retry-save"'; }
+    else { text = `Saved to ${nm}`; cls = 'saved'; }
+    return `<span id="filechip" class="filechip ${click ? 'clickable' : ''}" ${click} title="${esc(S.saveError || text)}"><span class="dot ${cls}"></span><span class="name">${text}</span></span>`;
+  }
+
+  function saveSoon() {
+    if (!FileLink.linked) { setSave('dirty'); return; }
+    setSave('dirty');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, 350);
+  }
+
+  async function flush() {
+    if (!FileLink.linked) return;
+    if (saving) { pending = true; return; }
+    saving = true;
+    setSave('saving');
+    try {
+      do { pending = false; await FileLink.write(S.db); } while (pending);
+      setSave('saved');
+    } catch (e) {
+      console.error(e);
+      const locked = /NoModification|NotAllowed|Security|busy|locked/i.test(e.name + ' ' + e.message);
+      setSave('error', locked ? 'Could not write to the file. If it is open in Excel, close it and click here to retry.' : e.message);
+      toast(locked ? 'Could not save: is the workbook open in Excel? Close it, then click the red status chip to retry.' : 'Could not save: ' + e.message, 'err');
+    } finally { saving = false; }
+  }
+
+  /** Apply a change to the db, persist it, re-render. */
+  function commit(mutator) {
+    mutator(S.db);
+    saveSoon();
+    render();
+  }
+
+  async function adoptFile() {
+    const db = await FileLink.read();
+    S.fileName = FileLink.name;
+    S.demo = false;
+    S.needsPermission = false;
+    if (db) {
+      S.db = db;
+      S.save = 'saved';
+      if (db._repaired) { delete db._repaired; saveSoon(); }
+    } else {
+      S.db = store.emptyDb();
+      await flush();
+    }
+    normalizeSelection();
+  }
+
+  function normalizeSelection() {
+    if (S.residenceId !== 'all' && !residence(S.residenceId)) S.residenceId = 'all';
+  }
+
+  async function reloadFromDisk(auto) {
+    if (!FileLink.linked) return;
+    try {
+      const db = await FileLink.read();
+      if (db) { S.db = db; delete db._repaired; normalizeSelection(); setSave('saved'); render(); }
+      toast(auto ? 'Workbook changed on disk — reloaded.' : 'Reloaded from workbook.', 'ok');
+    } catch (e) { toast('Could not read the workbook: ' + e.message, 'err'); }
+  }
+
+  function downloadCopy() {
+    const buf = store.serializeWorkbook(S.db);
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = S.fileName || 'Residence Tracker.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    if (!FileLink.linked && !S.demo) setSave('idle');
+  }
+
+  /* ============================================================ modal */
+
+  function openModal({ title, body, submit = 'Save', onSubmit, wide = false, danger = false, extra = '', actions = {}, onOpen }) {
+    const dlg = $('#modal');
+    dlg.className = wide ? 'wide' : '';
+    dlg.innerHTML = `
+      <form method="dialog" novalidate>
+        <header><h2>${esc(title)}</h2><button type="button" class="icon-btn" data-close aria-label="Close">✕</button></header>
+        <div class="modal-body">${body}</div>
+        <footer>${extra}<span class="spacer"></span>
+          <button type="button" class="btn" data-close>Cancel</button>
+          ${onSubmit ? `<button class="btn ${danger ? 'danger solid' : 'primary'}" type="submit">${esc(submit)}</button>` : ''}
+        </footer>
+      </form>`;
+    const form = $('form', dlg);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+      if (onSubmit && onSubmit(new FormData(form), form) !== false) dlg.close();
+    });
+    form.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close]')) { dlg.close(); return; }
+      const a = e.target.closest('[data-modal-action]');
+      if (a && actions[a.dataset.modalAction]) { if (actions[a.dataset.modalAction](form) !== false) dlg.close(); }
+    });
+    if (!dlg.open) dlg.showModal();
+    if (onOpen) onOpen(form);
+    const first = $('input:not([type=hidden]):not([type=checkbox]), select', form);
+    if (first && !first.value) first.focus();
+  }
+
+  function confirmBox(title, message, label, onYes) {
+    openModal({ title, body: `<p style="margin:0">${message}</p>`, submit: label, danger: true, onSubmit: () => { onYes(); } });
+  }
+
+  const field = (label, inner, cls = '', hint = '') => `<div class="field ${cls}"><label>${esc(label)}</label>${inner}${hint ? `<span class="hint">${hint}</span>` : ''}</div>`;
+  const options = (list, sel) => list.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(sel) ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  const personOptions = (sel, blank) => (blank ? `<option value="">${esc(blank)}</option>` : '') + options(S.db.people.filter((p) => p.active || p.id === sel).map((p) => [p.id, p.name]), sel);
+  const residenceOptions = (sel, blank) => (blank ? `<option value="">${esc(blank)}</option>` : '') + options(S.db.residences.map((r) => [r.id, r.name]), sel);
+
+  /* ============================================================ views */
+
+  function monthNav() {
+    return `<div class="monthnav">
+      ${iconBtn('prev-month', 'left', 'Previous month')}
+      <input type="month" id="monthInput" value="${S.period}" aria-label="Month">
+      ${iconBtn('next-month', 'right', 'Next month')}
+      ${btn('this-month', 'Today', '', 'sm ghost')}
+    </div>`;
+  }
+
+  function emptyOnboarding() {
+    const d = S.db;
+    return `<div class="card"><div class="body">
+      <h2>Let's get you set up</h2>
+      <ol class="steps">
+        <li><b>People</b> — ${d.people.length ? '✓ ' + d.people.length + ' added' : 'add everyone who shares expenses.'} ${!d.people.length ? btn('add-person', 'Add person', 'plus', 'sm') : ''}</li>
+        <li><b>Residence</b> — ${d.residences.length ? '✓ ' + d.residences.length + ' added' : 'an apartment or house, and who lives there.'} ${!d.residences.length ? btn('add-residence', 'Add residence', 'plus', 'sm') : ''}</li>
+        <li><b>Expenses</b> — rent / mortgage, water, wifi… and how each one is split. ${d.residences.length ? btn('add-expense', 'Add expense', 'plus', 'sm') : ''}</li>
+      </ol></div></div>`;
+  }
+
+  function billStatus(b) {
+    if (b.paid) return `<span class="badge paid">Paid${b.payment && b.payment.paidDate ? ' · ' + esc(fmtDate(b.payment.paidDate)) : ''}</span>`;
+    if (b.billed) return `<span class="badge billed">Billed</span>` + (b.state === 'overdue' ? ' <span class="badge overdue">Overdue</span>' : '');
+    return `<span class="badge ${b.state}">${{ overdue: 'Overdue', soon: 'Due soon', upcoming: 'Upcoming' }[b.state]}</span>`;
+  }
+  const payBtn = (b, label) => btn('pay', label || (b.paid ? 'Edit' : 'Pay'), b.paid ? 'edit' : 'check', b.paid ? 'sm ghost' : 'sm primary', `data-exp="${esc(b.expense.id)}" data-period="${b.period}" data-pay="${b.payment ? esc(b.payment.id) : ''}"`);
+
+  function dashboardView() {
+    const d = S.db;
+    if (!d.people.length || !d.residences.length || !d.expenses.length) return `<div class="pagehead"><h1>Dashboard</h1></div>${emptyOnboarding()}`;
+    const sum = C.periodSummary(d, S.period, S.residenceId);
+    const paidCount = sum.bills.filter((b) => b.paid).length;
+    const people = d.people.filter((p) => sum.byPerson[p.id] && (sum.byPerson[p.id].share > 0 || sum.byPerson[p.id].paid > 0));
+    const cats = Object.entries(sum.byCategory).sort((a, b) => b[1] - a[1]);
+    const catMax = cats.length ? cats[0][1] : 1;
+    const palette = RT.PALETTE;
+    const attention = sum.bills.filter((b) => !b.paid).slice(0, 7);
+    const plan = C.simplifyDebts(C.balances(d, S.residenceId)).slice(0, 4);
+    const tr = C.trend(d, S.period, S.residenceId, 12);
+
+    return `
+      <div class="pagehead"><h1>${esc(periodLabel(S.period))}</h1>${monthNav()}</div>
+      <div class="grid cols-4">
+        <div class="card stat"><div class="label">Total bills</div><div class="value">${money(sum.total)}</div><div class="sub">${sum.bills.length} bill${sum.bills.length === 1 ? '' : 's'}</div></div>
+        <div class="card stat"><div class="label">Paid</div><div class="value good">${money(sum.paid)}</div><div class="sub">${paidCount} of ${sum.bills.length} paid</div></div>
+        <div class="card stat"><div class="label">Outstanding</div><div class="value">${money(sum.outstanding)}</div><div class="sub">${sum.bills.length - paidCount} left to pay</div></div>
+        <div class="card stat"><div class="label">Overdue</div><div class="value ${sum.overdueCount ? 'bad' : ''}">${sum.overdueCount}</div><div class="sub">${sum.overdueCount ? 'needs attention' : 'all caught up'}</div></div>
+      </div>
+
+      <div class="grid cols-2">
+        <section class="card"><header><h2>Needs paying</h2><span class="spacer"></span>${btn('nav', 'All bills', '', 'sm ghost', 'data-view="bills"')}</header>
+          <div class="body" style="padding-top:6px">${attention.length ? `<div class="tablewrap"><table><tbody>${attention.map((b) => `
+            <tr><td><b>${esc(b.expense.name)}</b><div class="muted">Due ${esc(fmtDate(b.dueDate))}</div></td>
+            <td>${billStatus(b)}</td><td class="num">${money(b.amount)}</td><td class="row-actions">${payBtn(b)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Nothing outstanding this month 🎉</div>'}</div></section>
+
+        <section class="card"><header><h2>Settle up (all time${S.residenceId === 'all' ? '' : ', this residence'})</h2><span class="spacer"></span>${btn('nav', 'Balances', '', 'sm ghost', 'data-view="balances"')}</header>
+          <div class="body" style="padding-top:6px">${plan.length ? `<div class="tablewrap"><table><tbody>${plan.map((t) => `
+            <tr><td>${personTag(t.fromId)}</td><td class="muted">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Everyone is settled up.</div>'}</div></section>
+
+        <section class="card"><header><h2>This month by person</h2></header>
+          <div class="body" style="padding-top:6px">${people.length ? `<div class="tablewrap"><table>
+            <thead><tr><th>Person</th><th class="num">Share of bills</th><th class="num">Already paid out</th></tr></thead><tbody>${people.map((p) => `
+            <tr><td>${personTag(p.id)}</td><td class="num">${money(sum.byPerson[p.id].share)}</td><td class="num">${money(sum.byPerson[p.id].paid)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No bills this month.</div>'}</div></section>
+
+        <section class="card"><header><h2>By category</h2></header>
+          <div class="body">${cats.length ? `<div class="bars">${cats.map(([c, v], i) => `
+            <div class="bar-row"><div class="top"><span>${esc(c)}</span><span class="num">${money(v)}</span></div>
+            <div class="bar"><span style="width:${Math.max(2, (v / catMax) * 100)}%; --c:${palette[i % palette.length]}"></span></div></div>`).join('')}</div>` : '<div class="empty">No bills this month.</div>'}</div></section>
+      </div>
+
+      <section class="card"><header><h2>Last 12 months</h2><span class="spacer"></span><span class="hint">darker = paid</span></header>
+        <div class="body">${trendSvg(tr)}</div></section>`;
+  }
+
+  function trendSvg(tr) {
+    const W = 720, H = 150, padB = 22, padT = 6, n = tr.length, gap = 10;
+    const bw = (W - gap * (n - 1)) / n;
+    const max = Math.max(1, ...tr.map((t) => t.total));
+    const h = (v) => ((H - padB - padT) * v) / max;
+    return `<svg class="trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly totals">${tr.map((t, i) => {
+      const x = i * (bw + gap), y = H - padB - h(t.total), yp = H - padB - h(t.paid);
+      return `<g data-act="set-period" data-period="${t.period}" class="${t.period === S.period ? 't-sel' : ''}">
+        <title>${esc(periodLabel(t.period))}: ${esc(money(t.total))} (${esc(money(t.paid))} paid)</title>
+        <rect class="t-total" x="${x}" y="${y}" width="${bw}" height="${Math.max(0, h(t.total))}" rx="4"/>
+        <rect class="t-paid" x="${x}" y="${yp}" width="${bw}" height="${Math.max(0, h(t.paid))}" rx="4"/>
+        <text x="${x + bw / 2}" y="${H - 6}" ${t.period === S.period ? 'style="font-weight:700;fill:var(--text)"' : ''}>${esc(periodLabel(t.period, true))}</text></g>`;
+    }).join('')}</svg>`;
+  }
+
+  function billsView() {
+    const d = S.db;
+    const sum = C.periodSummary(d, S.period, S.residenceId);
+    let bills = sum.bills;
+    if (S.billFilter === 'unpaid') bills = bills.filter((b) => !b.paid);
+    if (S.billFilter === 'paid') bills = bills.filter((b) => b.paid);
+    return `
+      <div class="pagehead"><h1>Bills · ${esc(periodLabel(S.period))}</h1>${monthNav()}</div>
+      <div class="pagehead">
+        <select id="billFilter" aria-label="Filter">${options([['all', 'All bills'], ['unpaid', 'Unpaid'], ['paid', 'Paid']], S.billFilter)}</select>
+        <span class="muted">${money(sum.paid)} paid of ${money(sum.total)} · ${money(sum.outstanding)} outstanding</span>
+        <span class="spacer"></span>
+        ${btn('add-onetime', 'One-time bill', 'plus')}
+      </div>
+      <div class="card"><div class="tablewrap">${bills.length ? `<table>
+        <thead><tr><th>Due</th><th>Bill</th><th class="num">Amount</th><th>Split</th><th>Paid by</th><th>Status</th><th></th></tr></thead>
+        <tbody>${bills.map((b) => `<tr>
+          <td>${esc(fmtDate(b.dueDate))}</td>
+          <td><b>${esc(b.expense.name)}</b><div class="muted">${esc(b.expense.category || '')}${S.residenceId === 'all' && residence(b.expense.residenceId) ? ' · ' + esc(residence(b.expense.residenceId).name) : ''}</div></td>
+          <td class="num">${money(b.amount)}${!b.payment && b.expense.variable ? '<div class="hint">estimate</div>' : ''}</td>
+          <td><div class="chips">${b.split.map((s) => chip(person(s.personId), money(s.amount))).join('')}</div></td>
+          <td>${b.paid || b.paidById ? personTag(b.paidById) : '<span class="muted">—</span>'}</td>
+          <td>${billStatus(b)}</td>
+          <td class="row-actions">${payBtn(b)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No bills for this month.</div>'}</div></div>`;
+  }
+
+  function splitSummary(e) {
+    const parts = C.participants(S.db, e);
+    if (!parts.length) return '<span class="muted">nobody</span>';
+    const total = parts.reduce((a, p) => a + (e.splitMethod === 'Equal' ? 1 : Math.max(0, p.value)), 0) || parts.length;
+    return `<div class="chips">${parts.map((p) => {
+      const w = e.splitMethod === 'Equal' ? 1 : Math.max(0, p.value);
+      const label = e.splitMethod === 'Equal' ? '' : e.splitMethod === 'Percent' ? Math.round((w / total) * 100) + '%' : w + '×';
+      return chip(person(p.personId), (person(p.personId) || { name: '?' }).name.split(' ')[0] + (label ? ' ' + label : ''));
+    }).join('')}</div>`;
+  }
+
+  function expensesView() {
+    const d = S.db;
+    const list = d.expenses.filter(scoped);
+    const groups = d.residences.filter((r) => S.residenceId === 'all' || r.id === S.residenceId);
+    return `
+      <div class="pagehead"><h1>Expenses</h1>${btn('add-expense', 'Add expense', 'plus', 'primary')}</div>
+      <p class="muted" style="margin:0">Recurring costs and one-time bills, with how each is split. Monthly totals appear in <b>Bills</b>.</p>
+      ${!d.residences.length ? '<div class="card"><div class="empty">Add a residence first.</div></div>' : groups.map((r) => {
+        const es = list.filter((e) => e.residenceId === r.id);
+        const monthly = es.reduce((a, e) => a + C.monthlyEquivalent(e), 0);
+        return `<section class="card">
+          <div class="group-title"><h2>${esc(r.name)}</h2><span class="tag">${esc(r.tenure)}</span><span class="spacer"></span><span class="muted">≈ ${money(monthly)} / month</span></div>
+          <div class="tablewrap">${es.length ? `<table>
+            <thead><tr><th>Expense</th><th class="num">Amount</th><th>Frequency</th><th>Paid by</th><th>Split</th><th></th></tr></thead>
+            <tbody>${es.map((e) => `<tr class="${e.active ? '' : 'inactive'}">
+              <td><b>${esc(e.name)}</b><div class="muted">${esc(e.category || '')}${e.active ? '' : ' · inactive'}</div></td>
+              <td class="num">${money(e.amount)}${e.variable ? '<div class="hint">varies</div>' : ''}</td>
+              <td>${esc(e.frequency)}<div class="muted">${e.frequency === 'One-time' ? esc(fmtDate(e.startDate, true)) : 'day ' + (e.dueDay || (e.startDate ? +e.startDate.slice(8) : 1))}</div></td>
+              <td>${personTag(e.paidById)}</td>
+              <td>${splitSummary(e)}</td>
+              <td class="row-actions">${iconBtn('edit-expense', 'edit', 'Edit', `data-id="${esc(e.id)}"`)}${iconBtn('del-expense', 'trash', 'Delete', `data-id="${esc(e.id)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No expenses yet.</div>'}</div></section>`;
+      }).join('')}`;
+  }
+
+  function balancesView() {
+    const d = S.db;
+    const rows = C.balances(d, S.residenceId).filter((r) => person(r.personId) && (r.paid || r.owed || r.sent || r.received));
+    const plan = C.simplifyDebts(C.balances(d, S.residenceId));
+    const sets = d.settlements.filter((s) => S.residenceId === 'all' || s.residenceId === S.residenceId).sort((a, b) => b.date.localeCompare(a.date));
+    return `
+      <div class="pagehead"><h1>Balances</h1>${btn('add-settlement', 'Record payment', 'plus', 'primary')}</div>
+      <p class="muted" style="margin:0">Based on every bill marked <b>Paid</b>: whoever paid is owed by the others according to each bill's split.${S.residenceId === 'all' ? '' : ' Showing the selected residence only.'}</p>
+      <div class="grid cols-2">
+        <section class="card"><header><h2>Per person</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${rows.length ? `<table>
+          <thead><tr><th>Person</th><th class="num">Paid out</th><th class="num">Their share</th><th class="num">Settled</th><th class="num">Net</th></tr></thead>
+          <tbody>${rows.map((r) => `<tr><td>${personTag(r.personId)}</td><td class="num">${money(r.paid)}</td><td class="num">${money(r.owed)}</td>
+            <td class="num">${money(r.sent - r.received)}</td>
+            <td class="num"><b class="${r.net > 0.004 ? 'good' : r.net < -0.004 ? 'bad' : ''}">${r.net > 0 ? '+' : ''}${money(r.net)}</b><div class="hint">${r.net > 0.004 ? 'is owed' : r.net < -0.004 ? 'owes' : 'settled'}</div></td></tr>`).join('')}</tbody></table>` : '<div class="empty">No paid bills yet.</div>'}</div></div></section>
+        <section class="card"><header><h2>Suggested settle-up</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${plan.length ? `<table><tbody>${plan.map((t) => `
+          <tr><td>${personTag(t.fromId)}</td><td class="muted">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td>
+          <td class="row-actions">${btn('add-settlement', 'Record', 'check', 'sm', `data-from="${esc(t.fromId)}" data-to="${esc(t.toId)}" data-amount="${t.amount}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Everyone is settled up.</div>'}</div></div></section>
+      </div>
+      <section class="card"><header><h2>Settlement history</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${sets.length ? `<table>
+        <thead><tr><th>Date</th><th>From</th><th>To</th><th>Residence</th><th class="num">Amount</th><th>Note</th><th></th></tr></thead>
+        <tbody>${sets.map((s) => `<tr><td>${esc(fmtDate(s.date, true))}</td><td>${personTag(s.fromId)}</td><td>${personTag(s.toId)}</td>
+          <td>${residence(s.residenceId) ? esc(residence(s.residenceId).name) : '<span class="muted">All</span>'}</td><td class="num">${money(s.amount)}</td><td>${esc(s.note)}</td>
+          <td class="row-actions">${iconBtn('del-settlement', 'trash', 'Delete', `data-id="${esc(s.id)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No settlements recorded.</div>'}</div></div></section>`;
+  }
+
+  function peopleView() {
+    const d = S.db;
+    return `
+      <div class="pagehead"><h1>People</h1>${btn('add-person', 'Add person', 'plus', 'primary')}</div>
+      <div class="card"><div class="tablewrap">${d.people.length ? `<table>
+        <thead><tr><th>Name</th><th>Email</th><th>Lives at</th><th>Status</th><th></th></tr></thead>
+        <tbody>${d.people.map((p) => {
+          const homes = d.residents.filter((r) => r.personId === p.id).map((r) => residence(r.residenceId)).filter(Boolean);
+          return `<tr class="${p.active ? '' : 'inactive'}"><td><span class="person">${avatar(p, 'lg')}<b>${esc(p.name)}</b></span></td><td>${esc(p.email)}</td>
+            <td>${homes.map((h) => `<span class="tag">${esc(h.name)}</span>`).join(' ') || '<span class="muted">—</span>'}</td>
+            <td>${p.active ? 'Active' : 'Inactive'}</td>
+            <td class="row-actions">${iconBtn('edit-person', 'edit', 'Edit', `data-id="${esc(p.id)}"`)}${iconBtn('del-person', 'trash', 'Delete', `data-id="${esc(p.id)}"`)}</td></tr>`;
+        }).join('')}</tbody></table>` : '<div class="empty">No people yet.</div>'}</div></div>`;
+  }
+
+  function residencesView() {
+    const d = S.db;
+    return `
+      <div class="pagehead"><h1>Residences</h1>${btn('add-residence', 'Add residence', 'plus', 'primary')}</div>
+      ${d.residences.length ? `<div class="grid cards">${d.residences.map((r) => {
+        const members = d.residents.filter((x) => x.residenceId === r.id).map((x) => person(x.personId)).filter(Boolean);
+        const monthly = d.expenses.filter((e) => e.residenceId === r.id).reduce((a, e) => a + C.monthlyEquivalent(e), 0);
+        return `<article class="card"><div class="body">
+          <div style="display:flex;gap:8px;align-items:center"><h2 style="font-size:17px">${esc(r.name)}</h2><span class="spacer"></span>${iconBtn('edit-residence', 'edit', 'Edit', `data-id="${esc(r.id)}"`)}${iconBtn('del-residence', 'trash', 'Delete', `data-id="${esc(r.id)}"`)}</div>
+          <div style="margin:6px 0 10px"><span class="tag">${esc(r.type)}</span> <span class="tag">${esc(r.tenure)}</span>${r.endDate ? ' <span class="tag">ended</span>' : ''}</div>
+          ${r.address ? `<div class="muted">${esc(r.address)}</div>` : ''}
+          <div class="muted">${r.startDate ? 'Since ' + esc(fmtDate(r.startDate, true)) : ''}${r.endDate ? ' → ' + esc(fmtDate(r.endDate, true)) : ''}</div>
+          <div style="margin:12px 0 4px" class="chips">${members.map((p) => chip(p, p.name)).join('') || '<span class="muted">No residents yet</span>'}</div>
+          <div style="margin-top:10px"><span class="muted">Recurring costs ≈</span> <b class="num">${money(monthly)}</b> <span class="muted">/ month</span></div>
+          ${r.notes ? `<div class="hint" style="margin-top:8px">${esc(r.notes)}</div>` : ''}
+        </div></article>`;
+      }).join('')}</div>` : '<div class="card"><div class="empty">No residences yet.</div></div>'}`;
+  }
+
+  /* ----------------------------------------------------------- shell */
+
+  const NAV = [['dashboard', 'Dashboard'], ['bills', 'Bills'], ['expenses', 'Expenses'], ['balances', 'Balances'], ['people', 'People'], ['residences', 'Residences']];
+
+  function shell() {
+    const d = S.db;
+    const views = { dashboard: dashboardView, bills: billsView, expenses: expensesView, balances: balancesView, people: peopleView, residences: residencesView };
+    if (!views[S.view]) S.view = 'dashboard';
+    return `
+      <header class="topbar">
+        <div class="brand">${icon('home')}Residence Tracker</div>
+        <select id="resSelect" aria-label="Residence">${options([['all', 'All residences'], ...d.residences.map((r) => [r.id, r.name])], S.residenceId)}</select>
+        <span class="spacer"></span>
+        ${fileChip()}
+        ${FileLink.linked ? btn('reload', 'Reload', 'refresh', 'sm') : ''}
+        ${btn('download', 'Download .xlsx', 'download', 'sm' + (!FileLink.linked && S.save === 'dirty' ? ' attn' : ''))}
+        ${btn('open-file', FileLink.linked ? 'Switch file' : 'Open file', 'folder', 'sm')}
+      </header>
+      <div class="layout">
+        <nav class="nav" aria-label="Sections">
+          ${NAV.map(([k, l]) => `<button class="${S.view === k ? 'active' : ''}" data-act="nav" data-view="${k}">${icon(k)}${l}</button>`).join('')}
+          <hr>
+          <button data-act="settings">${icon('settings')}Settings</button>
+        </nav>
+        <main>${views[S.view]()}</main>
+      </div>`;
+  }
+
+  function welcomeView() {
+    const fs = FileLink.supported();
+    return `<div class="welcome">
+      <div class="card hero">
+        <div class="brand" style="font-size:20px">${icon('home')}Residence Tracker</div>
+        <h1>Your home expenses, kept in an Excel file you own.</h1>
+        <p class="muted" style="margin:0">Track rent or mortgage, utilities, wifi and more across apartments and houses. Split each bill between people and see who owes whom. Every change is saved straight into your <b>.xlsx</b> workbook — and edits you make in Excel show up here.</p>
+        ${S.bootError ? `<div class="callout err">${esc(S.bootError)}</div>` : ''}
+        ${S.needsPermission ? `<div class="callout info">Reconnect to <b>${esc(FileLink.name)}</b>: your browser needs your OK to access it again.<div style="margin-top:8px">${btn('reconnect', 'Reconnect ' + FileLink.name, 'folder', 'primary')}</div></div>` : ''}
+        <div class="actions">
+          ${btn('open-file', 'Open workbook…', 'folder', 'primary')}
+          ${btn('create-file', 'Create new workbook', 'plus')}
+          ${btn('create-sample', 'Start with sample data', '', 'ghost')}
+        </div>
+        ${fs ? '' : '<div class="callout">This browser can’t write to files directly. You can still open a workbook, edit, and use <b>Download .xlsx</b> to save. For automatic saving into the file, use Chrome or Edge.</div>'}
+      </div>
+    </div>`;
+  }
+
+  function render() {
+    const y = window.scrollY;
+    $('#app').innerHTML = S.db ? shell() : welcomeView();
+    window.scrollTo(0, y);
+  }
+
+  /* ========================================================== forms */
+
+  function openPersonForm(id) {
+    const p = id ? person(id) : { name: '', email: '', color: RT.PALETTE[S.db.people.length % RT.PALETTE.length], active: true };
+    openModal({
+      title: id ? 'Edit person' : 'Add person',
+      body: `<div class="form-grid">
+        ${field('Name', `<input name="name" required value="${esc(p.name)}">`, 'full')}
+        ${field('Email (optional)', `<input name="email" type="email" value="${esc(p.email)}">`)}
+        ${field('Color', `<input name="color" type="color" value="${esc(p.color)}">`)}
+        <label class="check full"><input type="checkbox" name="active" ${p.active ? 'checked' : ''}> Active (shows up in new splits)</label></div>`,
+      onSubmit: (fd) => {
+        commit((db) => {
+          const rec = id ? db.people.find((x) => x.id === id) : { id: store.uid('p') };
+          Object.assign(rec, { name: fd.get('name').trim(), email: fd.get('email').trim(), color: fd.get('color'), active: fd.get('active') === 'on' });
+          if (!id) db.people.push(rec);
+        });
+      },
+    });
+  }
+
+  function deletePerson(id) {
+    const p = person(id), d = S.db;
+    const used = d.payments.some((x) => x.paidById === id) || d.settlements.some((s) => s.fromId === id || s.toId === id) || d.expenses.some((e) => e.paidById === id);
+    if (used) {
+      openModal({
+        title: 'Cannot delete ' + p.name,
+        body: `<p style="margin:0">${esc(p.name)} appears in payments, settlements or as a default payer, so deleting would corrupt the history. Mark them <b>inactive</b> instead — they'll disappear from new splits but history stays intact.</p>`,
+        submit: 'Mark inactive',
+        onSubmit: () => commit((db) => { db.people.find((x) => x.id === id).active = false; }),
+      });
+      return;
+    }
+    confirmBox('Delete person', `Delete <b>${esc(p.name)}</b>? They'll be removed from residents and splits.`, 'Delete', () => commit((db) => {
+      db.people = db.people.filter((x) => x.id !== id);
+      db.residents = db.residents.filter((x) => x.personId !== id);
+      db.splits = db.splits.filter((x) => x.personId !== id);
+    }));
+  }
+
+  function openResidenceForm(id) {
+    const r = id ? residence(id) : { name: '', type: 'Apartment', tenure: 'Renting', address: '', startDate: '', endDate: '', notes: '' };
+    const members = new Set(S.db.residents.filter((x) => x.residenceId === id).map((x) => x.personId));
+    openModal({
+      title: id ? 'Edit residence' : 'Add residence',
+      body: `<div class="form-grid">
+        ${field('Name', `<input name="name" required value="${esc(r.name)}" placeholder="e.g. Maple Street Apartment">`, 'full')}
+        ${field('Type', `<select name="type">${options(['Apartment', 'House', 'Condo', 'Townhouse', 'Room', 'Other'].map((x) => [x, x]), r.type)}</select>`)}
+        ${field('Tenure', `<select name="tenure">${options(['Renting', 'Mortgage', 'Owned'].map((x) => [x, x]), r.tenure)}</select>`)}
+        ${field('Address', `<input name="address" value="${esc(r.address)}">`, 'full')}
+        ${field('Start date', `<input type="date" name="startDate" value="${esc(r.startDate)}">`)}
+        ${field('End date', `<input type="date" name="endDate" value="${esc(r.endDate)}">`)}
+        <div class="field full"><span class="lbl">Residents</span><div class="chips" style="gap:10px">${S.db.people.length ? S.db.people.map((p) => `
+          <label class="check"><input type="checkbox" name="res_${esc(p.id)}" ${members.has(p.id) ? 'checked' : ''}> ${esc(p.name)}</label>`).join('') : '<span class="muted">Add people first.</span>'}</div></div>
+        ${field('Notes', `<textarea name="notes">${esc(r.notes)}</textarea>`, 'full')}</div>`,
+      onSubmit: (fd) => {
+        commit((db) => {
+          const rec = id ? db.residences.find((x) => x.id === id) : { id: store.uid('r') };
+          Object.assign(rec, { name: fd.get('name').trim(), type: fd.get('type'), tenure: fd.get('tenure'), address: fd.get('address').trim(), startDate: fd.get('startDate'), endDate: fd.get('endDate'), notes: fd.get('notes').trim() });
+          if (!id) db.residences.push(rec);
+          db.residents = db.residents.filter((x) => x.residenceId !== rec.id);
+          db.people.forEach((p) => { if (fd.get('res_' + p.id) === 'on') db.residents.push({ residenceId: rec.id, personId: p.id }); });
+        });
+      },
+    });
+  }
+
+  function deleteResidence(id) {
+    const r = residence(id), d = S.db;
+    const exps = d.expenses.filter((e) => e.residenceId === id);
+    const pays = d.payments.filter((p) => exps.some((e) => e.id === p.expenseId));
+    confirmBox('Delete residence', `Delete <b>${esc(r.name)}</b> along with its <b>${exps.length}</b> expense(s) and <b>${pays.length}</b> recorded payment(s)? This cannot be undone (except by restoring your workbook).`, 'Delete everything', () => commit((db) => {
+      const eids = new Set(exps.map((e) => e.id));
+      db.expenses = db.expenses.filter((e) => e.residenceId !== id);
+      db.payments = db.payments.filter((p) => !eids.has(p.expenseId));
+      db.splits = db.splits.filter((s) => !eids.has(s.expenseId));
+      db.residents = db.residents.filter((x) => x.residenceId !== id);
+      db.settlements = db.settlements.filter((s) => s.residenceId !== id);
+      db.residences = db.residences.filter((x) => x.id !== id);
+      normalizeSelection();
+    }));
+  }
+
+  function openExpenseForm(id, preset = {}) {
+    const d = S.db;
+    if (!d.residences.length) { toast('Add a residence first.', 'err'); openResidenceForm(); return; }
+    if (!d.people.length) { toast('Add some people first.', 'err'); openPersonForm(); return; }
+    const today = C.todayISO();
+    const e = id ? expense(id) : Object.assign({
+      residenceId: S.residenceId !== 'all' ? S.residenceId : d.residences[0].id, name: '', category: '', amount: '', frequency: 'Monthly',
+      dueDay: '', startDate: S.period + '-01', endDate: '', paidById: '', splitMethod: 'Equal', variable: false, active: true, notes: '',
+    }, preset);
+    const existing = new Map(d.splits.filter((s) => s.expenseId === id).map((s) => [s.personId, s.value]));
+    const categories = [...new Set(['Rent', 'Mortgage', 'Utilities', 'Internet', 'Insurance', 'Taxes', 'Maintenance', 'Subscriptions', 'Groceries', 'Other', ...d.expenses.map((x) => x.category).filter(Boolean)])];
+
+    const participantRows = (resId, method, checkedMap) => {
+      const resMembers = new Set(d.residents.filter((x) => x.residenceId === resId).map((x) => x.personId));
+      const people = d.people.filter((p) => p.active || checkedMap.has(p.id)).sort((a, b) => (resMembers.has(b.id) - resMembers.has(a.id)) || a.name.localeCompare(b.name));
+      const useDefault = !checkedMap.size;
+      return `<table class="split-table"><thead><tr><th>Include</th><th>Person</th><th class="valcol num">${method === 'Percent' ? 'Percent' : 'Weight'}</th><th class="num">≈ per bill</th></tr></thead><tbody>${people.map((p) => {
+        const on = useDefault ? resMembers.has(p.id) : checkedMap.has(p.id);
+        const val = checkedMap.has(p.id) ? checkedMap.get(p.id) : (method === 'Percent' ? '' : 1);
+        return `<tr><td><input type="checkbox" name="inc_${esc(p.id)}" ${on ? 'checked' : ''}></td><td>${personTag(p.id)}</td>
+          <td class="valcol num"><input type="number" step="any" min="0" name="val_${esc(p.id)}" value="${esc(val)}"></td><td class="num preview" data-pid="${esc(p.id)}"></td></tr>`;
+      }).join('')}</tbody></table>
+      <div class="hint split-note"></div>`;
+    };
+
+    openModal({
+      title: id ? 'Edit expense' : (preset.frequency === 'One-time' ? 'Add one-time bill' : 'Add expense'),
+      wide: true,
+      body: `<div class="form-grid">
+        ${field('Name', `<input name="name" required value="${esc(e.name)}" placeholder="e.g. Rent, Water, Wi-Fi">`)}
+        ${field('Residence', `<select name="residenceId" required>${residenceOptions(e.residenceId)}</select>`)}
+        ${field('Category', `<input name="category" list="catlist" value="${esc(e.category)}"><datalist id="catlist">${categories.map((c) => `<option value="${esc(c)}">`).join('')}</datalist>`)}
+        ${field('Amount', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(e.amount)}">`)}
+        <label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" name="variable" ${e.variable ? 'checked' : ''}> Amount varies each month (estimate)</label>
+        ${field('Frequency', `<select name="frequency">${options(['Monthly', 'Quarterly', 'Yearly', 'One-time'].map((x) => [x, x]), e.frequency)}</select>`)}
+        ${field('Due day of month', `<input name="dueDay" type="number" min="1" max="31" value="${esc(e.dueDay || '')}">`, '', 'Blank = day of the start date')}
+        ${field('Start date', `<input type="date" name="startDate" required value="${esc(e.startDate)}">`, '', 'First bill. Quarterly/yearly repeat from here.')}
+        ${field('End date (optional)', `<input type="date" name="endDate" value="${esc(e.endDate)}">`)}
+        ${field('Usually paid by', `<select name="paidById">${personOptions(e.paidById, '— choose —')}</select>`, '', 'Default payer. You can change it per bill.')}
+        ${field('Split method', `<select name="splitMethod">${options([['Equal', 'Equal'], ['Percent', 'By percent'], ['Shares', 'By shares / weight']], e.splitMethod)}</select>`)}
+        <div class="field full"><span class="lbl">Who shares this expense</span><div id="participants"></div></div>
+        ${field('Notes', `<textarea name="notes">${esc(e.notes)}</textarea>`, 'full')}
+        <label class="check full"><input type="checkbox" name="active" ${e.active ? 'checked' : ''}> Active (inactive expenses stop generating bills)</label>
+      </div>`,
+      onOpen: (form) => {
+        const box = $('#participants', form);
+        let current = existing;
+        const draw = () => {
+          // preserve what the user typed when only the method/amount changes
+          box.innerHTML = participantRows(form.residenceId.value, form.splitMethod.value, current);
+          preview();
+        };
+        const readCurrent = () => {
+          const m = new Map();
+          form.querySelectorAll('input[name^="inc_"]').forEach((cb) => { if (cb.checked) m.set(cb.name.slice(4), num(form['val_' + cb.name.slice(4)].value)); });
+          return m;
+        };
+        const preview = () => {
+          const method = form.splitMethod.value, amount = num(form.amount.value);
+          form.querySelectorAll('.valcol').forEach((c) => c.classList.toggle('hidden', method === 'Equal'));
+          const ids = [...form.querySelectorAll('input[name^="inc_"]')].filter((cb) => cb.checked).map((cb) => cb.name.slice(4));
+          const fake = { id: '__preview', residenceId: form.residenceId.value, splitMethod: method };
+          const tmp = { people: d.people, residents: [], splits: ids.map((pid) => ({ expenseId: '__preview', personId: pid, value: method === 'Equal' ? 1 : num(form['val_' + pid].value) })) };
+          const amts = new Map(C.splitAmounts(tmp, fake, amount).map((s) => [s.personId, s.amount]));
+          form.querySelectorAll('.preview').forEach((c) => { c.textContent = amts.has(c.dataset.pid) ? money(amts.get(c.dataset.pid)) : ''; });
+          const note = form.querySelector('.split-note');
+          if (method === 'Percent') {
+            const tot = ids.reduce((a, pid) => a + num(form['val_' + pid].value), 0);
+            note.innerHTML = Math.abs(tot - 100) < 0.01 ? `<span class="good">Total ${tot}% ✓</span>` : `<span class="bad">Total ${round2(tot)}% — percentages will be scaled to add up to 100%.</span>`;
+          } else note.textContent = method === 'Shares' ? 'Weights are relative: 2 and 1 means a 2/3 – 1/3 split.' : '';
+        };
+        draw();
+        form.addEventListener('change', (ev) => {
+          if (ev.target.name === 'residenceId') { current = new Map(); draw(); }
+          else if (ev.target.name === 'splitMethod') { current = readCurrent(); if (form.splitMethod.value !== 'Equal') current.forEach((v, k) => { if (!v) current.set(k, form.splitMethod.value === 'Percent' ? 0 : 1); }); draw(); }
+          else preview();
+        });
+        form.addEventListener('input', (ev) => { if (ev.target.name === 'amount' || ev.target.name.startsWith('val_')) preview(); });
+      },
+      onSubmit: (fd, form) => {
+        const chosen = [...form.querySelectorAll('input[name^="inc_"]')].filter((cb) => cb.checked).map((cb) => cb.name.slice(4));
+        if (!chosen.length) { toast('Pick at least one person to share this expense.', 'err'); return false; }
+        const method = fd.get('splitMethod');
+        commit((db) => {
+          const rec = id ? db.expenses.find((x) => x.id === id) : { id: store.uid('e') };
+          Object.assign(rec, {
+            residenceId: fd.get('residenceId'), name: fd.get('name').trim(), category: fd.get('category').trim(), amount: round2(num(fd.get('amount'))),
+            frequency: fd.get('frequency'), dueDay: Math.round(num(fd.get('dueDay'))) || 0, startDate: fd.get('startDate'), endDate: fd.get('endDate'),
+            paidById: fd.get('paidById'), splitMethod: method, variable: fd.get('variable') === 'on', active: fd.get('active') === 'on', notes: fd.get('notes').trim(),
+          });
+          if (!id) db.expenses.push(rec);
+          db.splits = db.splits.filter((s) => s.expenseId !== rec.id);
+          chosen.forEach((pid) => db.splits.push({ expenseId: rec.id, personId: pid, value: method === 'Equal' ? 1 : num(fd.get('val_' + pid)) }));
+        });
+      },
+    });
+  }
+
+  function deleteExpense(id) {
+    const e = expense(id);
+    const n = S.db.payments.filter((p) => p.expenseId === id).length;
+    confirmBox('Delete expense', `Delete <b>${esc(e.name)}</b>${n ? ` and its <b>${n}</b> recorded payment(s)` : ''}? Tip: set it to inactive instead to keep history and stop future bills.`, 'Delete', () => commit((db) => {
+      db.expenses = db.expenses.filter((x) => x.id !== id);
+      db.payments = db.payments.filter((p) => p.expenseId !== id);
+      db.splits = db.splits.filter((s) => s.expenseId !== id);
+    }));
+  }
+
+  function openPayForm(expId, period, payId) {
+    const e = expense(expId);
+    const pay = payId ? S.db.payments.find((p) => p.id === payId) : null;
+    const bill = C.billsForPeriod(S.db, period, 'all').find((b) => b.expense.id === expId && ((pay && b.payment && b.payment.id === pay.id) || (!pay && !b.payment)));
+    const dflt = pay || { amount: e.amount, status: 'Paid', paidById: e.paidById, paidDate: C.todayISO(), note: '' };
+    openModal({
+      title: `${pay ? 'Edit payment' : 'Record payment'} · ${e.name}`,
+      body: `<p class="muted" style="margin:0">${esc(residence(e.residenceId) ? residence(e.residenceId).name : '')} · ${esc(periodLabel(period))}${bill ? ' · due ' + esc(fmtDate(bill.dueDate, true)) : ''}</p>
+        <div class="form-grid">
+          ${field('Amount', `<input name="amount" type="number" step="0.01" min="0" required value="${esc(dflt.amount)}">`, '', e.variable ? 'Variable bill — enter the actual amount.' : '')}
+          ${field('Status', `<select name="status">${options([['Paid', 'Paid'], ['Billed', 'Billed — amount known, not paid yet']], dflt.status)}</select>`)}
+          ${field('Paid by', `<select name="paidById">${personOptions(dflt.paidById, '— nobody yet —')}</select>`)}
+          ${field('Paid on', `<input type="date" name="paidDate" value="${esc(dflt.paidDate)}">`)}
+          ${field('Note', `<input name="note" value="${esc(dflt.note)}">`, 'full')}</div>
+        <div id="splitPrev" class="chips"></div>`,
+      extra: pay ? '<button type="button" class="btn danger" data-modal-action="remove">Remove record</button>' : '',
+      actions: { remove: () => { commit((db) => { db.payments = db.payments.filter((p) => p.id !== payId); }); } },
+      onOpen: (form) => {
+        const upd = () => {
+          const amts = C.splitAmounts(S.db, e, num(form.amount.value));
+          $('#splitPrev', form).innerHTML = '<span class="hint" style="width:100%">Split:</span>' + amts.map((s) => chip(person(s.personId), money(s.amount))).join('');
+        };
+        upd(); form.amount.addEventListener('input', upd);
+      },
+      onSubmit: (fd) => {
+        const status = fd.get('status');
+        if (status === 'Paid' && !fd.get('paidById')) { toast('Choose who paid this bill.', 'err'); return false; }
+        commit((db) => {
+          let rec = payId ? db.payments.find((p) => p.id === payId) : null;
+          if (!rec) { rec = { id: store.uid('pay'), expenseId: expId, period }; db.payments.push(rec); }
+          Object.assign(rec, { amount: round2(num(fd.get('amount'))), status, paidById: fd.get('paidById'), paidDate: fd.get('paidDate'), note: fd.get('note').trim() });
+        });
+      },
+    });
+  }
+
+  function openSettlementForm(pre = {}) {
+    const d = S.db;
+    if (d.people.length < 2) { toast('You need at least two people to record a settlement.', 'err'); return; }
+    openModal({
+      title: 'Record a payment between people',
+      body: `<div class="form-grid">
+        ${field('From (paid)', `<select name="fromId" required>${personOptions(pre.from, '— choose —')}</select>`)}
+        ${field('To (received)', `<select name="toId" required>${personOptions(pre.to, '— choose —')}</select>`)}
+        ${field('Amount', `<input name="amount" type="number" step="0.01" min="0.01" required value="${esc(pre.amount || '')}">`)}
+        ${field('Date', `<input name="date" type="date" required value="${C.todayISO()}">`)}
+        ${field('Applies to', `<select name="residenceId">${residenceOptions(S.residenceId !== 'all' ? S.residenceId : '', 'All residences')}</select>`, 'full', 'Balances are computed per selected residence, so pick the matching one.')}
+        ${field('Note', `<input name="note">`, 'full')}</div>`,
+      onSubmit: (fd) => {
+        if (fd.get('fromId') === fd.get('toId')) { toast('From and To must be different people.', 'err'); return false; }
+        commit((db) => db.settlements.push({ id: store.uid('s'), date: fd.get('date'), residenceId: fd.get('residenceId'), fromId: fd.get('fromId'), toId: fd.get('toId'), amount: round2(num(fd.get('amount'))), note: fd.get('note').trim() }));
+      },
+    });
+  }
+
+  function openSettings() {
+    openModal({
+      title: 'Settings',
+      body: `<div class="form-grid">
+        ${field('Currency code', `<input name="currency" maxlength="3" required value="${esc(S.db.settings.currency)}" style="text-transform:uppercase">`, '', 'ISO code, e.g. USD, EUR, GBP, CAD')}
+        <div class="field full"><span class="lbl">Workbook</span><div>${FileLink.linked ? `Linked to <b>${esc(FileLink.name)}</b>` : 'Not linked to a file on disk.'}</div>
+        <span class="hint">All data lives in the workbook's sheets — People, Residences, Residents, Expenses, Splits, Payments, Settlements. Keep it closed in Excel while using the app (Excel locks open files).</span></div></div>`,
+      extra: FileLink.linked ? '<button type="button" class="btn danger" data-modal-action="forget">Unlink file</button>' : '',
+      actions: { forget: async () => { await FileLink.forget(); S.db = null; render(); } },
+      onSubmit: (fd) => {
+        const cur = fd.get('currency').trim().toUpperCase();
+        try { new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }); } catch (e) { toast('Unknown currency code.', 'err'); return false; }
+        commit((db) => { db.settings.currency = cur; });
+      },
+    });
+  }
+
+  /* ========================================================= actions */
+
+  async function openFile() {
+    try {
+      if (FileLink.supported()) { await FileLink.pickOpen(); await adoptFile(); render(); }
+      else $('#fileInput').click();
+    } catch (e) { if (e.name !== 'AbortError') toast(e.message, 'err'); }
+  }
+
+  async function createFile(sample) {
+    try {
+      if (FileLink.supported()) {
+        await FileLink.pickCreate();
+        S.db = sample ? store.sampleDb() : store.emptyDb();
+        S.fileName = FileLink.name; S.demo = false; S.needsPermission = false;
+        await flush();
+      } else {
+        S.db = sample ? store.sampleDb() : store.emptyDb();
+        S.fileName = 'Residence Tracker.xlsx'; S.demo = false;
+        setSave('dirty');
+      }
+      render();
+    } catch (e) { if (e.name !== 'AbortError') toast(e.message, 'err'); }
+  }
+
+  const actions = {
+    nav: (el) => { S.view = el.dataset.view; savePrefs(); render(); window.scrollTo(0, 0); },
+    'prev-month': () => { S.period = C.addMonths(S.period, -1); render(); },
+    'next-month': () => { S.period = C.addMonths(S.period, 1); render(); },
+    'this-month': () => { S.period = C.todayISO().slice(0, 7); render(); },
+    'set-period': (el) => { S.period = el.dataset.period; render(); },
+    pay: (el) => openPayForm(el.dataset.exp, el.dataset.period, el.dataset.pay),
+    'add-expense': () => openExpenseForm(),
+    'add-onetime': () => openExpenseForm(null, { frequency: 'One-time', startDate: (S.period === C.todayISO().slice(0, 7) ? C.todayISO() : S.period + '-01') }),
+    'edit-expense': (el) => openExpenseForm(el.dataset.id),
+    'del-expense': (el) => deleteExpense(el.dataset.id),
+    'add-person': () => openPersonForm(),
+    'edit-person': (el) => openPersonForm(el.dataset.id),
+    'del-person': (el) => deletePerson(el.dataset.id),
+    'add-residence': () => openResidenceForm(),
+    'edit-residence': (el) => openResidenceForm(el.dataset.id),
+    'del-residence': (el) => deleteResidence(el.dataset.id),
+    'add-settlement': (el) => openSettlementForm({ from: el.dataset.from, to: el.dataset.to, amount: el.dataset.amount }),
+    'del-settlement': (el) => confirmBox('Delete settlement', 'Remove this recorded payment? Balances will change.', 'Delete', () => commit((db) => { db.settlements = db.settlements.filter((s) => s.id !== el.dataset.id); })),
+    settings: () => openSettings(),
+    'open-file': () => openFile(),
+    'create-file': () => createFile(false),
+    'create-sample': () => createFile(true),
+    download: () => downloadCopy(),
+    reload: () => reloadFromDisk(false),
+    'retry-save': () => flush(),
+    reconnect: async () => {
+      try { await FileLink.reconnect(); await adoptFile(); render(); }
+      catch (e) { S.bootError = e.message; render(); }
+    },
+  };
+
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el || el.closest('dialog') && !el.closest('#app')) return;
+    const fn = actions[el.dataset.act];
+    if (fn) fn(el);
+  });
+
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.id === 'resSelect') { S.residenceId = t.value; savePrefs(); render(); }
+    else if (t.id === 'billFilter') { S.billFilter = t.value; render(); }
+    else if (t.id === 'monthInput') { if (/^\d{4}-\d{2}$/.test(t.value)) { S.period = t.value; render(); } }
+    else if (t.id === 'fileInput' && t.files[0]) {
+      const f = t.files[0];
+      f.arrayBuffer().then((buf) => {
+        const db = store.parseWorkbook(buf);
+        delete db._repaired;
+        S.db = db; S.fileName = f.name; S.demo = false; S.save = 'idle'; normalizeSelection(); render();
+      }).catch((err) => toast('Could not read that file: ' + err.message, 'err'));
+      t.value = '';
+    }
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (S.db && !S.demo && (S.save === 'dirty' || S.save === 'saving' || S.save === 'error')) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  /* Pick up edits made in Excel while the app is open. */
+  async function pollDisk() {
+    if (document.hidden || !FileLink.linked || !S.db || saving || S.save === 'dirty' || S.save === 'error' || $('#modal').open) return;
+    try { if (await FileLink.changedOnDisk()) await reloadFromDisk(true); } catch (e) { /* file busy or moved; try again later */ }
+  }
+  setInterval(pollDisk, 3000);
+  window.addEventListener('focus', pollDisk);
+
+  /* ============================================================ boot */
+
+  async function boot() {
+    const params = new URLSearchParams(location.search);
+    if (params.has('demo')) {
+      S.db = store.sampleDb(); S.demo = true; S.fileName = 'Demo.xlsx';
+      if (params.get('view')) S.view = params.get('view');
+      render(); return;
+    }
+    render();
+    try {
+      const st = await FileLink.restore();
+      if (st === 'ready') await adoptFile();
+      else if (st === 'needs-permission') S.needsPermission = true;
+    } catch (e) {
+      S.bootError = `Couldn't open ${FileLink.name || 'the last workbook'}: ${e.message}`;
+      S.db = null;
+    }
+    render();
+  }
+  boot();
+})();
