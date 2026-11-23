@@ -320,6 +320,17 @@
       delete r.address;
     });
     db.expenseTypes = db.expenseTypes.filter((t) => t.name);
+    // Clean-up: an earlier version seeded a longer default list. Drop those untouched extras
+    // (amount still 0) and make sure the four real defaults are there. Anything you added or edited stays.
+    const oldExtras = new Set(['mortgage', 'property tax', 'hoa fees', 'home / renters insurance', "home / renter's insurance", 'parking', 'electricity', 'gas', 'water & sewer', 'trash & recycling', 'wi-fi / internet', 'streaming & subscriptions', 'groceries', 'maintenance & repairs']);
+    const before = db.expenseTypes.length;
+    db.expenseTypes = db.expenseTypes.filter((t) => !(oldExtras.has(t.name.toLowerCase()) && !t.amount));
+    if (db.expenseTypes.length !== before) {
+      const have = new Set(db.expenseTypes.map((t) => t.name.toLowerCase()));
+      const taken = new Set(db.expenseTypes.map((t) => t.id));
+      defaultTypes().filter((t) => !have.has(t.name.toLowerCase())).forEach((t) => { t.id = uid('t', taken); db.expenseTypes.push(t); });
+      repaired = true;
+    }
     db.expenseTypes.forEach((t) => { t.frequency = normChoice(t.frequency, ['Monthly', 'Quarterly', 'Yearly', 'One-time'], 'Monthly'); });
     db.expenses.forEach((e) => {
       if (e.variableLegacy) e.variable = true;
