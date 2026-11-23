@@ -33,7 +33,11 @@ Then **Create new workbook** (or **Open workbook…** for an existing one). The 
 
 ## The workbook
 
-Sheets: `People`, `Residences`, `Residents`, `Expenses`, `Splits`, `Payments`, `Settlements`, `Settings` (+ an `Info` sheet).
+Sheets: `People`, `Residences`, `Residents`, `ExpenseTypes`, `Expenses`, `Splits`, `Payments`, `Settlements`, `Settings` (+ an `Info` sheet).
+
+Two **read-only report sheets** are rewritten on every save, so the balance breakdown is visible in Excel too (edits to them are overwritten; change `Payments` / `Settlements` instead):
+- `Ledger` — one row per person per paid bill or settlement: bill total, who paid, their share, the effect on their balance, and a running balance.
+- `Balances` — paid out, share, settled and net per person, for all residences and for each residence.
 
 - You can edit it in Excel too. In the `*ID` columns you may type a **name** instead of an ID; it is resolved on load. Rows with no ID get one.
 - Columns named `Residence`, `Person`, `Expense`, `PaidBy`, `From`, `To` are read-only helpers for humans and are rewritten on save.

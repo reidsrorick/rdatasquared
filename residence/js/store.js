@@ -147,6 +147,8 @@
     ['Splits', 'Who shares each expense. Value depends on SplitMethod: Percent = percent, Shares = weight, Fixed = exact $ that person pays (blank/0 = splits the rest), Offset = $ more (+) or less (-) than an equal share. Ignored for Equal.'],
     ['Payments', 'Actual bills for a month (Period = YYYY-MM). Status Paid counts toward balances; Billed = amount known, not yet paid.'],
     ['Settlements', 'Money one person paid another to settle up.'],
+    ['Ledger', 'READ-ONLY report, rewritten on every save. One row per person per paid bill or settlement: their share, the effect on their balance (paid minus share; settlements +sent / -received) and a running balance across all residences. Edit Payments / Settlements instead.'],
+    ['Balances', 'READ-ONLY report, rewritten on every save. Net position per person for all residences and for each residence (positive = is owed, negative = owes).'],
     ['Settings', 'Currency etc.'],
     [''],
     ['Tips'],
@@ -351,6 +353,64 @@
 
   /* ------------------------------------------------------------- serialize */
 
+  /* Read-only report sheets, rewritten on every save and ignored on load. */
+  function derivedSheets(db) {
+    const C = RT.calc;
+    if (!C) return [];
+    const pName = (id) => (db.people.find((p) => p.id === id) || {}).name || '';
+    const rName = (id) => (db.residences.find((r) => r.id === id) || {}).name || '';
+    const people = [...db.people].sort((a, b) => a.name.localeCompare(b.name));
+
+    const ledgerCols = [
+      { h: 'Person', w: 20 }, { h: 'Date', t: 'date', w: 12 }, { h: 'Residence', w: 24 }, { h: 'Period', w: 9 },
+      { h: 'LineItem', w: 34 }, { h: 'Type', w: 11 }, { h: 'BillTotal', t: 'money', w: 12 }, { h: 'PaidBy', w: 18 },
+      { h: 'PersonShare', t: 'money', w: 13 }, { h: 'Effect', t: 'signed', w: 12 }, { h: 'RunningBalance', t: 'signed', w: 15 }, { h: 'Note', w: 30 },
+    ];
+    const ledgerRows = [];
+    people.forEach((p) => {
+      C.ledger(db, p.id, 'all').entries.forEach((en) => {
+        if (en.kind === 'bill') {
+          ledgerRows.push([p.name, en.date, rName(en.expense.residenceId), en.period, en.expense.name, 'Bill', en.total, pName(en.payerId), en.share, en.delta, en.running, en.payment.note || '']);
+        } else {
+          const s = en.settlement;
+          ledgerRows.push([p.name, en.date, rName(s.residenceId) || 'All', '', `Settlement: ${pName(s.fromId)} to ${pName(s.toId)}`, 'Settlement', en.total, pName(s.fromId), '', en.delta, en.running, s.note || '']);
+        }
+      });
+    });
+
+    const balCols = [
+      { h: 'Residence', w: 26 }, { h: 'Person', w: 20 }, { h: 'PaidOut', t: 'money', w: 12 }, { h: 'TheirShare', t: 'money', w: 12 },
+      { h: 'SettledSent', t: 'money', w: 13 }, { h: 'SettledReceived', t: 'money', w: 15 }, { h: 'Net', t: 'signed', w: 12 }, { h: 'Status', w: 10 },
+    ];
+    const balRows = [];
+    [['All residences', 'all'], ...db.residences.map((r) => [r.name, r.id])].forEach(([label, scope]) => {
+      C.balances(db, scope)
+        .filter((r) => r.paid || r.owed || r.sent || r.received)
+        .sort((a, b) => pName(a.personId).localeCompare(pName(b.personId)))
+        .forEach((r) => balRows.push([label, pName(r.personId), r.paid, r.owed, r.sent, r.received, r.net, r.net > 0.004 ? 'is owed' : r.net < -0.004 ? 'owes' : 'settled']));
+    });
+
+    return [{ name: 'Ledger', cols: ledgerCols, rows: ledgerRows }, { name: 'Balances', cols: balCols, rows: balRows }];
+  }
+
+  function buildSheet(cols, rows) {
+    const XLSX = XL();
+    const ws = {};
+    cols.forEach((c, ci) => { ws[XLSX.utils.encode_cell({ r: 0, c: ci })] = { t: 's', v: c.h }; });
+    rows.forEach((row, ri) => row.forEach((v, ci) => {
+      if (v === '' || v === undefined || v === null) return;
+      const c = cols[ci], addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+      if (c.t === 'date') { const n = isoToSerial(v); if (n !== null) ws[addr] = { t: 'n', v: n, z: 'yyyy-mm-dd' }; }
+      else if (c.t === 'money') ws[addr] = { t: 'n', v: Math.round(v * 100) / 100, z: '#,##0.00' };
+      else if (c.t === 'signed') ws[addr] = { t: 'n', v: Math.round(v * 100) / 100, z: '#,##0.00;[Red]-#,##0.00' };
+      else ws[addr] = { t: 's', v: String(v) };
+    }));
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(rows.length, 0), c: cols.length - 1 } });
+    ws['!cols'] = cols.map((c) => ({ wch: c.w || 12 }));
+    ws['!autofilter'] = { ref: ws['!ref'] };
+    return ws;
+  }
+
   function serializeWorkbook(db) {
     const XLSX = XL();
     const wb = XLSX.utils.book_new();
@@ -404,6 +464,8 @@
       ws['!autofilter'] = { ref: ws['!ref'] };
       XLSX.utils.book_append_sheet(wb, ws, def.name);
     });
+
+    derivedSheets(db).forEach((d) => XLSX.utils.book_append_sheet(wb, buildSheet(d.cols, d.rows), d.name));
 
     const settingsWs = XLSX.utils.aoa_to_sheet([
       ['Key', 'Value'],
