@@ -175,6 +175,10 @@
   function renderProjects() {
     var grid = $("grid");
     PROJECTS.forEach(function (p, i) { grid.appendChild(card(p, i)); });
+
+    // With an odd number of regular cards, widen the last one so no card sits alone in a half row.
+    var regular = grid.querySelectorAll(".card:not(.card-wide)");
+    if (regular.length % 2 === 1) regular[regular.length - 1].classList.add("card-wide");
   }
 
   /* ---------- Scroll reveal ---------- */

@@ -71,6 +71,13 @@ window.PROJECTS = [
     tags: ["Finance", "Local-first"]
   },
   {
+    name: "Car Tracker",
+    description: "Keep tabs on your vehicles and their maintenance. Your data lives in an Excel sheet that you own: open it, edit it, import or download it.",
+    demo: LIVE + "carz/",
+    icon: "🚗",
+    tags: ["Tracking", "Excel"]
+  },
+  {
     name: "Daily Game Collection",
     description: "The ultimate collection of daily games, all in one place. Come back every day for a new challenge.",
     demo: LIVE + "daily_games/",
