@@ -409,12 +409,10 @@
 
   // [name, category, variable?, frequency]
   const DEFAULT_TYPES = [
-    ['Rent', 'Rent', false, 'Monthly'], ['Mortgage', 'Mortgage', false, 'Monthly'], ['Property tax', 'Taxes', false, 'Quarterly'],
-    ['HOA fees', 'Housing', false, 'Monthly'], ['Home / renters insurance', 'Insurance', false, 'Yearly'], ['Parking', 'Housing', false, 'Monthly'],
-    ['Electricity', 'Utilities', true, 'Monthly'], ['Gas', 'Utilities', true, 'Monthly'], ['Water & Sewer', 'Utilities', true, 'Monthly'],
-    ['Trash & recycling', 'Utilities', false, 'Monthly'], ['Wi-Fi / Internet', 'Internet', false, 'Monthly'],
-    ['Streaming & subscriptions', 'Subscriptions', false, 'Monthly'], ['Groceries', 'Groceries', true, 'Monthly'],
-    ['Maintenance & repairs', 'Maintenance', true, 'One-time'],
+    ['Rent', 'Rent', false, 'Monthly'],
+    ['Water', 'Utilities', true, 'Monthly'],
+    ['Electric', 'Utilities', true, 'Monthly'],
+    ['Wi-Fi', 'Internet', false, 'Monthly'],
   ];
   function defaultTypes() {
     const ids = new Set();
@@ -455,8 +453,8 @@
       return e;
     };
     addExp(apt, 'Rent', 'Rent', 2400, 'Monthly', 1, alex, 'Percent', [[alex, 40], [sam, 30], [riley, 30]]);
-    addExp(apt, 'Electricity', 'Utilities', 95, 'Monthly', 15, sam, 'Equal', [[alex, 1], [sam, 1], [riley, 1]], { variable: true });
-    addExp(apt, 'Water & Sewer', 'Utilities', 48, 'Monthly', 20, riley, 'Equal', [[alex, 1], [sam, 1], [riley, 1]], { variable: true });
+    addExp(apt, 'Electric', 'Utilities', 95, 'Monthly', 15, sam, 'Equal', [[alex, 1], [sam, 1], [riley, 1]], { variable: true });
+    addExp(apt, 'Water', 'Utilities', 48, 'Monthly', 20, riley, 'Equal', [[alex, 1], [sam, 1], [riley, 1]], { variable: true });
     addExp(apt, 'Wi-Fi', 'Internet', 70, 'Monthly', 10, alex, 'Equal', [[alex, 1], [sam, 1], [riley, 1]]);
     addExp(apt, 'Streaming bundle', 'Subscriptions', 22, 'Monthly', 5, sam, 'Equal', [[alex, 1], [sam, 1]]);
     addExp(apt, "Renter's insurance", 'Insurance', 216, 'Yearly', 1, alex, 'Equal', [[alex, 1], [sam, 1], [riley, 1]], { startDate: C.addMonthsISO(today, -3).slice(0, 8) + '01' });
