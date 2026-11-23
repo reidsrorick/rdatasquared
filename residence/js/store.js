@@ -87,6 +87,7 @@
         { h: 'AmountType', k: 'variable', t: 'amounttype', w: 12 }, // Fixed = same every month | Variable = changes
         { h: 'Variable', k: 'variableLegacy', t: 'bool', dflt: false, legacy: true }, // older workbooks
         { h: 'Active', k: 'active', t: 'bool', w: 8 },
+        { h: 'PortalURL', k: 'portalUrl', link: true, w: 36 }, // website / portal where this bill is paid
         { h: 'Notes', k: 'notes', w: 32 },
       ],
     },
@@ -143,7 +144,7 @@
     ['Residences', 'Apartments / houses. Tenure: Renting, Mortgage or Owned.'],
     ['Residents', 'Which people live at which residence (and so default into its splits).'],
     ['ExpenseTypes', 'Your pick-list of common expenses (pre-fills the Add expense form). Ad hoc expenses do not need to be on it.'],
-    ['Expenses', 'Recurring (or one-time) costs: rent, mortgage, water, wifi... Frequency: Monthly, Quarterly, Yearly, One-time. AmountType: Fixed (same every month) or Variable (changes).'],
+    ['Expenses', 'Recurring (or one-time) costs: rent, mortgage, water, wifi... Frequency: Monthly, Quarterly, Yearly, One-time. AmountType: Fixed (same every month) or Variable (changes). PortalURL: optional website where the bill is paid (the app shows a Portal button). Never put passwords here.'],
     ['Splits', 'Who shares each expense. Value depends on SplitMethod: Percent = percent, Shares = weight, Fixed = exact $ that person pays (blank/0 = splits the rest), Offset = $ more (+) or less (-) than an equal share. Ignored for Equal.'],
     ['Payments', 'Actual bills for a month (Period = YYYY-MM). Status Paid counts toward balances; Billed = amount known, not yet paid.'],
     ['Settlements', 'Money one person paid another to settle up.'],
@@ -455,7 +456,9 @@
             case 'num': ws[addr] = { t: 'n', v: Number(v) }; break;
             case 'bool': ws[addr] = { t: 's', v: v ? 'Yes' : 'No' }; break;
             case 'amounttype': ws[addr] = { t: 's', v: v ? 'Variable' : 'Fixed' }; break;
-            default: ws[addr] = { t: 's', v: String(v) };
+            default:
+              ws[addr] = { t: 's', v: String(v) };
+              if (c.link && /^https?:\/\//i.test(String(v))) ws[addr].l = { Target: String(v) }; // clickable in Excel
           }
         });
       });
@@ -519,7 +522,7 @@
     const addExp = (res, name, category, amount, frequency, dueDay, paidBy, splitMethod, splitVals, extra = {}) => {
       const e = Object.assign({
         id: mk('e'), residenceId: res.id, name, category, amount, frequency, dueDay,
-        startDate: res.startDate, endDate: '', paidById: paidBy.id, splitMethod, variable: false, active: true, notes: '',
+        startDate: res.startDate, endDate: '', paidById: paidBy.id, splitMethod, variable: false, active: true, portalUrl: '', notes: '',
       }, extra);
       db.expenses.push(e);
       splitVals.forEach(([p, v]) => db.splits.push({ expenseId: e.id, personId: p.id, value: v }));
