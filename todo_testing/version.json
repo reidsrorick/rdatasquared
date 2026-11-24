@@ -1,4 +1,11 @@
-{"version":"1.71.1","build":"20261124093639","changelog":[
+{"version":"1.71.2","build":"20261124093928","changelog":[
+ {
+  "v": "1.71.2",
+  "title": "Wider answers on Waiting for your OK",
+  "items": [
+   "On the Waiting for your OK page (and anywhere else an action has an answer from someone), the answer and its Confirm / Not yet buttons now take the full width under the action instead of only the narrow text column. Long answers are easy to read, even with several waiting."
+  ]
+ },
  {
   "v": "1.71.1",
   "title": "Capital letter at the start of a line",

@@ -268,7 +268,9 @@ body.focus #panelrevs,body.focus #paneledge{display:none !important}}
 .prop{background:#f3c969;color:#4a3300;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;white-space:nowrap;align-self:center}
 .act.hasprop{box-shadow:inset 3px 0 0 #e0a82e}.pcb{outline:2px solid #e0a82e;outline-offset:1px;border-radius:3px}
 .propln{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 2px;padding:5px 8px;border-radius:8px;background:color-mix(in srgb,#e0a82e 16%,transparent);font-size:13px}.propln .pn{flex:1 1 180px;min-width:0}.propln small{color:var(--mute)}
-.propln.info{background:var(--hover2)}.ai>.propln{flex:0 0 100%;box-sizing:border-box;margin-left:28px;width:calc(100% - 28px)}
+.propln.info{background:var(--hover2)}
+.act>.propln{grid-column:1/-1;margin:2px 0 0 34px}
+@media(max-width:1500px){.act>.propln{flex:0 0 calc(100% - 34px);box-sizing:border-box;margin-left:34px}}.ai>.propln{flex:0 0 100%;box-sizing:border-box;margin-left:28px;width:calc(100% - 28px)}
 .propln button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font:inherit;font-size:12.5px}.propln button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .ai .nb{border:0;background:none;font-size:14px;opacity:.35;padding:0 4px}
 .ai .nb:hover,.ai .nb.has{opacity:1}
@@ -1202,8 +1204,15 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.71.1';
+const APP_VERSION = '1.71.2';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.71.2",
+  "title": "Wider answers on Waiting for your OK",
+  "items": [
+   "On the Waiting for your OK page (and anywhere else an action has an answer from someone), the answer and its Confirm / Not yet buttons now take the full width under the action instead of only the narrow text column. Long answers are easy to read, even with several waiting."
+  ]
+ },
  {
   "v": "1.71.1",
   "title": "Capital letter at the start of a line",
@@ -3710,13 +3719,13 @@ function actRow(x){
   const po = x.kind === 'task' ? x.item : x.ck, pp = proposalOf(po);
   return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''} ${pp && pp.kind === 'done' ? 'hasprop' : ''}" data-key="${x.key}">
     <input type="checkbox" data-ax="done" class="${pp && pp.kind === 'done' ? 'pcb' : ''}" ${x.done?'checked':''}>
-    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea>${propLine(po, x.key)}<div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a><a class="nlink" data-act="flpin" data-key="${x.key}" title="Keep this action in the floating window">⇱ ${po.fl ? 'Pinned' : 'Float'}</a><a class="nlink" data-act="fuset" data-key="${x.key}" title="Pick a day to check back on this. If it is not done by then it shows on Today.">↻ ${po.fu ? 'Change check-back' : 'Check back'}</a><a class="nlink" data-act="snzopen" data-key="${x.key}" title="Hide this for a while">⏰ Snooze</a>${chipsFor(po, x.key)}${doneText(po) ? `<small class="donewhen">✓ ${esc(doneText(po))}</small>` : ''}</div></div>
+    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a><a class="nlink" data-act="flpin" data-key="${x.key}" title="Keep this action in the floating window">⇱ ${po.fl ? 'Pinned' : 'Float'}</a><a class="nlink" data-act="fuset" data-key="${x.key}" title="Pick a day to check back on this. If it is not done by then it shows on Today.">↻ ${po.fu ? 'Change check-back' : 'Check back'}</a><a class="nlink" data-act="snzopen" data-key="${x.key}" title="Hide this for a while">⏰ Snooze</a>${chipsFor(po, x.key)}${doneText(po) ? `<small class="donewhen">✓ ${esc(doneText(po))}</small>` : ''}</div></div>
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
     <input type="time" data-ax="time" value="${esc(x.time)}" title="Time">
     <select data-ax="repeat" title="Repeat">${repeatOptions(x.repeat)}</select>
     <select data-ax="cat" title="Category: ${esc(catById(x.own) ? catById(x.own).name : blank)}" style="border-left:4px solid ${c ? esc(c.color) : 'transparent'}">${catOptions(x.own, blank)}</select>
     <input type="text" class="who" autocomplete="off" data-ax="assignee" value="${esc(x.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)">
-    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}</div>`;
+    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}${propLine(po, x.key)}</div>`;
 }
 function renderActions(){
   let list = allActions().filter(x => x.text.trim());
@@ -10252,7 +10261,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261124093639';</script>
+<script>window.NB_BUILD = '20261124093928';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
