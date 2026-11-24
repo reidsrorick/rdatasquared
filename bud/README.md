@@ -11,7 +11,20 @@ machine. When you need Excel, the **Excel** button exports everything to a workb
 - **Subscriptions & Bills** — recurring items, each normalized to a monthly cost, with an Active toggle.
 - **Expense Tracker** — everything someone owes you back: things you paid for (friends/family, work, a client) with a status and receipts for each, plus Luke's share of the apartment each month and the Venmo request behind it.
 
-The left **sidebar** collapses to an icon rail (click **Collapse**; remembered between visits), and on phones it becomes a slide-in drawer (the ☰ button). The app also **remembers the tab you were on** and reopens it after a refresh instead of resetting to Dashboard.
+## Layout
+
+The app is laid out like the [Residence Tracker](https://www.rdatasquared.com/residence/):
+
+- A translucent **top bar** with the app name, a **save chip** (`Budgeting · Saved 3:42 PM`, pulsing while it saves), the privacy eye, reload, **Excel** export and **Switch folder**. On phones the chip, eye and Excel stay; reload and folder move into Settings.
+- A **side nav** of colored icon tiles (a row of tabs on narrow screens). The Expense Tracker shows a count of expenses you haven't requested yet. **Settings** sits at the bottom.
+- Every page starts with a small label, the title, and a one-line description of what it's for, with that page's buttons on the right. Stat cards carry an icon tile and a colored top edge; everything else sits in rounded floating cards.
+- Light or dark follows your system. The app **remembers the tab you were on** and reopens it after a refresh.
+
+**First screen.** Before a folder is connected you get a welcome card: **Open budget folder** (or **Reconnect <folder>** when your browser just needs a one-click OK), or **Start with sample data**.
+
+**Sample data.** *Start with sample data* — or opening `index.html?demo` — loads made-up numbers so you can look around. Nothing is read or written; Excel export still works. **Open my folder** leaves it.
+
+**Settings** holds the Autosave switch, Hide amounts, the connected folder (Switch / Reload) and Excel export.
 
 ## Your data: `budget.json`
 
@@ -52,7 +65,7 @@ that, `budget.json` is the source of truth.
 
 ## Export to Excel
 
-the **Excel** button in the top bar builds a fresh workbook from what's on screen and downloads it as
+the **Excel** button in the top bar (or in Settings) builds a fresh workbook from what's on screen and downloads it as
 `Budget Export YYYY-MM-DD.xlsx` (check your Downloads folder). It contains:
 
 | Sheet | What's in it |
@@ -141,18 +154,18 @@ in-place file writing — see Fallback below).
 1. Click **Open budget folder** and pick your OneDrive `07) Budgeting` folder.
 2. Grant read/write when prompted.
 3. Edit anything — with **Autosave** on (the default) it writes itself; otherwise click
-   **Save budget.json** in the bar at the bottom.
+   **Save now** in the top bar.
 
 OneDrive then syncs `budget.json` up to the cloud like any other change.
 
 ## Autosave
 
-The **Autosave** switch in the header (on by default) writes your changes to `budget.json`
-automatically about 1.2 seconds after you stop editing. The bottom bar shows
-`Saving…` then `✓ Saved 3:42 PM`. Your preference is remembered between visits.
+The **Autosave** switch in **Settings** (on by default) writes your changes to `budget.json`
+automatically about 1.2 seconds after you stop editing. The save chip in the top bar shows
+`Saving…` then `Saved 3:42 PM`. Your preference is remembered between visits.
 
 - Autosave needs a connected folder (Chrome/Edge). In the download-only fallback it stays
-  off so it can't spam your downloads — use the manual **Save** button there.
+  off so it can't spam your downloads — use the **Download budget.json** button there.
 - If a save ever fails (e.g. the folder permission was revoked), autosave switches itself
   off and tells you, so it never loops.
 
@@ -175,8 +188,9 @@ the stale browser pulls the update instead.
 
 ## Status banners
 
-A banner appears below the top bar when something needs attention:
+A banner appears above the page when something needs attention:
 
+- **Sample data** — you're looking at the demo; nothing is saved.
 - **Autosave is off** — you turned it off; changes stay in the browser until you Save. (Turn it back on, or Save now.)
 - **Download mode** — the browser can't write in place (fallback); saving downloads a copy.
 - **Conflict** (red) — `budget.json` changed elsewhere; choose which version wins.
@@ -300,7 +314,8 @@ app/
     model.js        split logic, summaries, formatting, table schemas
     excel.js        Excel import (one-time migration) and export
     store.js        budget.json in your folder: load/save, backups, change detection, receipt files
-    ui.js           rendering, tables, modal form
+    sample.js       made-up data for "Start with sample data" / ?demo
+    ui.js           rendering: welcome, nav, pages, tables, forms, settings
     app.js          state + actions + bootstrap
   lib/
     xlsx.full.min.js  SheetJS (vendored, works offline)

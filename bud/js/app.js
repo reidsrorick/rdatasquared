@@ -661,33 +661,20 @@
     BB.ui.toast("Reloaded from disk.", "");
   }
 
+  // Look around with made-up data: nothing is read from or written to any file.
+  function startDemo() {
+    ingest(BB.sample.build());
+    S.folderName = "";
+    S.fileMode = "demo";
+    S.loaded = true;
+    BB.ui.render();
+  }
+
   function boot() {
-    $("connectBtn").addEventListener("click", connect);
-    $("reloadBtn").addEventListener("click", reload);
     $("fallbackInput").addEventListener("change", (e) => {
       if (e.target.files && e.target.files.length) loadFallback(e.target.files);
     });
-    $("autoChk").addEventListener("change", (e) => setAutosave(e.target.checked));
-    $("maskBtn").addEventListener("click", () => setMasked(!S.masked));
-    $("exportBtn").addEventListener("click", exportExcel);
-
-    // sidebar collapse (desktop) — persisted
-    const app = $("app");
-    try {
-      if (localStorage.getItem("bb.navCollapsed") === "1") app.classList.add("nav-collapsed");
-    } catch {}
-    $("collapseBtn").addEventListener("click", () => {
-      const collapsed = app.classList.toggle("nav-collapsed");
-      try {
-        localStorage.setItem("bb.navCollapsed", collapsed ? "1" : "0");
-      } catch {}
-    });
-    // mobile drawer toggle
-    $("navToggle").addEventListener("click", () => app.classList.toggle("nav-open"));
-    if (!BB.store.supportsFS) {
-      $("connectBtn").textContent = "Open budget file";
-      document.body.classList.add("no-fs");
-    }
+    if (!BB.store.supportsFS) document.body.classList.add("no-fs");
 
     // detect files changed by another device / Excel when we come back to the tab
     document.addEventListener("visibilitychange", () => {
@@ -696,12 +683,17 @@
     window.addEventListener("focus", checkExternalChanges);
     setInterval(checkExternalChanges, 20000); // also poll while the tab stays open
 
+    // index.html?demo opens straight into the sample data
+    if (/[?&]demo\b/.test(location.search)) {
+      startDemo();
+      return;
+    }
     BB.ui.render();
     attemptRestore();
   }
 
   BB.app = {
-    setTab, connect, loadFallback, commitRow, commitRows, deleteRow, save, reload,
+    setTab, connect, startDemo, loadFallback, commitRow, commitRows, deleteRow, save, reload,
     setAutosave, setMasked, autosaveOn, canAutosave,
     attachReceipts, unlinkReceipt, openReceiptByName, setExpenseStatus, settleMonth, markMonthPaid,
     createGroup, assignGroup, renameGroup, deleteGroup, setGroupStatus, groupList,

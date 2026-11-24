@@ -1,7 +1,7 @@
 /* Service worker: offline app shell.
    To ship an update: bump CACHE here AND the ?v= number on the <link>/<script> tags in
    index.html (the ?v= makes a previously-cached copy of the old file unmatchable). */
-const CACHE = "budget-v27";
+const CACHE = "budget-v28";
 const ASSETS = [
   "./",
   "index.html",
@@ -10,6 +10,7 @@ const ASSETS = [
   "js/model.js",
   "js/excel.js",
   "js/store.js",
+  "js/sample.js",
   "js/ui.js",
   "js/app.js",
   "lib/xlsx.full.min.js",

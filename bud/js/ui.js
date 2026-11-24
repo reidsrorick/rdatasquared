@@ -18,44 +18,90 @@
     eye: svg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
     eyeOff: svg('<path d="M17.9 17.9A10.1 10.1 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.1-5.1M9.9 5.2A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.2 3.2M3 3l18 18"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
     chevron: svg('<path d="m6 9 6 6 6-6"/>'),
+    wallet: svg('<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>'),
+    check: svg('<path d="M20 6 9 17l-5-5"/>'),
+    clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    settings: svg('<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/>'),
+    folder: svg('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+    download: svg('<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>'),
+    refresh: svg('<path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3"/><path d="M5 3v5h5M19 21v-5h-5"/>'),
+    plus: svg('<path d="M12 5v14M5 12h14"/>'),
+    table: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M12 3v18"/>'),
+    split: svg('<path d="M16 3h5v5M8 3H3v5M12 22v-8.3a4 4 0 0 0-1.2-2.8L3 3M15 9l6-6"/>'),
+    users: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>'),
     paperclip: svg('<path d="m21 11.5-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/>'),
   };
 
   const TABS = [
-    { id: "dashboard", label: "Dashboard", ico: ICON.dashboard },
-    { id: "apartment", label: "Apartment", schema: "apartment", ico: ICON.apartment },
-    { id: "summary", label: "Summary", ico: ICON.summary },
-    { id: "subscriptions", label: "Subscriptions & Bills", schema: "subscriptions", ico: ICON.subscriptions },
-    { id: "thirdparty", label: "Expense Tracker", schema: "thirdparty", ico: ICON.expenses },
+    { id: "dashboard", label: "Dashboard", ico: ICON.dashboard, tone: "#5b6cff", eyebrow: "Overview",
+      lede: "Where things stand across the apartment, your recurring costs, and what people owe you back." },
+    { id: "apartment", label: "Apartment", schema: "apartment", ico: ICON.apartment, tone: "#10b981", eyebrow: "Shared with Luke",
+      lede: "Log each bill and the split between you and Luke is worked out for you." },
+    { id: "summary", label: "Summary", ico: ICON.summary, tone: "#ec4899", eyebrow: "Roll-up",
+      lede: "The whole picture for a year, or all time: apartment, recurring costs, and what you've fronted for others." },
+    { id: "subscriptions", label: "Subscriptions & Bills", schema: "subscriptions", ico: ICON.subscriptions, tone: "#f59e0b", eyebrow: "Recurring",
+      lede: "Subscriptions and bills that repeat, with what each costs per month." },
+    { id: "thirdparty", label: "Expense Tracker", schema: "thirdparty", ico: ICON.expenses, tone: "#8b5cf6", eyebrow: "Reimbursements",
+      lede: "Things you paid for that someone owes you back. Move each from Pending to Submitted to Paid, and group related ones into trips." },
   ];
+
+  // title block at the top of every page: small label, big title, and a line saying what it's for
+  function pageHead(tabId, actions) {
+    const t = TABS.find((x) => x.id === tabId);
+    return `<div class="pagehead"><div><div class="eyebrow">${esc(t.eyebrow)}</div><h1>${esc(t.label)}</h1></div>${
+      actions || ""
+    }</div><p class="lede">${esc(t.lede)}</p>`;
+  }
 
   const validTab = (id) => TABS.some((t) => t.id === id);
 
+  // how many expenses are still waiting for you to send the request (shown on the nav)
+  function pendingCount() {
+    const S = BB.state.rows;
+    const lines = M.apartmentOwedLines(S.apartment || [], S.requests || []);
+    return (S.thirdparty || []).filter((r) => r.Status === "Pending").length + lines.filter((l) => l.status === "Pending").length;
+  }
+
   function renderNav() {
     const nav = el("tabs");
-    nav.innerHTML = TABS.map(
-      (t) =>
-        `<button class="tab${t.id === BB.state.activeTab ? " active" : ""}" data-tab="${t.id}" title="${esc(
-          t.label
-        )}"><span class="ico">${t.ico}</span><span class="tab-label">${esc(t.label)}</span></button>`
-    ).join("");
-    const active = TABS.find((t) => t.id === BB.state.activeTab);
-    const title = el("pageTitle");
-    if (title && active) title.textContent = active.label;
-    nav.querySelectorAll(".tab").forEach((b) =>
-      b.addEventListener("click", () => {
-        BB.app.setTab(b.dataset.tab);
-        document.getElementById("app").classList.remove("nav-open"); // close mobile drawer
-      })
-    );
+    const n = BB.state.loaded ? pendingCount() : 0;
+    nav.innerHTML =
+      TABS.map(
+        (t) =>
+          `<button class="tab${t.id === BB.state.activeTab ? " active" : ""}" data-tab="${t.id}" style="--tone:${t.tone}" title="${esc(
+            t.label
+          )}"><span class="ico">${t.ico}</span><span class="tab-label">${esc(t.label)}</span>${
+            t.id === "thirdparty" && n ? `<span class="count" title="${n} not requested yet">${n}</span>` : ""
+          }</button>`
+      ).join("") +
+      `<hr><button class="tab" data-act="settings" style="--tone:#697090"><span class="ico">${ICON.settings}</span><span class="tab-label">Settings</span></button>`;
+    nav.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => BB.app.setTab(b.dataset.tab)));
+    bindActs(nav);
+  }
+
+  // buttons that carry data-act="..." (top bar, welcome screen, settings, nav)
+  function bindActs(root) {
+    root.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => doAct(b.dataset.act)));
+  }
+  function doAct(a) {
+    const S = BB.state;
+    if (a === "connect") BB.app.connect();
+    else if (a === "demo") BB.app.startDemo();
+    else if (a === "reload") BB.app.reload();
+    else if (a === "export") BB.app.exportExcel();
+    else if (a === "mask") BB.app.setMasked(!S.masked);
+    else if (a === "settings") openSettings();
+    else if (a === "save") Object.keys(S.dirty).forEach((k) => S.dirty[k] && BB.app.save(k));
   }
 
   function render() {
+    el("app").classList.toggle("welcome-mode", !BB.state.loaded);
     renderNav();
     renderBars();
     const view = el("view");
     if (!BB.state.loaded) {
-      view.innerHTML = `<div class="empty"><h2>Not connected</h2><p>Open your OneDrive <strong>Budgeting</strong> folder. Your data lives in <em>budget.json</em> there — if it isn't there yet, your existing <em>Apartment Breakdown.xlsx</em> and <em>Expenses.xlsx</em> are imported into it the first time.</p></div>`;
+      view.innerHTML = welcomeHtml();
+      bindActs(view);
       return;
     }
     const tab = BB.state.activeTab;
@@ -66,6 +112,42 @@
     else if (tab === "thirdparty") renderExpenses(view);
     else renderTableTab(view, tab);
     labelTables(view);
+  }
+
+  // first screen: connect a folder, or look around with made-up data
+  function welcomeHtml() {
+    const S = BB.state;
+    const fs = BB.store.supportsFS;
+    const connect = S.pendingName
+      ? `<button class="btn primary" data-act="connect">${ICON.folder}Reconnect ${esc(S.pendingName)}</button>`
+      : `<button class="btn primary" data-act="connect">${ICON.folder}${fs ? "Open budget folder" : "Open budget file"}</button>`;
+    const feat = (c, ico, t, d) =>
+      `<div class="feature"><span class="tile" style="--c:${c}">${ico}</span><b>${t}</b><span>${d}</span></div>`;
+    return `<div class="welcome"><div class="hero">
+      <div class="hero-top">
+        <div class="brand"><span class="logo">${ICON.wallet}</span>Budget</div>
+        <h1>Your budget, kept in one file you own.</h1>
+        <p>Split the apartment, track subscriptions and bills, and keep tabs on everything people owe you back. It all lives in a single <b>budget.json</b> in your OneDrive folder, and exports to Excel any time.</p>
+      </div>
+      <div class="hero-body">
+        ${
+          S.pendingName
+            ? `<div class="callout info">Your browser needs your OK to open <b>${esc(S.pendingName)}</b> again. One click, no re-picking.</div>`
+            : ""
+        }
+        <div class="hero-actions">${connect}<button class="btn" data-act="demo">Start with sample data</button></div>
+        <div class="features">
+          ${feat("#10b981", ICON.table, "One file you own", "Every change autosaves into budget.json, with backups, and edits from another device are noticed.")}
+          ${feat("#f59e0b", ICON.split, "Split the apartment", "Rent, utilities and Internet divided your way, with a running tally of what Luke owes.")}
+          ${feat("#ec4899", ICON.expenses, "Get paid back", "Pending, Submitted, Paid for every expense, with receipts and trips grouped together.")}
+        </div>
+        ${
+          fs
+            ? ""
+            : `<div class="callout">This browser can't write to files directly. You can still open your budget.json, edit, and use <b>Save</b> to download the updated file. For automatic saving into your folder, use Chrome or Edge.</div>`
+        }
+      </div>
+    </div></div>`;
   }
 
   // Tag each table cell with its column's header text. Wide screens ignore it; on phones the
@@ -118,16 +200,18 @@
 
     const exp = M.expenseSummary(S.thirdparty, lines);
 
-    const card = (label, value, sub, cls) =>
-      `<div class="card ${cls || ""}"><div class="card-label">${esc(label)}</div><div class="card-value">${value}</div><div class="card-sub">${sub || ""}</div></div>`;
+    const card = (label, value, sub, cls, ico) =>
+      `<div class="card ${cls || ""}"><div class="card-ico">${ico || ICON.wallet}</div><div class="card-label">${esc(label)}</div><div class="card-value">${value}</div><div class="card-sub">${sub || ""}</div></div>`;
 
     view.innerHTML = `
+      ${pageHead("dashboard")}
       <div class="cards">
         ${card(
           latest ? `Apartment — ${esc(latest.label)}` : "Apartment",
           latest ? M.money(latest.total) : "—",
           latest ? `You ${M.money(latest.reid)} · Luke ${M.money(latest.luke)}` : "No entries",
-          "accent"
+          "accent",
+          ICON.apartment
         )}
         ${card(
           "Luke owes you",
@@ -137,12 +221,15 @@
             : lukeOpen.length === 1
             ? `${esc(lukeOpen[0].label)} — ${esc(aptNote(lukeOpen[0]))}`
             : `${lukeOpen.length} months open`,
-          lukeOpen.length ? "warn" : ""
+          lukeOpen.length ? "warn" : "ok",
+          ICON.users
         )}
         ${card(
           "Recurring / month",
           M.money(monthlyRecurring),
-          `Bills ${M.money(billsMo)} · Subs ${M.money(subsMo)}`
+          `Bills ${M.money(billsMo)} · Subs ${M.money(subsMo)}`,
+          "violet",
+          ICON.subscriptions
         )}
         ${card(
           "Owed back to me",
@@ -150,7 +237,8 @@
           `Work ${M.money(exp.byCat["Work (internal)"].outstanding)} · Client ${M.money(
             exp.byCat["Client"].outstanding
           )} · Friends ${M.money(exp.byCat["Friends/Family"].outstanding)}`,
-          exp.total.outstanding ? "warn" : ""
+          exp.total.outstanding ? "warn" : "ok",
+          exp.total.outstanding ? ICON.clock : ICON.check
         )}
       </div>
 
@@ -233,8 +321,8 @@
     const fr = M.frontedSummary(S.thirdparty, lines, year);
     const T = fr.total;
 
-    const card = (label, value, sub, cls) =>
-      `<div class="card ${cls || ""}"><div class="card-label">${esc(label)}</div><div class="card-value">${M.money(
+    const card = (label, value, sub, cls, ico) =>
+      `<div class="card ${cls || ""}"><div class="card-ico">${ico || ICON.wallet}</div><div class="card-label">${esc(label)}</div><div class="card-value">${M.money(
         value
       )}</div><div class="card-sub">${sub || ""}</div></div>`;
 
@@ -301,7 +389,7 @@
         : `<p class="muted rc-empty">${year == null ? "Nothing fronted for others yet." : `Nothing fronted for others in ${year}.`}</p>`;
 
     view.innerHTML = `
-      <div class="sum-toolbar"><span class="muted">Showing</span><div class="chips" aria-label="Period">${chips}</div></div>
+      ${pageHead("summary", `<div class="sum-toolbar"><div class="chips" aria-label="Period">${chips}</div></div>`)}
 
       <div class="cards">
         ${card(
@@ -310,15 +398,17 @@
           months
             ? `${M.money(byItem.total.reid / months)}/mo avg · Luke ${M.money(byItem.total.luke)} · ${months} month${months > 1 ? "s" : ""}`
             : year == null ? "no bills yet" : `no bills in ${year}`,
-          "accent"
+          "accent",
+          ICON.apartment
         )}
-        ${card("Recurring / month", rec.monthly, `${M.money(rec.yearly)}/yr · bills ${M.money(rec.bills)} · subs ${M.money(rec.subs)}`, "")}
-        ${card("Fronted for others", T.fronted, `${M.money(T.Paid)} paid back`, "")}
+        ${card("Recurring / month", rec.monthly, `${M.money(rec.yearly)}/yr · bills ${M.money(rec.bills)} · subs ${M.money(rec.subs)}`, "violet", ICON.subscriptions)}
+        ${card("Fronted for others", T.fronted, `${M.money(T.Paid)} paid back`, "pink", ICON.wallet)}
         ${card(
           "Still owed to you",
           T.outstanding,
           T.fronted > 0.005 ? `${pct(T.recovered)} recovered` : "nothing fronted",
-          T.outstanding > 0.005 ? "warn" : ""
+          T.outstanding > 0.005 ? "warn" : "ok",
+          T.outstanding > 0.005 ? ICON.clock : ICON.check
         )}
       </div>
 
@@ -444,8 +534,8 @@
     ];
     const countOf = (st) => items.filter((it) => it.status === st).length;
 
-    const card = (label, value, sub, cls) =>
-      `<div class="card ${cls || ""}"><div class="card-label">${esc(label)}</div><div class="card-value">${M.money(
+    const card = (label, value, sub, cls, ico) =>
+      `<div class="card ${cls || ""}"><div class="card-ico">${ico || ICON.wallet}</div><div class="card-label">${esc(label)}</div><div class="card-value">${M.money(
         value
       )}</div><div class="card-sub">${sub}</div></div>`;
 
@@ -645,11 +735,19 @@
     }
 
     view.innerHTML = `
+      ${pageHead(
+        "thirdparty",
+        `<span class="head-actions">
+          <button class="btn" id="newGroupBtn" title="Start a group (a trip, a batch to submit together)">New group</button>
+          <button class="btn" data-bulk="thirdparty">Bulk add</button>
+          <button class="btn primary" data-add="thirdparty">${ICON.plus}Add expense</button>
+        </span>`
+      )}
       <div class="cards">
-        ${card("Still owed to me", T.outstanding, `${countOf("Pending") + countOf("Submitted")} expenses open`, T.outstanding ? "accent" : "")}
-        ${card("Not requested yet", T.Pending, `${countOf("Pending")} pending`, T.Pending ? "warn" : "")}
-        ${card("Awaiting payment", T.Submitted, `${countOf("Submitted")} submitted`, "")}
-        ${card("Paid back", T.Paid, `${countOf("Paid")} reimbursed`, "")}
+        ${card("Still owed to me", T.outstanding, `${countOf("Pending") + countOf("Submitted")} expenses open`, "accent", ICON.wallet)}
+        ${card("Not requested yet", T.Pending, `${countOf("Pending")} pending`, T.Pending ? "warn" : "ok", ICON.clock)}
+        ${card("Awaiting payment", T.Submitted, `${countOf("Submitted")} submitted`, "cyan", ICON.expenses)}
+        ${card("Paid back", T.Paid, `${countOf("Paid")} reimbursed`, "ok", ICON.check)}
       </div>
 
       <div class="panel narrow">
@@ -662,14 +760,6 @@
       </div>
 
       <div class="board">
-        <div class="board-head">
-          <h3>Expenses</h3>
-          <span class="head-actions">
-            <button class="btn" id="newGroupBtn" title="Start a group (a trip, a batch to submit together)">New group</button>
-            <button class="btn" data-bulk="thirdparty">Bulk add</button>
-            <button class="btn primary" data-add="thirdparty">+ Add expense</button>
-          </span>
-        </div>
         <div class="filters">
           <div class="chips" aria-label="Filter by who pays">${catChips}</div>
           <div class="chips" aria-label="Filter by status">${stChips}</div>
@@ -936,8 +1026,13 @@
   }
 
   // ---------------- apartment tab (table + summary + links) ----------------
+  // "Bulk add" + "Add" for the page header of a table tab
+  const tableActions = (schemaName) =>
+    `<span class="head-actions"><button class="btn" data-bulk="${schemaName}">Bulk add</button><button class="btn primary" data-add="${schemaName}">${ICON.plus}Add</button></span>`;
+
   function renderApartment(view) {
     view.innerHTML = `
+      ${pageHead("apartment", tableActions("apartment"))}
       <div class="two-col">
         <div>${tableBlock("apartment")}</div>
         <aside class="side">
@@ -981,7 +1076,7 @@
 
   // ---------------- generic table tab ----------------
   function renderTableTab(view, schemaName) {
-    view.innerHTML = tableBlock(schemaName);
+    view.innerHTML = pageHead(schemaName, tableActions(schemaName)) + tableBlock(schemaName);
     wireTable(schemaName);
   }
 
@@ -1036,19 +1131,12 @@
       : `<tr><td class="muted" colspan="${cols.length + 1}">No rows yet — click “Add”.</td></tr>`;
 
     return `
-      <div class="panel-head row">
-        <h3>${esc(schema.title)}</h3>
-        <span class="head-actions">
-          <button class="btn" data-bulk="${schemaName}">Bulk add</button>
-          <button class="btn primary" data-add="${schemaName}">+ Add</button>
-        </span>
-      </div>
-      <div class="table-wrap">
+      <div class="card-table"><div class="table-wrap">
         <table class="grid" data-table="${schemaName}">
           <thead><tr>${head}</tr></thead>
           <tbody>${body}</tbody>
         </table>
-      </div>`;
+      </div></div>`;
   }
 
   function cellClass(c) {
@@ -1389,14 +1477,75 @@
     });
   }
 
-  // ---------------- controls + save bar + status ----------------
+  // ---------------- top bar, banners, settings ----------------
   function renderBars() {
     renderControls();
-    renderSaveBar();
     renderBanner();
   }
 
-  // Warning banners: file-changed-on-disk conflicts, and "autosave isn't saving" states.
+  function timeStr(d) {
+    return d ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
+  }
+
+  // the little pill in the top bar: is everything saved?
+  function fileChipHtml() {
+    const S = BB.state;
+    const dirty = Object.values(S.dirty).some(Boolean);
+    let dot = "";
+    let text;
+    let bad = false;
+    if (S.fileMode === "demo") text = "Sample data · not saved";
+    else if (S.conflict && S.conflict.data) {
+      dot = "error";
+      bad = true;
+      text = "Changed elsewhere";
+    } else if (S.fileMode === "download") {
+      dot = dirty ? "dirty" : "";
+      text = dirty ? "Unsaved changes" : "Opened · saving downloads a copy";
+    } else if (S.saving || (BB.app.autosaveOn() && dirty)) {
+      dot = "saving";
+      text = "Saving…";
+    } else if (dirty) {
+      dot = "dirty";
+      text = "Unsaved changes";
+    } else {
+      dot = "saved";
+      text = S.lastSavedAt ? `Saved ${timeStr(S.lastSavedAt)}` : "Up to date";
+    }
+    const name = S.folderName ? `${esc(S.folderName)} · ` : "";
+    return `<span class="filechip${bad ? " bad" : ""}" title="${esc(S.folderName || BB.store.DATA_FILE)}"><span class="dot ${dot}"></span><span class="name">${name}${esc(text)}</span></span>`;
+  }
+
+  function renderControls() {
+    const S = BB.state;
+    const host = el("controls");
+    if (!host) return;
+    if (!S.loaded) {
+      host.innerHTML = "";
+      return;
+    }
+    const dirty = Object.values(S.dirty).some(Boolean);
+    const fs = S.fileMode === "fs";
+    const needsSave = dirty && (S.fileMode === "download" || (fs && !BB.app.autosaveOn()));
+    const btn = (act, cls, ico, label, title) =>
+      `<button class="btn ${cls}" data-act="${act}" title="${esc(title || label)}" aria-label="${esc(title || label)}">${ico}${
+        label ? `<span class="lbl">${esc(label)}</span>` : ""
+      }</button>`;
+    host.innerHTML =
+      fileChipHtml() +
+      (needsSave ? btn("save", "sm attn", ICON.download, S.fileMode === "download" ? "Download budget.json" : "Save now") : "") +
+      `<button class="btn ghost iconly${S.masked ? " on" : ""}" data-act="mask" title="${S.masked ? "Show amounts" : "Hide amounts"}" aria-label="${
+        S.masked ? "Show amounts" : "Hide amounts"
+      }" aria-pressed="${S.masked ? "true" : "false"}">${S.masked ? ICON.eyeOff : ICON.eye}</button>` +
+      (fs ? btn("reload", "ghost iconly hide-xs", ICON.refresh, "", "Reload from disk") : "") +
+      btn("export", "sm", ICON.download, "Excel", "Export everything to an Excel file") +
+      (S.fileMode === "demo"
+        ? btn("connect", "sm primary hide-xs", ICON.folder, "Open my folder")
+        : btn("connect", "sm hide-xs", ICON.folder, fs ? "Switch folder" : "Open file"));
+    bindActs(host);
+  }
+
+  // Banners: sample data, file-changed-on-disk conflicts, and "autosave isn't saving" states.
   function renderBanner() {
     const host = el("banner");
     if (!host) return;
@@ -1427,23 +1576,27 @@
       );
     }
 
-    // 2) autosave-not-hooked-up (only when there's no conflict taking over)
     if (!parts.length) {
-      if (S.fileMode === "download") {
+      if (S.fileMode === "demo") {
+        // 2) looking at sample data
+        parts.push(
+          `<div class="banner">
+            <span class="banner-msg"><b>Sample data.</b> Look around and try things out — nothing is saved. Open your budget folder to work with the real thing.</span>
+            <span class="banner-actions"><button class="btn sm primary" data-act="connect">Open my folder</button></span>
+          </div>`
+        );
+      } else if (S.fileMode === "download") {
+        // 3) autosave-not-hooked-up
         parts.push(
           `<div class="banner warn">
-            <span class="banner-msg"><b>Download mode</b> — this browser can't write to your file directly, so changes aren't saved automatically. Use <b>Save</b> to download an updated <b>budget.json</b> and replace the one in your folder.</span>
+            <span class="banner-msg"><b>Download mode</b> — this browser can't write to your file directly, so changes aren't saved automatically. Use <b>Download budget.json</b> and replace the one in your folder.</span>
           </div>`
         );
       } else if (S.fileMode === "fs" && !S.autosave) {
-        const anyDirty = Object.values(S.dirty).some(Boolean);
         parts.push(
           `<div class="banner warn">
             <span class="banner-msg"><b>Autosave is off</b> — changes stay in your browser until you save them.</span>
-            <span class="banner-actions">
-              <button class="btn sm" data-autoon>Turn on autosave</button>
-              ${anyDirty ? `<button class="btn sm primary" data-savenow>Save now</button>` : ""}
-            </span>
+            <span class="banner-actions"><button class="btn sm" data-autoon>Turn on autosave</button></span>
           </div>`
         );
       }
@@ -1458,93 +1611,47 @@
     );
     const on = host.querySelector("[data-autoon]");
     if (on) on.addEventListener("click", () => BB.app.setAutosave(true));
-    host.querySelectorAll("[data-savenow]").forEach((b) =>
+    bindActs(host);
+  }
+
+  // Settings: the switches and housekeeping that used to crowd the top bar
+  function openSettings() {
+    const S = BB.state;
+    const fs = S.fileMode === "fs";
+    const demo = S.fileMode === "demo";
+    const row = (color, ico, title, desc, control) =>
+      `<div class="set-row"><span class="tile" style="--c:${color}">${ico}</span><div class="set-text"><b>${esc(title)}</b><span>${desc}</span></div>${control}</div>`;
+    const sw = (id, on) =>
+      `<label class="switch"><input type="checkbox" id="${id}"${on ? " checked" : ""}><span class="track"><span class="thumb"></span></span></label>`;
+    const host = el("modal");
+    host.innerHTML = `
+      <div class="modal-backdrop"></div>
+      <div class="modal-card" id="settingsCard">
+        <h3>Settings</h3>
+        <div class="set-list">
+          ${row("#10b981", ICON.refresh, "Autosave", fs ? "Save every change into budget.json a moment after you make it." : "Available once a folder is connected in Chrome or Edge.", fs ? sw("setAuto", S.autosave) : "")}
+          ${row("#8b5cf6", ICON.eyeOff, "Hide amounts", "Mask every dollar figure, handy when someone is looking over your shoulder.", sw("setMask", S.masked))}
+          ${row("#5b6cff", ICON.folder, demo ? "Your budget folder" : "Budget folder", demo ? "You're looking at sample data. Connect your OneDrive Budgeting folder to work with the real thing." : fs ? `Connected to <b>${esc(S.folderName)}</b>. Backups of budget.json are kept in a <b>backups</b> folder next to it.` : "Not connected to a folder, so saving downloads a copy.", `<span class="set-btns"><button class="btn sm" data-act="connect" data-close>${demo ? "Open folder" : "Switch"}</button>${fs ? `<button class="btn sm" data-act="reload" data-close>Reload</button>` : ""}</span>`)}
+          ${row("#f59e0b", ICON.download, "Export to Excel", "Everything in one workbook: apartment, requests, subscriptions, the tracker, owed totals and trips.", `<button class="btn sm" data-act="export">Download</button>`)}
+        </div>
+        <div class="modal-actions"><button type="button" class="btn primary" id="setDone">Done</button></div>
+      </div>`;
+    host.classList.add("open");
+    const close = () => {
+      host.classList.remove("open");
+      host.innerHTML = "";
+    };
+    host.querySelector(".modal-backdrop").addEventListener("click", close);
+    el("setDone").addEventListener("click", close);
+    host.querySelectorAll("[data-act]").forEach((b) =>
       b.addEventListener("click", () => {
-        Object.keys(BB.state.dirty).forEach((k) => BB.state.dirty[k] && BB.app.save(k));
+        doAct(b.dataset.act);
+        if (b.hasAttribute("data-close")) close();
       })
     );
-  }
-
-  function renderControls() {
-    const S = BB.state;
-    el("status").textContent = S.folderName
-      ? S.folderName
-      : S.loaded
-      ? "Loaded (read-only)"
-      : "No folder";
-    const toggle = el("autoToggle");
-    const canToggle = S.loaded && BB.store.supportsFS;
-    toggle.hidden = !canToggle;
-    const chk = el("autoChk");
-    if (chk) chk.checked = !!S.autosave;
-
-    const exportBtn = el("exportBtn");
-    if (exportBtn) exportBtn.hidden = !S.loaded;
-
-    const mask = el("maskBtn");
-    if (mask) {
-      mask.innerHTML = S.masked ? ICON.eyeOff : ICON.eye;
-      mask.title = S.masked ? "Show amounts" : "Hide amounts";
-      mask.setAttribute("aria-label", mask.title);
-      mask.setAttribute("aria-pressed", S.masked ? "true" : "false");
-      mask.classList.toggle("on", !!S.masked);
-    }
-
-    const btn = el("connectBtn");
-    if (btn) {
-      if (!S.loaded && S.pendingName) btn.textContent = `Reconnect ${S.pendingName}`;
-      else if (S.loaded) btn.textContent = "Change folder";
-      else btn.textContent = BB.store.supportsFS ? "Open budget folder" : "Open budget file";
-    }
-  }
-
-  function timeStr(d) {
-    return d
-      ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-      : "";
-  }
-
-  function renderSaveBar() {
-    const S = BB.state;
-    const bar = el("saveBar");
-    if (!S.loaded) {
-      bar.className = "savebar";
-      bar.innerHTML = "";
-      return;
-    }
-    const dirtyFiles = Object.keys(S.dirty).filter((k) => S.dirty[k]);
-    const auto = BB.app.autosaveOn();
-
-    if (auto) {
-      // files that can't be written in place still need a manual button
-      const needManual = dirtyFiles.filter((k) => !BB.store.state.files[k].handle);
-      const autoDirty = dirtyFiles.filter((k) => BB.store.state.files[k].handle);
-      let left;
-      if (S.saving || autoDirty.length) left = `<span class="saving">Saving…</span>`;
-      else left = `<span class="saved">✓ Saved${S.lastSavedAt ? " " + timeStr(S.lastSavedAt) : ""}</span>`;
-      bar.className = "savebar" + (needManual.length ? " dirty" : "");
-      bar.innerHTML = left + needManual.map(saveBtn).join("");
-      wireSave(bar);
-      return;
-    }
-
-    // manual mode
-    if (!dirtyFiles.length) {
-      bar.className = "savebar";
-      bar.innerHTML = `<span class="saved">All changes saved${S.lastSavedAt ? " " + timeStr(S.lastSavedAt) : ""}</span>`;
-      return;
-    }
-    bar.className = "savebar dirty";
-    bar.innerHTML = `<span>Unsaved changes</span>` + dirtyFiles.map(saveBtn).join("");
-    wireSave(bar);
-  }
-
-  const saveBtn = (k) =>
-    `<button class="btn primary" data-save="${k}">Save ${esc(BB.store.FILES[k].name)}</button>`;
-  function wireSave(bar) {
-    bar.querySelectorAll("[data-save]").forEach((b) =>
-      b.addEventListener("click", () => BB.app.save(b.dataset.save))
-    );
+    const auto = el("setAuto");
+    if (auto) auto.addEventListener("change", (e) => BB.app.setAutosave(e.target.checked));
+    el("setMask").addEventListener("change", (e) => BB.app.setMasked(e.target.checked));
   }
 
   // ---------------- toast ----------------
