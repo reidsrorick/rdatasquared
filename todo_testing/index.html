@@ -1204,8 +1204,16 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.71.2';
+const APP_VERSION = '1.71.3';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.71.3",
+  "title": "Remove the date and time when adding an action",
+  "items": [
+   "When what you type in an add box has a date or time in it (like “call Ann Friday 3pm”), the line under the box now shows what it picked up with a ✕ Remove date & time link. Press it and the words stay in the action but no due date, time or repeat is set from them. Use them brings it back.",
+   "Works in Quick add (Ctrl + Q), the Today and person-page add boxes, and the Actions add box. It resets after each add."
+  ]
+ },
  {
   "v": "1.71.2",
   "title": "Wider answers on Waiting for your OK",
@@ -3827,7 +3835,7 @@ function addAction(){
   }
   const nt = $('#anotefld'), noteText = nt ? nt.value.trim() : '';
   const i = {id:uid(), pinned:false, pinAll:false, type:'task', title:t.value.trim(), body:noteText ? plainToHtml(noteText) : '', tags:[], category:$('#acat').value, due:$('#adue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
-  db.items.push(i); autoDate(i, i.title, i);
+  db.items.push(i); autoDate(i, i.title, i, !qaNoDate); qaNoDate = false;
   const hid = [];                                         // don't let a filter hide what was just added
   if(actCat === 'none' ? !!i.category : actCat ? i.category !== actCat : false){ actCat = ''; hid.push('category'); }
   if(actPerson === 'none' ? !!i.assignee : actPerson ? (i.assignee || '').toLowerCase() !== actPerson.toLowerCase() : false){ actPerson = ''; hid.push('person'); }
@@ -3976,10 +3984,10 @@ const undoParsed = (o, item, p) => {
   if(p.addedPerson && !personUsed(p.addedPerson)) db.people = db.people.filter(k => k.toLowerCase() !== p.addedPerson.toLowerCase());
   item.updated = now();
 };
-function autoDate(o, text, item){
+function autoDate(o, text, item, datesAllowed = true){
   const w0 = !o.assignee ? findAssignee(text, item) : null;
   if(w0 && db.strict && !knownName(w0.name)) setTimeout(() => resolveAssignee(w0.name, nm => { if(nm){ o.assignee = nm; item.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 350);
-  const res = applyParsed(o, text, item, autoDates); if(!res) return false;          // an @name always assigns; dates only when Auto-detect dates is on
+  const res = applyParsed(o, text, item, autoDates && datesAllowed); if(!res) return false;          // an @name always assigns; dates only when Auto-detect dates is on
   const when = [o.due ? fmtDay(o.due) : '', o.time ? fmtTime(o.time) : ''].filter(Boolean).join(' '), bits = [];
   if(res.setDue || res.setTime) bits.push((res.setDue ? 'Due set to ' : 'Time set to ') + when);
   if(res.setRep) bits.push('repeats ' + lcFirst(describeRepeat(o.repeat)));
@@ -5737,13 +5745,22 @@ function renderToday(){
 }
 
 /* ---- Quick add: type it the way you'd say it ---- */
+let qaNoDate = false;          // “Remove date & time” was pressed for what is being typed: the words stay in the text, but no due date, time or repeat is taken from them
+const QA_BOXES = {apv:'anew', tqapv:'tqa', pqapv:'pqa', qapv2:'qai'};          // preview line -> its text box
+function qaPv(raw, base){          // the preview line under a quick-add box: what will be picked up, with a way to switch the date off (or back on)
+  const t = String(raw || '').trim(); if(!t){ qaNoDate = false; return ''; }
+  const body = base == null ? esc(qaSummary(qaParse(raw))) : base, w = qaNoDate ? parseWhen(qaParse(raw).title) : null;
+  if(qaNoDate) return (w && (w.date || w.time || w.repeat) ? `${body} · <span class="warnmsg">date and time in the words are ignored</span> <a data-act="qadateon">Use them</a>` : body);
+  const q = qaParse(raw); return q.date || q.time || q.repeat ? `${body} <a data-act="qanodate" title="Keep the words as they are, but do not set a due date or time from them">✕ Remove date &amp; time</a>` : body;
+}
+function qaPvRefresh(box){ if(box && box.value.trim()) box.dispatchEvent(new Event('input', {bubbles:true})); }
 function qaParse(raw){
   let text = String(raw).trim(), kind = 'task';
   const words = {note:'note', meeting:'meeting', action:'task', task:'task', n:'note', m:'meeting', a:'task', t:'task'};          // what you can type before the colon; the RAID words depend on this file's settings
   for(const k of raidKinds()){ words[RAID_DEFAULT[k].toLowerCase()] = k; words[raidOne(k).toLowerCase()] = k; if(!RAID_ID_RE.test(k)) words[k[0]] = k; }
   const m = text.match(/^([A-Za-z][\w-]{0,19})\s*:\s*/);
   if(m && words[m[1].toLowerCase()]){ kind = words[m[1].toLowerCase()]; text = text.slice(m[0].length).trim(); }
-  const p = text ? parseWhen(text) : null;
+  const p = text && !qaNoDate ? parseWhen(text) : null;
   const w = (kind === 'task' || RAID_META[kind]) && text ? findAssignee(text, null) : null;
   return {kind, title:text, date:p && p.date || '', time:p && p.time || '', repeat:p && p.repeat || null, assignee:w ? w.name : ''};
 }
@@ -5758,29 +5775,30 @@ function quickAdd(raw, who){                    // who: the person whose page yo
   const i = {id:uid(), pinned:false, pinAll:false, type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ const tn = knownName(q.assignee); if(tn) i.assignee = tn; else if(!db.strict){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } else unknownWho = q.assignee; } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = insideNotebook() ? nbView : inboxId(); const qnb = nbById(i.notebook); if(qnb && catById(qnb.category)) i.category = qnb.category; }
   if(who && i.type === 'task' && !i.assignee && !unknownWho) i.assignee = who;
-  db.items.push(i); touch(); refreshViews();
+  db.items.push(i); qaNoDate = false; touch(); refreshViews();
   if(unknownWho) setTimeout(() => resolveAssignee(unknownWho, nm => { if(nm){ i.assignee = nm; i.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 400); else if(i.assignee) afterAssign(i.assignee);
   toast(`Added “${q.title}” — ${qaSummary(q)}${who ? ' → ' + who : ''}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); }, 'Undo', i.id);
   return i;
 }
-function openQuickAdd(){ $('#qai').value = ''; $('#qapv2').textContent = qaSummary(qaParse('')); $('#qadlg').showModal(); $('#qai').focus(); }
+function openQuickAdd(){ qaNoDate = false; $('#qai').value = ''; $('#qapv2').textContent = qaSummary(qaParse('')); $('#qadlg').showModal(); $('#qai').focus(); }
 const oneLine = el => { const re = /\s*[\r\n]+\s*/g; if(re.test(el.value)){ const at = el.selectionStart, before = el.value.slice(0, at).replace(re, ' ').length; el.value = el.value.replace(re, ' '); try { el.setSelectionRange(before, before); } catch {} } };          // the Quick add boxes wrap on screen but hold one line of text (a pasted paragraph becomes one line)
 document.addEventListener('input', e => { const el = e.target; if(el && el.classList && el.classList.contains('qawrap')) oneLine(el); });
-$('#qai').addEventListener('input', e => { $('#qapv2').textContent = qaSummary(qaParse(e.target.value)); });
+$('#qai').addEventListener('input', e => { if(!e.target.value.trim()) qaNoDate = false; $('#qapv2').innerHTML = e.target.value.trim() ? qaPv(e.target.value) : esc(qaSummary(qaParse(''))); });
 $('#qai').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(quickAdd(e.target.value)) $('#qadlg').close(); } });
-$('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) : ''; if(e.target.id === 'pqa') $('#pqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) + (qaParse(e.target.value).assignee ? '' : ' → ' + actPerson) : ''; });
+$('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').innerHTML = qaPv(e.target.value); if(e.target.id === 'pqa') $('#pqapv').innerHTML = e.target.value.trim() ? qaPv(e.target.value, esc(qaSummary(qaParse(e.target.value)) + (qaParse(e.target.value).assignee ? '' : ' → ' + actPerson))) : (qaNoDate = false, ''); });
 function addPreview(text){                                // what the Actions add box will pick up from the words
   const t = text.trim(); if(!t) return '';
   const w = findAssignee(t, {assignee:'', checklist:[], attendees:'', type:'task'}), r = parseWhen(t), bits = [];
   if(w) bits.push('assigned to <b>' + esc(w.name) + '</b>');
-  if(r && (r.date || r.time)){
-    if(autoDates) bits.push('due <b>' + esc([r.date ? fmtDay(r.date) : '', r.time ? fmtTime(r.time) : ''].filter(Boolean).join(' ')) + '</b>');
+  if(r && (r.date || r.time) && qaNoDate) bits.push('<span class="warnmsg">the date and time in the words are ignored</span> <a data-act="qadateon">Use them</a>');
+  else if(r && (r.date || r.time)){
+    if(autoDates) bits.push('due <b>' + esc([r.date ? fmtDay(r.date) : '', r.time ? fmtTime(r.time) : ''].filter(Boolean).join(' ')) + '</b> <a data-act="qanodate" title="Keep the words as they are, but do not set a due date or time from them">✕ Remove date &amp; time</a>');
     else bits.push('<span class="warnmsg">a date in the words is being ignored because Auto-detect dates is off</span> <a data-act="autoon">Turn it on</a>');
   }
-  if(r && r.repeat && autoDates) bits.push('repeating');
+  if(r && r.repeat && autoDates && !qaNoDate) bits.push('repeating');
   return bits.length ? 'Will be ' + bits.join(', ') : '';
 }
-$('#detail').addEventListener('input', e => { if(e.target.id === 'anew' && $('#apv')) $('#apv').innerHTML = addPreview(e.target.value); });
+$('#detail').addEventListener('input', e => { if(e.target.id === 'anew' && $('#apv')){ if(!e.target.value.trim()) qaNoDate = false; $('#apv').innerHTML = addPreview(e.target.value); } });
 $('#detail').addEventListener('input', e => {
   if(e.target.id !== 'psearch') return;
   pageQ = e.target.value; clearTimeout(pageQTimer);
@@ -9733,6 +9751,7 @@ document.addEventListener('click', e => {
     else if(act === 'snaprestore') restoreSnapItem(+a.dataset.i, a.dataset.id); else if(act === 'snapdl') downloadSnap(+a.dataset.i);
     else if(act === 'clearafilters'){ actCat = ''; actPerson = ''; actNb = ''; actDone = false; pageQ = ''; pageDate = ''; pageDF = ''; pageDT = ''; saveUi(); renderDetail(); }
     else if(act === 'addnotetoggle'){ const nf = $('#anotefld'); if(nf){ nf.hidden = !nf.hidden; a.classList.toggle('on', !nf.hidden); if(!nf.hidden) nf.focus(); } }
+    else if(act === 'qanodate' || act === 'qadateon'){ qaNoDate = act === 'qanodate'; const pv = a.closest('.qapv'), bx = pv && document.getElementById(QA_BOXES[pv.id] || ''); qaPvRefresh(bx); if(bx) bx.focus(); }
     else if(act === 'autoon'){ autoDates = true; saveUi(); const an = $('#anew'); renderDetail(); const n2 = $('#anew'); if(n2 && an){ n2.value = an.value; n2.dispatchEvent(new Event('input', {bubbles:true})); n2.focus(); } }
     else if(act === 'pinfold'){ const k = a.dataset.nb || ''; if(pinFold.has(k)) pinFold.delete(k); else pinFold.add(k); saveUi(); renderList(); }
     else if(act === 'propok') decideProposal(a.dataset.key, true);
@@ -10261,7 +10280,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261124093928';</script>
+<script>window.NB_BUILD = '20261124094127';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

@@ -1,4 +1,12 @@
-{"version":"1.71.2","build":"20261124093928","changelog":[
+{"version":"1.71.3","build":"20261124094127","changelog":[
+ {
+  "v": "1.71.3",
+  "title": "Remove the date and time when adding an action",
+  "items": [
+   "When what you type in an add box has a date or time in it (like “call Ann Friday 3pm”), the line under the box now shows what it picked up with a ✕ Remove date & time link. Press it and the words stay in the action but no due date, time or repeat is set from them. Use them brings it back.",
+   "Works in Quick add (Ctrl + Q), the Today and person-page add boxes, and the Actions add box. It resets after each add."
+  ]
+ },
  {
   "v": "1.71.2",
   "title": "Wider answers on Waiting for your OK",
