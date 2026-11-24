@@ -1,20 +1,20 @@
 # Budget
 
-A local, no-build web app for tracking shared bills, subscriptions, and expenses people owe you
+A local, no-build web app for tracking your bills, subscriptions, and expenses people owe you
 back. Your data lives in **one Excel workbook, `budget.xlsx`**, in a folder you choose (such as a
 OneDrive folder). The app reads it and writes every change straight back, right in the browser.
 No server, no database, no upload; your data never leaves your machine. Open the same file in
 Excel any time.
 
-Nothing about you is built in. On first run a short **setup** asks your name, whether you share
-bills with someone (and how each bill splits), and who pays you back. Everything is editable later
-in **Settings**.
+Nothing about you is built in. On first run a short **setup** asks your name and, if you like,
+the people in your life. After that, **you choose who each bill is split with, and how, on the bill itself.**
 
-- **Dashboard** — this month's shared-bill split, what the other person owes you, recurring monthly cost, what's still owed back to you.
-- **Shared bills** (you name it: Apartment, House…) — a table of bills with an automatic split, a monthly summary, biller links. Only appears if you said you share bills.
+- **Dashboard** — the latest month you logged, what people owe you from split bills, recurring monthly cost (your share), and what's still owed back to you.
+- **Bill Log** — what you actually paid each month. Each entry is split the way its bill is set up, so you see your share and who owes what.
 - **Summary** — the overall picture across everything you track, by year.
-- **Subscriptions & Bills** — recurring items, each normalized to a monthly cost, with an Active toggle.
-- **Expense Tracker** — everything someone owes you back: things you paid for, with a status and receipts for each, grouped into trips if you like, plus the other person's share of the shared bills each month and the payment request behind it.
+- **Bills & Subscriptions** — everything that repeats, each normalized to a monthly cost, with a **split** per bill and a **Log** button to record a payment.
+- **Expense Tracker** — everything someone owes you back, per person: things you paid for with a status and receipts, grouped into trips if you like, plus each person's share of the bills you logged and the payment request behind it.
+- **People** — the people you split bills with or who pay you back.
 
 ## Layout
 
@@ -29,37 +29,37 @@ The app is laid out like the [Residence Tracker](https://www.rdatasquared.com/re
 
 **Sample data.** *Start with sample data* — or opening `index.html?demo` — loads made-up numbers so you can look around. Nothing is read or written. **Open my folder** leaves it.
 
-**Settings** holds your setup (names, split rules, categories), the Autosave switch, Hide amounts, the connected folder (Switch / Reload) and a download-a-copy button.
+**Settings** holds your name, the Autosave switch, Hide amounts, the connected folder (Switch / Reload) and a download-a-copy button.
 
-## Setup (first run)
+## People and splits
 
-Open a folder with no `budget.xlsx` and the setup appears. It asks:
+**First run.** Open a folder with no `budget.xlsx` and the setup asks for your name and (optionally) a few
+people: a roommate, a friend, an employer, a client. *Skip for now* leaves it blank. Add and edit people any time
+on the **People** page (name, plus an optional *kind* such as Roommate or Client). Typing a new name anywhere,
+such as "Who pays me back" on an expense, adds that person automatically. Renaming a person updates every
+split, expense and request that uses them.
 
-1. **Your name**, used for column headings.
-2. **Do you share bills with someone?** If yes: their name, what you call it (Apartment, House, Shared bills…), and your **split rules** (below). If no, the shared-bills tab and everything tied to it stays hidden.
-3. **Who pays you back?** Your own categories for expenses you cover and get reimbursed for (friends, an employer, clients…). Start from the suggestions or add your own.
+**Splitting a bill.** Open a bill on **Bills & Subscriptions** (or add one) and use **Split with**: tick the
+people it is shared with, then choose how:
 
-*Skip for now* leaves everything blank. Reopen it any time from **Settings → Names, split rules, categories**,
-or the **Edit** button on the shared-bills page. Changing a category or name never rewrites old rows; anything
-already on an expense keeps showing.
+| Method | Meaning |
+|--------|---------|
+| Split equally | you and everyone ticked pay the same |
+| They pay it all | split equally among the people ticked; your share is $0 |
+| By percent | a percentage for each person ticked; you pay what's left |
+| Fixed amounts | a dollar amount for each person ticked; you pay what's left |
+| Equal, but I pay more or less | equal, then you pay $X more (a minus means less) and the others pay less |
+| I pay a fixed amount | you pay $X each time; the others split the rest |
 
-### Split rules
+A live preview shows how the bill's amount divides. A bill with nobody ticked is just yours. Different bills can be
+split with different people in different ways: rent with your roommate, a streaming plan three ways, a phone
+plan not at all.
 
-Out of the box there are **no rules**: every shared bill is split in half. Add a rule for any item that
-splits differently. The item is whatever you type when adding a bill (suggestions come from your rules and past bills):
+**A bill's amount is the full bill.** The *Recurring / month* figures count only **your share** of it.
 
-| Rule | Meaning |
-|------|---------|
-| Split equally | each person pays half |
-| I pay all / They pay all | the whole bill is yours / theirs |
-| I pay a percentage | e.g. 60 → you pay 60%, they pay 40% |
-| Equal, but I pay more or less | half each, then you pay $X more (a minus amount means less) and they pay less |
-| I pay a fixed amount | you pay $X each time, they pay the rest |
-
-An optional **Shown as** name replaces the item in the Summary. Amounts are kept at full precision and shown to
-2 decimals. A month's **Total** is the sum of the actual bill amounts. (A rule saved with *Round each share up*
-in the workbook charges each person `total − INT(total ÷ 2)`, which can add up to a cent more than the bill;
-the setup screen doesn't offer it, it exists so older data keeps adding up.)
+**Logging payments.** Money is owed when you actually pay. On **Bill Log**, add an entry (or press **Log** on a bill's
+row to start one with its amount filled in). Each entry takes the split of the bill with the same name, and the
+log shows *My share*, *Others owe* and who. Entries for a bill with no split are simply yours.
 
 ## Your data: `budget.xlsx`
 
@@ -68,29 +68,36 @@ first**: Excel locks an open file, and the app will tell you "Couldn't write bud
 
 | Sheet | What's in it | Editable? |
 |-------|--------------|-----------|
-| **Shared Bills** | every bill, with the split columns calculated | yes (Date, Item, Total Amount) |
-| **Requests** | payment requests (which month, status, dates) | yes |
-| **Subscriptions-Bills** | recurring items | yes |
-| **Expense Tracker** | every reimbursable expense: status, dates, receipt filenames, group | yes |
+| **Bill Log** | every payment you logged, with your share and others' share calculated | yes (Date, Bill, Total Amount) |
+| **Requests** | payment requests (which month, from whom, status, dates) | yes |
+| **Subscriptions-Bills** | recurring items, with **Split With**, **Split Method**, **Split Values** | yes |
+| **Expense Tracker** | every reimbursable expense: who owes it, status, dates, receipt filenames, group | yes |
+| **People** | name and kind | yes |
 | **Links** | biller links | yes |
 | **Groups** | trip / group names (so an empty group survives) | yes |
-| **Split Rules** | your rules | yes |
-| **Categories** | your "who pays you back" list | yes |
-| **Settings** | names, setup flags | yes |
+| **Settings** | your name, setup flags | yes |
 | **Summary**, **Owed Summary**, **Trips**, **About** | reports | **no**, rewritten on every save |
 
-Dates and dollar amounts are real Excel dates and currency. The split columns are calculated from the
-rules, so they can't drift out of sync.
+Split With is a list of names from People separated by `;`. Split Values lines up with it (percentages or dollars;
+a single amount for the last two methods). Dates and dollar amounts are real Excel dates and currency.
 
 ### Moving over from earlier versions
 
 The first time you connect a folder that has **no `budget.xlsx`**, the app creates one from the first of these it finds, and says so:
 
-1. an older **`budget.json`** (this app's previous format). Your numbers are unchanged: the names and split rules that file was built on are carried into the new Settings automatically.
-2. your original **`Apartment Breakdown.xlsx`** and **`Expenses.xlsx`**, imported the same way.
+1. an older **`budget.json`**
+2. your original **`Apartment Breakdown.xlsx`** and **`Expenses.xlsx`**
 
-Those older files are only ever **read, never written or deleted**; after the move, `budget.xlsx` is the source of truth.
-A folder with none of them starts the setup.
+Those older files are only ever **read, never written or deleted**. An existing `budget.xlsx` made before the People
+list (with its one partner, per-item split rules and categories) is converted the same way, once, and every number
+stays the same:
+
+- the partner becomes a person, and each rule becomes a **split on a bill of that name** (items with no rule were split
+  in half, so they get an equal split);
+- logged items take the rule's display name (e.g. `uelec` becomes `Electric`);
+- a bill that gets a split now holds the **full amount last paid** (it used to be your portion);
+- each person who owed you on an expense becomes a person, with their old category as their *kind*;
+- payment requests are marked as being from the partner.
 
 ## Download a copy
 
@@ -102,11 +109,11 @@ The **Copy** button (top bar, or Settings → Download a copy) saves a dated cop
 Each data tab has a blue **+ Add** (one row via a form) and a **Bulk add** button. Bulk add
 opens an Excel-style grid where you can type multiple rows or **paste straight from Excel** —
 copy a block of cells, click the first box, and Ctrl+V. Dates accept `11/15/2026` or
-`2026-11-15`; item and category boxes suggest what you've used before; computed splits
+`2026-11-15`; the bill, name and group boxes suggest what you've used before; computed splits
 are filled in automatically. Edit a row with ✎, delete with ✕.
 
 Tables are laid out to fit without a sideways scrollbar. Long text wraps, and details such as a subscription's
-description, start date and comments, or an expense's category and who owes it, sit as small lines under the
+description, start date and comments, or who owes an expense, sit as small lines under the
 name instead of taking their own columns (they're all still stored and editable in the form). Bulk-adding
 expenses leaves out *Status* and its two dates — new expenses start *Pending* and the dates are filled in when
 you change the status.
@@ -115,26 +122,22 @@ you change the status.
 each value with its label ("Amount  $134.00"), with the row's buttons at the bottom. The bulk-add grid does the
 same on screens under about 980px, with one card per row to fill in.
 
-## How the split works
-
-See **Split rules** above. The split is calculated per bill from your rules; with no rules everything is 50/50.
-
 ## Summary tab
 
 Pick a **calendar year** (or **All time**) at the top; the year picker remembers your choice and
 defaults to the newest year with data. Four cards and three panels:
 
-- **Shared bills — your share** — what the shared bills cost you that year, your monthly average, and the other person's share. (Only if you share bills.)
+- **Your share of bills** — what the bills you logged cost you that year, your monthly average, and what others owe. (Only once you've logged something.)
 - **Recurring / month** — what your active subscriptions and bills cost now, per month and per year.
   This is a *current* figure, so it doesn't change with the year you pick.
 - **Fronted for others** and **Still owed to you** — what you paid for other people (expenses you bought that
   year, plus the other person's share of the shared bills), how much has come back, and the percentage recovered.
-- **Where the shared-bill money goes** — each kind of bill with its total, your share, theirs, and its percentage of all shared bills.
+- **Where the bill money goes** — each bill with its total, your share, others' share, and its percentage of everything logged.
 - **Recurring costs** — every active item as a monthly and yearly cost, biggest first.
-- **Fronted for others** — by who pays you back (your categories): fronted, paid back, still owed, recovered.
+- **Fronted for others** — by person: fronted, paid back, still owed, recovered.
 
-The month-by-month table is on the Dashboard and the shared-bills tab, so it isn't repeated here.
-One caution: a bill that's in both your shared bills and your Subscriptions & Bills list shows up in both places, so don't add the two together.
+The month-by-month table is on the Dashboard and the Bill Log, so it isn't repeated here.
+Recurring costs count only your share of a split bill.
 
 ## Privacy mode (hide amounts)
 
@@ -229,11 +232,10 @@ offline), and the versioned URLs make sure an old cached file can never be paire
 
 For anything you paid for that someone else should pay back. Each expense has:
 
-- **Who pays me back** — one of your own categories (set up in Settings, e.g. friends, your employer, a client). You can also just type a new one on an expense.
-- **Owed by** — the person or client's name.
+- **Who pays me back** — a person from People (a friend, your employer, a client). Type a new name and they're added.
 - **Status** — *Pending* (you paid, haven't asked yet) → *Submitted* (expense report / invoice sent, or payment requested) → *Paid*. Change it right from the dropdown on the row; the **Submitted on** / **Paid on** dates are filled in for you.
 
-The top of the page shows how much is **still owed**, how much you haven't requested yet, how much is awaiting payment, and how much has been paid back — plus a breakdown by who pays. Use the filter chips to look at just one category or status (the default view is everything still owed).
+The top of the page shows how much is **still owed**, how much you haven't requested yet, how much is awaiting payment, and how much has been paid back — plus a breakdown by person. Use the filter chips to look at just one person or status (the default view is everything still owed).
 
 **Receipts attach to the expense.** Choose files right in the **Add expense** / **Edit** form (a *Receipts* picker at the bottom), or click the **paperclip** on a row to open its receipts: drop files in or click *Add receipt(s)*. (Bulk add can't take files — attach those afterward with the paperclip.) Receipts need your budget folder connected in Chrome/Edge. Files are saved to a `Receipts/` subfolder of your budget folder as `YYYY-MM-DD_what_filename`, dated by the purchase date, with `-2`, `-3` added if a name repeats. The filenames are stored on the expense (the `Receipt` field), so they travel with it. **✕** unlinks a receipt from the expense but never deletes the file.
 
@@ -265,16 +267,14 @@ full total, and says "(3 shown)" when a filter is hiding some of its expenses.
 Groups are saved in `budget.xlsx` (the **Groups** sheet, and each expense's *Group* column), so an empty group
 survives until you use it, and the workbook has a **Trips** report sheet.
 
-## Shared bills in the Expense Tracker (their share)
+## Split bills in the Expense Tracker
 
-If you said you share bills, you front the whole bill and the other person pays their share by payment
-request, so that's an expense they owe you too. Each **month of shared bills** appears in the Expense Tracker as one line —
-*Apartment — November 2026, owed by Sam, $485.00* — filed under the category you picked for it in setup and counted in the
-totals, the "Who owes me" table, and the dashboard's **Owed back to me** card.
+When you log a payment of a bill that is split, each person pays you back their share. So each **month** and
+**person** appears in the Expense Tracker as one line, e.g. *Shared bills — November 2026, Sam's share of 5 bills, $485.00*,
+counted in the totals, the "Who owes me" table, and the dashboard's **Owed back to me** card.
 
-Nothing is entered twice. The line is **calculated** from your shared bills (their share of that
-month's bills, using your split rules) and takes its **status from that month's payment request**, which
-you manage right on the line:
+Nothing is entered twice. The line is **calculated** from your Bill Log and takes its **status from that month's payment request
+for that person**, which you manage right on the line:
 
 | Status | When |
 |--------|------|
@@ -284,20 +284,16 @@ you manage right on the line:
 
 The buttons on these lines update that request for you:
 
-- **Request…** — opens the payment-request form pre-filled for that month (title, month, their share, status Draft).
+- **Request…** — opens the payment-request form pre-filled for that month and person (title, month, who, status Draft).
 - **Mark paid** — they paid: stamps today as *Payment Received* and sets the status to Paid.
 - **Settled** — the month was already taken care of and has no request; records a Complete request so it stops showing as owed.
 - **✎** — edit the request: its status, the *sent* / *paid* dates, and the *account transferred* date (shown on the line as "in bank 11/14").
 - **✕** — remove the request. That month goes back to *no request yet*, which is how you undo a **Settled** you clicked by mistake.
 
-The receipts for the bills themselves go on the shared-bill entries.
-
-**One-time catch-up.** The first time data loads, every month of bills *before your first
-tracked request* (with no request of its own) is marked **settled** — it assumes you were paid before you
-started tracking. Each shows up as an ordinary *Complete* request titled e.g. "September 2026 Bills"
-(description "Marked settled (before tracking started)"); use **✕** on any you disagree with and that month
-goes back to Pending. This runs once and is remembered in the workbook (a `migration:` row on the Settings sheet), so it never re-creates
-a record you deleted.
+**One-time catch-up.** The first time data loads, every month before your first tracked request (with no request of
+its own) is marked **settled**, assuming you were paid before you started tracking. Each shows up as an ordinary
+*Complete* request (description "Marked settled (before tracking started)"); use **✕** on any you disagree with. This
+runs once and is remembered in the workbook (a `migration:` row on the Settings sheet).
 
 ## Hosting on GitHub
 
@@ -314,7 +310,7 @@ app/
   styles.css        theme (light/dark), layout
   sw.js             service worker (offline app shell)
   js/
-    model.js        settings, split rules, summaries, formatting, table schemas
+    model.js        people, per-bill splits, summaries, formatting, table schemas
     excel.js        reads and writes budget.xlsx (data + settings), older-file import, dated copy
     store.js        budget.xlsx in your folder: load/save, backups, change detection, receipt files
     sample.js       made-up data for "Start with sample data" / ?demo
@@ -328,5 +324,5 @@ app/
 
 Edit the `schemas` object in `js/model.js`. Each table lists its stored `columns` (saved to
 `budget.xlsx`) and optional `computed` columns (derived; set
-`persist: true` to also include them in the export, like the apartment splits). The Item dropdown
-comes from your split rules and past bills (free text).
+`persist: true` to also include them in the export, like the bill-log splits). The Item dropdown
+comes from your bills and past entries (free text).

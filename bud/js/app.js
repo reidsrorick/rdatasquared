@@ -31,7 +31,7 @@
     activeTab: startTab,
     masked: maskedPref,
     folderName: "",
-    rows: { apartment: [], requests: [], subscriptions: [], thirdparty: [] },
+    rows: { apartment: [], requests: [], subscriptions: [], thirdparty: [], people: [] },
     dirty: { data: false }, // unsaved changes vs budget.xlsx
     links: [],
     migrations: {}, // one-time data fixes already applied (stored in budget.xlsx)
@@ -483,42 +483,90 @@
   }
 
   // replace the in-memory data with what was just read:
-  // { rowsBySchema, links, migrations, groups, settings }
-  // A file that predates the setup screen has no settings; if it holds data it keeps the rules it
-  // was built on (so every number stays the same), and a blank one starts at the setup screen.
-  function ingest({ rowsBySchema, links, migrations, groups, settings }) {
-    const hasData = Object.values(rowsBySchema || {}).some((a) => a && a.length);
-    let st = settings;
-    let carried = false;
-    if (!st) {
-      st = hasData ? BB.model.legacySettings() : BB.model.blankSettings();
-      carried = hasData;
+  // { rowsBySchema, links, migrations, groups, settings, legacy }
+  // Files made before the People list kept one partner, per-item rules and categories. Those are
+  // turned into people and per-bill splits here (every number stays the same). A file with data but
+  // no settings at all (budget.json, the original spreadsheets) was built on the original defaults.
+  function ingest({ rowsBySchema, links, migrations, groups, settings, legacy }) {
+    const R = rowsBySchema || {};
+    const rows = {
+      apartment: R.apartment || [],
+      requests: R.requests || [],
+      subscriptions: R.subscriptions || [],
+      thirdparty: R.thirdparty || [],
+      people: R.people || [],
+    };
+    const hasData = ["apartment", "requests", "subscriptions", "thirdparty"].some((k) => rows[k].length);
+    const mig = { ...(migrations || {}) };
+    let st = settings || BB.model.blankSettings();
+    let migrated = false;
+    if (!mig.peopleModel) {
+      const old = legacy || (!settings && hasData ? BB.model.oldDefaults() : null);
+      if (old) {
+        BB.model.migrateToPeople(rows, old);
+        st = BB.model.normalizeSettings({ setupDone: old.setupDone, me: old.me });
+        migrated = hasData;
+      }
+      mig.peopleModel = true;
     }
     S.settings = st;
-    BB.model.setSettings(st); // before the rows are normalized: defaults depend on it
-    S.rows.apartment = rowsBySchema.apartment || [];
-    S.rows.requests = (rowsBySchema.requests || []).map(BB.model.normalizeRequest);
-    S.rows.subscriptions = rowsBySchema.subscriptions || [];
-    S.rows.thirdparty = (rowsBySchema.thirdparty || []).map(BB.model.normalizeExpense);
+    S.rows.people = rows.people;
+    S.rows.apartment = rows.apartment;
+    S.rows.subscriptions = rows.subscriptions;
+    S.rows.requests = rows.requests.map(BB.model.normalizeRequest);
+    S.rows.thirdparty = rows.thirdparty.map(BB.model.normalizeExpense);
+    BB.model.useData(S); // the split calculations read people and each bill's split
     S.links = links || [];
-    S.migrations = { ...(migrations || {}) };
+    S.migrations = mig;
     S.groups = [...(groups || [])];
     S.dirty = { data: false };
     S.conflict = { data: false };
     S.saveError = "";
     applyMigrations();
-    if (carried) markDirty("data"); // write the carried-over settings into the file
+    if (migrated) {
+      markDirty("data"); // write the new shape into the file
+      setTimeout(
+        () => BB.ui.toast("Set up your people and each bill's split from your earlier rules. Open People or a bill to change them.", "ok"),
+        4200
+      );
+    }
   }
 
-  // Change names, split rules or categories (from the setup / settings dialog).
+  // ---- people ----
+  // the canonical spelling of a person's name, adding them to People if they're new
+  function ensurePerson(name, kind) {
+    name = String(name || "").trim();
+    if (!name) return "";
+    const hit = S.rows.people.find((p) => BB.model.sameName(p.Name, name));
+    if (hit) return hit.Name;
+    S.rows.people.push(kind ? { Name: name, Kind: kind } : { Name: name });
+    return name;
+  }
+
+  // a person was renamed: change their name wherever it is used
+  function propagateRename(oldName, newName) {
+    const same = BB.model.sameName;
+    S.rows.thirdparty.forEach((r) => {
+      if (same(r["Owed By"], oldName)) r["Owed By"] = newName;
+    });
+    S.rows.requests.forEach((r) => {
+      if (same(r.Person, oldName)) r.Person = newName;
+    });
+    S.rows.subscriptions.forEach((b) => {
+      if (!b["Split With"]) return;
+      b["Split With"] = BB.model
+        .splitList(b["Split With"])
+        .map((n) => (same(n, oldName) ? newName : n))
+        .join("; ");
+    });
+  }
+
+  // Name (and optionally people to add) from the setup dialog
   function saveSettings(next) {
-    const st = BB.model.normalizeSettings(next);
-    st.setupDone = true;
-    S.settings = st;
-    BB.model.setSettings(st);
-    // a hidden tab can't stay the active one
-    if (!st.sharedEnabled && S.activeTab === "apartment") S.activeTab = "dashboard";
-    S.rows.thirdparty.forEach(BB.model.normalizeExpense);
+    next = next || {};
+    S.settings = BB.model.normalizeSettings({ ...S.settings, me: next.me != null ? next.me : S.settings.me, setupDone: true });
+    (next.people || []).forEach((p) => ensurePerson(p.Name, p.Kind));
+    BB.model.useData(S);
     markDirty("data");
     BB.ui.render();
   }
@@ -535,7 +583,7 @@
     if (added.length) S.rows.requests.push(...added);
     markDirty("requests"); // persist the data (and the "already done" marker)
     if (added.length) {
-      const months = added.map((r) => r.Title.replace(/ Bills$/, "")).join(" and ");
+      const months = [...new Set(added.map((r) => r.Title.replace(/ Bills$/, "")))].join(" and ");
       // shown a moment later so it isn't hidden behind the "connected" toast
       setTimeout(
         () =>
@@ -560,11 +608,35 @@
       BB.model.applyStatusDates(BB.model.normalizeExpense(row));
       if (row.Group) row.Group = ensureGroup(row.Group); // match an existing group's spelling / remember a new one
     }
-    if (schemaName === "requests") BB.model.normalizeRequest(row);
+    if (schemaName === "thirdparty" && row["Owed By"]) row["Owed By"] = ensurePerson(row["Owed By"]);
+    if (schemaName === "requests") {
+      BB.model.normalizeRequest(row);
+      if (row.Person) row.Person = ensurePerson(row.Person);
+    }
+    if (schemaName === "subscriptions") {
+      const who = BB.model.splitList(row["Split With"]).map((n) => ensurePerson(n));
+      row["Split With"] = who.join("; ") || null;
+      if (!who.length) {
+        row["Split Method"] = null;
+        row["Split Values"] = null;
+      }
+    }
     return row;
   }
 
   function commitRow(schemaName, index, out) {
+    if (schemaName === "people") {
+      out.Name = String(out.Name || "").trim();
+      const clash = S.rows.people.some((p, i) => i !== index && BB.model.sameName(p.Name, out.Name));
+      if (clash) {
+        BB.ui.toast(`“${out.Name}” is already in People.`, "warn");
+        return false;
+      }
+      if (index != null) {
+        const was = S.rows.people[index].Name;
+        if (was !== out.Name) propagateRename(was, out.Name);
+      }
+    }
     prepRow(schemaName, out);
     if (index == null) S.rows[schemaName].push(out);
     else S.rows[schemaName][index] = out;
@@ -582,8 +654,9 @@
 
   function deleteRow(schemaName, index) {
     const r = S.rows[schemaName][index];
-    const label = r.Item || r.Title || r.Activity || "this row";
-    if (!window.confirm(`Delete “${label}”?`)) return;
+    const label = r.Item || r.Title || r.Activity || r.Name || "this row";
+    const note = schemaName === "people" ? "\n\nTheir name stays on existing expenses, splits and requests as plain text." : "";
+    if (!window.confirm(`Delete “${label}”?${note}`)) return;
     S.rows[schemaName].splice(index, 1);
     markDirty(schemaName);
     BB.ui.render();
@@ -737,7 +810,7 @@
   }
 
   BB.app = {
-    setTab, connect, startDemo, loadFallback, saveSettings, commitRow, commitRows, deleteRow, save, reload,
+    setTab, connect, startDemo, loadFallback, saveSettings, ensurePerson, commitRow, commitRows, deleteRow, save, reload,
     setAutosave, setMasked, autosaveOn, canAutosave,
     attachReceipts, unlinkReceipt, openReceiptByName, setExpenseStatus, settleMonth, markMonthPaid,
     createGroup, assignGroup, renameGroup, deleteGroup, setGroupStatus, groupList,

@@ -69,7 +69,7 @@
   }
 
   // budget.xlsx → everything the app holds. `settings` is null for a workbook that has no
-  // Settings sheet (the older two-file workbooks).
+  // Settings sheet (the older two-file workbooks); `legacy` is set for one made before the People list.
   function readWorkbook(buf) {
     let wb;
     try {
@@ -88,6 +88,7 @@
       .filter(Boolean);
 
     let settings = null;
+    let legacy = null; // names / split rules / categories from a workbook made before the People list
     const migrations = {};
     if (wb.Sheets["Settings"]) {
       const kv = {};
@@ -98,29 +99,41 @@
           if (truthy(r.Value)) migrations[k.slice(10)] = true;
         } else kv[k] = r.Value;
       });
-      const methodId = (txt) => {
-        const t = String(txt == null ? "" : txt).trim().toLowerCase();
-        const hit = model.RULE_METHODS.find((m) => m.id === t || m.label.toLowerCase() === t);
-        return hit ? hit.id : "equal";
-      };
-      settings = model.normalizeSettings({
-        setupDone: truthy(kv.setupDone),
-        me: kv.me,
-        partner: kv.partner,
-        sharedEnabled: truthy(kv.sharedEnabled),
-        sharedLabel: kv.sharedLabel,
-        sharedCategory: kv.sharedCategory,
-        categories: parseSheet(wb.Sheets["Categories"]).map((r) => r.Category),
-        rules: parseSheet(wb.Sheets["Split Rules"]).map((r) => ({
-          item: r.Item,
-          method: methodId(r.Rule),
-          value: r["Amount or %"],
-          label: r["Shown as"],
-          up: truthy(r["Round each share up"]),
-        })),
-      });
+      settings = model.normalizeSettings({ setupDone: truthy(kv.setupDone), me: kv.me });
+      if (wb.Sheets["Split Rules"] || wb.Sheets["Categories"] || kv.sharedEnabled != null) {
+        const oldMethods = {
+          "split equally": "equal",
+          "i pay all": "mine",
+          "they pay all": "theirs",
+          "i pay a percentage": "percent",
+          "equal, but i pay more or less": "offset",
+          "i pay a fixed amount": "fixed",
+        };
+        const oldId = (txt) => {
+          const t = String(txt == null ? "" : txt).trim().toLowerCase();
+          return oldMethods[t] || (["equal", "mine", "theirs", "percent", "offset", "fixed"].includes(t) ? t : "equal");
+        };
+        const str = (v) => String(v == null ? "" : v).trim();
+        legacy = {
+          setupDone: truthy(kv.setupDone),
+          me: str(kv.me),
+          partner: str(kv.partner),
+          sharedEnabled: truthy(kv.sharedEnabled),
+          sharedLabel: str(kv.sharedLabel),
+          categories: parseSheet(wb.Sheets["Categories"]).map((r) => str(r.Category)).filter(Boolean),
+          rules: parseSheet(wb.Sheets["Split Rules"])
+            .map((r) => ({
+              item: str(r.Item),
+              method: oldId(r.Rule),
+              value: r["Amount or %"] == null || r["Amount or %"] === "" ? null : Number(r["Amount or %"]),
+              label: str(r["Shown as"]),
+              up: truthy(r["Round each share up"]),
+            }))
+            .filter((r) => r.item),
+        };
+      }
     }
-    return { rowsBySchema, links: readLinks(wb), groups, settings, migrations };
+    return { rowsBySchema, links: readLinks(wb), groups, settings, legacy, migrations };
   }
 
   // files: { apartment?: File, expenses?: File } — either may be missing (the older workbooks)
@@ -129,7 +142,7 @@
     for (const key of ["apartment", "expenses"]) {
       if (files[key]) wbs[key] = XLSX.read(await files[key].arrayBuffer(), { cellDates: true });
     }
-    const rowsBySchema = { apartment: [], requests: [], subscriptions: [], thirdparty: [] };
+    const rowsBySchema = { apartment: [], requests: [], subscriptions: [], thirdparty: [], people: [] };
     for (const [name, schema] of Object.entries(schemas)) {
       const wb = wbs[schema.file];
       if (!wb) continue;
@@ -201,7 +214,7 @@
 
   function summarySheet(rows) {
     const sum = model.summarize(rows);
-    const aoa = [["Month", model.meName(), model.partnerName(), "Total"]];
+    const aoa = [["Month", model.meName(), "Others", "Total"]];
     sum.months.forEach((m) => aoa.push([m.label, m.me, m.other, m.total]));
     aoa.push(["Year total", sum.year.me, sum.year.other, sum.year.total]);
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -210,7 +223,7 @@
     return ws;
   }
 
-  // `lines` = the other person's shared-bill months (derived), counted under the shared category
+  // `lines` = what each person owes from the bills you logged, month by month (derived)
   function owedSheet(rows, lines) {
     const sum = model.expenseSummary(rows, lines);
     const aoa = [["Who pays me back", "Pending", "Submitted", "Paid", "Still owed"]];
@@ -225,8 +238,8 @@
 
     if (lines && lines.length) {
       const start = aoa.length + 1; // leave a blank row
-      const head = [`${model.sharedLabel()} — ${model.partnerName()}'s share`, "Amount", "Status", "Request sent", "Payment received"];
-      const block = [head, ...lines.map((l) => [l.label, l.amount, l.status, model.toDate(l.sentOn) || null, model.toDate(l.paidOn) || null])];
+      const head = ["Shared bills: by month", "Person", "Amount", "Status", "Request sent", "Payment received"];
+      const block = [head, ...lines.map((l) => [l.label, l.person, l.amount, l.status, model.toDate(l.sentOn) || null, model.toDate(l.paidOn) || null])];
       XLSX.utils.sheet_add_aoa(ws, block, { origin: { r: start, c: 0 }, cellDates: true });
       block.forEach((row, i) => {
         if (i === 0) return;
@@ -234,9 +247,9 @@
           const cell = ws[XLSX.utils.encode_cell({ r: start + i, c })];
           if (cell && cell.v != null) cell.z = z;
         };
-        set(1, MONEY_FMT);
-        set(3, DATE_FMT);
+        set(2, MONEY_FMT);
         set(4, DATE_FMT);
+        set(5, DATE_FMT);
       });
       aoa.push([], ...block); // keeps column-width sizing aware of the second table
     }
@@ -270,37 +283,22 @@
     return ws;
   }
 
-  // the settings that make the numbers come out the way they do
+  // your name and setup flags, plus the trip / group names
   function settingsSheets(S) {
     const cfg = S.settings || model.blankSettings();
     const kv = [
       ["Setting", "Value"],
       ["setupDone", !!cfg.setupDone],
       ["me", cfg.me || ""],
-      ["partner", cfg.partner || ""],
-      ["sharedEnabled", !!cfg.sharedEnabled],
-      ["sharedLabel", cfg.sharedLabel || ""],
-      ["sharedCategory", cfg.sharedCategory || ""],
     ];
     Object.keys(S.migrations || {}).forEach((k) => S.migrations[k] && kv.push([`migration:${k}`, true]));
     const settings = XLSX.utils.aoa_to_sheet(kv);
     settings["!cols"] = [{ wch: 30 }, { wch: 30 }];
 
-    const label = (id) => (model.RULE_METHODS.find((m) => m.id === id) || model.RULE_METHODS[0]).label;
-    const rules = [["Item", "Rule", "Amount or %", "Shown as", "Round each share up"]].concat(
-      cfg.rules.map((r) => [r.item, label(r.method), r.value, r.label || null, r.up ? true : null])
-    );
-    const rulesWs = XLSX.utils.aoa_to_sheet(rules);
-    rulesWs["!cols"] = widths(rules[0], rules);
-
-    const cats = [["Category"], ...cfg.categories.map((c) => [c])];
-    const catsWs = XLSX.utils.aoa_to_sheet(cats);
-    catsWs["!cols"] = [{ wch: 28 }];
-
     const grp = [["Group"], ...(S.groups || []).map((g) => [String(g).trim()]).filter((r) => r[0])];
     const grpWs = XLSX.utils.aoa_to_sheet(grp);
     grpWs["!cols"] = [{ wch: 34 }];
-    return { settings, rulesWs, catsWs, grpWs };
+    return { settings, grpWs };
   }
 
   function aboutSheet() {
@@ -309,23 +307,29 @@
       ["This file is the saved copy of your budget. The app reads it when you open your folder and writes every change straight back."],
       [""],
       ["You can edit these sheets in Excel (close the file in Excel before using the app):"],
-      ["  Shared Bills, Requests, Subscriptions-Bills, Expense Tracker, Links, Groups, Split Rules, Categories, Settings"],
+      ["  Bill Log, Requests, Subscriptions-Bills, Expense Tracker, People, Links, Groups, Settings"],
       ["Rewritten on every save, so edits to them are overwritten:"],
       ["  Summary, Owed Summary, Trips, About"],
       [""],
-      ["Split Rules: Rule is one of Split equally, I pay all, They pay all, I pay a percentage, Equal but I pay more or less, I pay a fixed amount."],
-      ["Anything without a rule is split in half."],
+      ["Splits live on each bill in Subscriptions-Bills: Split With (names from People, separated by ;), Split Method, Split Values."],
+      ["Split Method is one of: Split equally, They pay it all, By percent, Fixed amounts, Equal but I pay more or less, I pay a fixed amount."],
+      ["Split Values lines up with Split With (percentages or dollars); for the last two methods it is a single amount."],
+      ["A bill with no Split With is just yours. Bill Log entries use the split of the bill with the same name."],
     ];
     const ws = XLSX.utils.aoa_to_sheet(lines);
-    ws["!cols"] = [{ wch: 120 }];
+    ws["!cols"] = [{ wch: 130 }];
     return ws;
   }
+
+  // make the split calculations see this data (people and each bill's split)
+  const useModelData = (S) => model.useData({ settings: S.settings, rows: S.rows || {} });
 
   // S = { rows, links, groups, settings, migrations }
   function buildWorkbook(S) {
     const wb = XLSX.utils.book_new();
     const add = (name, ws) => XLSX.utils.book_append_sheet(wb, ws, name);
     const rows = S.rows || {};
+    useModelData(S);
     add(schemas.apartment.sheet, buildSheet(schemas.apartment, rows.apartment || []));
     add("Summary", summarySheet(rows.apartment || []));
     add("Requests", buildSheet(schemas.requests, rows.requests || []));
@@ -335,10 +339,9 @@
     const trips = tripsSheet(rows.thirdparty || [], S.groups || []);
     if (trips) add("Trips", trips);
     add("Links", linksSheet(S.links || []));
+    add(schemas.people.sheet, buildSheet(schemas.people, rows.people || []));
     const st = settingsSheets(S);
     add("Groups", st.grpWs);
-    add("Split Rules", st.rulesWs);
-    add("Categories", st.catsWs);
     add("Settings", st.settings);
     add("About", aboutSheet());
     return wb;

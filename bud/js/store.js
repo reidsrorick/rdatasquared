@@ -161,7 +161,7 @@
   }
 
   function emptyRows() {
-    return { apartment: [], requests: [], subscriptions: [], thirdparty: [] };
+    return { apartment: [], requests: [], subscriptions: [], thirdparty: [], people: [] };
   }
 
   function parseJson(text) {

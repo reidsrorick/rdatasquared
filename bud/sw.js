@@ -1,7 +1,7 @@
 /* Service worker: offline app shell.
    To ship an update: bump CACHE here AND the ?v= number on the <link>/<script> tags in
    index.html (the ?v= makes a previously-cached copy of the old file unmatchable). */
-const CACHE = "budget-v29";
+const CACHE = "budget-v31";
 const ASSETS = [
   "./",
   "index.html",

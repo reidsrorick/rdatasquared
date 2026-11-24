@@ -34,16 +34,17 @@
 
   const TABS = [
     { id: "dashboard", label: "Dashboard", ico: ICON.dashboard, tone: "#5b6cff", eyebrow: "Overview",
-      lede: "Where things stand across the apartment, your recurring costs, and what people owe you back." },
-    { id: "apartment", get label() { return M.sharedLabel(); }, schema: "apartment", ico: ICON.apartment, tone: "#10b981",
-      get eyebrow() { return `Shared with ${M.partnerName()}`; },
-      get lede() { return `Log each bill and the split between you and ${M.partnerName()} is worked out for you.`; } },
+      lede: "Where things stand: what you paid, what repeats, and what people owe you back." },
+    { id: "apartment", label: "Bill Log", schema: "apartment", ico: ICON.apartment, tone: "#10b981", eyebrow: "Payments",
+      lede: "What you actually paid each month. Every entry is split the way its bill is set up, so you see your share and what others owe you." },
     { id: "summary", label: "Summary", ico: ICON.summary, tone: "#ec4899", eyebrow: "Roll-up",
-      lede: "The whole picture for a year, or all time: apartment, recurring costs, and what you've fronted for others." },
-    { id: "subscriptions", label: "Subscriptions & Bills", schema: "subscriptions", ico: ICON.subscriptions, tone: "#f59e0b", eyebrow: "Recurring",
-      lede: "Subscriptions and bills that repeat, with what each costs per month." },
+      lede: "The whole picture for a year, or all time: your bills, recurring costs, and what you've fronted for others." },
+    { id: "subscriptions", label: "Bills & Subscriptions", schema: "subscriptions", ico: ICON.subscriptions, tone: "#f59e0b", eyebrow: "Recurring",
+      lede: "Everything that repeats. Choose who each bill is split with and how, then use Log each time you pay it." },
     { id: "thirdparty", label: "Expense Tracker", schema: "thirdparty", ico: ICON.expenses, tone: "#8b5cf6", eyebrow: "Reimbursements",
       lede: "Things you paid for that someone owes you back. Move each from Pending to Submitted to Paid, and group related ones into trips." },
+    { id: "people", label: "People", schema: "people", ico: ICON.users, tone: "#06b6d4", eyebrow: "Who's involved",
+      lede: "Anyone you split bills with or who pays you back: a roommate, a friend, an employer, a client." },
   ];
 
   // title block at the top of every page: small label, big title, and a line saying what it's for
@@ -55,8 +56,7 @@
   }
 
   const validTab = (id) => TABS.some((t) => t.id === id);
-  // the shared-bills tab only exists if you said you share bills with someone
-  const visibleTabs = () => TABS.filter((t) => t.id !== "apartment" || M.getSettings().sharedEnabled);
+  const visibleTabs = () => TABS;
 
   // how many expenses are still waiting for you to send the request (shown on the nav)
   function pendingCount() {
@@ -99,6 +99,7 @@
 
   function render() {
     el("app").classList.toggle("welcome-mode", !BB.state.loaded);
+    M.useData(BB.state); // people and each bill's split drive every number below
     renderNav();
     renderBars();
     const view = el("view");
@@ -114,6 +115,7 @@
     else if (tab === "apartment") renderApartment(view);
     else if (tab === "summary") renderSummaryView(view);
     else if (tab === "thirdparty") renderExpenses(view);
+    else if (tab === "people") renderPeople(view);
     else renderTableTab(view, tab);
     labelTables(view);
   }
@@ -142,7 +144,7 @@
         <div class="hero-actions">${connect}<button class="btn" data-act="demo">Start with sample data</button></div>
         <div class="features">
           ${feat("#10b981", ICON.table, "Excel is the file", "Every change autosaves into budget.xlsx, with backups, and edits from another device are noticed.")}
-          ${feat("#f59e0b", ICON.split, "Split any way", "Equal, a percentage, a fixed amount or more-than-half: you set the rules, with a tally of what's owed.")}
+          ${feat("#f59e0b", ICON.split, "Split bill by bill", "Add the people in your life, then pick who each bill is split with and how: equally, by percent, fixed amounts, or more than half.")}
           ${feat("#ec4899", ICON.expenses, "Get paid back", "Pending, Submitted, Paid for every expense, with receipts and trips grouped together.")}
         </div>
         ${
@@ -172,7 +174,7 @@
     });
   }
 
-  // One-line status for a month of the other person's share, taken from that month's request.
+  // One-line status for a month of one person's share, taken from that month's request.
   function aptNote(l) {
     const inBank = l.transferredOn ? ` · in bank ${fmtShort(l.transferredOn)}` : "";
     if (l.status === "Paid")
@@ -182,94 +184,86 @@
   }
 
   // ---------------- dashboard ----------------
-  const shared = () => M.getSettings().sharedEnabled;
   const lc = (s) => String(s || "").toLowerCase();
 
   function renderDashboard(view) {
     const S = BB.state.rows;
-    const on = shared();
     const sum = M.summarize(S.apartment);
     const latest = sum.months[sum.months.length - 1];
-    const them = M.partnerName();
 
-    // what they still owe you (months of shared bills not yet paid)
+    // what people still owe you from the bills you logged (months not yet paid)
     const lines = M.apartmentOwedLines(S.apartment, S.requests);
-    const theyOpen = lines.filter((l) => l.status !== "Paid");
-    const theyOwe = theyOpen.reduce((a, l) => a + l.amount, 0);
+    const open = lines.filter((l) => l.status !== "Paid");
+    const openTotal = open.reduce((a, l) => a + l.amount, 0);
+    const anySplit = lines.length > 0 || S.subscriptions.some((b) => M.splitDef(b));
 
     const activeSubs = S.subscriptions.filter((r) => r.Active !== false);
-    const monthlyRecurring = activeSubs.reduce((a, r) => a + M.monthlyEquivalent(r.Amount, r.Occurance), 0);
+    const monthlyRecurring = activeSubs.reduce((a, r) => a + M.myMonthly(r), 0);
     const billsMo = activeSubs
       .filter((r) => /bill/i.test(r.Category || ""))
-      .reduce((a, r) => a + M.monthlyEquivalent(r.Amount, r.Occurance), 0);
+      .reduce((a, r) => a + M.myMonthly(r), 0);
     const subsMo = monthlyRecurring - billsMo;
 
     const exp = M.expenseSummary(S.thirdparty, lines);
-    const catLine = exp.cats.length
-      ? exp.cats
-          .slice(0, 3)
-          .map((c) => `${esc(c)} ${M.money(exp.byCat[c].outstanding)}`)
-          .join(" · ")
-      : "nothing tracked yet";
+    const owing = exp.cats
+      .filter((c) => exp.byCat[c].outstanding > 0.005)
+      .sort((a, b) => exp.byCat[b].outstanding - exp.byCat[a].outstanding);
+    const owingLine = owing.length
+      ? owing.slice(0, 3).map((c) => `${esc(c)} ${M.money(exp.byCat[c].outstanding)}`).join(" · ")
+      : "nobody owes you right now";
 
     const card = (label, value, sub, cls, ico) =>
       `<div class="card ${cls || ""}"><div class="card-ico">${ico || ICON.wallet}</div><div class="card-label">${esc(label)}</div><div class="card-value">${value}</div><div class="card-sub">${sub || ""}</div></div>`;
 
     const cards = [];
-    if (on)
+    if (latest)
       cards.push(
         card(
-          latest ? `${esc(M.sharedLabel())} — ${esc(latest.label)}` : esc(M.sharedLabel()),
-          latest ? M.money(latest.total) : "—",
-          latest ? `You ${M.money(latest.me)} · ${esc(them)} ${M.money(latest.other)}` : "No entries yet",
+          `Bill Log — ${esc(latest.label)}`,
+          M.money(latest.total),
+          `You ${M.money(latest.me)}${latest.other > 0.005 ? ` · Others ${M.money(latest.other)}` : ""}`,
           "accent",
           ICON.apartment
-        ),
+        )
+      );
+    if (anySplit) {
+      const who = [...new Set(open.map((l) => l.person))];
+      cards.push(
         card(
-          `${esc(them)} owes you`,
-          M.money(theyOwe),
-          theyOpen.length === 0
+          "Split bills owed to you",
+          M.money(openTotal),
+          open.length === 0
             ? "all settled"
-            : theyOpen.length === 1
-            ? `${esc(theyOpen[0].label)} — ${esc(aptNote(theyOpen[0]))}`
-            : `${theyOpen.length} months open`,
-          theyOpen.length ? "warn" : "ok",
+            : `${esc(who.slice(0, 3).join(", "))}${who.length > 3 ? "…" : ""} · ${open.length} month${open.length === 1 ? "" : "s"} open`,
+          open.length ? "warn" : "ok",
           ICON.users
         )
       );
+    }
     cards.push(
       card("Recurring / month", M.money(monthlyRecurring), `Bills ${M.money(billsMo)} · Subs ${M.money(subsMo)}`, "violet", ICON.subscriptions),
       card(
         "Owed back to me",
         M.money(exp.total.outstanding),
-        catLine,
+        owingLine,
         exp.total.outstanding ? "warn" : "ok",
         exp.total.outstanding ? ICON.clock : ICON.check
       )
     );
 
+    const panels = [];
+    if (S.apartment.length)
+      panels.push(`<div class="panel"><div class="panel-head"><h3>Bill Log by month</h3></div>${renderSummaryTable(sum)}</div>`);
+    panels.push(`<div class="panel"><div class="panel-head"><h3>Active recurring</h3></div>${renderMiniRecurring(activeSubs)}</div>`);
+
     view.innerHTML = `
       ${pageHead("dashboard")}
       <div class="cards" style="--n:${cards.length}">${cards.join("")}</div>
-
-      <div class="dash-grid${on ? "" : " one"}">
-        ${
-          on
-            ? `<div class="panel">
-          <div class="panel-head"><h3>Monthly ${esc(lc(M.sharedLabel()))} split</h3></div>
-          ${renderSummaryTable(sum)}
-        </div>`
-            : ""
-        }
-        <div class="panel">
-          <div class="panel-head"><h3>Active recurring</h3></div>
-          ${renderMiniRecurring(activeSubs)}
-        </div>
-      </div>`;
+      <div class="dash-grid${panels.length === 1 ? " one" : ""}">${panels.join("")}</div>`;
   }
 
   function renderSummaryTable(sum) {
-    if (!sum.months.length) return `<p class="muted rc-empty">No entries yet.</p>`;
+    if (!sum.months.length) return `<p class="muted rc-empty">Nothing logged yet.</p>`;
     const rows = sum.months
       .map(
         (m) =>
@@ -278,17 +272,15 @@
           )}</td><td class="num">${M.money(m.total)}</td></tr>`
       )
       .join("");
-    return `<div class="panel-scroll"><table class="grid summary"><thead><tr><th>Month</th><th class="num">${esc(M.meName())}</th><th class="num">${esc(
-      M.partnerName()
-    )}</th><th class="num">Total</th></tr></thead>
+    return `<div class="panel-scroll"><table class="grid summary"><thead><tr><th>Month</th><th class="num">My share</th><th class="num">Others</th><th class="num">Total</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td>Year total</td><td class="num strong">${M.money(sum.year.me)}</td><td class="num">${M.money(
+      <tfoot><tr><td>Total</td><td class="num strong">${M.money(sum.year.me)}</td><td class="num">${M.money(
       sum.year.other
     )}</td><td class="num">${M.money(sum.year.total)}</td></tr></tfoot></table></div>`;
   }
 
   // ---------------- Summary tab ----------------
-  // The overall picture across everything you track. Dated data (shared bills, expenses) is
+  // The overall picture across everything you track. Dated data (the bill log, expenses) is
   // scoped to a calendar year; "All time" shows everything.
   const pct = (x) => (x == null ? "—" : `${Math.round(x * 100)}%`);
 
@@ -307,13 +299,9 @@
 
   function renderSummaryView(view) {
     const S = BB.state.rows;
-    const on = shared();
-    const them = M.partnerName();
     const years = M.summaryYears(S);
     if (!years.length && !(S.subscriptions || []).length) {
-      view.innerHTML = `${pageHead("summary")}<div class="empty"><h2>Nothing to summarize yet</h2><p>Add some ${
-        on ? "shared bills, " : ""
-      }subscriptions or expenses and they'll roll up here.</p></div>`;
+      view.innerHTML = `${pageHead("summary")}<div class="empty"><h2>Nothing to summarize yet</h2><p>Add some bills, subscriptions or expenses and they'll roll up here.</p></div>`;
       return;
     }
 
@@ -326,6 +314,7 @@
     const aptIn = year == null ? S.apartment : S.apartment.filter((r) => M.toDate(r.Date) && M.toDate(r.Date).getFullYear() === year);
     const months = M.summarize(aptIn).months.length;
     const byItem = M.apartmentByItem(S.apartment, year);
+    const hasLog = S.apartment.length > 0;
     const rec = M.recurringBreakdown(S.subscriptions);
     const lines = M.apartmentOwedLines(S.apartment, S.requests);
     const fr = M.frontedSummary(S.thirdparty, lines, year);
@@ -341,15 +330,13 @@
         .map((y) => `<button class="chip${String(y) === period ? " on" : ""}" data-sumperiod="${y}">${y}</button>`)
         .join("") + `<button class="chip${period === "all" ? " on" : ""}" data-sumperiod="all">All time</button>`;
 
-    // ---- where the shared-bill money goes ----
+    // ---- where the bill money goes ----
     const aptBody = byItem.items.length
-      ? `<div class="panel-scroll"><table class="grid"><thead><tr><th>Bill</th><th class="num" title="Entries">#</th><th class="num">Total</th><th class="num">${esc(
-          M.meName()
-        )}</th><th class="num">${esc(them)}</th><th class="num" title="% of bills">%</th></tr></thead>
+      ? `<div class="panel-scroll"><table class="grid"><thead><tr><th>Bill</th><th class="num" title="Entries">#</th><th class="num">Total</th><th class="num">My share</th><th class="num">Others</th><th class="num" title="% of bills">%</th></tr></thead>
           <tbody>${byItem.items
             .map(
               (it) =>
-                `<tr><td>${esc(M.itemLabel(it.item))}</td><td class="num">${it.count}</td><td class="num">${M.money(
+                `<tr><td>${esc(it.item)}</td><td class="num">${it.count}</td><td class="num">${M.money(
                   it.total
                 )}</td><td class="num strong">${M.money(it.me)}</td><td class="num">${M.money(it.other)}</td><td class="num">${pct(
                   byItem.total.total ? it.total / byItem.total.total : null
@@ -359,7 +346,7 @@
           <tfoot><tr><td>Total</td><td class="num">${byItem.total.count}</td><td class="num">${M.money(
             byItem.total.total
           )}</td><td class="num strong">${M.money(byItem.total.me)}</td><td class="num">${M.money(byItem.total.other)}</td><td class="num">100%</td></tr></tfoot></table></div>`
-      : `<p class="muted rc-empty">${year == null ? "No bills yet." : `No bills in ${year}.`}</p>`;
+      : `<p class="muted rc-empty">${year == null ? "No bills logged yet." : `No bills logged in ${year}.`}</p>`;
 
     // ---- recurring costs (active now) ----
     const recBody = rec.items.length
@@ -378,8 +365,8 @@
             rec.yearly
           )}</td></tr></tfoot></table></div>
           ${
-            on
-              ? `<p class="muted rc-note-line">A bill that's also in your shared bills appears in both places, so don't add the two together.</p>`
+            hasLog
+              ? `<p class="muted rc-note-line">A bill you split counts only your share here.</p>`
               : ""
           }`
       : `<p class="muted rc-empty">No active subscriptions or bills.</p>`;
@@ -400,19 +387,17 @@
             <tfoot><tr><td>Total</td><td class="num">${M.money(T.fronted)}</td><td class="num">${M.money(T.Paid)}</td><td class="num strong">${M.money(
                 T.outstanding
               )}</td><td class="num">${pct(T.recovered)}</td></tr></tfoot></table></div>
-            <p class="muted rc-note-line">${
-              on ? `Includes ${esc(them)}'s share of ${esc(lc(M.sharedLabel()))} each month. ` : ""
-            }Expenses count in the year they were bought.</p>`
+            <p class="muted rc-note-line">Includes people's share of the bills you logged each month. Expenses count in the year they were bought.</p>`
         : `<p class="muted rc-empty">${year == null ? "Nothing fronted for others yet." : `Nothing fronted for others in ${year}.`}</p>`;
 
     const cards = [];
-    if (on)
+    if (hasLog)
       cards.push(
         card(
-          `${M.sharedLabel()} — your share`,
+          "Your share of bills",
           byItem.total.me,
           months
-            ? `${M.money(byItem.total.me / months)}/mo avg · ${esc(them)} ${M.money(byItem.total.other)} · ${months} month${months > 1 ? "s" : ""}`
+            ? `${M.money(byItem.total.me / months)}/mo avg · others ${M.money(byItem.total.other)} · ${months} month${months > 1 ? "s" : ""}`
             : year == null ? "no bills yet" : `no bills in ${year}`,
           "accent",
           ICON.apartment
@@ -435,11 +420,11 @@
 
       <div class="cards" style="--n:${cards.length}">${cards.join("")}</div>
 
-      <div class="dash-grid${on ? "" : " one"}">
+      <div class="dash-grid${hasLog ? "" : " one"}">
         ${
-          on
+          hasLog
             ? `<div class="panel">
-          <div class="panel-head"><h3>Where the ${esc(lc(M.sharedLabel()))} money goes · ${esc(periodLabel)}</h3></div>
+          <div class="panel-head"><h3>Where the bill money goes · ${esc(periodLabel)}</h3></div>
           ${aptBody}
         </div>`
             : ""
@@ -462,11 +447,11 @@
   }
 
   // ---------------- Expense Tracker tab ----------------
-  // Things you paid for that someone else owes you back: friends/family, your employer
-  // (internal expense reports), or a client. Receipts attach to the expense they belong to.
-  // each category gets its own dot color, in the order you listed them
+  // Things you paid for that someone else owes you back: a friend, your employer, a client.
+  // Receipts attach to the expense they belong to.
+  // each person gets their own dot color, in the order of the People list
   const catIndex = (name) => {
-    const list = M.categories(BB.state.rows.thirdparty || []);
+    const list = M.payers(BB.state.rows.thirdparty || []);
     const i = list.findIndex((c) => lc(c) === lc(name));
     return i < 0 ? list.length : i;
   };
@@ -559,15 +544,15 @@
     const lines = M.apartmentOwedLines(BB.state.rows.apartment || [], BB.state.rows.requests || []);
     const sum = M.expenseSummary(rows, lines);
     const T = sum.total;
-    if (expFilter.cat !== "all" && !sum.cats.some((c) => lc(c) === lc(expFilter.cat))) expFilter.cat = "all"; // that category is gone
+    if (expFilter.cat !== "all" && !sum.cats.some((c) => lc(c) === lc(expFilter.cat))) expFilter.cat = "all"; // that person is gone
     // one list for everything owed to you: stored expenses + the derived apartment months
     const items = [
       ...rows.map((r, i) => ({
         kind: "expense", i, r,
-        cat: r.Category, status: r.Status, amount: Number(r.Amount) || 0,
+        cat: M.payerOf(r), status: r.Status, amount: Number(r.Amount) || 0,
         date: M.toDate(r["Date of Original Purchase"]),
       })),
-      ...lines.map((l) => ({ kind: "apt", l, cat: M.sharedCategory(), status: l.status, amount: l.amount, date: l.date })),
+      ...lines.map((l) => ({ kind: "apt", l, cat: l.person, status: l.status, amount: l.amount, date: l.date })),
     ];
     const countOf = (st) => items.filter((it) => it.status === st).length;
 
@@ -631,7 +616,7 @@
         l.status === "Paid"
           ? ""
           : (l.requestIndex != null
-              ? `<button class="btn sm" data-aptpaid="${esc(l.key)}" title="${esc(M.partnerName())} paid this request">Mark paid</button>`
+              ? `<button class="btn sm" data-aptpaid="${esc(l.key)}" title="${esc(l.person)} paid this request">Mark paid</button>`
               : `<button class="btn sm" data-aptreq="${esc(l.key)}" title="Create the payment request for this month">Request…</button> <button class="btn ghost sm" data-aptsettle="${esc(
                   l.key
                 )}" title="Already settled — no request needed">Settled</button>`);
@@ -641,12 +626,12 @@
           : "";
       return `<tr class="apt-line">
         <td class="nw">${esc(l.label)}</td>
-        <td class="ex-what"><div class="ex-title">${esc(M.sharedLabel())} — ${esc(longName)}</div><div class="ex-desc">${esc(M.partnerName())}'s share of ${l.count} bill${
+        <td class="ex-what"><div class="ex-title">Shared bills — ${esc(longName)}</div><div class="ex-desc">${esc(l.person)}'s share of ${l.count} bill${
         l.count === 1 ? "" : "s"
-      }${esc(differs)}</div><div class="ex-meta">${catPill(M.sharedCategory())}<span>${esc(M.partnerName())}</span></div></td>
+      }${esc(differs)}</div><div class="ex-meta">${catPill(l.person)}${M.personKind(l.person) ? `<span>${esc(M.personKind(l.person))}</span>` : ""}</div></td>
         <td class="num strong">${M.money(l.amount)}</td>
         <td class="ex-status"><span class="status-pill ${STATUS_CLASS[l.status]}">${esc(l.status)}</span><div class="ex-note">${esc(note)}</div></td>
-        <td class="muted" title="Receipts for the bills themselves go on the ${esc(M.sharedLabel())} tab">—</td>
+        <td class="muted" title="Receipts for the bills themselves go with the Bill Log entries">—</td>
         <td class="act apt-actions">${actions} ${edit}</td>
       </tr>`;
     };
@@ -662,8 +647,8 @@
           on ? " checked" : ""
         }><div class="ex-main"><div class="ex-title">${esc(r.Activity)}</div>${
           r.Description ? `<div class="ex-desc">${esc(r.Description)}</div>` : ""
-        }<div class="ex-meta">${catPill(r.Category)}${
-          r["Owed By"] ? `<span>${esc(r["Owed By"])}</span>` : ""
+        }<div class="ex-meta">${catPill(M.payerOf(r))}${
+          M.personKind(M.payerOf(r)) ? `<span>${esc(M.personKind(M.payerOf(r)))}</span>` : ""
         }</div></div></div></td>
         <td class="num strong">${M.money(r.Amount)}</td>
         <td class="ex-status">${statusSelect(r, i)}<div class="ex-note">${statusNote(r)}</div></td>
@@ -942,7 +927,8 @@
         openForm("requests", null, {
           Title: `${l.date.toLocaleDateString("en-US", { month: "long" })} ${l.date.getFullYear()} Bills`,
           Month: l.date,
-          Description: `Payment request for ${l.label} ${lc(M.sharedLabel())} bills`,
+          Person: l.person,
+          Description: `Payment request for ${l.label} bills`,
           Amount: M.round2(l.amount),
           Status: "Draft",
         });
@@ -1049,20 +1035,62 @@
     if (!subs.length) return `<p class="muted rc-empty">No active subscriptions or bills yet.</p>`;
     const rows = subs
       .slice()
-      .sort((a, b) => M.monthlyEquivalent(b.Amount, b.Occurance) - M.monthlyEquivalent(a.Amount, a.Occurance))
+      .sort((a, b) => M.myMonthly(b) - M.myMonthly(a))
       .map(
         (r) =>
           `<tr><td>${esc(r.Item)}</td><td><span class="pill ${/bill/i.test(r.Category || "") ? "pill-bill" : "pill-sub"}">${esc(
             r.Category || ""
           )}</span></td><td>${esc(r.Occurance || "")}</td><td class="num">${M.money(r.Amount)}</td><td class="num strong">${M.money(
-            M.monthlyEquivalent(r.Amount, r.Occurance)
+            M.myMonthly(r)
           )}</td></tr>`
       )
       .join("");
     return `<div class="panel-scroll"><table class="grid"><thead><tr><th>Item</th><th>Type</th><th>Cycle</th><th class="num">Amount</th><th class="num">/mo</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
-  // ---------------- apartment tab (table + summary + links) ----------------
+  // ---------------- People page ----------------
+  const AVATAR_COLORS = ["#5b6cff", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#8b5cf6"];
+  const initials = (name) =>
+    (String(name).trim().split(/\s+/).map((w) => w[0] || "").slice(0, 2).join("") || "?").toUpperCase();
+
+  function renderPeople(view) {
+    const S = BB.state.rows;
+    const lines = M.apartmentOwedLines(S.apartment, S.requests);
+    const sum = M.expenseSummary(S.thirdparty, lines);
+    const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+    const usedIn = (name) => {
+      const splits = S.subscriptions.filter((b) => M.splitList(b["Split With"]).some((n) => M.sameName(n, name))).length;
+      const exps = S.thirdparty.filter((r) => M.sameName(M.payerOf(r), name)).length;
+      return [splits && plural(splits, "split bill"), exps && plural(exps, "expense")].filter(Boolean).join(" · ") || "—";
+    };
+    const rows = S.people.length
+      ? S.people
+          .map((p, i) => {
+            const b = sum.byCat[p.Name];
+            const owes = b ? b.outstanding : 0;
+            return `<tr>
+              <td><span class="person"><span class="avatar" style="--c:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${esc(initials(p.Name))}</span><b>${esc(p.Name)}</b></span></td>
+              <td>${p.Kind ? `<span class="tag">${esc(p.Kind)}</span>` : '<span class="muted">—</span>'}</td>
+              <td class="num strong">${owes > 0.005 ? M.money(owes) : '<span class="muted">—</span>'}</td>
+              <td class="muted">${esc(usedIn(p.Name))}</td>
+              <td class="act"><button class="icon" data-edit="${i}" title="Edit">✎</button><button class="icon danger" data-del="${i}" title="Delete">✕</button></td>
+            </tr>`;
+          })
+          .join("")
+      : `<tr class="empty-row"><td class="muted" colspan="5">No one yet. Add the people you split bills with or who pay you back: a roommate, a friend, your employer, a client.</td></tr>`;
+    view.innerHTML = `
+      ${pageHead("people", tableActions("people"))}
+      <div class="card-table"><div class="table-wrap">
+        <table class="grid" data-table="people">
+          <thead><tr><th>Name</th><th>Kind</th><th class="num">Owes you</th><th>Used in</th><th class="act"></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div></div>`;
+    labelTables(view);
+    wireTable("people");
+  }
+
+  // ---------------- Bill Log tab (table + summary + links) ----------------
   // "Bulk add" + "Add" for the page header of a table tab
   const tableActions = (schemaName) =>
     `<span class="head-actions"><button class="btn" data-bulk="${schemaName}">Bulk add</button><button class="btn primary" data-add="${schemaName}">${ICON.plus}Add</button></span>`;
@@ -1081,24 +1109,19 @@
             <div class="panel-head"><h3>Biller portals</h3></div>
             ${renderLinks()}
           </div>
-          ${rulesPanel()}
+          <div class="panel note">
+            <div class="note-head"><strong>How splits work</strong><button class="btn sm" id="goBills">Open Bills</button></div>
+            <ul>
+              <li>Each entry is split the way its bill is set up on <b>Bills &amp; Subscriptions</b>.</li>
+              <li>A bill with no split is just yours.</li>
+              <li>Use <b>Log</b> on a bill's row to add a payment fast.</li>
+            </ul>
+          </div>
         </aside>
       </div>`;
     wireTable("apartment");
-    const er = el("editRules");
-    if (er) er.addEventListener("click", () => openSetup({ focus: "rules" }));
-  }
-
-  // the split rules in force, with a way to change them
-  function rulesPanel() {
-    const rules = M.getSettings().rules;
-    return `<div class="panel note">
-      <div class="note-head"><strong>Split rules</strong><button class="btn sm" id="editRules">${rules.length ? "Edit" : "Add rules"}</button></div>
-      <ul>
-        ${rules.map((r) => `<li><b>${esc(r.label || r.item)}:</b> ${esc(M.ruleSummary(r))}</li>`).join("")}
-        <li>${rules.length ? "Everything else" : "Every bill"}: split in half</li>
-      </ul>
-    </div>`;
+    const go = el("goBills");
+    if (go) go.addEventListener("click", () => BB.app.setTab("subscriptions"));
   }
 
   function renderLinks() {
@@ -1127,7 +1150,7 @@
   function tableBlock(schemaName) {
     const schema = M.schemas[schemaName];
     const rows = BB.state.rows[schemaName] || [];
-    const allCols = [...schema.columns, ...(schema.computed || [])];
+    const allCols = [...schema.columns, ...(schema.computed || [])].filter((c) => !c.hide);
     // `sub` columns don't get their own column; they show as small lines under the first one
     const cols = allCols.filter((c) => !c.sub);
     const subCols = allCols.filter((c) => c.sub);
@@ -1160,6 +1183,7 @@
       cols.map((c) => `<th class="${cellClass(c)}">${esc(c.label)}</th>`).join("") +
       `<th class="act"></th>`;
 
+    const log = schemaName === "subscriptions";
     const body = ordered.length
       ? ordered
           .map(
@@ -1168,7 +1192,9 @@
               cols
                 .map((c, k) => `<td class="${cellClass(c)}">${renderCell(r, c)}${k === 0 ? subLines(r) : ""}</td>`)
                 .join("") +
-              `<td class="act"><button class="icon" data-edit="${i}" title="Edit">✎</button><button class="icon danger" data-del="${i}" title="Delete">✕</button></td>` +
+              `<td class="act">${
+                log ? `<button class="btn sm" data-logbill="${i}" title="Log a payment of this bill">Log</button>` : ""
+              }<button class="icon" data-edit="${i}" title="Edit">✎</button><button class="icon danger" data-del="${i}" title="Delete">✕</button></td>` +
               `</tr>`
           )
           .join("")
@@ -1176,7 +1202,7 @@
 
     return `
       <div class="card-table"><div class="table-wrap">
-        <table class="grid" data-table="${schemaName}">
+        <table class="grid${log ? " compact" : ""}" data-table="${schemaName}">
           <thead><tr>${head}</tr></thead>
           <tbody>${body}</tbody>
         </table>
@@ -1184,8 +1210,7 @@
   }
 
   function cellClass(c) {
-    if (c.type === "money" || c.key === "half" || c.key === "me" || c.key === "other" || c.key === "PerMonth")
-      return "num" + (c.strong ? " strong" : "");
+    if (c.type === "money" || c.key === "me" || c.key === "others" || c.key === "PerMonth") return "num" + (c.strong ? " strong" : "");
     if (c.wide) return "wide";
     if (c.type === "date" || c.type === "bool") return "nw"; // dates and ticks never break across lines
     return "";
@@ -1194,7 +1219,7 @@
   function renderCell(r, c) {
     if (c.calc) {
       const v = c.calc(r);
-      return c.key === "PerMonth" ? M.money(v) : M.money(v);
+      return c.text ? (v ? esc(v) : '<span class="muted">—</span>') : M.money(v);
     }
     const v = r[c.key];
     if (c.type === "date") return c.month ? (v ? esc(M.monthLabel(v)) : "") : esc(M.fmtDate(v));
@@ -1223,17 +1248,159 @@
       t.querySelectorAll("[data-del]").forEach((b) =>
         b.addEventListener("click", () => BB.app.deleteRow(schemaName, Number(b.dataset.del)))
       );
+      // "Log" on a bill: add a payment of it to the Bill Log, amount filled in
+      t.querySelectorAll("[data-logbill]").forEach((b) =>
+        b.addEventListener("click", () => {
+          const bill = BB.state.rows.subscriptions[Number(b.dataset.logbill)];
+          if (bill) openForm("apartment", null, { Date: new Date(), Item: bill.Item, "Total Amount": bill.Amount });
+        })
+      );
     });
   }
 
-  // the suggestion lists behind the free-text boxes: trips/groups, shared-bill items, categories
+  // the suggestion lists behind the free-text boxes: trips/groups, bills, people, kinds of people
+  const KIND_IDEAS = ["Roommate", "Friend", "Family", "Employer", "Client"];
+  function suggestBills() {
+    const out = [];
+    const add = (n) => {
+      n = String(n || "").trim();
+      if (n && !out.some((x) => x.toLowerCase() === n.toLowerCase())) out.push(n);
+    };
+    (BB.state.rows.subscriptions || []).forEach((b) => add(b.Item));
+    (BB.state.rows.apartment || []).forEach((r) => add(r.Item));
+    return out;
+  }
   function groupDatalist(cols) {
     let html = "";
     const list = (id, names) => `<datalist id="dl-${id}">${names.map((n) => `<option value="${esc(n)}"></option>`).join("")}</datalist>`;
     if (cols.some((c) => c.suggest === "groups")) html += list("groups", M.groupNames(BB.state.rows.thirdparty, BB.state.groups));
-    if (cols.some((c) => c.suggest === "items")) html += list("items", suggestItems());
-    if (cols.some((c) => c.suggest === "categories")) html += list("categories", M.categories(BB.state.rows.thirdparty));
+    if (cols.some((c) => c.suggest === "bills")) html += list("bills", suggestBills());
+    if (cols.some((c) => c.suggest === "people")) html += list("people", M.peopleNames());
+    if (cols.some((c) => c.suggest === "kinds")) {
+      const kinds = [...KIND_IDEAS];
+      (BB.state.rows.people || []).forEach((p) => p.Kind && !kinds.some((k) => lc(k) === lc(p.Kind)) && kinds.push(p.Kind));
+      html += list("kinds", kinds);
+    }
     return html;
+  }
+
+  // ---------------- split editor (on a bill's form) ----------------
+  const pchip = (name, on) =>
+    `<label class="pchip"><input type="checkbox" value="${esc(name)}"${on ? " checked" : ""}><span>${esc(name)}</span></label>`;
+
+  function splitEditorHtml(row) {
+    const def = M.splitDef(row);
+    const names = M.peopleNames();
+    const chosen = def ? def.people : [];
+    const all = [...names, ...chosen.filter((n) => !names.some((x) => M.sameName(x, n)))];
+    return `<div class="field wide split-ed" id="splitEd">
+      <span>Split with <em class="muted">(leave everyone unticked if this bill is just yours)</em></span>
+      <div class="pchips" id="splitPeople">${all.map((n) => pchip(n, chosen.some((x) => M.sameName(x, n)))).join("")}</div>
+      <div class="cat-add"><input type="text" id="splitNew" placeholder="Someone new? Type a name and press Enter" maxlength="40" autocomplete="off"><button type="button" class="btn sm" id="splitNewBtn">Add</button></div>
+      <div id="splitBody"></div>
+    </div>`;
+  }
+
+  // wires the editor; returns { read } to collect Split With / Method / Values on save
+  function wireSplitEditor(form, row) {
+    const def = M.splitDef(row);
+    const st = { method: def ? def.method : "equal", vals: {}, mine: def ? def.values[0] : "" };
+    if (def) def.people.forEach((n, i) => (st.vals[n.toLowerCase()] = def.values[i]));
+    const box = form.querySelector("#splitPeople");
+    const body = form.querySelector("#splitBody");
+    const chosen = () => [...box.querySelectorAll("input:checked")].map((i) => i.value);
+    const amountInput = form.elements["Amount"];
+    const unit = (info) => (info.unit === "$" ? "$" : "");
+
+    function current() {
+      const who = chosen();
+      const info = M.methodInfo(st.method);
+      const values = info.per ? who.map((n) => Number(st.vals[n.toLowerCase()]) || 0) : info.mine ? [Number(st.mine) || 0] : [];
+      return { method: st.method, people: who, values };
+    }
+    function previewText() {
+      const total = Number(amountInput && amountInput.value) || 100;
+      const s = M.computeSplit(current(), total);
+      return `On ${M.money(total)}: you ${M.money(s.me)}${s.parts.map((p) => `, ${p.person} ${M.money(p.amount)}`).join("")}`;
+    }
+    function render() {
+      const who = chosen();
+      if (!who.length) {
+        body.innerHTML = `<p class="muted split-note">Not split. The whole bill is yours.</p>`;
+        return;
+      }
+      const info = M.methodInfo(st.method);
+      const methods = M.SPLIT_METHODS.concat(st.method === "equalup" ? [M.methodInfo("equalup")] : []);
+      let inputs = "";
+      if (info.per)
+        inputs = who
+          .map((n) => {
+            const v = st.vals[n.toLowerCase()];
+            return `<label class="split-row"><span>${esc(n)}</span>${unit(info) ? `<span class="r-unit">$</span>` : ""}<input type="number" step="0.01" min="0" data-val="${esc(n)}" value="${v == null ? "" : esc(v)}">${
+              info.unit === "%" ? `<span class="r-unit">%</span>` : ""
+            }</label>`;
+          })
+          .join("");
+      else if (info.mine)
+        inputs = `<label class="split-row"><span>${st.method === "offset" ? "I pay more (use − for less)" : "I pay"}</span><span class="r-unit">$</span><input type="number" step="0.01" data-mine value="${
+          st.mine === "" || st.mine == null ? "" : esc(st.mine)
+        }"></label>`;
+      body.innerHTML = `<div class="split-method"><select data-method aria-label="How to split">${methods
+        .map((m) => `<option value="${m.id}"${m.id === st.method ? " selected" : ""}>${esc(m.label)}</option>`)
+        .join("")}</select><span class="muted">${esc(info.hint)}</span></div>${inputs}<div class="muted split-preview" id="splitPreview">${esc(previewText())}</div>`;
+    }
+    const refreshPreview = () => {
+      const p = form.querySelector("#splitPreview");
+      if (p) p.textContent = previewText();
+    };
+
+    box.addEventListener("change", render);
+    body.addEventListener("change", (e) => {
+      if (e.target.matches("[data-method]")) {
+        st.method = e.target.value;
+        render();
+      }
+    });
+    body.addEventListener("input", (e) => {
+      if (e.target.matches("[data-val]")) st.vals[e.target.dataset.val.toLowerCase()] = e.target.value === "" ? "" : Number(e.target.value);
+      else if (e.target.matches("[data-mine]")) st.mine = e.target.value === "" ? "" : Number(e.target.value);
+      refreshPreview();
+    });
+    if (amountInput) amountInput.addEventListener("input", refreshPreview);
+
+    const addNew = () => {
+      const inp = form.querySelector("#splitNew");
+      const name = inp.value.trim();
+      inp.value = "";
+      if (!name) return;
+      const hit = [...box.querySelectorAll("input")].find((i) => M.sameName(i.value, name));
+      if (hit) hit.checked = true;
+      else box.insertAdjacentHTML("beforeend", pchip(name, true));
+      render();
+    };
+    form.querySelector("#splitNewBtn").addEventListener("click", addNew);
+    form.querySelector("#splitNew").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addNew();
+      }
+    });
+    render();
+
+    return {
+      read() {
+        const d = current();
+        if (!d.people.length) return { with: "", method: "", values: "" };
+        const info = M.methodInfo(d.method);
+        if (d.method === "percent" && d.values.reduce((a, b) => a + b, 0) > 100.0001)
+          return { error: "Those percentages add up to more than 100." };
+        return {
+          with: d.people.join("; "),
+          method: info.label,
+          values: info.per || info.mine ? d.values.join("; ") : "",
+        };
+      },
+    };
   }
 
   // ---------------- add / edit modal ----------------
@@ -1247,9 +1414,11 @@
       ? { ...prefill }
       : schemaName === "thirdparty"
       ? { Status: "Pending" }
+      : schemaName === "apartment"
+      ? { Date: new Date() }
       : {};
     // columns managed elsewhere (e.g. attached receipts) stay out of the form
-    const formCols = schema.columns.filter((c) => !c.noForm);
+    const formCols = schema.columns.filter((c) => !c.noForm && !c.split);
 
     const fields = formCols
       .map((c) => {
@@ -1305,8 +1474,8 @@
       <div class="modal-backdrop"></div>
       <form class="modal-card" id="rowForm">
         <h3>${editing ? "Edit" : "Add"} — ${esc(schema.title)}</h3>
-        <div class="form-grid">${fields}${receiptField}</div>
-        ${groupDatalist(formCols)}
+        <div class="form-grid">${fields}${schemaName === "subscriptions" ? splitEditorHtml(row) : ""}${receiptField}</div>
+        ${groupDatalist(formCols)}${schemaName === "subscriptions" ? groupDatalist([{ suggest: "people" }]) : ""}
         <div class="modal-actions">
           <button type="button" class="btn" id="cancelBtn">Cancel</button>
           <button type="submit" class="btn primary">${editing ? "Save" : "Add"}</button>
@@ -1320,6 +1489,16 @@
     };
     host.querySelector(".modal-backdrop").addEventListener("click", close);
     el("cancelBtn").addEventListener("click", close);
+    const splitCtl = schemaName === "subscriptions" ? wireSplitEditor(el("rowForm"), row) : null;
+    if (schemaName === "apartment") {
+      // picking a bill fills in its usual amount
+      const itemBox = el("rowForm").elements["Item"];
+      const amtBox = el("rowForm").elements["Total Amount"];
+      itemBox.addEventListener("change", () => {
+        const b = M.billFor(itemBox.value);
+        if (b && b.Amount != null && !amtBox.value) amtBox.value = b.Amount;
+      });
+    }
     el("rowForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
@@ -1337,6 +1516,16 @@
           out[c.key] = val || null;
         }
       }
+      if (splitCtl) {
+        const sp = splitCtl.read();
+        if (sp.error) {
+          toast(sp.error, "warn");
+          return;
+        }
+        out["Split With"] = sp.with || null;
+        out["Split Method"] = sp.method || null;
+        out["Split Values"] = sp.values || null;
+      }
       const missing = schema.columns.filter((c) => c.required && (out[c.key] == null || out[c.key] === ""));
       if (missing.length) {
         toast("Missing: " + missing.map((m) => m.label).join(", "), "warn");
@@ -1345,7 +1534,7 @@
       // grab any chosen receipt files before the form is torn down
       const picker = e.target.querySelector('[name="__receipts"]');
       const files = picker && picker.files ? Array.from(picker.files) : [];
-      BB.app.commitRow(schemaName, index, out);
+      if (BB.app.commitRow(schemaName, index, out) === false) return; // e.g. a duplicate name; keep the form open
       const savedIndex = index != null ? index : BB.state.rows[schemaName].length - 1;
       close();
       if (files.length) BB.app.attachReceipts(savedIndex, files);
@@ -1526,65 +1715,40 @@
     });
   }
 
-  // ---------------- setup / settings dialog ----------------
-  // First run opens this automatically (nothing is assumed: no names, no split rules, no
-  // categories). Settings reopens it later to change anything.
-  const CATEGORY_IDEAS = ["Friends & family", "Work", "Client"];
-
+  // ---------------- setup dialog ----------------
+  // First run: your name, and (if you like) the people you share bills with or who pay you
+  // back. Nothing is assumed. Later this only edits your name; people live on the People page.
   function openSetup(opts) {
     const first = !!(opts && opts.first);
-    const cur = M.getSettings();
-    const draft = {
-      shared: !!cur.sharedEnabled,
-      rules: cur.rules.map((r) => ({ ...r })),
-      categories: [...cur.categories],
-    };
-    const methodOpts = (sel) =>
-      M.RULE_METHODS.map((m) => `<option value="${m.id}"${m.id === sel ? " selected" : ""}>${esc(m.label)}</option>`).join("");
-    const unitOf = (id) => (M.RULE_METHODS.find((m) => m.id === id) || {}).unit || "";
-
+    const cur = BB.state.settings;
+    const draft = { people: [{ Name: "", Kind: "" }] };
     const host = el("modal");
     host.innerHTML = `
       <div class="modal-backdrop"></div>
       <form class="modal-card setup-card" id="setupForm" autocomplete="off">
-        <h3>${first ? "Set up your budget" : "Setup"}</h3>
+        <h3>${first ? "Set up your budget" : "Your name"}</h3>
         <p class="muted setup-lede">${
           first
-            ? "A few quick questions so the app fits how you actually handle money. Nothing is assumed, and you can change any of it later in Settings."
-            : "Names, how shared bills split, and who pays you back."
+            ? "A couple of quick questions. Nothing is assumed, and you can change all of it later."
+            : "Used for your column headings and totals."
         }</p>
 
         <section class="setup-sec">
-          <div class="setup-h"><span class="tile" style="--c:#5b6cff">${ICON.users}</span><div><b>About you</b><span>Used for the column headings and the dashboard.</span></div></div>
+          <div class="setup-h"><span class="tile" style="--c:#5b6cff">${ICON.users}</span><div><b>About you</b><span>What should we call you?</span></div></div>
           <label class="field"><span>Your name</span><input type="text" name="me" value="${esc(cur.me)}" placeholder="e.g. Alex" maxlength="40"></label>
         </section>
 
-        <section class="setup-sec">
-          <div class="setup-h"><span class="tile" style="--c:#10b981">${ICON.apartment}</span><div><b>Shared bills</b><span>Do you split regular bills, like rent and utilities, with someone?</span></div></div>
-          <div class="seg" role="radiogroup" id="sharedSeg">
-            <label><input type="radio" name="shared" value="no"${draft.shared ? "" : " checked"}><span>No</span></label>
-            <label><input type="radio" name="shared" value="yes"${draft.shared ? " checked" : ""}><span>Yes</span></label>
-          </div>
-          <div id="sharedFields"${draft.shared ? "" : " hidden"}>
-            <div class="form-grid">
-              <label class="field"><span>Their name</span><input type="text" name="partner" value="${esc(cur.partner)}" placeholder="e.g. Sam" maxlength="40"></label>
-              <label class="field"><span>What do you call it?</span><input type="text" name="sharedLabel" value="${esc(cur.sharedLabel)}" placeholder="Apartment, House, Shared bills" maxlength="30"></label>
-            </div>
-            <div class="rules-head"><b>Split rules</b><span class="muted">Every bill is split in half unless you add a rule here. Add a rule for any item that splits differently.</span></div>
-            <div id="rulesList"></div>
-            <button type="button" class="btn sm" id="addRule">${ICON.plus}Add a rule</button>
-          </div>
-        </section>
-
-        <section class="setup-sec">
-          <div class="setup-h"><span class="tile" style="--c:#8b5cf6">${ICON.expenses}</span><div><b>Who pays you back?</b><span>Groups for expenses you cover and get reimbursed for: friends, an employer, clients…</span></div></div>
-          <div id="catList" class="catchips"></div>
-          <div class="cat-add"><input type="text" id="catInput" placeholder="Add a category, then press Enter" maxlength="40"><button type="button" class="btn sm" id="catAdd">Add</button></div>
-          <div class="cat-ideas muted" id="catIdeas"></div>
-          <label class="field" id="sharedCatWrap" hidden><span>Count their share of the shared bills under</span><select id="sharedCat"></select></label>
-        </section>
-
-        <datalist id="dl-setup-items">${suggestItems().map((i) => `<option value="${esc(i)}"></option>`).join("")}</datalist>
+        ${
+          first
+            ? `<section class="setup-sec">
+          <div class="setup-h"><span class="tile" style="--c:#06b6d4">${ICON.users}</span><div><b>People</b><span>Anyone you split bills with, or who pays you back: a roommate, a friend, an employer, a client. You can skip this and add them later.</span></div></div>
+          <div id="personRows"></div>
+          <button type="button" class="btn sm" id="addPerson">${ICON.plus}Add another</button>
+          <p class="muted setup-note">You choose who each bill is split with, and how, on the bill itself.</p>
+        </section>`
+            : `<p class="muted setup-note">Add and edit people on the People page.</p>`
+        }
+        <datalist id="dl-kinds">${KIND_IDEAS.map((k) => `<option value="${esc(k)}"></option>`).join("")}</datalist>
         <div class="modal-actions">
           ${first ? `<button type="button" class="btn ghost" id="setupSkip">Skip for now</button>` : `<button type="button" class="btn" id="setupCancel">Cancel</button>`}
           <span class="spacer"></span>
@@ -1600,157 +1764,56 @@
     };
     if (!first) host.querySelector(".modal-backdrop").addEventListener("click", close);
 
-    // ---- split rules ----
-    const rulesBox = el("rulesList");
-    function renderRules() {
-      rulesBox.innerHTML = draft.rules.length
-        ? draft.rules
-            .map((r, i) => {
-              const u = unitOf(r.method);
-              return `<div class="rule-row" data-i="${i}">
-                <input type="text" class="r-item" list="dl-setup-items" placeholder="Item, e.g. Rent" value="${esc(r.item)}" aria-label="Item">
-                <select class="r-method" aria-label="How it splits">${methodOpts(r.method)}</select>
-                <span class="r-val-wrap"${u ? "" : " hidden"}><span class="r-unit">${esc(u)}</span><input type="number" step="0.01" class="r-val" value="${r.value == null ? "" : esc(r.value)}" aria-label="Amount"></span>
-                <input type="text" class="r-label" placeholder="Shown as (optional)" value="${esc(r.label)}" aria-label="Shown as">
-                <button type="button" class="icon danger r-del" title="Remove this rule">✕</button>
-                <div class="rule-hint muted">${esc(M.ruleSummary(r))}</div>
-              </div>`;
-            })
-            .join("")
-        : `<p class="muted rule-empty">No rules yet, so every shared bill is split 50/50.</p>`;
-    }
-    const hintFor = (row, r) => (row.querySelector(".rule-hint").textContent = M.ruleSummary(r));
-    rulesBox.addEventListener("input", (e) => {
-      const row = e.target.closest(".rule-row");
-      if (!row) return;
-      const r = draft.rules[Number(row.dataset.i)];
-      if (e.target.classList.contains("r-item")) r.item = e.target.value;
-      else if (e.target.classList.contains("r-label")) r.label = e.target.value;
-      else if (e.target.classList.contains("r-val")) r.value = e.target.value === "" ? null : Number(e.target.value);
-      hintFor(row, r);
-    });
-    rulesBox.addEventListener("change", (e) => {
-      if (!e.target.classList.contains("r-method")) return;
-      const row = e.target.closest(".rule-row");
-      draft.rules[Number(row.dataset.i)].method = e.target.value;
-      renderRules(); // shows or hides the amount box
-    });
-    rulesBox.addEventListener("click", (e) => {
-      const del = e.target.closest(".r-del");
-      if (!del) return;
-      draft.rules.splice(Number(del.closest(".rule-row").dataset.i), 1);
-      renderRules();
-    });
-    el("addRule").addEventListener("click", () => {
-      draft.rules.push({ item: "", method: "equal", value: null, label: "", up: false });
-      renderRules();
-      const last = rulesBox.querySelector(".rule-row:last-child .r-item");
-      if (last) last.focus();
-    });
-
-    // ---- categories ----
-    function renderCats() {
-      el("catList").innerHTML = draft.categories.length
-        ? draft.categories
-            .map((c, i) => `<span class="catchip">${esc(c)}<button type="button" data-delcat="${i}" aria-label="Remove ${esc(c)}">×</button></span>`)
-            .join("")
-        : `<span class="muted">None yet. Add the people or groups who pay you back.</span>`;
-      const ideas = CATEGORY_IDEAS.filter((c) => !draft.categories.some((x) => x.toLowerCase() === c.toLowerCase()));
-      el("catIdeas").innerHTML = ideas.length
-        ? `Ideas: ${ideas.map((c) => `<button type="button" class="linkbtn" data-idea="${esc(c)}">+ ${esc(c)}</button>`).join(" ")}`
-        : "";
-      const sel = el("sharedCat");
-      const keep = sel.value || cur.sharedCategory;
-      sel.innerHTML = draft.categories.map((c) => `<option${c === keep ? " selected" : ""}>${esc(c)}</option>`).join("");
-      el("sharedCatWrap").hidden = !(draft.shared && draft.categories.length);
-    }
-    const addCat = (name) => {
-      name = String(name || "").trim();
-      if (name && !draft.categories.some((c) => c.toLowerCase() === name.toLowerCase())) draft.categories.push(name);
-      el("catInput").value = "";
-      renderCats();
-    };
-    el("catAdd").addEventListener("click", () => addCat(el("catInput").value));
-    el("catInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        addCat(e.target.value);
-      }
-    });
-    form.addEventListener("click", (e) => {
-      const d = e.target.closest("[data-delcat]");
-      if (d) {
-        draft.categories.splice(Number(d.dataset.delcat), 1);
-        renderCats();
-      }
-      const idea = e.target.closest("[data-idea]");
-      if (idea) addCat(idea.dataset.idea);
-    });
-
-    // ---- shared yes / no ----
-    form.querySelectorAll('input[name="shared"]').forEach((r) =>
-      r.addEventListener("change", () => {
-        draft.shared = form.elements.shared.value === "yes";
-        el("sharedFields").hidden = !draft.shared;
-        renderCats();
-      })
-    );
-
-    renderRules();
-    renderCats();
-
-    if (first) el("setupSkip").addEventListener("click", () => {
-      close();
-      BB.app.saveSettings({});
-    });
-    else el("setupCancel").addEventListener("click", close);
+    if (first) {
+      const box = el("personRows");
+      const renderRows = () => {
+        box.innerHTML = draft.people
+          .map(
+            (p, i) => `<div class="person-row" data-i="${i}">
+              <input type="text" class="p-name" placeholder="Name" value="${esc(p.Name)}" maxlength="40" aria-label="Name">
+              <input type="text" class="p-kind" list="dl-kinds" placeholder="Kind (optional)" value="${esc(p.Kind)}" maxlength="30" aria-label="Kind">
+              <button type="button" class="icon danger p-del" title="Remove"${draft.people.length === 1 ? " hidden" : ""}>✕</button>
+            </div>`
+          )
+          .join("");
+      };
+      box.addEventListener("input", (e) => {
+        const row = e.target.closest(".person-row");
+        if (!row) return;
+        const p = draft.people[Number(row.dataset.i)];
+        if (e.target.classList.contains("p-name")) p.Name = e.target.value;
+        else if (e.target.classList.contains("p-kind")) p.Kind = e.target.value;
+      });
+      box.addEventListener("click", (e) => {
+        const del = e.target.closest(".p-del");
+        if (!del) return;
+        draft.people.splice(Number(del.closest(".person-row").dataset.i), 1);
+        renderRows();
+      });
+      el("addPerson").addEventListener("click", () => {
+        draft.people.push({ Name: "", Kind: "" });
+        renderRows();
+        const last = box.querySelector(".person-row:last-child .p-name");
+        if (last) last.focus();
+      });
+      renderRows();
+      el("setupSkip").addEventListener("click", () => {
+        close();
+        BB.app.saveSettings({});
+      });
+    } else el("setupCancel").addEventListener("click", close);
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (el("catInput").value.trim()) addCat(el("catInput").value); // a name typed but not added yet
-      const fd = new FormData(form);
-      const partner = String(fd.get("partner") || "").trim();
-      if (draft.shared && !partner) {
-        toast("Add the other person's name, or choose No.", "warn");
-        return;
-      }
-      const rules = draft.rules.filter((r) => String(r.item || "").trim());
-      if (rules.some((r) => ["percent", "offset", "fixed"].includes(r.method) && r.value == null)) {
-        toast("A rule is missing its amount.", "warn");
-        return;
-      }
-      const next = {
-        me: fd.get("me"),
-        partner: draft.shared ? partner : String(cur.partner || ""),
-        sharedEnabled: draft.shared,
-        sharedLabel: fd.get("sharedLabel"),
-        sharedCategory: el("sharedCat") && el("sharedCat").value ? el("sharedCat").value : "",
-        categories: draft.categories,
-        rules,
-      };
+      const me = String(new FormData(form).get("me") || "").trim();
+      const people = draft.people.filter((p) => String(p.Name || "").trim()).map((p) => ({ Name: p.Name.trim(), Kind: String(p.Kind || "").trim() }));
       close();
-      BB.app.saveSettings(next);
+      BB.app.saveSettings({ me, people });
     });
-
     setTimeout(() => {
-      const target = opts && opts.focus === "rules" && draft.shared ? el("addRule") : form.querySelector('input[name="me"]');
-      if (target) {
-        if (opts && opts.focus === "rules") target.scrollIntoView({ block: "center" });
-        target.focus();
-      }
+      const t = form.querySelector('input[name="me"]');
+      if (t) t.focus();
     }, 40);
-  }
-
-  // item names you can pick from when adding a shared bill or a rule
-  function suggestItems() {
-    const out = [];
-    const add = (n) => {
-      n = String(n || "").trim();
-      if (n && !out.some((x) => x.toLowerCase() === n.toLowerCase())) out.push(n);
-    };
-    M.getSettings().rules.forEach((r) => add(r.item));
-    (BB.state.rows.apartment || []).forEach((r) => add(r.Item));
-    return out;
   }
 
   // ---------------- top bar, banners, settings ----------------
@@ -1909,7 +1972,7 @@
       <div class="modal-card" id="settingsCard">
         <h3>Settings</h3>
         <div class="set-list">
-          ${row("#5b6cff", ICON.users, "Names, split rules, categories", "Who you are, who you share bills with, how each bill splits, and who pays you back.", `<button class="btn sm" id="setEdit">Edit</button>`)}
+          ${row("#5b6cff", ICON.users, "Your name", S.settings.me ? `Shown as <b>${esc(S.settings.me)}</b>. People are on the People page.` : "Not set. People are on the People page.", `<button class="btn sm" id="setEdit">Edit</button>`)}
           ${row("#10b981", ICON.refresh, "Autosave", fs ? "Save every change into budget.xlsx a moment after you make it." : "Available once a folder is connected in Chrome or Edge.", fs ? sw("setAuto", S.autosave) : "")}
           ${row("#8b5cf6", ICON.eyeOff, "Hide amounts", "Mask every dollar figure, handy when someone is looking over your shoulder.", sw("setMask", S.masked))}
           ${row("#5b6cff", ICON.folder, demo ? "Your budget folder" : "Budget folder", demo ? "You're looking at sample data. Connect your OneDrive Budgeting folder to work with the real thing." : fs ? `Connected to <b>${esc(S.folderName)}</b>. Backups of budget.xlsx are kept in a <b>backups</b> folder next to it. You can open it in Excel too; close it there before editing here.` : "Not connected to a folder, so saving downloads a copy.", `<span class="set-btns"><button class="btn sm" data-act="connect" data-close>${demo ? "Open folder" : "Switch"}</button>${fs ? `<button class="btn sm" data-act="reload" data-close>Reload</button>` : ""}</span>`)}
