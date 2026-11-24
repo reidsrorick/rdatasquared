@@ -3,7 +3,7 @@
  */
 (function () {
   'use strict';
-  const { store, calc: C, FileLink } = RT;
+  const { store, calc: C, FileLink, FileLink2, sync } = RT;
 
   /* ============================================================ state */
 
@@ -19,6 +19,9 @@
     save: 'idle',        // idle | dirty | saving | saved | error
     saveError: '',
     demo: false,
+    sync: 'off',         // off | ok | conflict | error  (secondary copy)
+    syncMsg: '',
+    needs2: false,       // secondary needs the browser's permission again
   };
 
   try {
@@ -137,8 +140,22 @@
     else if (S.save === 'saving') text = 'Saving…';
     else if (S.save === 'dirty') text = 'Unsaved changes…';
     else if (S.save === 'error') { text = 'Save failed — click to retry'; click = 'data-act="retry-save"'; }
-    else { text = `Saved to ${nm}`; cls = 'saved'; }
+    else {
+      const both = FileLink2.linked && !S.needs2 && S.sync === 'ok';
+      text = `Saved to ${nm}${both ? ' + ' + esc(FileLink2.name) : ''}`; cls = 'saved';
+    }
     return `<span id="filechip" class="filechip ${click ? 'clickable' : ''}" ${click} title="${esc(S.saveError || text)}"><span class="dot ${cls}"></span><span class="name">${text}</span></span>`;
+  }
+
+  /** Extra chip shown only when the secondary copy needs attention. */
+  function syncChip() {
+    if (S.demo || !FileLink2.linked) return '';
+    let text, act;
+    if (S.needs2) { text = `Reconnect ${esc(FileLink2.name)}`; act = 'reconnect2'; }
+    else if (S.sync === 'conflict') { text = 'Copies differ — click to merge'; act = 'sync-now'; }
+    else if (S.sync === 'error') { text = 'Secondary copy not saved — click to retry'; act = 'sync-now'; }
+    else return '';
+    return `<span id="syncchip" class="filechip clickable" data-act="${act}" title="${esc(S.syncMsg || text)}"><span class="dot error"></span><span class="name">${text}</span></span>`;
   }
 
   function saveSoon() {
@@ -154,8 +171,9 @@
     saving = true;
     setSave('saving');
     try {
-      do { pending = false; await FileLink.write(S.db); } while (pending);
+      do { pending = false; sync.stamp(S.db, { device: deviceName() }); await FileLink.write(S.db); } while (pending);
       setSave('saved');
+      if (FileLink2.linked) setTimeout(syncSecondary, 0);
     } catch (e) {
       console.error(e);
       const locked = /NoModification|NotAllowed|Security|busy|locked/i.test(e.name + ' ' + e.message);
@@ -185,6 +203,7 @@
       await flush();
     }
     normalizeSelection();
+    if (FileLink2.linked) setTimeout(syncSecondary, 0);
   }
 
   function normalizeSelection() {
@@ -197,6 +216,7 @@
       const db = await FileLink.read();
       if (db) { S.db = db; delete db._repaired; normalizeSelection(); setSave('saved'); render(); }
       toast(auto ? 'Workbook changed on disk — reloaded.' : 'Reloaded from workbook.', 'ok');
+      if (FileLink2.linked) setTimeout(syncSecondary, 0);
     } catch (e) { toast('Could not read the workbook: ' + e.message, 'err'); }
   }
 
@@ -209,6 +229,161 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 3000);
     if (!FileLink.linked && !S.demo) setSave('idle');
+  }
+
+  /* ============================================ secondary copy (two-file sync) */
+
+  let syncing = false;
+
+  function deviceName() { try { return localStorage.getItem('rt-device') || ''; } catch (e) { return ''; } }
+
+  function setSync(state, msg) {
+    const changed = S.sync !== state;
+    S.sync = state; S.syncMsg = msg || '';
+    if (changed && S.db) render();
+    else { const el = $('#filechip'); if (el) el.outerHTML = fileChip(); }
+  }
+
+  /* Snapshots of the last state both copies agreed on let a merge tell "deleted" from "never had". */
+  async function loadSnaps() { try { return (await store.kvGet('snaps')) || []; } catch (e) { return []; } }
+  async function saveSnap(db) {
+    try {
+      const hash = sync.hashDb(db);
+      const snaps = (await loadSnaps()).filter((x) => x.hash !== hash);
+      snaps.push({ hash, json: JSON.stringify(db) });
+      await store.kvSet('snaps', snaps.slice(-6));
+    } catch (e) { /* storage unavailable: merges just ask about more rows */ }
+  }
+  async function findBase(a, b) {
+    const snaps = await loadSnaps();
+    if (!snaps.length) return null;
+    const inB = new Set([...sync.historyOf(b), sync.hashDb(b)]);
+    for (const h of [...sync.historyOf(a), sync.hashDb(a)].reverse()) {
+      if (!inB.has(h)) continue;
+      const snap = snaps.find((x) => x.hash === h);
+      if (snap) return JSON.parse(snap.json);
+    }
+    return null;
+  }
+
+  /** Compare the in-memory workbook with the secondary file and bring them together. */
+  async function syncSecondary() {
+    if (syncing || !FileLink2.linked || !S.db || S.demo || S.needs2) return;
+    syncing = true;
+    try {
+      const mine = S.db;
+      const other = await FileLink2.read();
+      if (!other) { await FileLink2.write(mine); await saveSnap(mine); setSync('ok'); return; }
+      const rel = sync.compare(mine, other);
+      if (rel === 'same') { await saveSnap(mine); setSync('ok'); }
+      else if (rel === 'a-ahead') { await FileLink2.write(mine); await saveSnap(mine); setSync('ok'); }
+      else if (rel === 'b-ahead') { await takeSecondary(other); }
+      else { await resolveDivergence(mine, other); }
+    } catch (e) {
+      console.error(e);
+      const locked = /NoModification|NotAllowed|Security|busy|locked/i.test(e.name + ' ' + e.message);
+      setSync('error', locked ? 'Could not reach the secondary file. If it is open in Excel, close it and click here to retry.' : e.message);
+    } finally { syncing = false; }
+  }
+
+  async function takeSecondary(other) {
+    delete other._repaired;
+    S.db = other; normalizeSelection();
+    await FileLink.write(other);
+    S.save = 'saved';
+    await saveSnap(other);
+    setSync('ok'); render();
+    toast(`${FileLink2.name} had newer changes — your main workbook is now up to date.`, 'ok');
+  }
+
+  async function resolveDivergence(mine, other) {
+    const base = await findBase(mine, other);
+    const res = sync.mergeDbs(base, mine, other);
+    if (!res.conflicts.length) {
+      await applyMerge(res.db, mine, other, `Both copies had changes — combined them automatically${res.auto ? ` (${res.auto} change${res.auto === 1 ? '' : 's'})` : ''}.`);
+      return;
+    }
+    setSync('conflict', 'The main and secondary workbooks were both changed. Click to choose what to keep.');
+    if (!$('#modal').open) openMergeDialog(mine, other, base, res);
+  }
+
+  async function applyMerge(merged, a, b, message) {
+    try {
+      const db = store.parseWorkbook(store.serializeWorkbook(merged)); // drops orphaned rows, normalises values
+      delete db._repaired;
+      sync.stamp(db, { device: deviceName(), extraHistory: [...sync.historyOf(a), ...sync.historyOf(b), sync.hashDb(a), sync.hashDb(b)] });
+      S.db = db; normalizeSelection();
+      await FileLink.write(db);
+      await FileLink2.write(db);
+      await saveSnap(db);
+      S.save = 'saved';
+      setSync('ok'); render();
+      toast(message, 'ok');
+    } catch (e) {
+      console.error(e);
+      setSync('error', e.message);
+      toast('Could not write the merged workbook: ' + e.message, 'err');
+    }
+  }
+
+  function describeSide(c, side) {
+    const row = c[side];
+    if (!row) return c.kind === 'changed' ? '' : (side === 'a' ? 'Not in the main workbook' : 'Not in the secondary workbook');
+    const show = (v) => (v === true ? 'Yes' : v === false ? 'No' : v === '' || v === undefined || v === null ? '—' : String(v));
+    if (c.kind === 'changed' && c.fields.length) return c.fields.map((f) => `${f.field}: ${show(f[side])}`).join(' · ');
+    return c.label.replace(/^[^:]+: /, '');
+  }
+
+  function openMergeDialog(a, b, base, res) {
+    const when = (db) => (db.settings.savedat ? new Date(db.settings.savedat).toLocaleString() : 'unknown time') + (db.settings.savedby ? ' by ' + db.settings.savedby : '');
+    const kindText = { changed: 'Changed in both', 'only-main': 'Only in main', 'only-secondary': 'Only in secondary', 'deleted-main': 'Removed in main, changed in secondary', 'deleted-secondary': 'Removed in secondary, changed in main' };
+    openModal({
+      title: 'Merge the two copies',
+      wide: true,
+      submit: 'Apply and save both',
+      body: `<p class="lede" style="margin-top:0">The main and secondary workbooks have both changed since they were last in sync.${base ? ` Everything changed on just one side was combined automatically${res.auto ? ` (${res.auto})` : ''}; only items changed on both sides are listed.` : ' Every difference is listed; items only one copy has are kept unless you remove them.'}</p>
+        <div class="merge-heads"><div><b>Main</b> · ${esc(FileLink.name)}<br><span class="hint">saved ${esc(when(a))}</span></div><div><b>Secondary</b> · ${esc(FileLink2.name)}<br><span class="hint">saved ${esc(when(b))}</span></div></div>
+        <div class="merge-list">${res.conflicts.map((c, i) => {
+          const na = c.kind === 'only-secondary' || c.kind === 'deleted-main';
+          const opt = (side, title) => `<label class="mc-opt"><input type="radio" name="c${i}" value="${side}" ${c.dflt === side ? 'checked' : ''}><span><b>${title}</b><small>${esc(describeSide(c, side)) || '&nbsp;'}</small></span></label>`;
+          return `<div class="mc"><div class="mc-title">${esc(c.label)}<span class="badge">${esc(kindText[c.kind])}</span></div><div class="mc-opts">${opt('a', na ? 'Main (leave out)' : 'Main')}${opt('b', c.kind === 'only-main' || c.kind === 'deleted-secondary' ? 'Secondary (leave out)' : 'Secondary')}</div></div>`;
+        }).join('')}</div>`,
+      extra: '<button type="button" class="btn sm" data-modal-action="all-a">Keep main for all</button><button type="button" class="btn sm" data-modal-action="all-b">Keep secondary for all</button>',
+      actions: {
+        'all-a': (form) => { form.querySelectorAll('input[value=a]').forEach((r) => (r.checked = true)); return false; },
+        'all-b': (form) => { form.querySelectorAll('input[value=b]').forEach((r) => (r.checked = true)); return false; },
+      },
+      onSubmit: (fd) => {
+        const choices = {};
+        res.conflicts.forEach((c, i) => { choices[c.id] = fd.get('c' + i) || c.dflt; });
+        const out = sync.mergeDbs(base, a, b, choices);
+        applyMerge(out.db, a, b, `Merged — both workbooks now match${out.conflicts.length ? ` (${out.conflicts.length} item${out.conflicts.length === 1 ? '' : 's'} chosen by you)` : ''}.`);
+      },
+    });
+  }
+
+  async function linkSecondary(mode) {
+    try {
+      if (mode === 'open') await FileLink2.pickOpen(); else await FileLink2.pickCreate('Residence Tracker (copy).xlsx');
+      if (FileLink.linked && (await FileLink.handle.isSameEntry(FileLink2.handle))) {
+        await FileLink2.forget();
+        toast('That is the main workbook itself — pick a different file for the secondary copy.', 'err');
+        return;
+      }
+      S.needs2 = false; S.sync = 'ok';
+      $('#modal').close();
+      render();
+      await syncSecondary();
+      render();
+    } catch (e) { if (e.name !== 'AbortError') toast(e.message, 'err'); }
+  }
+
+  async function restoreSecondary() {
+    try {
+      const st = await FileLink2.restore();
+      if (st === 'needs-permission') { S.needs2 = true; render(); }
+      else if (st === 'ready') { S.needs2 = false; await syncSecondary(); }
+    } catch (e) { /* secondary unavailable: main still works */ }
   }
 
   /* ============================================================ modal */
@@ -310,7 +485,7 @@
 
         <section class="card"><header><h2>Settle up (all time${S.residenceId === 'all' ? '' : ', this residence'})</h2><span class="spacer"></span>${btn('nav', 'Balances', '', 'sm ghost', 'data-view="balances"')}</header>
           <div class="body" style="padding-top:6px">${plan.length ? `<div class="tablewrap"><table><tbody>${plan.map((t) => `
-            <tr><td>${personTag(t.fromId)}</td><td class="muted">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Everyone is settled up.</div>'}</div></section>
+            <tr><td>${personTag(t.fromId)}</td><td class="muted hide-sm">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Everyone is settled up.</div>'}</div></section>
 
         <section class="card"><header><h2>This month by person</h2></header>
           <div class="body" style="padding-top:6px">${people.length ? `<div class="tablewrap"><table>
@@ -434,15 +609,15 @@
     return `
       <div class="pagehead"><h1>Balances</h1>${btn('add-settlement', 'Record payment', 'plus', 'primary')}</div>
       <p class="lede">Based on every bill marked <b>Paid</b>: whoever paid is owed by the others according to each bill's split.${S.residenceId === 'all' ? '' : ' Showing the selected residence only.'}</p>
-      <div class="grid cols-2">
-        <section class="card"><header><h2>Per person</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${rows.length ? `<table>
-          <thead><tr><th>Person</th><th class="num">Paid out</th><th class="num">Their share</th><th class="num">Settled</th><th class="num">Net</th><th></th></tr></thead>
+      <section class="card"><header><h2>Per person</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${rows.length ? `<table class="fit">
+          <thead><tr><th>Person</th><th class="num">Paid out</th><th class="num">Share</th><th class="num hide-sm">Settled</th><th class="num">Net</th><th class="chev-col"></th></tr></thead>
           <tbody>${rows.map((r) => `<tr class="clickable" data-act="person-ledger" data-id="${esc(r.personId)}" title="Click for the line-item breakdown"><td>${personTag(r.personId)}</td><td class="num">${money(r.paid)}</td><td class="num">${money(r.owed)}</td>
-            <td class="num">${money(r.sent - r.received)}</td>
+            <td class="num hide-sm">${money(r.sent - r.received)}</td>
             <td class="num"><span class="pill ${r.net > 0.004 ? 'good' : r.net < -0.004 ? 'bad' : ''}">${r.net > 0 ? '+' : ''}${money(r.net)}</span><div class="hint">${r.net > 0.004 ? 'is owed' : r.net < -0.004 ? 'owes' : 'settled'}</div></td>
-            <td class="row-actions">${btn('person-ledger', 'Details', 'right', 'sm ghost', `data-id="${esc(r.personId)}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No paid bills yet.</div>'}</div></div></section>
-        <section class="card"><header><h2>Suggested settle-up</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${plan.length ? `<table><tbody>${plan.map((t) => `
-          <tr><td>${personTag(t.fromId)}</td><td class="muted">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td>
+            <td class="chev-col">${icon('right')}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No paid bills yet.</div>'}</div></div></section>
+      <div class="grid">
+        <section class="card"><header><h2>Suggested settle-up</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${plan.length ? `<table class="fit"><tbody>${plan.map((t) => `
+          <tr><td>${personTag(t.fromId)}</td><td class="muted hide-sm">pays</td><td>${personTag(t.toId)}</td><td class="num"><b>${money(t.amount)}</b></td>
           <td class="row-actions">${btn('add-settlement', 'Record', 'check', 'sm', `data-from="${esc(t.fromId)}" data-to="${esc(t.toId)}" data-amount="${t.amount}"`)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Everyone is settled up.</div>'}</div></div></section>
       </div>
       <section class="card"><header><h2>Settlement history</h2></header><div class="body" style="padding-top:6px"><div class="tablewrap">${sets.length ? `<table>
@@ -502,7 +677,7 @@
         <div class="brand"><span class="logo">${icon('home')}</span><span class="brand-name">Residence Tracker</span></div>
         <select id="resSelect" aria-label="Residence">${options([['all', 'All residences'], ...d.residences.map((r) => [r.id, r.name])], S.residenceId)}</select>
         <span class="spacer"></span>
-        ${fileChip()}
+        ${fileChip()}${syncChip()}
         ${FileLink.linked ? btn('reload', 'Reload', 'refresh', 'sm') : ''}
         ${btn('download', 'Download .xlsx', 'download', 'sm' + (!FileLink.linked && S.save === 'dirty' ? ' attn' : ''))}
         ${btn('open-file', FileLink.linked ? 'Switch file' : 'Open file', 'folder', 'sm')}
@@ -976,10 +1151,24 @@
       body: `<div class="form-grid">
         ${field('Currency code', `<input name="currency" maxlength="3" required value="${esc(S.db.settings.currency)}" style="text-transform:uppercase">`, '', 'ISO code, e.g. USD, EUR, GBP, CAD')}
         <div class="field full"><span class="lbl">Workbook</span><div>${FileLink.linked ? `Linked to <b>${esc(FileLink.name)}</b>` : 'Not linked to a file on disk.'}</div>
-        <span class="hint">All data lives in the workbook's sheets — People, Residences, Residents, Expenses, Splits, Payments, Settlements. Keep it closed in Excel while using the app (Excel locks open files).</span></div></div>`,
+        <span class="hint">All data lives in the workbook's sheets — People, Residences, Residents, Expenses, Splits, Payments, Settlements. Keep it closed in Excel while using the app (Excel locks open files).</span></div>
+        ${FileLink.supported() && FileLink.linked ? `<div class="field full"><span class="lbl">Secondary copy <span class="muted">(optional)</span></span>
+          <div>${FileLink2.linked ? `Mirrored to <b>${esc(FileLink2.name)}</b>${S.needs2 ? ' — needs reconnecting' : S.sync === 'conflict' ? ' — copies differ, needs a merge' : S.sync === 'error' ? ' — last sync failed' : ' — in sync'}` : 'Not set up.'}</div>
+          <div class="btn-row">${FileLink2.linked
+            ? `<button type="button" class="btn sm" data-modal-action="sync2">Sync now</button><button type="button" class="btn sm danger" data-modal-action="unlink2">Stop mirroring</button>`
+            : `<button type="button" class="btn sm" data-modal-action="link2-open">Choose an existing file…</button><button type="button" class="btn sm" data-modal-action="link2-new">Create a new file…</button>`}</div>
+          <span class="hint">Every save also writes this second workbook — for example a copy in your other OneDrive. Whenever the app opens, or either file changes, the two are compared: if only one changed it is copied over the other; if both changed (say, one at work and one at home) you pick what to keep, item by item.</span></div>
+        ${field('This device\'s name', `<input name="device" maxlength="40" value="${esc(deviceName())}" placeholder="e.g. Work laptop">`, 'full', 'Shown in the merge screen as "saved by …".')}` : ''}</div>`,
       extra: FileLink.linked ? '<button type="button" class="btn danger" data-modal-action="forget">Unlink file</button>' : '',
-      actions: { forget: async () => { await FileLink.forget(); S.db = null; render(); } },
+      actions: {
+        forget: async () => { await FileLink.forget(); S.db = null; render(); },
+        'link2-open': () => { linkSecondary('open'); return false; },
+        'link2-new': () => { linkSecondary('new'); return false; },
+        sync2: () => { $('#modal').close(); syncSecondary(); return false; },
+        unlink2: async () => { await FileLink2.forget(); S.needs2 = false; S.sync = 'off'; render(); openSettings(); return false; },
+      },
       onSubmit: (fd) => {
+        if (fd.has('device')) { try { localStorage.setItem('rt-device', fd.get('device').trim()); } catch (e) { /* ignore */ } }
         const cur = fd.get('currency').trim().toUpperCase();
         try { new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }); } catch (e) { toast('Unknown currency code.', 'err'); return false; }
         commit((db) => { db.settings.currency = cur; });
@@ -1045,8 +1234,13 @@
     download: () => downloadCopy(),
     reload: () => reloadFromDisk(false),
     'retry-save': () => flush(),
+    'sync-now': () => syncSecondary(),
+    reconnect2: async () => {
+      try { await FileLink2.reconnect(); S.needs2 = false; render(); await syncSecondary(); }
+      catch (e) { toast(e.message, 'err'); }
+    },
     reconnect: async () => {
-      try { await FileLink.reconnect(); await adoptFile(); render(); }
+      try { await FileLink.reconnect(); await adoptFile(); render(); restoreSecondary(); }
       catch (e) { S.bootError = e.message; render(); }
     },
   };
@@ -1080,8 +1274,11 @@
 
   /* Pick up edits made in Excel while the app is open. */
   async function pollDisk() {
-    if (document.hidden || !FileLink.linked || !S.db || saving || S.save === 'dirty' || S.save === 'error' || $('#modal').open) return;
-    try { if (await FileLink.changedOnDisk()) await reloadFromDisk(true); } catch (e) { /* file busy or moved; try again later */ }
+    if (document.hidden || !FileLink.linked || !S.db || saving || syncing || S.save === 'dirty' || S.save === 'error' || $('#modal').open) return;
+    try {
+      if (await FileLink.changedOnDisk()) await reloadFromDisk(true);
+      else if (FileLink2.linked && !S.needs2 && (await FileLink2.changedOnDisk())) await syncSecondary();
+    } catch (e) { /* file busy or moved; try again later */ }
   }
   setInterval(pollDisk, 3000);
   window.addEventListener('focus', pollDisk);
@@ -1100,6 +1297,7 @@
       const st = await FileLink.restore();
       if (st === 'ready') await adoptFile();
       else if (st === 'needs-permission') S.needsPermission = true;
+      if (st === 'ready') await restoreSecondary();
     } catch (e) {
       S.bootError = `Couldn't open ${FileLink.name || 'the last workbook'}: ${e.message}`;
       S.db = null;

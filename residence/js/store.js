@@ -474,8 +474,10 @@
       ['Key', 'Value'],
       ['Currency', db.settings.currency || 'USD'],
       ['SchemaVersion', '1'],
+      ...[['SyncHash', 'synchash'], ['SyncHistory', 'synchistory'], ['SavedAt', 'savedat'], ['SavedBy', 'savedby']]
+        .filter(([, k]) => db.settings[k]).map(([label, k]) => [label, db.settings[k]]),
     ]);
-    settingsWs['!cols'] = [{ wch: 16 }, { wch: 16 }];
+    settingsWs['!cols'] = [{ wch: 16 }, { wch: 40 }];
     XLSX.utils.book_append_sheet(wb, settingsWs, 'Settings');
 
     return XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true });
@@ -580,7 +582,8 @@
     return new Promise((res, rej) => { const tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
   }
 
-  const FileLink = {
+  /** One linked workbook on disk. `slot` names where its handle is remembered. */
+  function makeLink(slot) { return {
     handle: null,
     name: '',
     lastModified: 0,
@@ -610,14 +613,14 @@
     async _adopt(h) {
       this.handle = h;
       this.name = h.name;
-      await kvSet('handle', h).catch(() => {});
+      await kvSet(slot, h).catch(() => {});
     },
 
     /** On startup: find the previously linked file. Returns 'ready' | 'needs-permission' | 'none'. */
     async restore() {
       if (!this.supported()) return 'none';
       let h;
-      try { h = await kvGet('handle'); } catch (e) { return 'none'; }
+      try { h = await kvGet(slot); } catch (e) { return 'none'; }
       if (!h) return 'none';
       this.handle = h;
       this.name = h.name;
@@ -632,7 +635,7 @@
 
     async forget() {
       this.handle = null; this.name = ''; this.lastModified = 0;
-      await kvDel('handle').catch(() => {});
+      await kvDel(slot).catch(() => {});
     },
 
     async read() {
@@ -656,8 +659,12 @@
       const f = await this.handle.getFile();
       return f.lastModified !== this.lastModified;
     },
-  };
+  }; }
 
-  RT.store = { SHEETS, emptyDb, parseWorkbook, serializeWorkbook, sampleDb, newDb, defaultTypes, uid, toISODate, toPeriod, isoToSerial };
+  const FileLink = makeLink('handle');           // main workbook
+  const FileLink2 = makeLink('handle2');         // optional secondary copy
+
+  RT.store = { kvGet, kvSet, kvDel, SHEETS, emptyDb, parseWorkbook, serializeWorkbook, sampleDb, newDb, defaultTypes, uid, toISODate, toPeriod, isoToSerial };
   RT.FileLink = FileLink;
+  RT.FileLink2 = FileLink2;
 })(typeof window !== 'undefined' ? window : globalThis);

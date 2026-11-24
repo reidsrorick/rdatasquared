@@ -33,9 +33,20 @@ Then **Create new workbook** (or **Open workbook…** for an existing one). The 
 - *Equal, but some pay $ more / less* — start from an equal split and enter the extra (+) or reduction (−), e.g. +75 → you pay $75 more than half ($1,053.50) and the other person $75 less ($903.50). If the rent changes, you still pay $75 over half.
 **Balances** = what each person paid out − their share of every bill marked Paid, adjusted by recorded settlements. Use the residence picker (top bar) to scope everything to one home.
 
+## Secondary copy (two files, e.g. work + personal OneDrive)
+
+**Settings → Secondary copy** lets you pick a second workbook. Every save writes both; the main workbook stays the one you open first. Each save stamps the file (Settings sheet: `SyncHash`, `SyncHistory`, `SavedAt`, `SavedBy`) so the app can tell the copies' relationship whenever it starts, regains focus, or either file changes (OneDrive syncing a newer copy down counts):
+
+- **Identical** → nothing to do.
+- **One copy is simply older** (the other's history contains it) → it is brought up to date automatically.
+- **Both were edited separately** (work in the day, home at night) → they are merged row by row. Changes made on only one side — including deletions — are combined automatically (using a snapshot of the last agreed state kept in this browser). Only rows changed on *both* sides open a **Merge the two copies** screen where you pick Main or Secondary per item, or keep one side for all. After you apply, both files are rewritten identically and carry the shared history, so they don't conflict again.
+- Without a snapshot (first time on a new device) every difference is listed; rows only one copy has are kept unless you pick the other side.
+
+Give each device a name (Settings → *This device's name*) so the merge screen can say who saved what. Note: open the same workbook on two devices *at the same time* and the app can only compare when it notices a change (about every 3 s), so avoid editing the same item in both.
+
 ## The workbook
 
-Sheets: `People`, `Residences`, `Residents`, `ExpenseTypes`, `Expenses`, `Splits`, `Payments`, `Settlements`, `Settings` (+ an `Info` sheet).
+Sheets (the `Settings` sheet also holds the sync stamp): `People`, `Residences`, `Residents`, `ExpenseTypes`, `Expenses`, `Splits`, `Payments`, `Settlements`, `Settings` (+ an `Info` sheet).
 
 Two **read-only report sheets** are rewritten on every save, so the balance breakdown is visible in Excel too (edits to them are overwritten; change `Payments` / `Settlements` instead):
 - `Ledger` — one row per person per paid bill or settlement: bill total, who paid, their share, the effect on their balance, and a running balance.
@@ -54,6 +65,7 @@ index.html          page shell
 css/styles.css      styling (light/dark)
 js/store.js         workbook <-> data, file linking (File System Access API)
 js/calc.js          schedules, splits, balances (pure logic)
+js/sync.js          two-copy compare + merge (pure logic)
 js/app.js           UI
 vendor/xlsx.full.min.js   SheetJS 0.18.5 (bundled; works offline)
 ```
