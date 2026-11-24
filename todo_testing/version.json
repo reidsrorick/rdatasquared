@@ -1,4 +1,14 @@
-{"version":"1.70.0","build":"20261120145110","changelog":[
+{"version":"1.70.1","build":"20261124093056","changelog":[
+ {
+  "v": "1.70.1",
+  "title": "Spreadsheet folders you open, like Notebooks",
+  "items": [
+   "Spreadsheet folders now work like Notebooks. The Spreadsheets list shows your folders; click one to see the spreadsheets inside, and use ‹ Folders to go back.",
+   "Press ＋ inside a folder to make a spreadsheet there (from the list of folders it goes to Unfiled).",
+   "Right-click a spreadsheet to move it to a folder (or Unfiled, or a new folder). Right-click a folder to add a spreadsheet, rename, move it up or down, or delete it.",
+   "Folders are called folders, not notebooks. Deleting a folder moves its spreadsheets to Unfiled; none is deleted."
+  ]
+ },
  {
   "v": "1.70.0",
   "title": "Feeds retry by themselves and warn you",

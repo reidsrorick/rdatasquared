@@ -1,5 +1,5 @@
 // Caches the app so it opens offline. Your notes are NOT stored here: they live in your own JSON file.
-const PFX = 'notebooktest-', CACHE = PFX + '20261120145110';          // a copy of the app at another address of the same site (the test copy) uses another prefix, so the two never delete or read each other's stored files
+const PFX = 'notebooktest-', CACHE = PFX + '20261124093056';          // a copy of the app at another address of the same site (the test copy) uses another prefix, so the two never delete or read each other's stored files
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {

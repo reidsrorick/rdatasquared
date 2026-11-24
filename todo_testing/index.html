@@ -1191,8 +1191,18 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.70.0';
+const APP_VERSION = '1.70.1';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.70.1",
+  "title": "Spreadsheet folders you open, like Notebooks",
+  "items": [
+   "Spreadsheet folders now work like Notebooks. The Spreadsheets list shows your folders; click one to see the spreadsheets inside, and use ‹ Folders to go back.",
+   "Press ＋ inside a folder to make a spreadsheet there (from the list of folders it goes to Unfiled).",
+   "Right-click a spreadsheet to move it to a folder (or Unfiled, or a new folder). Right-click a folder to add a spreadsheet, rename, move it up or down, or delete it.",
+   "Folders are called folders, not notebooks. Deleting a folder moves its spreadsheets to Unfiled; none is deleted."
+  ]
+ },
  {
   "v": "1.70.0",
   "title": "Feeds retry by themselves and warn you",
@@ -2815,7 +2825,20 @@ const sheetFold = new Set();
 const pgFold = new Set(); let pgIdle = false;          // sidebar People: which groups are folded, and whether people with nothing open are hidden (kept per computer)
 try { (JSON.parse(localStorage.getItem('notebook-pgfold') || '[]') || []).forEach(k => pgFold.add(k)); pgIdle = localStorage.getItem('notebook-pgidle') === '1'; } catch {}
 const pgSave = () => { try { localStorage.setItem('notebook-pgfold', JSON.stringify([...pgFold])); localStorage.setItem('notebook-pgidle', pgIdle ? '1' : '0'); } catch {} };
-let lastSF = '';          // the spreadsheet folder you used last: new spreadsheets start there
+let lastSF = '';          // the spreadsheet folder you used last
+let sfView = '';          // the spreadsheet folder the list is showing: '' = the list of folders, '_' = Unfiled, else a folder id
+const sfKey = i => (db.sfolders || []).some(f => f.id === i.sfolder) ? i.sfolder : '_';          // which folder a spreadsheet is in ('_' = Unfiled)
+const sfById = id => (db.sfolders || []).find(f => f.id === id);
+const sfShown = () => filter === 'sheet' && !!sfView && (sfView === '_' || !!sfById(sfView));
+function sfNew(){ const nm = (prompt('Name the new folder:', '') || '').trim().slice(0, 60); if(!nm) return; const f = {id: uid(), name: nm}; (db.sfolders = db.sfolders || []).push(f); touch(); renderList(); toast(`Made the folder “${nm}”. Click it to open it, then press ＋ to make a spreadsheet in it.`); }
+function sfRename(id){ const f = sfById(id); if(!f) return; const nm = (prompt('Rename the folder:', f.name) || '').trim().slice(0, 60); if(nm && nm !== f.name){ f.name = nm; touch(); renderList(); renderDetail(); } }
+function sfDelete(id){ const f = sfById(id); if(!f) return; const n = db.items.filter(i => i.sheet && i.sfolder === f.id).length; if(!confirm(`Delete the folder “${f.name}”?${n ? ` Its ${n} spreadsheet${n === 1 ? '' : 's'} move to Unfiled; none is deleted.` : ''}`)) return; db.items.forEach(i => { if(i.sheet && i.sfolder === f.id){ i.sfolder = ''; i.updated = now(); } }); db.sfolders = db.sfolders.filter(x => x !== f); if(lastSF === f.id) lastSF = ''; if(sfView === f.id) sfView = ''; touch(); renderAll(); }
+function sfMoveBy(id, dir){ const a = db.sfolders || [], k = a.findIndex(f => f.id === id), t = k + dir; if(k < 0 || t < 0 || t >= a.length) return; [a[k], a[t]] = [a[t], a[k]]; touch(); renderList(); }
+function moveSheet(i, id){          // id: a folder id, or '' for Unfiled
+  const prev = i.sfolder || ''; if((id || '') === prev) return; const f = sfById(id), name = f ? f.name : 'Unfiled';
+  i.sfolder = f ? id : ''; i.updated = now(); touch(); fixSelection(); renderAll();
+  toast(`Moved “${i.title || 'Untitled'}” to ${name}.`, () => { i.sfolder = prev; i.updated = now(); touch(); renderAll(); });
+}
 let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '', lastNoteSel = '', hideCkDone = false, metaOff = false, dateField = 'updated', datePreset = '', dateFrom = '', dateTo = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
 const pinFold = new Set();          // where the Pinned strip is collapsed ('' = the notebook list, otherwise a notebook id)
 const nbFold = new Set();          // notebooks folded closed in the Notes list
@@ -3166,6 +3189,7 @@ function renderFilterBar(){
   document.querySelectorAll('#sortseg [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === sortMode));
   const bar = $('#nbbar'); bar.style.display = filter === 'note' || filter === 'sheet' ? '' : 'none';
   if(filter === 'sheet') bar.innerHTML = `<a data-act="newsf" title="Make a folder to group spreadsheets">＋ Folder</a>`;
+  if(filter === 'sheet') bar.style.display = sfShown() && !search.trim() ? 'none' : '';
   if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add the pages from a notebook file, e.g. one exported on another computer">⤒ Import</a>`;
   const opts = document.querySelector('.list .opts'); if(opts) opts.classList.toggle('nblist', filter === 'note' && !nbView && !search.trim());
   $('#datewrap').style.display = filter === 'note' ? '' : 'none'; $('#dfield').value = dateField; $('#dpreset').value = datePreset; $('#dcustom').style.display = datePreset === 'custom' ? '' : 'none'; $('#dfrom').value = dateFrom; $('#dto').value = dateTo;
@@ -3186,7 +3210,7 @@ function dateRange(){
   return [dateFrom || '0000-00-00', dateTo || '9999-12-31'];
 }
 const noteDay = i => { const v = dateField === 'page' ? i.date : i[dateField]; if(!v) return ''; return dateField === 'page' ? v : dstr(new Date(v)); };
-const inNotesView = e => filter !== 'note' || !nbById(nbView) || !!search.trim() || (dateActive() && !nbById(nbView)) || (e.item.type === 'note' && (nbKey(e.item) === nbView || e.item.pinAll));
+const inNotesView = e => (filter === 'sheet' && sfShown() && !search.trim()) ? (!!e.item.sheet && sfKey(e.item) === sfView) : filter !== 'note' || !nbById(nbView) || !!search.trim() || (dateActive() && !nbById(nbView)) || (e.item.type === 'note' && (nbKey(e.item) === nbView || e.item.pinAll));
 function fixSelection(){
   const v = listEntries();
   if(!v.some(e => e.item.id === selId && inNotesView(e))){
@@ -3519,11 +3543,20 @@ function renderList(){
       html = `<div class="nbhead2" data-nbmenu="${esc(nb.id)}" style="--nbc:${esc(nb.color)}"><a data-act="nball" title="Back to all notebooks">‹ Notebooks</a><span class="nbn">${esc(nb.name)}</span><small>${all.length} page${all.length === 1 ? '' : 's'}</small>${nb.id === inboxIdQuiet() && procQueue().length ? `<button data-act="goproc" class="procbtn" title="Go through these notes one at a time: file, make an action, or delete">📥 Process ${procQueue().length}</button>` : ''}<button data-act="nbnewpage" data-id="${esc(nb.id)}" title="New page in ${esc(nb.name)}">＋</button></div>`
         + pinHtml + (pins.length && rows.length ? '<div class="pinhead">Pages</div>' : '') + (rows.length ? rows.map(e => entryHtml(e)).join('') : (all.length ? '' : `<div class="nbempty">No pages yet. Press ＋ to add one.</div>`));
     }
-  } else if(filter === 'sheet'){                  // Spreadsheets: grouped into folders (their own, not notebooks), each group can be folded away
-    const items = v.filter(e => e.kind === 'item'), sfOf = i => (db.sfolders || []).some(f => f.id === i.sfolder) ? i.sfolder : '';
-    html = [...(db.sfolders || []).map(f => ({id: f.id, name: f.name, real: true})), {id: '', name: 'Unfiled', real: false}].map(g => {
-      const rows = items.filter(e => sfOf(e.item) === g.id); if(!rows.length && !g.real) return ''; const key = g.id || '_', folded = sheetFold.has(key);
-      return `<div class="sfhead"><div class="pinhead pinfold" data-sheetfold="${esc(key)}" title="Click to ${folded ? 'show' : 'hide'} these spreadsheets">${folded ? '▸' : '▾'} 📁 ${esc(g.name)} <small>${rows.length}</small></div>${g.real ? `<span class="sfbtns"><button data-act="sfrename" data-id="${esc(g.id)}" title="Rename this folder">✎</button><button data-act="sfdelete" data-id="${esc(g.id)}" title="Delete this folder (its spreadsheets move to Unfiled)">✕</button></span>` : ''}</div>` + (folded ? '' : rows.map(e => entryHtml(e)).join('') || (g.real ? '<div class="nbempty">Empty. Pick this folder in a spreadsheet’s Folder box.</div>' : '')); }).join('');
+  } else if(filter === 'sheet'){                  // Spreadsheets: your folders first; click one to see its spreadsheets (like Notebooks). Searching looks through everything.
+    const items = v.filter(e => e.kind === 'item');
+    if(sfView && sfView !== '_' && !sfById(sfView)) sfView = '';
+    const nWord = n => `${n} spreadsheet${n === 1 ? '' : 's'}`;
+    if(search.trim()) html = items.map(e => entryHtml(e, true)).join('');
+    else if(!sfView){
+      const row = (key, name, mine, menu) => { const last = mine.reduce((mx, e) => (e.item.updated || '') > mx ? e.item.updated : mx, ''); return `<div class="nbgh big" data-sfopen="${esc(key)}" ${menu ? `data-sfmenu="${esc(key)}"` : ''} title="Click to open" style="--nbc:#6b7a90"><div class="nbtxt"><b>📁 ${esc(name)}</b><small>${nWord(mine.length)}${last ? ' · edited ' + esc(fmtDay(dstr(new Date(last)))) : ''}</small></div><span class="nbgo">›</span></div>`; };
+      const un = items.filter(e => sfKey(e.item) === '_');
+      html = (db.sfolders || []).map(f => row(f.id, f.name, items.filter(e => sfKey(e.item) === f.id), true)).join('') + (un.length || !(db.sfolders || []).length ? row('_', 'Unfiled', un, false) : '');
+    } else {
+      const f = sfById(sfView), rows = items.filter(e => sfKey(e.item) === sfView);
+      html = `<div class="nbhead2" ${f ? `data-sfmenu="${esc(f.id)}"` : ''} style="--nbc:#6b7a90"><a data-act="sfall" title="Back to all folders">‹ Folders</a><span class="nbn">${esc(f ? f.name : 'Unfiled')}</span><small>${nWord(rows.length)}</small><button data-act="sfnewhere" title="New spreadsheet in ${esc(f ? f.name : 'Unfiled')}">＋</button></div>`
+        + (rows.length ? rows.map(e => entryHtml(e)).join('') : `<div class="nbempty">No spreadsheets here yet. Press ＋ to add one, or right-click a spreadsheet elsewhere and choose this folder.</div>`);
+    }
   } else {
     v.forEach(e => { const b = bucketOf(e); counts[b] = (counts[b] || 0) + 1; });
     for(const e of v){
@@ -3779,7 +3812,7 @@ function toast(msg, undo, label = 'Undo', openId, ms){
   el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms || 9000);
 }
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
-function openItemById(id){ const oi = byId(id); if(!oi) return; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); selId = id; selCk = ''; search = ''; saveUi(); renderAll(); }
+function openItemById(id){ const oi = byId(id); if(!oi) return; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); if(filter === 'sheet') sfView = sfKey(oi); selId = id; selCk = ''; search = ''; saveUi(); renderAll(); }
 /* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
 /* ---- people ---- */
 const teamName = v => { const x = String(v || '').trim().toLowerCase(); return x ? db.people.find(k => k.toLowerCase() === x) || '' : ''; };
@@ -4199,7 +4232,7 @@ const viewFor = i => i.type === 'task' ? 'task' : (i.sheet && SHEETS_APART) ? 's
 function openActionByKey(key){
   const t = findEntry(key); if(!t) return;
   if($('#tldlg').open) $('#tldlg').close();
-  filter = viewFor(t.item); if(filter === 'note') nbView = nbKey(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
+  filter = viewFor(t.item); if(filter === 'note') nbView = nbKey(t.item); if(filter === 'sheet') sfView = sfKey(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
   if(selCk){ const ai = document.querySelector(`#detail [data-ci="${selCk}"]`), r = ai && ai.closest('.ai'); if(r){ r.classList.add('flash'); r.scrollIntoView({block:'center'}); } }
 }
 function openLinkedFromBlock(){ const t = linkTarget(tlEdit.b); if(t) openActionByKey(t.key); }
@@ -4498,13 +4531,13 @@ function newItem(kind){                      // kind: 'task', 'note' or 'meeting
   const i = {id:uid(), pinned:false, pinAll:false, type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(kind === 'sheet') i.sheet = shNew();
   let toInbox = false;
-  if(kind === 'sheet' && SHEETS_APART){ i.notebook = inboxId(); i.sfolder = (db.sfolders || []).some(f => f.id === lastSF) ? lastSF : ''; filter = 'sheet'; }
+  if(kind === 'sheet' && SHEETS_APART){ i.notebook = inboxId(); const inF = sfShown() && sfView !== '_' ? sfView : ''; i.sfolder = inF; sfView = inF || '_'; lastSF = inF; filter = 'sheet'; toInbox = !inF; }
   else if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; const nbc = nbById(i.notebook); if(nbc && catById(nbc.category) && !i.category) i.category = nbc.category; }
   db.items.push(i); selId = i.id; search = '';
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
-  if(toInbox) toast(`New ${kind === 'sheet' ? 'spreadsheet' : 'note'} is in your Inbox notebook. Use the Notebook box to move it when you know where it belongs.`);
+  if(toInbox) toast(kind === 'sheet' ? 'New spreadsheet is in Unfiled. Use the Folder box (or right-click it in the list) to move it.' : `New note is in your Inbox notebook. Use the Notebook box to move it when you know where it belongs.`);
 }
 /* ---- export / import notebooks (move a notebook between computers, or keep a copy) ---- */
 const notebookPages = id => db.items.filter(i => i.type === 'note' && nbKey(i) === id);
@@ -5388,7 +5421,8 @@ function menuForObj(i, c, openFn){
   const setCat = id => { if(c) c.cat = id; else i.category = id; edited(i); refreshViews(); };
   const m = [{l: c ? 'Open in its note' : 'Open', ic: '↗', fn: openFn}];
   if(isTask) m.push({l: o.done ? 'Mark not done' : 'Mark done', ic: '✓', fn: () => { completeToggle(o, i, !o.done); edited(i); refreshViews(); }});
-  if(!c && i.type === 'note' && db.notebooks.length > 1) m.push({hd:'Notebook'}, ...db.notebooks.map(n => ({l:n.name, ic: nbKey(i) === n.id ? '✓' : '', fn: () => moveNote(i, n.id)})));
+  if(!c && i.sheet && SHEETS_APART) m.push({hd:'Folder'}, {l:'Unfiled', ic: !sfById(i.sfolder) ? '✓' : '', fn: () => moveSheet(i, '')}, ...(db.sfolders || []).map(f => ({l:f.name, ic: i.sfolder === f.id ? '✓' : '', fn: () => moveSheet(i, f.id)})), {l:'New folder…', ic:'＋', fn: () => { const nm = (prompt('Name the new folder:', '') || '').trim().slice(0, 60); if(nm){ const f = {id: uid(), name: nm}; (db.sfolders = db.sfolders || []).push(f); moveSheet(i, f.id); } }});
+  else if(!c && i.type === 'note' && db.notebooks.length > 1) m.push({hd:'Notebook'}, ...db.notebooks.map(n => ({l:n.name, ic: nbKey(i) === n.id ? '✓' : '', fn: () => moveNote(i, n.id)})));
   if(!c){
     if(i.pinned) m.push({l:'Unpin', ic:'📌', fn: () => setPin(i, 'off')});
     if(!i.pinned || i.pinAll) m.push({l: i.type === 'note' ? (i.pinAll ? 'Pin to the top of its notebook only' : 'Pin to the top of this notebook') : 'Pin to top', ic:'📌', fn: () => setPin(i, 'nb')});
@@ -5463,6 +5497,16 @@ $('#items').addEventListener('contextmenu', e => {
       {l: nb.shared && nb.shared.on ? 'Sharing options…' : 'Share notebook to a folder…', ic:'⇪', fn: () => nbShareAction(nb, e.clientX, e.clientY)},
       {hd:'Colour'}, ...NB_COLORS.map((c, k) => ({l:['Blue', 'Green', 'Amber', 'Purple', 'Orange', 'Teal'][k], ic: nb.color === c ? '✓' : '', dot:c, fn: () => { nb.color = c; touch(); renderList(); }})),
       {sep:1}, {l:'Delete notebook…', ic:'🗑', cls:'danger', fn: () => removeNotebook(nb.id)}], gh);
+    return;
+  }
+  const sfh = e.target.closest('[data-sfmenu]'), sfo = sfh && sfById(sfh.dataset.sfmenu);          // right-click a spreadsheet folder
+  if(sfo){
+    e.preventDefault();
+    openMenu(e.clientX, e.clientY, [
+      {l:'New spreadsheet here', ic:'＋', fn: () => { sfView = sfo.id; filter = 'sheet'; newItem('sheet'); }},
+      {l:'Rename…', ic:'✎', fn: () => sfRename(sfo.id)},
+      {l:'Move up', ic:'▲', fn: () => sfMoveBy(sfo.id, -1)}, {l:'Move down', ic:'▼', fn: () => sfMoveBy(sfo.id, 1)},
+      {sep:1}, {l:'Delete folder…', ic:'🗑', cls:'danger', fn: () => sfDelete(sfo.id)}], sfh);
     return;
   }
   const row = e.target.closest('.it'); if(!row) return;
@@ -9483,7 +9527,7 @@ $('#detail').addEventListener('input', e => {
     if(f === 'tags') v = parseTags(v);
     if(f === 'done'){ const rolled = completeToggle(i, i, v); edited(i); if(rolled) renderDetail(); return; }
     if(f === 'assignee') return;
-    i[f] = v; if(f === 'sfolder') lastSF = v; if(f === 'date' || f === 'time') i.autoDt = false;          // you set it yourself, so it counts now
+    i[f] = v; if(f === 'sfolder'){ lastSF = v; if(sfShown()) sfView = sfKey(i); } if(f === 'date' || f === 'time') i.autoDt = false;          // you set it yourself, so it counts now
     if(f === 'body'){ grow(t); scheduleTagSync(i.id); }
     edited(i);
   } else if(t.dataset.ci){ const c = i.checklist.find(x => x.id === t.dataset.ci); if(c){ c.text = t.value; edited(i); } }
@@ -9562,13 +9606,14 @@ document.addEventListener('keydown', e => {                       // Timeline: l
 $('#tlt').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); saveBlockDlg(); } });
 document.addEventListener('click', e => {
   const n = e.target.closest('[data-new]'); if(n){ $('#newmenu').classList.remove('open'); if(n.dataset.new === 'sticky') quickSticky(); else newItem(n.dataset.new); return; }
-  const o = e.target.closest('[data-open]'); if(o){ const oi = byId(o.dataset.open) || {}; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
+  const o = e.target.closest('[data-open]'); if(o){ const oi = byId(o.dataset.open) || {}; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); if(filter === 'sheet') sfView = sfKey(oi); selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
   const tc = e.target.closest('[data-tlcat]'); if(tc && tlEdit){ tlEdit.b.cat = tlEdit.b.cat === tc.dataset.tlcat ? '' : tc.dataset.tlcat; renderTlDlg(); return; }
   const sb = e.target.closest('[data-sort]'); if(sb){ sortMode = sb.dataset.sort; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const lcat = e.target.closest('[data-lcat]'); if(lcat){ listCat = listCat === lcat.dataset.lcat ? '' : lcat.dataset.lcat; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const ch = e.target.closest('[data-chip]');
   if(ch){ const v = chipView(), s = new Set(chipsOff[v]); if(s.has(ch.dataset.chip)) s.delete(ch.dataset.chip); else s.add(ch.dataset.chip); chipsOff[v] = [...s]; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const pgf = e.target.closest('[data-pgfold]'); if(pgf){ const k = pgf.dataset.pgfold; if(pgFold.has(k)) pgFold.delete(k); else pgFold.add(k); pgSave(); renderRail(); return; }
+  const so = e.target.closest('[data-sfopen]'); if(so && !e.target.closest('button')){ sfView = so.dataset.sfopen; fixSelection(); renderList(); renderDetail(); return; }
   const sf = e.target.closest('[data-sheetfold]'); if(sf){ const id = sf.dataset.sheetfold; if(sheetFold.has(id)) sheetFold.delete(id); else sheetFold.add(id); renderList(); return; }
   const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbById(id)){ nbView = id; lastNb = id; saveUi(); fixSelection(); renderList(); renderDetail(); } return; }
   const pp = e.target.closest('[data-person]'); if(pp){ filter = 'person'; actPerson = pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
@@ -9636,9 +9681,11 @@ document.addEventListener('click', e => {
     else if(act === 'teammerge') mergePerson(a.dataset.from, a.dataset.to);
     else if(act === 'feedremove') removePerson(a.dataset.p);
     else if(act === 'pgidle'){ pgIdle = !pgIdle; pgSave(); renderRail(); }
-    else if(act === 'newsf'){ const nm = (prompt('Name the new folder:', '') || '').trim().slice(0, 60); if(nm){ const f = {id: uid(), name: nm}; (db.sfolders = db.sfolders || []).push(f); touch(); renderList(); toast(`Made the folder “${nm}”. Pick it in a spreadsheet’s Folder box, or when you press + while it is the last one used.`); lastSF = f.id; } }
-    else if(act === 'sfrename'){ const f = (db.sfolders || []).find(x => x.id === a.dataset.id); if(f){ const nm = (prompt('Rename the folder:', f.name) || '').trim().slice(0, 60); if(nm && nm !== f.name){ f.name = nm; touch(); renderList(); renderDetail(); } } }
-    else if(act === 'sfdelete'){ const f = (db.sfolders || []).find(x => x.id === a.dataset.id); if(f){ const n = db.items.filter(i => i.sheet && i.sfolder === f.id).length; if(confirm(`Delete the folder “${f.name}”?${n ? ` Its ${n} spreadsheet${n === 1 ? '' : 's'} move to Unfiled; none is deleted.` : ''}`)){ db.items.forEach(i => { if(i.sheet && i.sfolder === f.id){ i.sfolder = ''; i.updated = now(); } }); db.sfolders = db.sfolders.filter(x => x !== f); if(lastSF === f.id) lastSF = ''; touch(); renderList(); renderDetail(); } } }
+    else if(act === 'newsf') sfNew();
+    else if(act === 'sfrename') sfRename(a.dataset.id);
+    else if(act === 'sfdelete') sfDelete(a.dataset.id);
+    else if(act === 'sfall'){ sfView = ''; renderList(); }
+    else if(act === 'sfnewhere') newItem('sheet');
     else if(act === 'feedretry'){ feedProblems().forEach(f => feedRetry.delete(personKey(f.person))); toast('Trying the feeds again…', null, 'Undo', undefined, 3000); runShareWrites(true).then(() => { const bad = feedProblems(); if(!bad.length) toast('✓ The feeds are writing again.', null, 'Undo', undefined, 5000); }); }
     else if(act === 'feedteam') openSettings('team');
     else if(act === 'feedwrite'){ feedWritten.delete(a.dataset.p); toast(`Writing ${a.dataset.p}’s feed…`); runShareWrites(true, personKey(a.dataset.p)).then(() => { const st = feedStat.get(personKey(a.dataset.p)); toast(st && st.ok ? `Wrote ${a.dataset.p}’s feed.` : `Couldn’t write ${a.dataset.p}’s feed: ${(st && st.err) || 'unknown reason'}`); }); }
@@ -10122,7 +10169,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261120145110';</script>
+<script>window.NB_BUILD = '20261124093056';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>
