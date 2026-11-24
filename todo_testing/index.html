@@ -1204,8 +1204,19 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.71.3';
+const APP_VERSION = '1.72.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.72.0",
+  "title": "Times, durations and custom formats in spreadsheets",
+  "items": [
+   "Spreadsheet times work like Excel. Type 9 am, 9:30 PM, 13:45 or 9:30:15 and the cell becomes a real time (it shows 9:00 AM, 9:30 PM, 13:45, 09:30:15). Type 36:15 for a duration, or 2026-11-17 9:30 AM (also Nov 17, 2026 9 am) for a date with a time.",
+   "Subtracting or adding times gives a duration: =B2-A2 shows 8:30, and SUM of durations goes past 24 hours (28:15) instead of wrapping. Multiply by 24 for hours as a number.",
+   "The format box has Time, Duration, Minutes and seconds and Date and time styles, plus Custom format…: write any Excel code such as h:mm AM/PM, [h]:mm, yyyy-mm-dd hh:mm, dddd, mmmm d, #,##0.00 or 0.0% and see how it looks before applying.",
+   "New functions: NOW, TIME, HOUR, MINUTE, SECOND, TIMEVALUE, DATEVALUE, TEXT (any format code), NETWORKDAYS, WORKDAY (both with a holiday list) and DATEDIF.",
+   "Drag the fill square across times to continue them (9:00, 9:30, then 10:00…). Excel export keeps the time formats, and CSV export writes what the cells show."
+  ]
+ },
  {
   "v": "1.71.3",
   "title": "Remove the date and time when adding an action",
@@ -6862,7 +6873,7 @@ const shColName = n => { let s = ''; for(n++; n > 0; n = Math.floor((n - 1) / 26
 const shColNum = s => { let n = 0; for(const ch of s) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
 const shKey = (r, c) => shColName(c) + (r + 1);                                                                                                     // zero-based row and column -> "B3"
 const shPos = k => { const m = SH_KEY_RE.exec(k); return m ? {r: +m[2] - 1, c: shColNum(m[1])} : null; };
-const SH_FMT_OK = /^(n|i|p|p0|c|c0|d[2-7w]?)$/;                 // number and date formats a cell can have (General has none)
+const SH_FMT_OK = /^(n|i|p|p0|c|c0|d[2-7w]?|t[1-4]|u[1-3]|dt2?|x:[^\u0000-\u001f]{1,60})$/;                 // number and date formats a cell can have (General has none)
 const shNew = () => ({r:30, c:26, cells:{}, f:{}, w:{}, wr:{}, st:{}, cm:{}, cf:[], dv:[], nm:{}, ln:{}});
 function cleanSheet(s){                                  // a sheet as read from a file: only valid cells, formats and widths, inside the size limit
   if(!s || typeof s !== 'object' || Array.isArray(s)) return null;
@@ -6959,6 +6970,114 @@ function shDateFmt(v, f){                                // a date number shown 
   }
   return shDateText(v);
 }
+/* ---- times, durations and number format codes (the codes are Excel's: h:mm AM/PM, [h]:mm, yyyy-mm-dd hh:mm, 0.00, #,##0, 0.0%) ---- */
+const SH_CODE = {t1:'h:mm AM/PM', t2:'h:mm:ss AM/PM', t3:'h:mm', t4:'hh:mm:ss', u1:'[h]:mm', u2:'[h]:mm:ss', u3:'mm:ss', dt:'yyyy-mm-dd h:mm AM/PM', dt2:'yyyy-mm-dd h:mm'};
+function shTokens(code){                                  // a format code cut into pieces: text, y m d h s (runs), [h] elapsed, AM/PM, fractions of a second
+  const out = []; let i = 0;
+  while(i < code.length){
+    const c = code[i], rest = code.slice(i);
+    if(c === '"'){ let j = code.indexOf('"', i + 1); if(j < 0) j = code.length; out.push({k:'lit', t:code.slice(i + 1, j)}); i = j + 1; }
+    else if(c === '\\'){ out.push({k:'lit', t:code[i + 1] || ''}); i += 2; }
+    else if(c === '_'){ out.push({k:'lit', t:' '}); i += 2; }
+    else if(c === '*'){ i += 2; }
+    else if(c === '['){ const j = code.indexOf(']', i), b = j < 0 ? '' : code.slice(i + 1, j), m = /^(h+|m+|s+)$/i.exec(b); if(j < 0){ out.push({k:'lit', t:c}); i++; } else { if(m) out.push({k:'el', u:m[1][0].toLowerCase(), n:m[1].length}); i = j + 1; } }
+    else if(/^(AM\/PM|A\/P)/i.test(rest)){ const m = /^(AM\/PM|A\/P)/i.exec(rest); out.push({k:'ap', t:m[1]}); i += m[1].length; }
+    else if(/[ymdhs]/i.test(c)){ let j = i; while(j < code.length && code[j].toLowerCase() === c.toLowerCase()) j++; out.push({k:c.toLowerCase(), n:j - i}); i = j; }
+    else if(c === '.' && /^\.0{1,3}/.test(rest) && out.length && (out[out.length - 1].k === 's' || (out[out.length - 1].k === 'el' && out[out.length - 1].u === 's'))){ const m = /^\.(0{1,3})/.exec(rest); out.push({k:'ms', n:m[1].length}); i += m[0].length; }
+    else { out.push({k:'lit', t:c}); i++; }
+  }
+  return out;
+}
+const shIsTimeCode = tk => tk.some(t => ['y', 'd', 'h', 's', 'ap', 'el', 'ms'].includes(t.k)) || tk.some((t, k) => t.k === 'm');
+function shDateCode(v, tk){
+  if(!(v >= 0) && !tk.some(t => t.k === 'el')) return '########';
+  if(v >= 2958466) return '########';
+  const neg = v < 0; v = Math.abs(v);
+  const ms = tk.find(t => t.k === 'ms'), sc = ms ? Math.pow(10, ms.n) : 1, T = Math.round(v * 86400 * sc), sec = Math.floor(T / sc), fr = T - sec * sc;
+  const day = Math.floor(sec / 86400), rem = sec - day * 86400, h24 = Math.floor(rem / 3600), mi = Math.floor(rem % 3600 / 60), se = rem % 60;
+  const ymd = day >= 1 ? shYmd(day) : [1900, 1, 0], dow = day >= 1 ? new Date(Date.UTC(ymd[0], ymd[1] - 1, ymd[2])).getUTCDay() : 6;
+  const ap = tk.some(t => t.k === 'ap'), p2 = n => String(n).padStart(2, '0'), real = tk.filter(t => t.k !== 'lit' && t.k !== 'ms');
+  let out = neg ? '-' : '';
+  tk.forEach((t, k) => {
+    switch(t.k){
+      case 'lit': out += t.t; break;
+      case 'y': out += t.n <= 2 ? p2(ymd[0] % 100) : String(ymd[0]).padStart(4, '0'); break;
+      case 'd': out += t.n === 1 ? ymd[2] : t.n === 2 ? p2(ymd[2]) : t.n === 3 ? SH_DAYS[dow].slice(0, 3) : SH_DAYS[dow]; break;
+      case 'h': { const h = ap ? (h24 % 12 || 12) : h24; out += t.n >= 2 ? p2(h) : h; break; }
+      case 's': out += t.n >= 2 ? p2(se) : se; break;
+      case 'ms': out += String(fr).padStart(t.n, '0'); break;
+      case 'ap': out += ap && h24 >= 12 ? (/am\/pm/i.test(t.t) ? (t.t === t.t.toLowerCase() ? 'pm' : 'PM') : (t.t === t.t.toLowerCase() ? 'p' : 'P')) : (/am\/pm/i.test(t.t) ? (t.t === t.t.toLowerCase() ? 'am' : 'AM') : (t.t === t.t.toLowerCase() ? 'a' : 'A')); break;
+      case 'el': { const n = t.u === 'h' ? Math.floor(sec / 3600) : t.u === 'm' ? Math.floor(sec / 60) : sec; out += t.n >= 2 ? String(n).padStart(t.n, '0') : n; break; }
+      case 'm': {                                       // minutes when it follows hours or comes before seconds, otherwise the month
+        let before = null, after = null; for(let j = k - 1; j >= 0; j--) if(tk[j].k !== 'lit'){ before = tk[j]; break; } for(let j = k + 1; j < tk.length; j++) if(tk[j].k !== 'lit'){ after = tk[j]; break; }
+        const isMin = (before && (before.k === 'h' || (before.k === 'el' && before.u === 'h'))) || (after && (after.k === 's' || (after.k === 'el' && after.u === 's')));
+        if(isMin) out += t.n >= 2 ? p2(mi) : mi;
+        else out += t.n === 1 ? ymd[1] : t.n === 2 ? p2(ymd[1]) : t.n === 3 ? SH_MONTHS[ymd[1] - 1].slice(0, 3) : t.n === 4 ? SH_MONTHS[ymd[1] - 1] : SH_MONTHS[ymd[1] - 1][0];
+        break;
+      }
+    }
+  });
+  return out;
+}
+function shNumCode(v, tk, sections){                       // 0.00  #,##0  0%  0.0E+00  "$"#,##0.00  000-0000
+  let neg = v < 0; v = Math.abs(v);
+  let pct = 0; tk.forEach(t => { if(t.k === 'lit' && t.t === '%') pct++; });
+  const dot = tk.findIndex(t => t.k === 'lit' && t.t === '.'), isPH = t => t.k === 'lit' && (t.t === '0' || t.t === '#' || t.t === '?');
+  const intIdx = [], fracIdx = []; tk.forEach((t, k) => { if(isPH(t)){ if(dot >= 0 && k > dot) fracIdx.push(k); else intIdx.push(k); } });
+  if(!intIdx.length && !fracIdx.length) return tk.map(t => t.k === 'lit' ? t.t : '').join('');          // plain text, no digits
+  const lastInt = intIdx.length ? intIdx[intIdx.length - 1] : -1, lastAny = Math.max(lastInt, fracIdx.length ? fracIdx[fracIdx.length - 1] : -1); let scale = 0; for(let k = lastAny + 1; k < tk.length && tk[k].k === 'lit' && tk[k].t === ','; k++) scale++;
+  const thousands = intIdx.length > 1 && tk.some((t, k) => t.k === 'lit' && t.t === ',' && k > intIdx[0] && k < lastInt);
+  const ePos = tk.findIndex((t, k) => t.k === 'lit' && /^[Ee]$/.test(t.t) && tk[k + 1] && tk[k + 1].k === 'lit' && /^[+-]$/.test(tk[k + 1].t));
+  v = v * Math.pow(100, pct) / Math.pow(1000, scale);
+  let expText = '';
+  if(ePos >= 0){                                          // scientific: 0.00E+00
+    const ed = tk.slice(ePos + 2).filter(t => t.k === 'lit' && t.t === '0').length, idig = Math.max(1, intIdx.filter(k => k < ePos).length);
+    let ex = v === 0 ? 0 : Math.floor(Math.log10(v)) - (idig - 1); v = v / Math.pow(10, ex);
+    expText = 'E' + (ex < 0 ? '-' : tk[ePos + 1].t === '+' ? '+' : '') + String(Math.abs(ex)).padStart(ed, '0');
+  }
+  const fd = fracIdx.filter(k => ePos < 0 || k < ePos).length;
+  let s = (Math.round((v + 1e-12 * Math.max(1, v)) * Math.pow(10, fd)) / Math.pow(10, fd)).toFixed(fd), [is, fs = ''] = s.split('.');
+  const zeros = intIdx.filter(k => tk[k].t === '0').length;
+  if(is === '0' && zeros === 0) is = '';
+  is = is.padStart(zeros, '0');
+  if(thousands) is = is.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  let fl = fs.split(''); for(let k = fracIdx.length - 1; k >= 0 && fl.length; k--){ if(tk[fracIdx[k]].t !== '0' && fl[k] === '0') fl[k] = tk[fracIdx[k]].t === '?' ? ' ' : ''; else break; } fs = fl.join('');
+  let out = '', ip = 0, fp = 0; const nI = intIdx.filter(k => ePos < 0 || k < ePos).length, fill = new Array(nI), d = is.split('');
+  for(let k = nI - 1; k >= 0; k--){ const t = tk[intIdx[k]], pad = t.t === '0' ? '0' : t.t === '?' ? ' ' : ''; if(k === 0){ fill[k] = d.join('') || pad; d.length = 0; } else fill[k] = d.length ? d.pop() : pad; }
+  tk.forEach((t, k) => {
+    if(t.k !== 'lit'){ return; }
+    if(ePos >= 0 && k === ePos){ out += expText; return; } if(ePos >= 0 && k === ePos + 1) return; if(ePos >= 0 && k > ePos + 1 && /^[0#?]$/.test(t.t)) return;
+    if(t.t === ','){ if(thousands && k > intIdx[0] && k < lastInt) return; if(k > lastAny && k <= lastAny + scale) return; out += ','; return; }
+    if(t.t === '.'){ if(k === dot){ out += fd || fracIdx.length ? '.' : ''; return; } out += '.'; return; }
+    if(isPH(t)){
+      if(dot >= 0 && k > dot){ out += fp < fs.length ? fs[fp++] : (t.t === '0' ? '0' : t.t === '?' ? ' ' : ''); return; }
+      const at = ip++; if(at >= nI) return;
+      if(thousands){ if(at === 0) out += is; return; }
+      out += fill[at]; return;
+    }
+    out += t.t;
+  });
+  out = out.replace(/\.$/, (m) => fd === 0 && dot >= 0 && !fracIdx.length ? '' : m);
+  return (neg && sections === 1 && /[1-9]/.test(out) ? '-' : '') + out;
+}
+function shFormatCode(v, code){
+  code = String(code == null ? '' : code); if(code === '' || /^general$/i.test(code)) return shNumText(v, '');
+  const parts = []; { let cur = '', q = false; for(const ch of code){ if(ch === '"') q = !q; if(ch === ';' && !q){ parts.push(cur); cur = ''; } else cur += ch; } parts.push(cur); }
+  let use = parts[0], n = v;
+  if(v < 0 && parts.length > 1){ use = parts[1]; n = Math.abs(v); } else if(v === 0 && parts.length > 2) use = parts[2];
+  const tk = shTokens(use);
+  if(shIsTimeCode(tk)) return shDateCode(n, tk);
+  return shNumCode(n, tk, parts.length > 1 && v < 0 ? 2 : 1);
+}
+function shTimeParse(raw){                                 // 9 am, 9:30 PM, 13:45, 9:30:15, 30:15 (over a day: a duration) -> {v: fraction of a day, auto: format}
+  const t = String(raw).trim(), m = /^(\d{1,3})(?::(\d{1,2}))?(?::(\d{1,2})(?:\.\d+)?)?(?:\s*([AaPp])\.?[Mm]?\.?)?$/.exec(t); if(!m) return null;
+  const h = +m[1], mi = m[2] === undefined ? 0 : +m[2], se = m[3] === undefined ? 0 : +m[3], ap = m[4] ? m[4].toLowerCase() : '';
+  if(m[2] === undefined && !ap) return null;                      // a bare number is a number
+  if(mi > 59 || se > 59 || (m[2] !== undefined && m[2].length !== 2 && !ap)) return null;
+  if(ap){ if(h < 1 || h > 12) return null; return {v: (((h % 12) + (ap === 'p' ? 12 : 0)) * 3600 + mi * 60 + se) / 86400, auto: m[3] === undefined ? 't1' : 't2'}; }
+  if(h >= 24) return {v: (h * 3600 + mi * 60 + se) / 86400, auto: m[3] === undefined ? 'u1' : 'u2'};
+  return {v: (h * 3600 + mi * 60 + se) / 86400, auto: m[3] === undefined ? 't3' : 't4'};
+}
 const SH_LIT = /^(-|\+)?(\$)?(-|\+)?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)(%)?$/;
 function shLiteral(raw){                                 // what typing this means: a number or date (with the format it suggests) or plain text
   const t = String(raw).trim();
@@ -6975,6 +7094,9 @@ function shLiteral(raw){                                 // what typing this mea
   if(d && shMonthNo(d[1]) && dOK(+d[3], shMonthNo(d[1]), +d[2])) return {v: shSerial(+d[3], shMonthNo(d[1]), +d[2]), auto:'d2'};
   d = /^(\d{1,2}) ([A-Za-z]{3,9})\.? (\d{4})$/.exec(t);                      // 17 Nov 2026
   if(d && shMonthNo(d[2]) && dOK(+d[3], shMonthNo(d[2]), +d[1])) return {v: shSerial(+d[3], shMonthNo(d[2]), +d[1]), auto:'d4'};
+  const tm = shTimeParse(t); if(tm) return tm;                              // 9 am, 9:30 PM, 13:45, 30:15
+  const dt = /^(.*\S)(?:\s+|T)(\d{1,2}(?::\d{2}){0,2}(?:\.\d+)?(?:\s*[AaPp]\.?[Mm]?\.?)?)$/.exec(t);          // 2026-11-17 9:30, Nov 17, 2026 9 am
+  if(dt){ const dl = shLiteral(dt[1]), tl = shTimeParse(dt[2]); if(dl && typeof dl.v === 'number' && /^d\d?$|^dw$/.test(dl.auto) && tl && /^t/.test(tl.auto)) return {v: dl.v + tl.v, auto: tl.auto === 't1' || tl.auto === 't2' ? 'dt' : 'dt2'}; }
   return {v:String(raw), auto:''};
 }
 
@@ -7243,6 +7365,33 @@ function shRun(src, cellAt, rangeAt, gridAt){          // cellAt(r, c, sheetName
         const v = g[r - 1][c - 1]; if(v instanceof ShErr) throw v; return v;
       }
       case 'TODAY': argc(A, 0, 0); { const d = new Date(); return shSerial(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+      case 'NOW': argc(A, 0, 0); { const d = new Date(); return shSerial(d.getFullYear(), d.getMonth() + 1, d.getDate()) + (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / 86400; }
+      case 'TIME': { argc(A, 3, 3); const h = Math.trunc(num(ev(A[0]))), mi = Math.trunc(num(ev(A[1]))), se = Math.trunc(num(ev(A[2]))), t = h * 3600 + mi * 60 + se; if(t < 0 || h > 32767) throw E('#NUM!'); return (t % 86400) / 86400; }
+      case 'HOUR': case 'MINUTE': case 'SECOND': {
+        argc(A, 1, 1); const x = ev(A[0]); let n; if(typeof x === 'string'){ const l = shLiteral(x); if(typeof l.v !== 'number') throw E('#VALUE!'); n = l.v; } else n = num(x);
+        const t = Math.round((n - Math.floor(n)) * 86400) % 86400; return f === 'HOUR' ? Math.floor(t / 3600) : f === 'MINUTE' ? Math.floor(t % 3600 / 60) : t % 60;
+      }
+      case 'TIMEVALUE': case 'DATEVALUE': {
+        argc(A, 1, 1); const l = shLiteral(txt(ev(A[0]))); if(typeof l.v !== 'number' || !/^(d|t|u)/.test(l.auto)) throw E('#VALUE!');
+        if(f === 'DATEVALUE'){ if(!/^d/.test(l.auto)) throw E('#VALUE!'); return Math.floor(l.v); } return l.v - Math.floor(l.v);
+      }
+      case 'TEXT': { argc(A, 2, 2); const v = ev(A[0]); if(v instanceof ShErr) throw v; const code = txt(ev(A[1])); if(typeof v === 'number') return shFormatCode(v, code); if(v === null) return shFormatCode(0, code); if(typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'; return String(v); }
+      case 'NETWORKDAYS': case 'WORKDAY': {
+        argc(A, 2, 3); const a = Math.trunc(num(ev(A[0]))), b = Math.trunc(num(ev(A[1]))), hol = new Set(A.length > 2 ? nums([A[2]]).map(Math.trunc) : []), work = d => { const w = (((d - SH_EPOCH) % 7) + 11) % 7; return w !== 0 && w !== 6 && !hol.has(d); };
+        if(f === 'NETWORKDAYS'){ const lo = Math.min(a, b), hi = Math.max(a, b); if(hi - lo > 40000) throw E('#NUM!'); let n = 0; for(let d = lo; d <= hi; d++) if(work(d)) n++; return a <= b ? n : -n; }
+        let d = a, left = Math.abs(b), step = b < 0 ? -1 : 1; if(left > 40000) throw E('#NUM!'); while(left > 0){ d += step; if(work(d)) left--; } return d;
+      }
+      case 'DATEDIF': {
+        argc(A, 3, 3); const a = Math.trunc(num(ev(A[0]))), b = Math.trunc(num(ev(A[1]))), u = txt(ev(A[2])).toUpperCase(); if(a > b) throw E('#NUM!');
+        const [y1, m1, d1] = shYmd(a), [y2, m2, d2] = shYmd(b); let months = (y2 - y1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0);
+        switch(u){
+          case 'Y': return Math.floor(months / 12); case 'M': return months; case 'D': return b - a;
+          case 'YM': return ((months % 12) + 12) % 12;
+          case 'MD': { const tm = (y1 * 12 + (m1 - 1)) + months, ny = Math.floor(tm / 12), nm = (tm % 12 + 12) % 12 + 1; return b - shSerial(ny, nm, Math.min(d1, new Date(Date.UTC(ny, nm, 0)).getUTCDate())); }
+          case 'YD': { let y = y2; let st = shSerial(y, m1, Math.min(d1, new Date(Date.UTC(y, m1, 0)).getUTCDate())); if(st > b){ y--; st = shSerial(y, m1, Math.min(d1, new Date(Date.UTC(y, m1, 0)).getUTCDate())); } return b - st; }
+        }
+        throw E('#NUM!');
+      }
       case 'DAYS': argc(A, 2, 2); return Math.trunc(num(ev(A[0]))) - Math.trunc(num(ev(A[1])));
       case 'EDATE': {
         argc(A, 2, 2); const [y, m, d] = shYmd(num(ev(A[0]))), n = Math.trunc(num(ev(A[1]))), tm = (y * 12 + (m - 1)) + n, ny = Math.floor(tm / 12), nm = (tm % 12 + 12) % 12 + 1;
@@ -7316,15 +7465,39 @@ function shNumText(v, f){
   if(f === 'p0') return rnd(v * 100) + '%';
   if(f === 'c0') return (v < 0 ? '-$' : '$') + Math.abs(rnd(v)).toLocaleString('en-US');
   if(f === 'i') return rnd(v).toLocaleString('en-US');
+  if(f && f[0] === 'x') return shFormatCode(v, f.slice(2));
+  if(f && SH_CODE[f] !== undefined) return shFormatCode(v, SH_CODE[f]);
   if(f && f[0] === 'd' && v >= 1 && v < 2958466) return shDateFmt(v, f);
   return String(+v.toPrecision(15));
 }
 const shShow = (v, f) => v instanceof ShErr ? v.e : v === null || v === undefined ? '' : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : typeof v === 'number' ? shNumText(v, f) : String(v);          // what the cell displays
-function shFmtOf(s, k, raw){ return s.f[k] || (raw ? (raw[0] === '=' ? (/^=\s*(TODAY|EDATE|EOMONTH|DATE)\s*\(/i.test(raw) ? 'd' : '') : shLiteral(raw).auto) : ''); }
+function shFmtOf(s, k, raw, depth = 0){
+  if(s.f[k]) return s.f[k]; if(!raw) return '';
+  if(raw[0] !== '=') return shLiteral(raw).auto;
+  if(/^=\s*(TODAY|EDATE|EOMONTH|DATE|WORKDAY)\s*\(/i.test(raw)) return 'd';
+  if(/^=\s*NOW\s*\(/i.test(raw)) return 'dt';
+  if(/^=\s*(TIME|TIMEVALUE)\s*\(/i.test(raw) && shWholeCall(raw)) return 't1';
+  return depth < 3 ? shInferFmt(s, raw, depth) : '';
+}
+function shWholeCall(raw){                                // is the formula just one function call, like =TIME(9,0,0), with nothing calculated around it?
+  const t = raw.replace(/"(?:[^"]|"")*"/g, '""'), o = t.indexOf('('); if(o < 0) return false; let d = 0;
+  for(let i = o; i < t.length; i++){ if(t[i] === '(') d++; else if(t[i] === ')'){ d--; if(d === 0) return t.slice(i + 1).trim() === ''; } }
+  return false;
+}
+const shIsTimeFmt = f => /^(t[1-4]|u[1-3]|dt2?)$/.test(f || '');
+const shDurOf = f => f === 'u3' ? 'u3' : (f === 't2' || f === 't4' || f === 'u2') ? 'u2' : 'u1';          // the duration format that goes with a time format
+function shInferFmt(s, raw, depth){                        // a formula over times shows as a time or duration, as in Excel (=B2-A2 is a duration, =SUM(C2:C9) of durations is one too)
+  const R = '\\$?[A-Za-z]{1,2}\\$?\\d{1,4}', fo = ref => { const p = /^\$?([A-Za-z]{1,2})\$?(\d{1,4})$/.exec(ref); if(!p) return ''; const kk = shKey(+p[2] - 1, shColNum(p[1].toUpperCase())); return shFmtOf(s, kk, s.cells[kk], depth + 1); };
+  let m = new RegExp('^=\\s*(' + R + ')\\s*([-+])\\s*(' + R + ')\\s*$').exec(raw);
+  if(m){ const a = fo(m[1]), b = fo(m[3]); if(shIsTimeFmt(a) && shIsTimeFmt(b)) return shDurOf(a); if(shIsTimeFmt(a)) return a; if(m[2] === '+' && shIsTimeFmt(b)) return b; return ''; }
+  m = new RegExp('^=\\s*(SUM|AVERAGE|AVG|MIN|MAX|MEDIAN)\\s*\\(\\s*(' + R + ')').exec(raw);
+  if(m){ const a = fo(m[2]); if(!shIsTimeFmt(a)) return ''; return m[1].toUpperCase() === 'SUM' ? shDurOf(a) : a; }
+  return '';
+}
 function shPlain(v, f){                                  // what goes into a CSV or onto the clipboard: numbers without thousands separators
   if(v instanceof ShErr) return v.e; if(v === null || v === undefined) return '';
   if(typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
-  if(typeof v === 'number'){ if(f === 'p' || f === 'p0' || (f && f[0] === 'd')) return shNumText(v, f); if(f === 'c' || f === 'n') return String(+v.toFixed(2)); if(f === 'c0' || f === 'i') return String((v < 0 ? -1 : 1) * Math.round(Math.abs(v) + 1e-9)); return shNumText(v, ''); }
+  if(typeof v === 'number'){ if(f === 'p' || f === 'p0' || (f && /^[dtux]/.test(f))) return shNumText(v, f); if(f === 'c' || f === 'n') return String(+v.toFixed(2)); if(f === 'c0' || f === 'i') return String((v < 0 ? -1 : 1) * Math.round(Math.abs(v) + 1e-9)); return shNumText(v, ''); }
   return String(v);
 }
 
@@ -7462,7 +7635,7 @@ function shTabSet(t, save){
   document.querySelectorAll('#detail .shtab').forEach(b => b.classList.toggle('on', b.dataset.shtab === t));
   if(save) try { localStorage.setItem('notebook-shtab', t); } catch {}
 }
-const SH_FMT_OPTS = '<option value="g">General</option><optgroup label="Numbers"><option value="n">Number 1,234.50</option><option value="i">Whole number 1,235</option><option value="p">Percent 12.5%</option><option value="p0">Percent, no decimals 13%</option><option value="c">Currency $1,234.50</option><option value="c0">Currency, no cents $1,235</option></optgroup><optgroup label="Dates"><option value="d">2026-11-17</option><option value="d3">11/17/2026</option><option value="d2">Nov 17, 2026</option><option value="d4">17 Nov 2026</option><option value="d6">Nov 17</option><option value="d7">November 2026</option><option value="d5">Tuesday, November 17, 2026</option><option value="dw">Tuesday</option></optgroup>';
+const SH_FMT_OPTS = '<option value="g">General</option><optgroup label="Numbers"><option value="n">Number 1,234.50</option><option value="i">Whole number 1,235</option><option value="p">Percent 12.5%</option><option value="p0">Percent, no decimals 13%</option><option value="c">Currency $1,234.50</option><option value="c0">Currency, no cents $1,235</option></optgroup><optgroup label="Dates"><option value="d">2026-11-17</option><option value="d3">11/17/2026</option><option value="d2">Nov 17, 2026</option><option value="d4">17 Nov 2026</option><option value="d6">Nov 17</option><option value="d7">November 2026</option><option value="d5">Tuesday, November 17, 2026</option><option value="dw">Tuesday</option></optgroup><optgroup label="Times and durations"><option value="t1">Time 9:30 AM</option><option value="t3">Time 9:30 (24-hour)</option><option value="t2">Time 9:30:15 AM</option><option value="t4">Time 09:30:15 (24-hour)</option><option value="u1">Duration 36:15</option><option value="u2">Duration 36:15:30</option><option value="u3">Minutes and seconds 15:30</option></optgroup><optgroup label="Date and time"><option value="dt">2026-11-17 9:30 AM</option><option value="dt2">2026-11-17 9:30 (24-hour)</option></optgroup><optgroup label="Your own"><option value="x">Custom format…</option></optgroup>';
 function shHtml(i){
   const s = i.sheet; shFit(s); const vals = shValues(s), w = c => s.w[c] || SH_W; shShown = new Map();
   const ctx = shCtx(s, vals); let total = 46, cols = '', ths = '';
@@ -7541,7 +7714,7 @@ function shShowSel(i){
   const k = shKey(sel.ar, sel.ac), nm = document.querySelector('#detail .shname'), fx = document.querySelector('#detail .shfxin'), fm = document.querySelector('#detail [data-shfmt]');
   if(nm) nm.textContent = sel.r1 === sel.r2 && sel.c1 === sel.c2 ? k : shKey(sel.r1, sel.c1) + ':' + shKey(sel.r2, sel.c2);
   if(fx && document.activeElement !== fx){ fx.value = i.sheet.cells[k] || ''; fx.dataset.k = k; }
-  if(fm) fm.value = i.sheet.f[k] || (i.sheet.cells[k] ? shLiteral(i.sheet.cells[k]).auto : '') || 'g';
+  if(fm){ const fv = i.sheet.f[k] || (i.sheet.cells[k] ? shFmtOf(i.sheet, k, i.sheet.cells[k]) : '') || 'g', xo = fm.querySelector('option[value=x]'); if(xo) xo.textContent = fv[0] === 'x' ? 'Custom: ' + fv.slice(2) : 'Custom format…'; fm.value = fv[0] === 'x' ? 'x' : fv; if(fm.value !== (fv[0] === 'x' ? 'x' : fv)) fm.value = 'g'; }
   const wb = document.querySelector('#detail [data-sh=wrap]'); if(wb) wb.classList.toggle('on', !!i.sheet.wr[k]);
   shToolbarState(i); shGuideIdle(i);
   const fz = document.querySelector('#detail [data-shfz]'), z = i.sheet.fz; if(fz){ fz.options[0].textContent = z ? 'Frozen: ' + [z.r ? z.r + (z.r === 1 ? ' row' : ' rows') : '', z.c ? z.c + (z.c === 1 ? ' column' : ' columns') : ''].filter(Boolean).join(', ') : 'Freeze: off'; fz.value = ''; }
@@ -7660,9 +7833,9 @@ const SH_FNS = [['IF', 'test, if_true, if_false', 'one answer or the other'], ['
   ['COUNT', 'range', 'how many cells hold a number'], ['COUNTA', 'range', 'how many cells are not empty'], ['PRODUCT', 'numbers', 'multiplies them'], ['ABS', 'number', 'without its minus sign'], ['ROUND', 'number, digits', 'rounds'], ['ROUNDUP', 'number, digits', 'rounds away from zero'], ['ROUNDDOWN', 'number, digits', 'rounds toward zero'],
   ['SQRT', 'number', 'square root'], ['POWER', 'number, power', 'raises to a power'], ['MOD', 'number, divisor', 'the remainder'], ['LARGE', 'range, k', 'the k-th biggest'], ['SMALL', 'range, k', 'the k-th smallest'], ['RANK', 'value, range', 'its place in the range, 1 = biggest'],
   ['CONCAT', 'text, text, …', 'joins text together'], ['LEFT', 'text, count', 'the first letters'], ['RIGHT', 'text, count', 'the last letters'], ['UPPER', 'text', 'CAPITALS'], ['LEN', 'text', 'how many characters'], ['TRIM', 'text', 'removes extra spaces'],
-  ['TEXTBEFORE', 'text, delimiter', 'what comes before it'], ['TEXTAFTER', 'text, delimiter', 'what comes after it'], ['TEXTSPLIT', 'text, column_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]', 'splits into cells to the right and below'],
+  ['TEXT', 'value, format', 'shows a number or date in a format, like "h:mm AM/PM"'], ['TEXTBEFORE', 'text, delimiter', 'what comes before it'], ['TEXTAFTER', 'text, delimiter', 'what comes after it'], ['TEXTSPLIT', 'text, column_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]', 'splits into cells to the right and below'],
   ['XLOOKUP', 'find, look_in, return_from, if_not_found', 'look up and give back the match'], ['INDEX', 'range, row, column', 'the value at that place in the range'], ['AVERAGEIF', 'range, criteria, average_range', 'average of the matching cells'], ['AVERAGEIFS', 'average_range, range, criteria, …', 'average with several conditions'], ['SUMIFS', 'sum_range, range, criteria, …', 'add up with several conditions'], ['COUNTIFS', 'range, criteria, …', 'count with several conditions'], ['SUMPRODUCT', 'range, range, …', 'multiply, then add up'], ['VLOOKUP', 'find, table, column, 0', 'look up in the first column of a table'], ['FILTER', 'range, test, if_empty', 'only the rows that pass a test (fills cells)'], ['SORT', 'range, column, order', 'the rows sorted (fills cells)'], ['DATE', 'year, month, day', 'a date'], ['YEAR', 'date', 'the year'], ['MONTH', 'date', 'the month, 1 to 12'], ['DAY', 'date', 'the day of the month'], ['WEEKDAY', 'date, type', 'day of the week, 1 to 7'], ['EOMONTH', 'date, months', 'the last day of a month'],
-  ['MATCH', 'find, range, 0', 'the position of a value in a list (0 = exact)'], ['SEQUENCE', 'rows, columns, start, step', 'a run of numbers, filling cells'], ['TODAY', '', 'today’s date'], ['DAYS', 'end, start', 'days between two dates'], ['EDATE', 'date, months', 'a date some months later']];
+  ['MATCH', 'find, range, 0', 'the position of a value in a list (0 = exact)'], ['SEQUENCE', 'rows, columns, start, step', 'a run of numbers, filling cells'], ['TODAY', '', 'today’s date'], ['DAYS', 'end, start', 'days between two dates'], ['EDATE', 'date, months', 'a date some months later'], ['NOW', '', 'today’s date and the time right now'], ['TIME', 'hour, minute, second', 'a time of day'], ['TIMEVALUE', 'text', 'the time written in some text'], ['HOUR', 'time', 'the hour of a time'], ['MINUTE', 'time', 'the minute of a time'], ['SECOND', 'time', 'the second of a time'], ['DATEVALUE', 'text', 'the date written in some text'], ['NETWORKDAYS', 'start, end, [holidays]', 'working days between two dates'], ['WORKDAY', 'start, days, [holidays]', 'the date some working days away'], ['DATEDIF', 'start, end, unit', 'years (Y), months (M), days (D) between dates']];
 let shAcIdx = 0, shAcFor = null, shPoint = null;
 /* ---- the formula guide: a line under the formula bar that stays in view. While you write a formula it shows the function you are inside and which part comes next; otherwise a reminder, or the function of the selected cell ---- */
 const SH_GUIDE_INTRO = 'Formulas start with =. Type a function name and press Tab to fill it in; click or drag over cells to add them.';
@@ -7865,6 +8038,14 @@ function shFreeze(i){                                      // frozen rows and co
     if(frozenRow) top += h;
   }
 }
+function shCustomFormat(i){                                 // type your own format code, like Excel's Custom
+  const sel = shSelOf(i), k = shKey(sel.ar, sel.ac), s = i.sheet, cur = s.f[k] && s.f[k][0] === 'x' ? s.f[k].slice(2) : '', v = shValues(s).get(k), sample = typeof v === 'number' ? v : 45978.5625;
+  const ex = [['h:mm AM/PM', 'Time'], ['[h]:mm', 'Hours over 24'], ['[h]:mm:ss', 'Hours, minutes, seconds'], ['yyyy-mm-dd hh:mm', 'Date and time'], ['dddd, mmmm d', 'Tuesday, November 17'], ['0.00', 'Two decimals'], ['#,##0', 'Thousands'], ['0.0%', 'Percent'], ['"$"#,##0.00', 'Dollars'], ['0.0" kg"', 'With a unit'], ['[h]" h "mm" min"', 'Hours and minutes in words']];
+  const d = shDialog('Custom format', `<p style="margin:0 0 8px;color:var(--mute);font-size:13px">Write a format the way Excel does. The cell keeps its value; only how it shows changes.</p><input type="text" class="shfcode" value="${esc(cur)}" placeholder="for example h:mm AM/PM" maxlength="60" spellcheck="false" style="width:100%"><p class="shfprev" style="margin:8px 0"></p><div class="shfex">${ex.map(([c, l]) => `<button data-code="${esc(c)}" title="${esc(l)}">${esc(c)}</button>`).join(' ')}</div>`, {ok:'Apply', close:'Cancel', onOk: dd => { const c = dd.querySelector('.shfcode').value.trim(); if(!c){ shMsg(dd, 'Type a format, or press Cancel.'); return false; } shSetFormat(i, 'x:' + c); } });
+  const inp = d.querySelector('.shfcode'), pv = d.querySelector('.shfprev'), upd = () => { const c = inp.value.trim(); pv.textContent = c ? 'Looks like: ' + shFormatCode(sample, c) : ''; };
+  d.addEventListener('input', upd); d.addEventListener('click', e => { const b = e.target.closest('[data-code]'); if(b){ inp.value = b.dataset.code; upd(); inp.focus(); } });
+  upd(); inp.focus(); d.addEventListener('close', () => { try { shToolbarState(i); } catch {} });
+}
 function shSetFormat(i, f){
   const sel = shSelOf(i), area = (sel.r2 - sel.r1 + 1) * (sel.c2 - sel.c1 + 1);
   shDo(i, s => {
@@ -7997,7 +8178,7 @@ $('#detail').addEventListener('click', e => {
 $('#detail').addEventListener('change', e => {
   const t = e.target; if(MOBILE || !t.matches) return;
   if(t.matches('[data-shfz]')){ const i = shItem(); const v = t.value; t.value = ''; if(i && v) shFreezeSet(i, v); shFocus(); return; }
-  if(t.matches('[data-shfmt]')){ const i = shItem(); if(i){ shSetFormat(i, t.value); shFocus(); } }
+  if(t.matches('[data-shfmt]')){ const i = shItem(); if(i){ if(t.value === 'x') shCustomFormat(i); else { shSetFormat(i, t.value); shFocus(); } } }
   else if(t.id === 'shfile'){ const i = shItem(), f = t.files && t.files[0]; t.value = ''; if(i && f) shImportFile(i, f); }
 });
 $('#detail').addEventListener('input', e => {
@@ -8150,7 +8331,7 @@ function shStat(i){
   if(n < 2){ el.textContent = 'Ready · select several cells to see their count, sum and average'; el.hidden = false; return; }
   const vals = shValues(s); let cnt = 0, num = 0, sum = 0, min = Infinity, max = -Infinity;
   for(let r = sel.r1; r <= sel.r2; r++) for(let c = sel.c1; c <= sel.c2; c++){ const v = vals.get(shKey(r, c)); if(shBlank(v)) continue; cnt++; if(typeof v === 'number'){ num++; sum += v; if(v < min) min = v; if(v > max) max = v; } }
-  const ak = shKey(sel.ar, sel.ac), f = shFmtOf(s, ak, s.cells[ak]), nf = f && f[0] !== 'd' ? f : '', fmt = x => shNumText(+x.toPrecision(12), nf);
+  const ak = shKey(sel.ar, sel.ac), f = shFmtOf(s, ak, s.cells[ak]), nf = shIsTimeFmt(f) ? shDurOf(f) : (f && f[0] !== 'd' ? f : ''), fmt = x => shNumText(+x.toPrecision(12), nf);
   el.hidden = false;
   el.innerHTML = num ? `<span>Sum <b>${esc(fmt(sum))}</b></span><span>Average <b>${esc(fmt(sum / num))}</b></span><span>Count <b>${cnt}</b></span><span>Min <b>${esc(fmt(min))}</b></span><span>Max <b>${esc(fmt(max))}</b></span>` : `<span>Count <b>${cnt}</b></span>`;
 }
@@ -8379,7 +8560,7 @@ function shFhPlace(i){
 function shSeriesOf(raws, s, ks){                         // how a run of cells goes on: numbers, dates and "Row 1, Row 2" continue; anything else repeats. Returns (steps, forward) -> text, or null
   const lit = raws.map(r => r === undefined || r[0] === '=' ? null : shLiteral(r));
   const nums = lit.every(l => l && typeof l.v === 'number');
-  const fmtNum = (v, k0) => { const l = lit[k0], raw = raws[k0], auto = (s.f[ks[k0]]) || l.auto; if(auto && auto[0] === 'd') return shDateFmt(Math.round(v), auto); if(l.auto === 'p' || /%\s*$/.test(raw)) return +(v * 100).toFixed(8) + '%'; if(l.auto === 'c' || /^\s*[-+]?\$/.test(raw)) return (v < 0 ? '-$' : '$') + Math.abs(+v.toFixed(6)); return String(+v.toPrecision(12)); };
+  const fmtNum = (v, k0) => { const l = lit[k0], raw = raws[k0], auto = (s.f[ks[k0]]) || l.auto; if(auto && SH_CODE[auto] !== undefined) return shNumText(Math.round(v * 86400) / 86400, auto); if(auto && auto[0] === 'd') return shDateFmt(Math.round(v), auto); if(l.auto === 'p' || /%\s*$/.test(raw)) return +(v * 100).toFixed(8) + '%'; if(l.auto === 'c' || /^\s*[-+]?\$/.test(raw)) return (v < 0 ? '-$' : '$') + Math.abs(+v.toFixed(6)); return String(+v.toPrecision(12)); };
   if(nums && raws.length >= 2){
     const step = lit[1].v - lit[0].v; if(lit.every((l, k) => Math.abs(l.v - lit[0].v - step * k) < 1e-9)) return (m, fwd) => fmtNum(fwd ? lit[lit.length - 1].v + step * m : lit[0].v - step * m, fwd ? lit.length - 1 : 0);
     return null;
@@ -9246,7 +9427,7 @@ function xlsxBuild(i){
   const fonts = ['<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>'], fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'], nfs = [], xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'], xfKey = new Map([['{}', 0]]), dxfs = [];
   const fontOf = st => { const h = `<font>${st.b ? '<b/>' : ''}${st.i ? '<i/>' : ''}${st.u ? '<u/>' : ''}<sz val="11"/>${st.c ? `<color rgb="${xlRgb(SH_INK[st.c])}"/>` : st.bg ? '<color rgb="FF1D1D1B"/>' : ''}<name val="Calibri"/><family val="2"/></font>`; let k = fonts.indexOf(h); if(k < 0){ fonts.push(h); k = fonts.length - 1; } return k; };
   const fillOf = bg => { const h = `<fill><patternFill patternType="solid"><fgColor rgb="${xlRgb(SH_FILL[bg])}"/><bgColor indexed="64"/></patternFill></fill>`; let k = fills.indexOf(h); if(k < 0){ fills.push(h); k = fills.length - 1; } return k; };
-  const nfOf = f => { const c = XL_NF[f]; if(c === undefined) return 0; if(typeof c === 'number') return c; let k = nfs.indexOf(c); if(k < 0){ nfs.push(c); k = nfs.length - 1; } return 164 + k; };
+  const nfOf = f => { const c = f && f[0] === 'x' ? f.slice(2) : SH_CODE[f] !== undefined ? SH_CODE[f] : XL_NF[f]; if(c === undefined) return 0; if(typeof c === 'number') return c; let k = nfs.indexOf(c); if(k < 0){ nfs.push(c); k = nfs.length - 1; } return 164 + k; };
   const xfFor = (f, st, wrap) => {
     st = st || {}; const key = JSON.stringify([f || '', st.b || 0, st.i || 0, st.u || 0, st.c || '', st.bg || '', st.al || '', wrap ? 1 : 0]); if(xfKey.has(key)) return xfKey.get(key);
     const nf = nfOf(f), fo = st.b || st.i || st.u || st.c || st.bg ? fontOf(st) : 0, fi = st.bg ? fillOf(st.bg) : 0, al = st.al || wrap;
@@ -10280,7 +10461,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261124094127';</script>
+<script>window.NB_BUILD = '20261124095244';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

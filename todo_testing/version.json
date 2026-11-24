@@ -1,4 +1,15 @@
-{"version":"1.71.3","build":"20261124094127","changelog":[
+{"version":"1.72.0","build":"20261124095244","changelog":[
+ {
+  "v": "1.72.0",
+  "title": "Times, durations and custom formats in spreadsheets",
+  "items": [
+   "Spreadsheet times work like Excel. Type 9 am, 9:30 PM, 13:45 or 9:30:15 and the cell becomes a real time (it shows 9:00 AM, 9:30 PM, 13:45, 09:30:15). Type 36:15 for a duration, or 2026-11-17 9:30 AM (also Nov 17, 2026 9 am) for a date with a time.",
+   "Subtracting or adding times gives a duration: =B2-A2 shows 8:30, and SUM of durations goes past 24 hours (28:15) instead of wrapping. Multiply by 24 for hours as a number.",
+   "The format box has Time, Duration, Minutes and seconds and Date and time styles, plus Custom format…: write any Excel code such as h:mm AM/PM, [h]:mm, yyyy-mm-dd hh:mm, dddd, mmmm d, #,##0.00 or 0.0% and see how it looks before applying.",
+   "New functions: NOW, TIME, HOUR, MINUTE, SECOND, TIMEVALUE, DATEVALUE, TEXT (any format code), NETWORKDAYS, WORKDAY (both with a holiday list) and DATEDIF.",
+   "Drag the fill square across times to continue them (9:00, 9:30, then 10:00…). Excel export keeps the time formats, and CSV export writes what the cells show."
+  ]
+ },
  {
   "v": "1.71.3",
   "title": "Remove the date and time when adding an action",
