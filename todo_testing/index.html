@@ -382,6 +382,7 @@ input.who:focus{border-color:var(--accent)}
 .nbhead2 button{border:0;background:none;color:var(--mute);font-size:18px;line-height:1;padding:0 6px;border-radius:6px}.nbhead2 button:hover{color:var(--accent);background:var(--hover)}
 .pgh{display:flex;gap:6px;align-items:center;padding:6px 10px 2px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);cursor:pointer;user-select:none}.pgh small{text-transform:none;letter-spacing:0}.pgh:hover{color:var(--text)}.tag.idle{opacity:.55}.tag.idle.on{opacity:1}.pgtool{padding:4px 10px}.pgtool a{font-size:11.5px;color:var(--mute);cursor:pointer}.pgtool a:hover{color:var(--text);text-decoration:underline}
 .sfhead{display:flex;align-items:center}.sfhead .pinhead{flex:1}.sfbtns{display:flex;gap:2px;padding-right:8px}.sfbtns button{border:0;background:none;color:var(--mute);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px}.sfbtns button:hover{background:var(--hover2);color:var(--text)}
+.pxfer{margin-left:auto;display:inline-flex;gap:6px}.pxfer button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font-size:12.5px;cursor:pointer}.pxfer button:hover{background:var(--hover2)}
 .nbempty{padding:10px 16px 12px 30px;color:var(--mute);font-size:12.5px;border-bottom:1px solid var(--line)}
 [data-nbdrop].over{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--soft)}
 .tdmine{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mute);margin:-8px 0 14px}
@@ -1033,6 +1034,15 @@ body.mobile #mobwelcome .bad{color:var(--red)}
   </div>
   <div class="dfoot"><span></span><span><button data-act="nbimpcancel">Cancel</button> <button class="pri" data-act="nbimpgo">Import</button></span></div>
 </dialog>
+<dialog id="nbpaste">
+  <h3>Import notes</h3>
+  <p style="margin:0 0 10px;color:var(--mute);font-size:13px">Bring in a note, a notebook or a whole data file made on another device. Choose the file, or paste the text that <b>Copy for another device</b> put on the clipboard. You see what is in it, and choose what to add, before anything changes.</p>
+  <div class="setbtns"><button class="pri" data-act="nbpastefile">Choose a file…</button></div>
+  <div style="font-size:12px;color:var(--mute);margin:12px 0 4px">or paste the text here</div>
+  <textarea id="nbpastetext" class="txtbox" rows="6" placeholder="Paste the copied text" spellcheck="false"></textarea>
+  <p id="nbpastemsg" style="color:var(--red);margin:8px 0 0"></p>
+  <div class="dfoot"><span></span><span><button data-act="nbpasteclose">Cancel</button> <button class="pri" data-act="nbpasteread">Read it</button></span></div>
+</dialog>
 <dialog id="senddlg">
   <h3>Send actions</h3>
   <p style="margin:0 0 10px;color:var(--mute);font-size:13px">Packs up the actions assigned to one person, and nothing else: no notes, pages or titles unless you tick them. Take the file or the text to your other notebook and choose <b>Bring in actions…</b> there.</p>
@@ -1191,8 +1201,18 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.70.1';
+const APP_VERSION = '1.71.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.71.0",
+  "title": "Move notes and actions between devices",
+  "items": [
+   "Move one note to another device: open a note's Export menu and choose Copy for another device (text) or Save for another device (.json). On the other device go to Notes, press ⤒ Import and paste the text (or choose the file).",
+   "The Notes Import box now takes pasted text as well as files, and shows what is in it before anything is added.",
+   "Moving actions between devices: every person's page (team members and Claude projects) has Export actions and Import actions buttons. Export copies the text or saves a file; Import on the other device adds them to that person, and you can change who they go to.",
+   "Nothing is ever overwritten by an import, and Undo removes exactly what was added."
+  ]
+ },
  {
   "v": "1.70.1",
   "title": "Spreadsheet folders you open, like Notebooks",
@@ -3190,7 +3210,7 @@ function renderFilterBar(){
   const bar = $('#nbbar'); bar.style.display = filter === 'note' || filter === 'sheet' ? '' : 'none';
   if(filter === 'sheet') bar.innerHTML = `<a data-act="newsf" title="Make a folder to group spreadsheets">＋ Folder</a>`;
   if(filter === 'sheet') bar.style.display = sfShown() && !search.trim() ? 'none' : '';
-  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add the pages from a notebook file, e.g. one exported on another computer">⤒ Import</a>`;
+  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add notes or notebooks from a file, or from text copied on another device">⤒ Import</a>`;
   const opts = document.querySelector('.list .opts'); if(opts) opts.classList.toggle('nblist', filter === 'note' && !nbView && !search.trim());
   $('#datewrap').style.display = filter === 'note' ? '' : 'none'; $('#dfield').value = dateField; $('#dpreset').value = datePreset; $('#dcustom').style.display = datePreset === 'custom' ? '' : 'none'; $('#dfrom').value = dateFrom; $('#dto').value = dateTo;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
@@ -3761,7 +3781,7 @@ function renderPerson(){
   $('#detail').innerHTML = `
     <div class="type">People</div>
     <h1 class="ptitle">${esc(name)}</h1>
-    <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}</div>
+    <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}<span class="pxfer"><button data-act="sendact" data-who="${esc(name)}" title="Copy or save ${esc(name)}’s actions to take to another device">⤓ Export actions</button><button data-act="bringact" data-who="${esc(name)}" title="Add actions from another device to ${esc(name)}">⤒ Import actions</button></span></div>
     <div class="addrow"><textarea class="qawrap" rows="1" id="pqa" placeholder="Add for ${esc(name)}: “call the vendor Friday 3pm”${raidKinds().length ? `, “${esc(raidOne(raidKinds()[0]).toLowerCase())}: vendor may slip”` : ''}" autocomplete="off" spellcheck="true"></textarea><button data-act="padd">Add</button></div>
     <div class="qapv" id="pqapv"></div>
     ${pageSearchBox('Filter this person’s items…', true)}
@@ -4551,6 +4571,16 @@ function notebookPack(ids){
   out.categories = db.categories.filter(c => cats.has(c.id)); out.people = [...ppl];
   return out;
 }
+function notePack(i){                                       // one note or spreadsheet, in the same format as a notebook export (so Import reads it)
+  const nb = nbById(nbKey(i)) || {id:nbKey(i), name:'Imported', color:'#8a857a'}, cats = new Set(), ppl = new Set(), page = Object.assign(JSON.parse(JSON.stringify(i)), {shared:null});
+  if(page.category) cats.add(page.category); if(page.assignee) ppl.add(page.assignee); page.checklist.forEach(c => { if(c.cat) cats.add(c.cat); if(c.assignee) ppl.add(c.assignee); });
+  return {app:'notebook-export', format:1, exported:now(), fromVersion:APP_VERSION, notebooks:[{id:nb.id, name:nb.name, color:nb.color, items:[page]}], categories:db.categories.filter(c => cats.has(c.id)), people:[...ppl]};
+}
+function copyNoteForDevice(i){
+  const t = JSON.stringify(notePack(i)), done = () => toast('Copied. On the other device open Notes, press ⤒ Import and paste it in.');
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(done).catch(() => { const ta = Object.assign(document.createElement('textarea'), {value:t}); ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if(ok) done(); else toast('The browser would not copy it. Use “Save for another device” instead.'); });
+}
+function saveNoteForDevice(i){ const slug = (i.title || 'note').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 40) || 'note'; downloadFile(`${slug}.notebook.json`, JSON.stringify(notePack(i), null, 2), 'application/json'); toast(`Saved ${slug}.notebook.json. On the other device open Notes and press ⤒ Import.`); }
 function notebookToMd(nb){
   const pages = notebookPages(nb.id).sort((a, b) => (a.title || '').localeCompare(b.title || ''));
   return `# ${nb.name}\n\n` + (pages.length ? pages.map(i => itemToMd(i).replace(/^# /, '## ').replace(/\n## Action items/, '\n### Action items')).join('\n\n---\n\n') : '_No pages yet._\n');
@@ -4653,6 +4683,15 @@ async function importFromFile(f){
   if($('#nbdlg').open) $('#nbdlg').close();
   openImport(pack, f.name);
 }
+function openImportBox(){ if($('#nbdlg').open) $('#nbdlg').close(); $('#nbpastetext').value = ''; $('#nbpastemsg').textContent = ''; $('#nbpaste').showModal(); setTimeout(() => $('#nbpastetext').focus(), 30); }
+function readPasted(){
+  const t = $('#nbpastetext').value.trim(); if(!t){ $('#nbpastemsg').textContent = 'Paste the copied text first.'; return; }
+  let j = null; try { j = JSON.parse(t); } catch {}
+  if(j && j.app === ACTIONS_APP){ $('#nbpastemsg').textContent = 'That text is a list of actions. Open the person’s page and press Import actions.'; return; }
+  const pack = j && parseImport(j);
+  if(!pack){ $('#nbpastemsg').textContent = 'That doesn’t look like text copied from a note, a notebook or a data file. Copy it again from the other device, all of it.'; return; }
+  $('#nbpaste').close(); openImport(pack, 'the pasted text');
+}
 $('#nbfile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if(f) importFromFile(f); });
 /* ---- Move actions between notebooks: "Send actions" (one person's actions, nothing else) and "Bring in actions" (map that person, pick where they land) ----
    Made for one person with two notebooks (work and home). Notes, pages and titles never travel; each action carries its text, date, time, repeat, category name, and (if you tick it) its note.
@@ -4671,10 +4710,12 @@ function sendPayload(){
   const items = list.map(x => ({id:x.key, text:x.text.trim(), done:!!x.done, due:x.due || '', time:x.time || '', repeat:x.repeat || null, raid:x.raid || '', category:(catById(x.cat) || {}).name || '', note:withNotes && !isBlank(x.note) ? x.note : '', from:withTitle && x.kind === 'ck' ? (x.item.title || '') : ''}));
   return {app:ACTIONS_APP, format:1, at:now(), from:{label:srcLabel() || db.me || '', sourceId:db.sourceId || ''}, person, items};
 }
-function openSend(){
-  const who = actionAssignees();
+function openSend(pre){
+  const who = actionAssignees().slice();
+  if(pre && !who.some(w => w.name.toLowerCase() === pre.toLowerCase())) who.push({name:pre, open:0, all:0});
   if(!who.length){ toast('No action here is assigned to anyone yet, so there is nothing to send.'); return; }
   $('#sendwho').innerHTML = who.map(w => `<option value="${esc(w.name)}">${esc(w.name)} — ${w.open} open${w.all > w.open ? ', ' + (w.all - w.open) + ' done' : ''}</option>`).join('');
+  if(pre){ const o = [...$('#sendwho').options].find(x => x.value.toLowerCase() === pre.toLowerCase()); if(o) $('#sendwho').value = o.value; }
   $('#sendopen').checked = true; $('#sendnotes').checked = true; $('#sendtitle').checked = false;
   if($('#setdlg').open) $('#setdlg').close();
   updateSend(); $('#senddlg').showModal();
@@ -4706,8 +4747,9 @@ function parseActionsFile(j){                                // a file made by S
 }
 const bringKey = p => p.sourceId || ('label:' + p.label.toLowerCase());
 const wasBrought = (p, it) => (db.imported || []).find(r => r.src === bringKey(p) && r.id === it.id);
-function openBring(){
-  bring = null; $('#bringtext').value = ''; $('#bringmsg').textContent = ''; $('#bringbody').hidden = true; $('#bringpick').hidden = false; $('#bringgo').disabled = true;
+let bringPre = '';
+function openBring(pre){
+  bringPre = pre || ''; bring = null; $('#bringtext').value = ''; $('#bringmsg').textContent = ''; $('#bringbody').hidden = true; $('#bringpick').hidden = false; $('#bringgo').disabled = true;
   if($('#setdlg').open) $('#setdlg').close();
   $('#bringdlg').showModal();
 }
@@ -4720,8 +4762,8 @@ function readBring(j, name){
   $('#bringfrom').innerHTML = `From <b>${esc(src)}</b> · ${p.items.length} action${p.items.length === 1 ? '' : 's'} for <b>${esc(p.person || 'no one')}</b>${p.at ? ' · sent ' + esc(new Date(p.at).toLocaleDateString([], {month:'short', day:'numeric'})) : ''}`;
   const known = knownName(p.person) || '', near = known ? '' : (nearNames(p.person)[0] || '');          // only an exact name is chosen for you; a near one is just suggested
   $('#bringwho').innerHTML = '<option value="" disabled>Choose…</option>' + everyone().slice().sort((a, b) => a.localeCompare(b)).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') + '<option value="__none">No one (leave unassigned)</option><option value="__new">Someone new…</option>';
-  $('#bringwho').value = known || ''; $('#bringnew').value = ''; $('#bringnew').hidden = true;
-  $('#bringwhohelp').textContent = (p.person ? `In the file they are for “${p.person}”. Choose who that is in this notebook.` : 'Choose who these should be assigned to here.') + (near ? ` (It looks like ${near}.)` : '');
+  $('#bringwho').value = (bringPre && knownName(bringPre)) || known || ''; $('#bringnew').value = ''; $('#bringnew').hidden = true;
+  $('#bringwhohelp').textContent = bringPre ? `These will be added for ${knownName(bringPre) || bringPre}. Change it here if they belong to someone else.` : (p.person ? `In the file they are for “${p.person}”. Choose who that is in this notebook.` : 'Choose who these should be assigned to here.') + (near ? ` (It looks like ${near}.)` : '');
   document.querySelector('input[name=bringto][value=standalone]').checked = true;
   const notes = db.items.filter(i => i.type === 'note').sort((a, b) => (b.updated || '').localeCompare(a.updated || '')).slice(0, 200);
   $('#bringnote').innerHTML = notes.map(i => `<option value="${esc(i.id)}">${esc(i.title || 'Untitled')}</option>`).join('') || '<option value="">(no notes yet)</option>'; $('#bringnote').disabled = true;
@@ -5611,7 +5653,7 @@ function exportItem(i, fmt){
   else if(fmt === 'txt'){ downloadFile(fileSlug(i) + '.txt', itemAsText(i) + '\n', 'text/plain'); toast(`Saved ${fileSlug(i)}.txt to your downloads.`); }
   else printHtml(itemPrintHtml(i));
 }
-const exportEntries = i => [...(i.sheet ? [{l:'Excel (.xlsx)', ic:'⤓', fn: () => shExportXlsx(i)}, {l:'Spreadsheet (.csv)', ic:'⤓', fn: () => shExportCsv(i)}] : []), {l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}];
+const exportEntries = i => [...(i.sheet ? [{l:'Excel (.xlsx)', ic:'⤓', fn: () => shExportXlsx(i)}, {l:'Spreadsheet (.csv)', ic:'⤓', fn: () => shExportCsv(i)}] : []), {l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}, ...(i.type === 'note' ? [{l:'Copy for another device (text)', ic:'⇄', fn: () => copyNoteForDevice(i)}, {l:'Save for another device (.json)', ic:'⇄', fn: () => saveNoteForDevice(i)}] : [])];
 
 /* ---- Trash ---- */
 function setPin(i, mode){                                  // 'off', 'nb' (top of its own notebook) or 'all' (top of every notebook)
@@ -9771,9 +9813,9 @@ document.addEventListener('click', e => {
     else if(act === 'nbshare'){ const nb = nbById(a.dataset.id); if(nb){ const r = a.getBoundingClientRect(); if($('#nbdlg').open && nb.shared && nb.shared.on){ $('#nbdlg').close(); } nbShareAction(nb, r.left, r.bottom + 4); } }
     else if(act === 'nbexport') openNbExport([a.dataset.id]); else if(act === 'nbexportall') openNbExport(db.notebooks.map(n => n.id));
     else if(act === 'nbexpgo') runNbExport(); else if(act === 'nbexpcancel') $('#nbexp').close();
-    else if(act === 'sendact') openSend(); else if(act === 'sendsave') sendSaveFile(); else if(act === 'sendcopy') sendCopyText(); else if(act === 'sendclose') $('#senddlg').close();
-    else if(act === 'bringact') openBring(); else if(act === 'bringfile') $('#bringfile').click(); else if(act === 'bringread'){ let j = null; try { j = JSON.parse($('#bringtext').value.trim()); } catch {} readBring(j, ''); } else if(act === 'bringgo') runBring(); else if(act === 'bringclose'){ bring = null; $('#bringdlg').close(); }
-    else if(act === 'nbimport') $('#nbfile').click(); else if(act === 'nbimpgo') runImport(); else if(act === 'nbimpcancel'){ importPack = null; $('#nbimp').close(); }
+    else if(act === 'sendact') openSend(a.dataset.who || ''); else if(act === 'sendsave') sendSaveFile(); else if(act === 'sendcopy') sendCopyText(); else if(act === 'sendclose') $('#senddlg').close();
+    else if(act === 'bringact') openBring(a.dataset.who || ''); else if(act === 'bringfile') $('#bringfile').click(); else if(act === 'bringread'){ let j = null; try { j = JSON.parse($('#bringtext').value.trim()); } catch {} readBring(j, ''); } else if(act === 'bringgo') runBring(); else if(act === 'bringclose'){ bring = null; $('#bringdlg').close(); }
+    else if(act === 'nbimport') openImportBox(); else if(act === 'nbpastefile') $('#nbfile').click(); else if(act === 'nbpasteread') readPasted(); else if(act === 'nbpasteclose') $('#nbpaste').close(); else if(act === 'nbimpgo') runImport(); else if(act === 'nbimpcancel'){ importPack = null; $('#nbimp').close(); }
     else if(act === 'nbup') moveNotebookBy(a.dataset.id, -1); else if(act === 'nbdown') moveNotebookBy(a.dataset.id, 1);
     else if(act === 'editpeople'){ renderPeople(); $('#pdlg').showModal(); } else if(act === 'closepeople') $('#pdlg').close();
     else if(act === 'addperson'){ let n = 'New person', k = 2; while(db.people.some(x => x.toLowerCase() === n.toLowerCase())) n = 'New person ' + k++; db.people.push(n); touch(); renderPeople(); const r = $('#prows').querySelector(`[data-pn="${n}"]`); if(r){ r.focus(); r.select(); } }
@@ -10169,7 +10211,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261124093056';</script>
+<script>window.NB_BUILD = '20261124093341';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

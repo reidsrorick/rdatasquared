@@ -1,4 +1,14 @@
-{"version":"1.70.1","build":"20261124093056","changelog":[
+{"version":"1.71.0","build":"20261124093341","changelog":[
+ {
+  "v": "1.71.0",
+  "title": "Move notes and actions between devices",
+  "items": [
+   "Move one note to another device: open a note's Export menu and choose Copy for another device (text) or Save for another device (.json). On the other device go to Notes, press ⤒ Import and paste the text (or choose the file).",
+   "The Notes Import box now takes pasted text as well as files, and shows what is in it before anything is added.",
+   "Moving actions between devices: every person's page (team members and Claude projects) has Export actions and Import actions buttons. Export copies the text or saves a file; Import on the other device adds them to that person, and you can change who they go to.",
+   "Nothing is ever overwritten by an import, and Undo removes exactly what was added."
+  ]
+ },
  {
   "v": "1.70.1",
   "title": "Spreadsheet folders you open, like Notebooks",
