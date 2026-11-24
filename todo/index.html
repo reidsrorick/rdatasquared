@@ -268,7 +268,9 @@ body.focus #panelrevs,body.focus #paneledge{display:none !important}}
 .prop{background:#f3c969;color:#4a3300;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;white-space:nowrap;align-self:center}
 .act.hasprop{box-shadow:inset 3px 0 0 #e0a82e}.pcb{outline:2px solid #e0a82e;outline-offset:1px;border-radius:3px}
 .propln{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 2px;padding:5px 8px;border-radius:8px;background:color-mix(in srgb,#e0a82e 16%,transparent);font-size:13px}.propln .pn{flex:1 1 180px;min-width:0}.propln small{color:var(--mute)}
-.propln.info{background:var(--hover2)}.ai>.propln{flex:0 0 100%;box-sizing:border-box;margin-left:28px;width:calc(100% - 28px)}
+.propln.info{background:var(--hover2)}
+.act>.propln{grid-column:1/-1;margin:2px 0 0 34px}
+@media(max-width:1500px){.act>.propln{flex:0 0 calc(100% - 34px);box-sizing:border-box;margin-left:34px}}.ai>.propln{flex:0 0 100%;box-sizing:border-box;margin-left:28px;width:calc(100% - 28px)}
 .propln button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font:inherit;font-size:12.5px}.propln button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .ai .nb{border:0;background:none;font-size:14px;opacity:.35;padding:0 4px}
 .ai .nb:hover,.ai .nb.has{opacity:1}
@@ -382,6 +384,7 @@ input.who:focus{border-color:var(--accent)}
 .nbhead2 button{border:0;background:none;color:var(--mute);font-size:18px;line-height:1;padding:0 6px;border-radius:6px}.nbhead2 button:hover{color:var(--accent);background:var(--hover)}
 .pgh{display:flex;gap:6px;align-items:center;padding:6px 10px 2px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);cursor:pointer;user-select:none}.pgh small{text-transform:none;letter-spacing:0}.pgh:hover{color:var(--text)}.tag.idle{opacity:.55}.tag.idle.on{opacity:1}.pgtool{padding:4px 10px}.pgtool a{font-size:11.5px;color:var(--mute);cursor:pointer}.pgtool a:hover{color:var(--text);text-decoration:underline}
 .sfhead{display:flex;align-items:center}.sfhead .pinhead{flex:1}.sfbtns{display:flex;gap:2px;padding-right:8px}.sfbtns button{border:0;background:none;color:var(--mute);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px}.sfbtns button:hover{background:var(--hover2);color:var(--text)}
+.pxfer{margin-left:auto;display:inline-flex;gap:6px}.pxfer button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font-size:12.5px;cursor:pointer}.pxfer button:hover{background:var(--hover2)}
 .nbempty{padding:10px 16px 12px 30px;color:var(--mute);font-size:12.5px;border-bottom:1px solid var(--line)}
 [data-nbdrop].over{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--soft)}
 .tdmine{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mute);margin:-8px 0 14px}
@@ -1033,6 +1036,15 @@ body.mobile #mobwelcome .bad{color:var(--red)}
   </div>
   <div class="dfoot"><span></span><span><button data-act="nbimpcancel">Cancel</button> <button class="pri" data-act="nbimpgo">Import</button></span></div>
 </dialog>
+<dialog id="nbpaste">
+  <h3>Import notes</h3>
+  <p style="margin:0 0 10px;color:var(--mute);font-size:13px">Bring in a note, a notebook or a whole data file made on another device. Choose the file, or paste the text that <b>Copy for another device</b> put on the clipboard. You see what is in it, and choose what to add, before anything changes.</p>
+  <div class="setbtns"><button class="pri" data-act="nbpastefile">Choose a file…</button></div>
+  <div style="font-size:12px;color:var(--mute);margin:12px 0 4px">or paste the text here</div>
+  <textarea id="nbpastetext" class="txtbox" rows="6" placeholder="Paste the copied text" spellcheck="false"></textarea>
+  <p id="nbpastemsg" style="color:var(--red);margin:8px 0 0"></p>
+  <div class="dfoot"><span></span><span><button data-act="nbpasteclose">Cancel</button> <button class="pri" data-act="nbpasteread">Read it</button></span></div>
+</dialog>
 <dialog id="senddlg">
   <h3>Send actions</h3>
   <p style="margin:0 0 10px;color:var(--mute);font-size:13px">Packs up the actions assigned to one person, and nothing else: no notes, pages or titles unless you tick them. Take the file or the text to your other notebook and choose <b>Bring in actions…</b> there.</p>
@@ -1106,6 +1118,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
   <div class="setsec"><h4>Move actions between notebooks</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Send the actions assigned to one person from this notebook, and bring them into another one, without sharing any notes or pages. For example, ideas you jot down at home that you want in your work notebook.</div><div class="setbtns"><button data-act="sendact">Send actions…</button><button data-act="bringact">Bring in actions…</button></div></div>
 </div><div class="setpane" role="tabpanel" data-spane="look" hidden>
   <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
+  <div class="setsec"><h4>Typing</h4><label class="setline"><input type="checkbox" id="autocap"> Start each line with a capital letter <small style="color:var(--mute)">When you finish the first word of a line (press Space) in a note, a title or a quick-add box, its first letter is capitalised. Undo (Ctrl + Z) takes it back.</small></label></div>
 </div><div class="setpane" role="tabpanel" data-spane="team" hidden>
   <div class="setsec"><h4>Team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">The people and Claude projects you can assign actions to. Turn on <b>Keep a feed</b> for one and the app writes a file, in a folder you choose and share with them, listing their actions, so they can answer “done?”. You always confirm. A feed holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
   <div class="setsec"><h4>From the team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">If someone shared a folder with you, connect it here. Then you see what is assigned to you and the pages shared with you, and can send “done?” requests and suggestions back.</div><div id="setinbox"></div></div>
@@ -1191,8 +1204,63 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.70.0';
+const APP_VERSION = '1.72.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.72.0",
+  "title": "Times, durations and custom formats in spreadsheets",
+  "items": [
+   "Spreadsheet times work like Excel. Type 9 am, 9:30 PM, 13:45 or 9:30:15 and the cell becomes a real time (it shows 9:00 AM, 9:30 PM, 13:45, 09:30:15). Type 36:15 for a duration, or 2026-11-17 9:30 AM (also Nov 17, 2026 9 am) for a date with a time.",
+   "Subtracting or adding times gives a duration: =B2-A2 shows 8:30, and SUM of durations goes past 24 hours (28:15) instead of wrapping. Multiply by 24 for hours as a number.",
+   "The format box has Time, Duration, Minutes and seconds and Date and time styles, plus Custom format…: write any Excel code such as h:mm AM/PM, [h]:mm, yyyy-mm-dd hh:mm, dddd, mmmm d, #,##0.00 or 0.0% and see how it looks before applying.",
+   "New functions: NOW, TIME, HOUR, MINUTE, SECOND, TIMEVALUE, DATEVALUE, TEXT (any format code), NETWORKDAYS, WORKDAY (both with a holiday list) and DATEDIF.",
+   "Drag the fill square across times to continue them (9:00, 9:30, then 10:00…). Excel export keeps the time formats, and CSV export writes what the cells show."
+  ]
+ },
+ {
+  "v": "1.71.3",
+  "title": "Remove the date and time when adding an action",
+  "items": [
+   "When what you type in an add box has a date or time in it (like “call Ann Friday 3pm”), the line under the box now shows what it picked up with a ✕ Remove date & time link. Press it and the words stay in the action but no due date, time or repeat is set from them. Use them brings it back.",
+   "Works in Quick add (Ctrl + Q), the Today and person-page add boxes, and the Actions add box. It resets after each add."
+  ]
+ },
+ {
+  "v": "1.71.2",
+  "title": "Wider answers on Waiting for your OK",
+  "items": [
+   "On the Waiting for your OK page (and anywhere else an action has an answer from someone), the answer and its Confirm / Not yet buttons now take the full width under the action instead of only the narrow text column. Long answers are easy to read, even with several waiting."
+  ]
+ },
+ {
+  "v": "1.71.1",
+  "title": "Capital letter at the start of a line",
+  "items": [
+   "The first word of a line now starts with a capital letter. When you finish it (press Space) in a note, a title or a quick-add box, its first letter is capitalised. Ctrl + Z takes it back.",
+   "It leaves alone anything that is not a plain lower-case word (for example a date, a name that already has capitals, a spreadsheet cell, or a line starting with @ or a number).",
+   "Switch it off in Settings > Look > Typing (per computer)."
+  ]
+ },
+ {
+  "v": "1.71.0",
+  "title": "Move notes and actions between devices",
+  "items": [
+   "Move one note to another device: open a note's Export menu and choose Copy for another device (text) or Save for another device (.json). On the other device go to Notes, press ⤒ Import and paste the text (or choose the file).",
+   "The Notes Import box now takes pasted text as well as files, and shows what is in it before anything is added.",
+   "Moving actions between devices: every person's page (team members and Claude projects) has Export actions and Import actions buttons. Export copies the text or saves a file; Import on the other device adds them to that person, and you can change who they go to.",
+   "Nothing is ever overwritten by an import, and Undo removes exactly what was added."
+  ]
+ },
+ {
+  "v": "1.70.1",
+  "title": "Spreadsheet folders you open, like Notebooks",
+  "items": [
+   "Spreadsheet folders now work like Notebooks. The Spreadsheets list shows your folders; click one to see the spreadsheets inside, and use ‹ Folders to go back.",
+   "Press ＋ inside a folder to make a spreadsheet there (from the list of folders it goes to Unfiled).",
+   "Right-click a spreadsheet to move it to a folder (or Unfiled, or a new folder). Right-click a folder to add a spreadsheet, rename, move it up or down, or delete it.",
+   "Folders are called folders, not notebooks. Deleting a folder moves its spreadsheets to Unfiled; none is deleted."
+  ]
+ },
  {
   "v": "1.70.0",
   "title": "Feeds retry by themselves and warn you",
@@ -2815,7 +2883,20 @@ const sheetFold = new Set();
 const pgFold = new Set(); let pgIdle = false;          // sidebar People: which groups are folded, and whether people with nothing open are hidden (kept per computer)
 try { (JSON.parse(localStorage.getItem('notebook-pgfold') || '[]') || []).forEach(k => pgFold.add(k)); pgIdle = localStorage.getItem('notebook-pgidle') === '1'; } catch {}
 const pgSave = () => { try { localStorage.setItem('notebook-pgfold', JSON.stringify([...pgFold])); localStorage.setItem('notebook-pgidle', pgIdle ? '1' : '0'); } catch {} };
-let lastSF = '';          // the spreadsheet folder you used last: new spreadsheets start there
+let lastSF = '';          // the spreadsheet folder you used last
+let sfView = '';          // the spreadsheet folder the list is showing: '' = the list of folders, '_' = Unfiled, else a folder id
+const sfKey = i => (db.sfolders || []).some(f => f.id === i.sfolder) ? i.sfolder : '_';          // which folder a spreadsheet is in ('_' = Unfiled)
+const sfById = id => (db.sfolders || []).find(f => f.id === id);
+const sfShown = () => filter === 'sheet' && !!sfView && (sfView === '_' || !!sfById(sfView));
+function sfNew(){ const nm = (prompt('Name the new folder:', '') || '').trim().slice(0, 60); if(!nm) return; const f = {id: uid(), name: nm}; (db.sfolders = db.sfolders || []).push(f); touch(); renderList(); toast(`Made the folder “${nm}”. Click it to open it, then press ＋ to make a spreadsheet in it.`); }
+function sfRename(id){ const f = sfById(id); if(!f) return; const nm = (prompt('Rename the folder:', f.name) || '').trim().slice(0, 60); if(nm && nm !== f.name){ f.name = nm; touch(); renderList(); renderDetail(); } }
+function sfDelete(id){ const f = sfById(id); if(!f) return; const n = db.items.filter(i => i.sheet && i.sfolder === f.id).length; if(!confirm(`Delete the folder “${f.name}”?${n ? ` Its ${n} spreadsheet${n === 1 ? '' : 's'} move to Unfiled; none is deleted.` : ''}`)) return; db.items.forEach(i => { if(i.sheet && i.sfolder === f.id){ i.sfolder = ''; i.updated = now(); } }); db.sfolders = db.sfolders.filter(x => x !== f); if(lastSF === f.id) lastSF = ''; if(sfView === f.id) sfView = ''; touch(); renderAll(); }
+function sfMoveBy(id, dir){ const a = db.sfolders || [], k = a.findIndex(f => f.id === id), t = k + dir; if(k < 0 || t < 0 || t >= a.length) return; [a[k], a[t]] = [a[t], a[k]]; touch(); renderList(); }
+function moveSheet(i, id){          // id: a folder id, or '' for Unfiled
+  const prev = i.sfolder || ''; if((id || '') === prev) return; const f = sfById(id), name = f ? f.name : 'Unfiled';
+  i.sfolder = f ? id : ''; i.updated = now(); touch(); fixSelection(); renderAll();
+  toast(`Moved “${i.title || 'Untitled'}” to ${name}.`, () => { i.sfolder = prev; i.updated = now(); touch(); renderAll(); });
+}
 let theme = 'auto', actPerson = '', todayMine = false, actNb = '', searchAll = false, lastNb = '', nbView = '', lastNoteSel = '', hideCkDone = false, metaOff = false, dateField = 'updated', datePreset = '', dateFrom = '', dateTo = '';          // nbView: the notebook whose pages the Notes list is showing ('' = the list of notebooks)
 const pinFold = new Set();          // where the Pinned strip is collapsed ('' = the notebook list, otherwise a notebook id)
 const nbFold = new Set();          // notebooks folded closed in the Notes list
@@ -3166,7 +3247,8 @@ function renderFilterBar(){
   document.querySelectorAll('#sortseg [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === sortMode));
   const bar = $('#nbbar'); bar.style.display = filter === 'note' || filter === 'sheet' ? '' : 'none';
   if(filter === 'sheet') bar.innerHTML = `<a data-act="newsf" title="Make a folder to group spreadsheets">＋ Folder</a>`;
-  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add the pages from a notebook file, e.g. one exported on another computer">⤒ Import</a>`;
+  if(filter === 'sheet') bar.style.display = sfShown() && !search.trim() ? 'none' : '';
+  if(filter === 'note') bar.innerHTML = `<a data-act="newnbtab">＋ Notebook</a><a data-act="editnb" title="Rename, recolour or delete notebooks">⚙ Manage (${db.notebooks.length})</a><a data-act="nbimport" title="Add notes or notebooks from a file, or from text copied on another device">⤒ Import</a>`;
   const opts = document.querySelector('.list .opts'); if(opts) opts.classList.toggle('nblist', filter === 'note' && !nbView && !search.trim());
   $('#datewrap').style.display = filter === 'note' ? '' : 'none'; $('#dfield').value = dateField; $('#dpreset').value = datePreset; $('#dcustom').style.display = datePreset === 'custom' ? '' : 'none'; $('#dfrom').value = dateFrom; $('#dto').value = dateTo;
   $('#datedwrap').style.display = sortMode === 'date' ? '' : 'none';
@@ -3186,7 +3268,7 @@ function dateRange(){
   return [dateFrom || '0000-00-00', dateTo || '9999-12-31'];
 }
 const noteDay = i => { const v = dateField === 'page' ? i.date : i[dateField]; if(!v) return ''; return dateField === 'page' ? v : dstr(new Date(v)); };
-const inNotesView = e => filter !== 'note' || !nbById(nbView) || !!search.trim() || (dateActive() && !nbById(nbView)) || (e.item.type === 'note' && (nbKey(e.item) === nbView || e.item.pinAll));
+const inNotesView = e => (filter === 'sheet' && sfShown() && !search.trim()) ? (!!e.item.sheet && sfKey(e.item) === sfView) : filter !== 'note' || !nbById(nbView) || !!search.trim() || (dateActive() && !nbById(nbView)) || (e.item.type === 'note' && (nbKey(e.item) === nbView || e.item.pinAll));
 function fixSelection(){
   const v = listEntries();
   if(!v.some(e => e.item.id === selId && inNotesView(e))){
@@ -3245,7 +3327,7 @@ function renderSettings(){
   const ok = fileState === 'ready' && !writeError;
   $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
-  $('#settheme').value = theme; try { renderBackupSettings(); } catch {} try { renderCalSettings(); } catch {} try { renderInstallHelp(); } catch {} renderInboxSettings(); renderRaidSettings(); renderAlertSettings(); renderKeySettings(); try { renderSetup(); } catch {}
+  $('#settheme').value = theme; $('#autocap').checked = autoCapOn(); try { renderBackupSettings(); } catch {} try { renderCalSettings(); } catch {} try { renderInstallHelp(); } catch {} renderInboxSettings(); renderRaidSettings(); renderAlertSettings(); renderKeySettings(); try { renderSetup(); } catch {}
   const hasClaude = [...db.people, ...(db.feeds || []).map(f => f.person)].some(n => /^claude/i.test(n) || claudeStem(n)) || (db.feeds || []).some(f => f.claude), names = [...new Set([...(hasClaude ? [] : ['Claude']), ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
   const sl = srcSlug(), onTeam = n => db.people.some(p => personKey(p) === personKey(n)), feedOf = n => (db.feeds || []).find(x => personKey(x.person) === personKey(n));
   const openOf = n => feedItems({person:n, titles:false}).filter(x => !x.done).length, openUnder = n => allEntries().filter(x => !x.done && (x.assignee || '').toLowerCase() === n.toLowerCase()).length;
@@ -3519,11 +3601,20 @@ function renderList(){
       html = `<div class="nbhead2" data-nbmenu="${esc(nb.id)}" style="--nbc:${esc(nb.color)}"><a data-act="nball" title="Back to all notebooks">‹ Notebooks</a><span class="nbn">${esc(nb.name)}</span><small>${all.length} page${all.length === 1 ? '' : 's'}</small>${nb.id === inboxIdQuiet() && procQueue().length ? `<button data-act="goproc" class="procbtn" title="Go through these notes one at a time: file, make an action, or delete">📥 Process ${procQueue().length}</button>` : ''}<button data-act="nbnewpage" data-id="${esc(nb.id)}" title="New page in ${esc(nb.name)}">＋</button></div>`
         + pinHtml + (pins.length && rows.length ? '<div class="pinhead">Pages</div>' : '') + (rows.length ? rows.map(e => entryHtml(e)).join('') : (all.length ? '' : `<div class="nbempty">No pages yet. Press ＋ to add one.</div>`));
     }
-  } else if(filter === 'sheet'){                  // Spreadsheets: grouped into folders (their own, not notebooks), each group can be folded away
-    const items = v.filter(e => e.kind === 'item'), sfOf = i => (db.sfolders || []).some(f => f.id === i.sfolder) ? i.sfolder : '';
-    html = [...(db.sfolders || []).map(f => ({id: f.id, name: f.name, real: true})), {id: '', name: 'Unfiled', real: false}].map(g => {
-      const rows = items.filter(e => sfOf(e.item) === g.id); if(!rows.length && !g.real) return ''; const key = g.id || '_', folded = sheetFold.has(key);
-      return `<div class="sfhead"><div class="pinhead pinfold" data-sheetfold="${esc(key)}" title="Click to ${folded ? 'show' : 'hide'} these spreadsheets">${folded ? '▸' : '▾'} 📁 ${esc(g.name)} <small>${rows.length}</small></div>${g.real ? `<span class="sfbtns"><button data-act="sfrename" data-id="${esc(g.id)}" title="Rename this folder">✎</button><button data-act="sfdelete" data-id="${esc(g.id)}" title="Delete this folder (its spreadsheets move to Unfiled)">✕</button></span>` : ''}</div>` + (folded ? '' : rows.map(e => entryHtml(e)).join('') || (g.real ? '<div class="nbempty">Empty. Pick this folder in a spreadsheet’s Folder box.</div>' : '')); }).join('');
+  } else if(filter === 'sheet'){                  // Spreadsheets: your folders first; click one to see its spreadsheets (like Notebooks). Searching looks through everything.
+    const items = v.filter(e => e.kind === 'item');
+    if(sfView && sfView !== '_' && !sfById(sfView)) sfView = '';
+    const nWord = n => `${n} spreadsheet${n === 1 ? '' : 's'}`;
+    if(search.trim()) html = items.map(e => entryHtml(e, true)).join('');
+    else if(!sfView){
+      const row = (key, name, mine, menu) => { const last = mine.reduce((mx, e) => (e.item.updated || '') > mx ? e.item.updated : mx, ''); return `<div class="nbgh big" data-sfopen="${esc(key)}" ${menu ? `data-sfmenu="${esc(key)}"` : ''} title="Click to open" style="--nbc:#6b7a90"><div class="nbtxt"><b>📁 ${esc(name)}</b><small>${nWord(mine.length)}${last ? ' · edited ' + esc(fmtDay(dstr(new Date(last)))) : ''}</small></div><span class="nbgo">›</span></div>`; };
+      const un = items.filter(e => sfKey(e.item) === '_');
+      html = (db.sfolders || []).map(f => row(f.id, f.name, items.filter(e => sfKey(e.item) === f.id), true)).join('') + (un.length || !(db.sfolders || []).length ? row('_', 'Unfiled', un, false) : '');
+    } else {
+      const f = sfById(sfView), rows = items.filter(e => sfKey(e.item) === sfView);
+      html = `<div class="nbhead2" ${f ? `data-sfmenu="${esc(f.id)}"` : ''} style="--nbc:#6b7a90"><a data-act="sfall" title="Back to all folders">‹ Folders</a><span class="nbn">${esc(f ? f.name : 'Unfiled')}</span><small>${nWord(rows.length)}</small><button data-act="sfnewhere" title="New spreadsheet in ${esc(f ? f.name : 'Unfiled')}">＋</button></div>`
+        + (rows.length ? rows.map(e => entryHtml(e)).join('') : `<div class="nbempty">No spreadsheets here yet. Press ＋ to add one, or right-click a spreadsheet elsewhere and choose this folder.</div>`);
+    }
   } else {
     v.forEach(e => { const b = bucketOf(e); counts[b] = (counts[b] || 0) + 1; });
     for(const e of v){
@@ -3647,13 +3738,13 @@ function actRow(x){
   const po = x.kind === 'task' ? x.item : x.ck, pp = proposalOf(po);
   return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''} ${pp && pp.kind === 'done' ? 'hasprop' : ''}" data-key="${x.key}">
     <input type="checkbox" data-ax="done" class="${pp && pp.kind === 'done' ? 'pcb' : ''}" ${x.done?'checked':''}>
-    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea>${propLine(po, x.key)}<div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a><a class="nlink" data-act="flpin" data-key="${x.key}" title="Keep this action in the floating window">⇱ ${po.fl ? 'Pinned' : 'Float'}</a><a class="nlink" data-act="fuset" data-key="${x.key}" title="Pick a day to check back on this. If it is not done by then it shows on Today.">↻ ${po.fu ? 'Change check-back' : 'Check back'}</a><a class="nlink" data-act="snzopen" data-key="${x.key}" title="Hide this for a while">⏰ Snooze</a>${chipsFor(po, x.key)}${doneText(po) ? `<small class="donewhen">✓ ${esc(doneText(po))}</small>` : ''}</div></div>
+    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a><a class="nlink" data-act="flpin" data-key="${x.key}" title="Keep this action in the floating window">⇱ ${po.fl ? 'Pinned' : 'Float'}</a><a class="nlink" data-act="fuset" data-key="${x.key}" title="Pick a day to check back on this. If it is not done by then it shows on Today.">↻ ${po.fu ? 'Change check-back' : 'Check back'}</a><a class="nlink" data-act="snzopen" data-key="${x.key}" title="Hide this for a while">⏰ Snooze</a>${chipsFor(po, x.key)}${doneText(po) ? `<small class="donewhen">✓ ${esc(doneText(po))}</small>` : ''}</div></div>
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
     <input type="time" data-ax="time" value="${esc(x.time)}" title="Time">
     <select data-ax="repeat" title="Repeat">${repeatOptions(x.repeat)}</select>
     <select data-ax="cat" title="Category: ${esc(catById(x.own) ? catById(x.own).name : blank)}" style="border-left:4px solid ${c ? esc(c.color) : 'transparent'}">${catOptions(x.own, blank)}</select>
     <input type="text" class="who" autocomplete="off" data-ax="assignee" value="${esc(x.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)">
-    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}</div>`;
+    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}${propLine(po, x.key)}</div>`;
 }
 function renderActions(){
   let list = allActions().filter(x => x.text.trim());
@@ -3728,7 +3819,7 @@ function renderPerson(){
   $('#detail').innerHTML = `
     <div class="type">People</div>
     <h1 class="ptitle">${esc(name)}</h1>
-    <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}</div>
+    <div class="tdsum"><span class="${open ? 'warn' : ''}">${open} open</span>${counts}<span class="pxfer"><button data-act="sendact" data-who="${esc(name)}" title="Copy or save ${esc(name)}’s actions to take to another device">⤓ Export actions</button><button data-act="bringact" data-who="${esc(name)}" title="Add actions from another device to ${esc(name)}">⤒ Import actions</button></span></div>
     <div class="addrow"><textarea class="qawrap" rows="1" id="pqa" placeholder="Add for ${esc(name)}: “call the vendor Friday 3pm”${raidKinds().length ? `, “${esc(raidOne(raidKinds()[0]).toLowerCase())}: vendor may slip”` : ''}" autocomplete="off" spellcheck="true"></textarea><button data-act="padd">Add</button></div>
     <div class="qapv" id="pqapv"></div>
     ${pageSearchBox('Filter this person’s items…', true)}
@@ -3755,7 +3846,7 @@ function addAction(){
   }
   const nt = $('#anotefld'), noteText = nt ? nt.value.trim() : '';
   const i = {id:uid(), pinned:false, pinAll:false, type:'task', title:t.value.trim(), body:noteText ? plainToHtml(noteText) : '', tags:[], category:$('#acat').value, due:$('#adue').value, date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now(), assignee:''};
-  db.items.push(i); autoDate(i, i.title, i);
+  db.items.push(i); autoDate(i, i.title, i, !qaNoDate); qaNoDate = false;
   const hid = [];                                         // don't let a filter hide what was just added
   if(actCat === 'none' ? !!i.category : actCat ? i.category !== actCat : false){ actCat = ''; hid.push('category'); }
   if(actPerson === 'none' ? !!i.assignee : actPerson ? (i.assignee || '').toLowerCase() !== actPerson.toLowerCase() : false){ actPerson = ''; hid.push('person'); }
@@ -3779,7 +3870,7 @@ function toast(msg, undo, label = 'Undo', openId, ms){
   el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), ms || 9000);
 }
 function refreshViews(){ renderRail(); renderList(); renderDetail(); }
-function openItemById(id){ const oi = byId(id); if(!oi) return; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); selId = id; selCk = ''; search = ''; saveUi(); renderAll(); }
+function openItemById(id){ const oi = byId(id); if(!oi) return; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); if(filter === 'sheet') sfView = sfKey(oi); selId = id; selCk = ''; search = ''; saveUi(); renderAll(); }
 /* o is a checklist item or a task; only ever fills in what's empty, and always offers Undo */
 /* ---- people ---- */
 const teamName = v => { const x = String(v || '').trim().toLowerCase(); return x ? db.people.find(k => k.toLowerCase() === x) || '' : ''; };
@@ -3904,10 +3995,10 @@ const undoParsed = (o, item, p) => {
   if(p.addedPerson && !personUsed(p.addedPerson)) db.people = db.people.filter(k => k.toLowerCase() !== p.addedPerson.toLowerCase());
   item.updated = now();
 };
-function autoDate(o, text, item){
+function autoDate(o, text, item, datesAllowed = true){
   const w0 = !o.assignee ? findAssignee(text, item) : null;
   if(w0 && db.strict && !knownName(w0.name)) setTimeout(() => resolveAssignee(w0.name, nm => { if(nm){ o.assignee = nm; item.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 350);
-  const res = applyParsed(o, text, item, autoDates); if(!res) return false;          // an @name always assigns; dates only when Auto-detect dates is on
+  const res = applyParsed(o, text, item, autoDates && datesAllowed); if(!res) return false;          // an @name always assigns; dates only when Auto-detect dates is on
   const when = [o.due ? fmtDay(o.due) : '', o.time ? fmtTime(o.time) : ''].filter(Boolean).join(' '), bits = [];
   if(res.setDue || res.setTime) bits.push((res.setDue ? 'Due set to ' : 'Time set to ') + when);
   if(res.setRep) bits.push('repeats ' + lcFirst(describeRepeat(o.repeat)));
@@ -4199,7 +4290,7 @@ const viewFor = i => i.type === 'task' ? 'task' : (i.sheet && SHEETS_APART) ? 's
 function openActionByKey(key){
   const t = findEntry(key); if(!t) return;
   if($('#tldlg').open) $('#tldlg').close();
-  filter = viewFor(t.item); if(filter === 'note') nbView = nbKey(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
+  filter = viewFor(t.item); if(filter === 'note') nbView = nbKey(t.item); if(filter === 'sheet') sfView = sfKey(t.item); selId = t.item.id; selCk = t.kind === 'ck' ? t.ck.id : ''; search = ''; saveUi(); renderAll();
   if(selCk){ const ai = document.querySelector(`#detail [data-ci="${selCk}"]`), r = ai && ai.closest('.ai'); if(r){ r.classList.add('flash'); r.scrollIntoView({block:'center'}); } }
 }
 function openLinkedFromBlock(){ const t = linkTarget(tlEdit.b); if(t) openActionByKey(t.key); }
@@ -4498,13 +4589,13 @@ function newItem(kind){                      // kind: 'task', 'note' or 'meeting
   const i = {id:uid(), pinned:false, pinAll:false, type, title:'', body:'', tags: filter.startsWith('tag:') ? [filter.slice(4)] : [], category: filter.startsWith('cat:') ? filter.slice(4) : '', due:'', date: type === 'note' ? todayStr() : '', time: type === 'note' ? halfHour() : '', autoDt: type === 'note' && kind !== 'meeting', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(kind === 'sheet') i.sheet = shNew();
   let toInbox = false;
-  if(kind === 'sheet' && SHEETS_APART){ i.notebook = inboxId(); i.sfolder = (db.sfolders || []).some(f => f.id === lastSF) ? lastSF : ''; filter = 'sheet'; }
+  if(kind === 'sheet' && SHEETS_APART){ i.notebook = inboxId(); const inF = sfShown() && sfView !== '_' ? sfView : ''; i.sfolder = inF; sfView = inF || '_'; lastSF = inF; filter = 'sheet'; toInbox = !inF; }
   else if(type === 'note'){ const inside = insideNotebook(); i.notebook = inside ? nbView : inboxId(); toInbox = !inside; lastNb = i.notebook; nbView = i.notebook; const nbc = nbById(i.notebook); if(nbc && catById(nbc.category) && !i.category) i.category = nbc.category; }
   db.items.push(i); selId = i.id; search = '';
   if(['task','note'].includes(filter) && filter !== type || FULL_PAGES.includes(filter) || (filter.startsWith('nb:') && type === 'task')) filter = type;
   saveUi(); touch(); renderAll();
   const t = $('#detail .title'); if(t) t.focus();
-  if(toInbox) toast(`New ${kind === 'sheet' ? 'spreadsheet' : 'note'} is in your Inbox notebook. Use the Notebook box to move it when you know where it belongs.`);
+  if(toInbox) toast(kind === 'sheet' ? 'New spreadsheet is in Unfiled. Use the Folder box (or right-click it in the list) to move it.' : `New note is in your Inbox notebook. Use the Notebook box to move it when you know where it belongs.`);
 }
 /* ---- export / import notebooks (move a notebook between computers, or keep a copy) ---- */
 const notebookPages = id => db.items.filter(i => i.type === 'note' && nbKey(i) === id);
@@ -4518,6 +4609,16 @@ function notebookPack(ids){
   out.categories = db.categories.filter(c => cats.has(c.id)); out.people = [...ppl];
   return out;
 }
+function notePack(i){                                       // one note or spreadsheet, in the same format as a notebook export (so Import reads it)
+  const nb = nbById(nbKey(i)) || {id:nbKey(i), name:'Imported', color:'#8a857a'}, cats = new Set(), ppl = new Set(), page = Object.assign(JSON.parse(JSON.stringify(i)), {shared:null});
+  if(page.category) cats.add(page.category); if(page.assignee) ppl.add(page.assignee); page.checklist.forEach(c => { if(c.cat) cats.add(c.cat); if(c.assignee) ppl.add(c.assignee); });
+  return {app:'notebook-export', format:1, exported:now(), fromVersion:APP_VERSION, notebooks:[{id:nb.id, name:nb.name, color:nb.color, items:[page]}], categories:db.categories.filter(c => cats.has(c.id)), people:[...ppl]};
+}
+function copyNoteForDevice(i){
+  const t = JSON.stringify(notePack(i)), done = () => toast('Copied. On the other device open Notes, press ⤒ Import and paste it in.');
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(done).catch(() => { const ta = Object.assign(document.createElement('textarea'), {value:t}); ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); if(ok) done(); else toast('The browser would not copy it. Use “Save for another device” instead.'); });
+}
+function saveNoteForDevice(i){ const slug = (i.title || 'note').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 40) || 'note'; downloadFile(`${slug}.notebook.json`, JSON.stringify(notePack(i), null, 2), 'application/json'); toast(`Saved ${slug}.notebook.json. On the other device open Notes and press ⤒ Import.`); }
 function notebookToMd(nb){
   const pages = notebookPages(nb.id).sort((a, b) => (a.title || '').localeCompare(b.title || ''));
   return `# ${nb.name}\n\n` + (pages.length ? pages.map(i => itemToMd(i).replace(/^# /, '## ').replace(/\n## Action items/, '\n### Action items')).join('\n\n---\n\n') : '_No pages yet._\n');
@@ -4620,6 +4721,15 @@ async function importFromFile(f){
   if($('#nbdlg').open) $('#nbdlg').close();
   openImport(pack, f.name);
 }
+function openImportBox(){ if($('#nbdlg').open) $('#nbdlg').close(); $('#nbpastetext').value = ''; $('#nbpastemsg').textContent = ''; $('#nbpaste').showModal(); setTimeout(() => $('#nbpastetext').focus(), 30); }
+function readPasted(){
+  const t = $('#nbpastetext').value.trim(); if(!t){ $('#nbpastemsg').textContent = 'Paste the copied text first.'; return; }
+  let j = null; try { j = JSON.parse(t); } catch {}
+  if(j && j.app === ACTIONS_APP){ $('#nbpastemsg').textContent = 'That text is a list of actions. Open the person’s page and press Import actions.'; return; }
+  const pack = j && parseImport(j);
+  if(!pack){ $('#nbpastemsg').textContent = 'That doesn’t look like text copied from a note, a notebook or a data file. Copy it again from the other device, all of it.'; return; }
+  $('#nbpaste').close(); openImport(pack, 'the pasted text');
+}
 $('#nbfile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if(f) importFromFile(f); });
 /* ---- Move actions between notebooks: "Send actions" (one person's actions, nothing else) and "Bring in actions" (map that person, pick where they land) ----
    Made for one person with two notebooks (work and home). Notes, pages and titles never travel; each action carries its text, date, time, repeat, category name, and (if you tick it) its note.
@@ -4638,10 +4748,12 @@ function sendPayload(){
   const items = list.map(x => ({id:x.key, text:x.text.trim(), done:!!x.done, due:x.due || '', time:x.time || '', repeat:x.repeat || null, raid:x.raid || '', category:(catById(x.cat) || {}).name || '', note:withNotes && !isBlank(x.note) ? x.note : '', from:withTitle && x.kind === 'ck' ? (x.item.title || '') : ''}));
   return {app:ACTIONS_APP, format:1, at:now(), from:{label:srcLabel() || db.me || '', sourceId:db.sourceId || ''}, person, items};
 }
-function openSend(){
-  const who = actionAssignees();
+function openSend(pre){
+  const who = actionAssignees().slice();
+  if(pre && !who.some(w => w.name.toLowerCase() === pre.toLowerCase())) who.push({name:pre, open:0, all:0});
   if(!who.length){ toast('No action here is assigned to anyone yet, so there is nothing to send.'); return; }
   $('#sendwho').innerHTML = who.map(w => `<option value="${esc(w.name)}">${esc(w.name)} — ${w.open} open${w.all > w.open ? ', ' + (w.all - w.open) + ' done' : ''}</option>`).join('');
+  if(pre){ const o = [...$('#sendwho').options].find(x => x.value.toLowerCase() === pre.toLowerCase()); if(o) $('#sendwho').value = o.value; }
   $('#sendopen').checked = true; $('#sendnotes').checked = true; $('#sendtitle').checked = false;
   if($('#setdlg').open) $('#setdlg').close();
   updateSend(); $('#senddlg').showModal();
@@ -4673,8 +4785,9 @@ function parseActionsFile(j){                                // a file made by S
 }
 const bringKey = p => p.sourceId || ('label:' + p.label.toLowerCase());
 const wasBrought = (p, it) => (db.imported || []).find(r => r.src === bringKey(p) && r.id === it.id);
-function openBring(){
-  bring = null; $('#bringtext').value = ''; $('#bringmsg').textContent = ''; $('#bringbody').hidden = true; $('#bringpick').hidden = false; $('#bringgo').disabled = true;
+let bringPre = '';
+function openBring(pre){
+  bringPre = pre || ''; bring = null; $('#bringtext').value = ''; $('#bringmsg').textContent = ''; $('#bringbody').hidden = true; $('#bringpick').hidden = false; $('#bringgo').disabled = true;
   if($('#setdlg').open) $('#setdlg').close();
   $('#bringdlg').showModal();
 }
@@ -4687,8 +4800,8 @@ function readBring(j, name){
   $('#bringfrom').innerHTML = `From <b>${esc(src)}</b> · ${p.items.length} action${p.items.length === 1 ? '' : 's'} for <b>${esc(p.person || 'no one')}</b>${p.at ? ' · sent ' + esc(new Date(p.at).toLocaleDateString([], {month:'short', day:'numeric'})) : ''}`;
   const known = knownName(p.person) || '', near = known ? '' : (nearNames(p.person)[0] || '');          // only an exact name is chosen for you; a near one is just suggested
   $('#bringwho').innerHTML = '<option value="" disabled>Choose…</option>' + everyone().slice().sort((a, b) => a.localeCompare(b)).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') + '<option value="__none">No one (leave unassigned)</option><option value="__new">Someone new…</option>';
-  $('#bringwho').value = known || ''; $('#bringnew').value = ''; $('#bringnew').hidden = true;
-  $('#bringwhohelp').textContent = (p.person ? `In the file they are for “${p.person}”. Choose who that is in this notebook.` : 'Choose who these should be assigned to here.') + (near ? ` (It looks like ${near}.)` : '');
+  $('#bringwho').value = (bringPre && knownName(bringPre)) || known || ''; $('#bringnew').value = ''; $('#bringnew').hidden = true;
+  $('#bringwhohelp').textContent = bringPre ? `These will be added for ${knownName(bringPre) || bringPre}. Change it here if they belong to someone else.` : (p.person ? `In the file they are for “${p.person}”. Choose who that is in this notebook.` : 'Choose who these should be assigned to here.') + (near ? ` (It looks like ${near}.)` : '');
   document.querySelector('input[name=bringto][value=standalone]').checked = true;
   const notes = db.items.filter(i => i.type === 'note').sort((a, b) => (b.updated || '').localeCompare(a.updated || '')).slice(0, 200);
   $('#bringnote').innerHTML = notes.map(i => `<option value="${esc(i.id)}">${esc(i.title || 'Untitled')}</option>`).join('') || '<option value="">(no notes yet)</option>'; $('#bringnote').disabled = true;
@@ -5388,7 +5501,8 @@ function menuForObj(i, c, openFn){
   const setCat = id => { if(c) c.cat = id; else i.category = id; edited(i); refreshViews(); };
   const m = [{l: c ? 'Open in its note' : 'Open', ic: '↗', fn: openFn}];
   if(isTask) m.push({l: o.done ? 'Mark not done' : 'Mark done', ic: '✓', fn: () => { completeToggle(o, i, !o.done); edited(i); refreshViews(); }});
-  if(!c && i.type === 'note' && db.notebooks.length > 1) m.push({hd:'Notebook'}, ...db.notebooks.map(n => ({l:n.name, ic: nbKey(i) === n.id ? '✓' : '', fn: () => moveNote(i, n.id)})));
+  if(!c && i.sheet && SHEETS_APART) m.push({hd:'Folder'}, {l:'Unfiled', ic: !sfById(i.sfolder) ? '✓' : '', fn: () => moveSheet(i, '')}, ...(db.sfolders || []).map(f => ({l:f.name, ic: i.sfolder === f.id ? '✓' : '', fn: () => moveSheet(i, f.id)})), {l:'New folder…', ic:'＋', fn: () => { const nm = (prompt('Name the new folder:', '') || '').trim().slice(0, 60); if(nm){ const f = {id: uid(), name: nm}; (db.sfolders = db.sfolders || []).push(f); moveSheet(i, f.id); } }});
+  else if(!c && i.type === 'note' && db.notebooks.length > 1) m.push({hd:'Notebook'}, ...db.notebooks.map(n => ({l:n.name, ic: nbKey(i) === n.id ? '✓' : '', fn: () => moveNote(i, n.id)})));
   if(!c){
     if(i.pinned) m.push({l:'Unpin', ic:'📌', fn: () => setPin(i, 'off')});
     if(!i.pinned || i.pinAll) m.push({l: i.type === 'note' ? (i.pinAll ? 'Pin to the top of its notebook only' : 'Pin to the top of this notebook') : 'Pin to top', ic:'📌', fn: () => setPin(i, 'nb')});
@@ -5463,6 +5577,16 @@ $('#items').addEventListener('contextmenu', e => {
       {l: nb.shared && nb.shared.on ? 'Sharing options…' : 'Share notebook to a folder…', ic:'⇪', fn: () => nbShareAction(nb, e.clientX, e.clientY)},
       {hd:'Colour'}, ...NB_COLORS.map((c, k) => ({l:['Blue', 'Green', 'Amber', 'Purple', 'Orange', 'Teal'][k], ic: nb.color === c ? '✓' : '', dot:c, fn: () => { nb.color = c; touch(); renderList(); }})),
       {sep:1}, {l:'Delete notebook…', ic:'🗑', cls:'danger', fn: () => removeNotebook(nb.id)}], gh);
+    return;
+  }
+  const sfh = e.target.closest('[data-sfmenu]'), sfo = sfh && sfById(sfh.dataset.sfmenu);          // right-click a spreadsheet folder
+  if(sfo){
+    e.preventDefault();
+    openMenu(e.clientX, e.clientY, [
+      {l:'New spreadsheet here', ic:'＋', fn: () => { sfView = sfo.id; filter = 'sheet'; newItem('sheet'); }},
+      {l:'Rename…', ic:'✎', fn: () => sfRename(sfo.id)},
+      {l:'Move up', ic:'▲', fn: () => sfMoveBy(sfo.id, -1)}, {l:'Move down', ic:'▼', fn: () => sfMoveBy(sfo.id, 1)},
+      {sep:1}, {l:'Delete folder…', ic:'🗑', cls:'danger', fn: () => sfDelete(sfo.id)}], sfh);
     return;
   }
   const row = e.target.closest('.it'); if(!row) return;
@@ -5567,7 +5691,7 @@ function exportItem(i, fmt){
   else if(fmt === 'txt'){ downloadFile(fileSlug(i) + '.txt', itemAsText(i) + '\n', 'text/plain'); toast(`Saved ${fileSlug(i)}.txt to your downloads.`); }
   else printHtml(itemPrintHtml(i));
 }
-const exportEntries = i => [...(i.sheet ? [{l:'Excel (.xlsx)', ic:'⤓', fn: () => shExportXlsx(i)}, {l:'Spreadsheet (.csv)', ic:'⤓', fn: () => shExportCsv(i)}] : []), {l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}];
+const exportEntries = i => [...(i.sheet ? [{l:'Excel (.xlsx)', ic:'⤓', fn: () => shExportXlsx(i)}, {l:'Spreadsheet (.csv)', ic:'⤓', fn: () => shExportCsv(i)}] : []), {l:'Markdown (.md)', ic:'⤓', fn: () => exportItem(i, 'md')}, {l:'Plain text (.txt)', ic:'⤓', fn: () => exportItem(i, 'txt')}, {l:'Print / save as PDF…', ic:'🖨', fn: () => exportItem(i, 'pdf')}, ...(i.type === 'note' ? [{l:'Copy for another device (text)', ic:'⇄', fn: () => copyNoteForDevice(i)}, {l:'Save for another device (.json)', ic:'⇄', fn: () => saveNoteForDevice(i)}] : [])];
 
 /* ---- Trash ---- */
 function setPin(i, mode){                                  // 'off', 'nb' (top of its own notebook) or 'all' (top of every notebook)
@@ -5632,13 +5756,22 @@ function renderToday(){
 }
 
 /* ---- Quick add: type it the way you'd say it ---- */
+let qaNoDate = false;          // “Remove date & time” was pressed for what is being typed: the words stay in the text, but no due date, time or repeat is taken from them
+const QA_BOXES = {apv:'anew', tqapv:'tqa', pqapv:'pqa', qapv2:'qai'};          // preview line -> its text box
+function qaPv(raw, base){          // the preview line under a quick-add box: what will be picked up, with a way to switch the date off (or back on)
+  const t = String(raw || '').trim(); if(!t){ qaNoDate = false; return ''; }
+  const body = base == null ? esc(qaSummary(qaParse(raw))) : base, w = qaNoDate ? parseWhen(qaParse(raw).title) : null;
+  if(qaNoDate) return (w && (w.date || w.time || w.repeat) ? `${body} · <span class="warnmsg">date and time in the words are ignored</span> <a data-act="qadateon">Use them</a>` : body);
+  const q = qaParse(raw); return q.date || q.time || q.repeat ? `${body} <a data-act="qanodate" title="Keep the words as they are, but do not set a due date or time from them">✕ Remove date &amp; time</a>` : body;
+}
+function qaPvRefresh(box){ if(box && box.value.trim()) box.dispatchEvent(new Event('input', {bubbles:true})); }
 function qaParse(raw){
   let text = String(raw).trim(), kind = 'task';
   const words = {note:'note', meeting:'meeting', action:'task', task:'task', n:'note', m:'meeting', a:'task', t:'task'};          // what you can type before the colon; the RAID words depend on this file's settings
   for(const k of raidKinds()){ words[RAID_DEFAULT[k].toLowerCase()] = k; words[raidOne(k).toLowerCase()] = k; if(!RAID_ID_RE.test(k)) words[k[0]] = k; }
   const m = text.match(/^([A-Za-z][\w-]{0,19})\s*:\s*/);
   if(m && words[m[1].toLowerCase()]){ kind = words[m[1].toLowerCase()]; text = text.slice(m[0].length).trim(); }
-  const p = text ? parseWhen(text) : null;
+  const p = text && !qaNoDate ? parseWhen(text) : null;
   const w = (kind === 'task' || RAID_META[kind]) && text ? findAssignee(text, null) : null;
   return {kind, title:text, date:p && p.date || '', time:p && p.time || '', repeat:p && p.repeat || null, assignee:w ? w.name : ''};
 }
@@ -5653,29 +5786,30 @@ function quickAdd(raw, who){                    // who: the person whose page yo
   const i = {id:uid(), pinned:false, pinAll:false, type: q.kind === 'task' || RAID_META[q.kind] ? 'task' : 'note', raid: RAID_META[q.kind] ? q.kind : '', title:q.title, body:'', tags:[], category:'', due:'', date:'', time:'', attendees:'', repeat:null, done:false, checklist:[], created:now(), updated:now()};
   if(q.kind === 'task' || RAID_META[q.kind]){ i.due = q.date; i.time = q.time; i.repeat = RAID_META[q.kind] ? null : q.repeat; if(q.assignee){ const tn = knownName(q.assignee); if(tn) i.assignee = tn; else if(!db.strict){ i.assignee = canonPerson(q.assignee); addPerson(i.assignee); } else unknownWho = q.assignee; } } else { i.date = q.date || (q.kind === 'meeting' ? todayStr() : ''); i.time = q.time; i.notebook = insideNotebook() ? nbView : inboxId(); const qnb = nbById(i.notebook); if(qnb && catById(qnb.category)) i.category = qnb.category; }
   if(who && i.type === 'task' && !i.assignee && !unknownWho) i.assignee = who;
-  db.items.push(i); touch(); refreshViews();
+  db.items.push(i); qaNoDate = false; touch(); refreshViews();
   if(unknownWho) setTimeout(() => resolveAssignee(unknownWho, nm => { if(nm){ i.assignee = nm; i.updated = now(); touch(); refreshViews(); renderRail(); afterAssign(nm); } }), 400); else if(i.assignee) afterAssign(i.assignee);
   toast(`Added “${q.title}” — ${qaSummary(q)}${who ? ' → ' + who : ''}`, () => { db.items = db.items.filter(x => x !== i); touch(); refreshViews(); }, 'Undo', i.id);
   return i;
 }
-function openQuickAdd(){ $('#qai').value = ''; $('#qapv2').textContent = qaSummary(qaParse('')); $('#qadlg').showModal(); $('#qai').focus(); }
+function openQuickAdd(){ qaNoDate = false; $('#qai').value = ''; $('#qapv2').textContent = qaSummary(qaParse('')); $('#qadlg').showModal(); $('#qai').focus(); }
 const oneLine = el => { const re = /\s*[\r\n]+\s*/g; if(re.test(el.value)){ const at = el.selectionStart, before = el.value.slice(0, at).replace(re, ' ').length; el.value = el.value.replace(re, ' '); try { el.setSelectionRange(before, before); } catch {} } };          // the Quick add boxes wrap on screen but hold one line of text (a pasted paragraph becomes one line)
 document.addEventListener('input', e => { const el = e.target; if(el && el.classList && el.classList.contains('qawrap')) oneLine(el); });
-$('#qai').addEventListener('input', e => { $('#qapv2').textContent = qaSummary(qaParse(e.target.value)); });
+$('#qai').addEventListener('input', e => { if(!e.target.value.trim()) qaNoDate = false; $('#qapv2').innerHTML = e.target.value.trim() ? qaPv(e.target.value) : esc(qaSummary(qaParse(''))); });
 $('#qai').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); if(quickAdd(e.target.value)) $('#qadlg').close(); } });
-$('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) : ''; if(e.target.id === 'pqa') $('#pqapv').textContent = e.target.value.trim() ? qaSummary(qaParse(e.target.value)) + (qaParse(e.target.value).assignee ? '' : ' → ' + actPerson) : ''; });
+$('#detail').addEventListener('input', e => { if(e.target.id === 'tqa') $('#tqapv').innerHTML = qaPv(e.target.value); if(e.target.id === 'pqa') $('#pqapv').innerHTML = e.target.value.trim() ? qaPv(e.target.value, esc(qaSummary(qaParse(e.target.value)) + (qaParse(e.target.value).assignee ? '' : ' → ' + actPerson))) : (qaNoDate = false, ''); });
 function addPreview(text){                                // what the Actions add box will pick up from the words
   const t = text.trim(); if(!t) return '';
   const w = findAssignee(t, {assignee:'', checklist:[], attendees:'', type:'task'}), r = parseWhen(t), bits = [];
   if(w) bits.push('assigned to <b>' + esc(w.name) + '</b>');
-  if(r && (r.date || r.time)){
-    if(autoDates) bits.push('due <b>' + esc([r.date ? fmtDay(r.date) : '', r.time ? fmtTime(r.time) : ''].filter(Boolean).join(' ')) + '</b>');
+  if(r && (r.date || r.time) && qaNoDate) bits.push('<span class="warnmsg">the date and time in the words are ignored</span> <a data-act="qadateon">Use them</a>');
+  else if(r && (r.date || r.time)){
+    if(autoDates) bits.push('due <b>' + esc([r.date ? fmtDay(r.date) : '', r.time ? fmtTime(r.time) : ''].filter(Boolean).join(' ')) + '</b> <a data-act="qanodate" title="Keep the words as they are, but do not set a due date or time from them">✕ Remove date &amp; time</a>');
     else bits.push('<span class="warnmsg">a date in the words is being ignored because Auto-detect dates is off</span> <a data-act="autoon">Turn it on</a>');
   }
-  if(r && r.repeat && autoDates) bits.push('repeating');
+  if(r && r.repeat && autoDates && !qaNoDate) bits.push('repeating');
   return bits.length ? 'Will be ' + bits.join(', ') : '';
 }
-$('#detail').addEventListener('input', e => { if(e.target.id === 'anew' && $('#apv')) $('#apv').innerHTML = addPreview(e.target.value); });
+$('#detail').addEventListener('input', e => { if(e.target.id === 'anew' && $('#apv')){ if(!e.target.value.trim()) qaNoDate = false; $('#apv').innerHTML = addPreview(e.target.value); } });
 $('#detail').addEventListener('input', e => {
   if(e.target.id !== 'psearch') return;
   pageQ = e.target.value; clearTimeout(pageQTimer);
@@ -6131,6 +6265,36 @@ document.addEventListener('input', e => {
     const L = tm[2].length + 2; el.setSelectionRange(pos - L, pos);
     let ok = false; try { ok = document.execCommand('insertText', false, todayStr()); } catch {}
     if(!ok){ el.setRangeText(todayStr(), pos - L, pos, 'end'); el.dispatchEvent(new Event('input', {bubbles:true})); }
+  }
+});
+/* ---- the first word of a line starts with a capital (on by default; Settings > Look > Typing) ---- */
+const autoCapOn = () => { try { return localStorage.getItem('notebook-autocap') !== '0'; } catch { return true; } };
+const AC_WORD = /^([\s\u00a0]*)([a-z])([a-z']*)[\s\u00a0]$/;          // only: optional spaces, one plain lower-case word, then the space just typed
+document.addEventListener('input', e => {
+  if(e.inputType !== 'insertText' || !/^[\s\u00a0]$/.test(e.data || '') || e.isComposing || !autoCapOn()) return;
+  const el = e.target; if(!el || MOBILE) return;
+  if(el.isContentEditable){
+    if(!el.classList.contains('rt')) return;
+    const sel = getSelection(); if(!sel.rangeCount || !sel.isCollapsed) return;
+    const n = sel.anchorNode, off = sel.anchorOffset; if(!n || n.nodeType !== 3) return;
+    let blk = n.parentNode; while(blk && blk !== el && !/^(DIV|P|LI|H[1-6]|BLOCKQUOTE|TD|TH)$/.test(blk.nodeName)) blk = blk.parentNode; if(!blk) return;
+    if(blk.closest && blk.closest('pre, code')) return;
+    const pre = document.createRange(); pre.selectNodeContents(blk); pre.setEnd(n, off);
+    const m = AC_WORD.exec(pre.toString()); if(!m) return;
+    const want = m[1].length; let seen = 0, tn = null, to = 0;          // find the text node and offset of the first letter
+    const w = document.createTreeWalker(blk, NodeFilter.SHOW_TEXT);
+    for(let x = w.nextNode(); x; x = w.nextNode()){ const L = x === n ? off : x.nodeValue.length; if(seen + L > want){ tn = x; to = want - seen; break; } seen += L; if(x === n) break; }
+    if(!tn || tn.nodeValue[to] !== m[2]) return;
+    const keep = {n, off: off}, r = document.createRange(); r.setStart(tn, to); r.setEnd(tn, to + 1); sel.removeAllRanges(); sel.addRange(r);
+    let ok = false; try { ok = document.execCommand('insertText', false, m[2].toUpperCase()); } catch {}
+    if(!ok){ tn.replaceData(to, 1, m[2].toUpperCase()); }
+    const c = document.createRange(); try { c.setStart(keep.n, Math.min(keep.off, keep.n.nodeValue.length)); } catch { return; } c.collapse(true); sel.removeAllRanges(); sel.addRange(c);
+  } else if(el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.getAttribute('type') || ''))){
+    if(el.readOnly || el.disabled || el.classList.contains('shin') || el.classList.contains('shfxin') || el.classList.contains('shfind')) return;
+    if(!(el.classList.contains('title') || el.classList.contains('qawrap'))) return;
+    const pos = el.selectionStart; if(pos == null || pos !== el.selectionEnd) return;
+    const lineStart = el.value.lastIndexOf('\n', pos - 1) + 1, m = AC_WORD.exec(el.value.slice(lineStart, pos)); if(!m) return;
+    const at = lineStart + m[1].length; el.setRangeText(m[2].toUpperCase(), at, at + 1, 'preserve');
   }
 });
 function insertToday(){
@@ -6709,7 +6873,7 @@ const shColName = n => { let s = ''; for(n++; n > 0; n = Math.floor((n - 1) / 26
 const shColNum = s => { let n = 0; for(const ch of s) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
 const shKey = (r, c) => shColName(c) + (r + 1);                                                                                                     // zero-based row and column -> "B3"
 const shPos = k => { const m = SH_KEY_RE.exec(k); return m ? {r: +m[2] - 1, c: shColNum(m[1])} : null; };
-const SH_FMT_OK = /^(n|i|p|p0|c|c0|d[2-7w]?)$/;                 // number and date formats a cell can have (General has none)
+const SH_FMT_OK = /^(n|i|p|p0|c|c0|d[2-7w]?|t[1-4]|u[1-3]|dt2?|x:[^\u0000-\u001f]{1,60})$/;                 // number and date formats a cell can have (General has none)
 const shNew = () => ({r:30, c:26, cells:{}, f:{}, w:{}, wr:{}, st:{}, cm:{}, cf:[], dv:[], nm:{}, ln:{}});
 function cleanSheet(s){                                  // a sheet as read from a file: only valid cells, formats and widths, inside the size limit
   if(!s || typeof s !== 'object' || Array.isArray(s)) return null;
@@ -6806,6 +6970,114 @@ function shDateFmt(v, f){                                // a date number shown 
   }
   return shDateText(v);
 }
+/* ---- times, durations and number format codes (the codes are Excel's: h:mm AM/PM, [h]:mm, yyyy-mm-dd hh:mm, 0.00, #,##0, 0.0%) ---- */
+const SH_CODE = {t1:'h:mm AM/PM', t2:'h:mm:ss AM/PM', t3:'h:mm', t4:'hh:mm:ss', u1:'[h]:mm', u2:'[h]:mm:ss', u3:'mm:ss', dt:'yyyy-mm-dd h:mm AM/PM', dt2:'yyyy-mm-dd h:mm'};
+function shTokens(code){                                  // a format code cut into pieces: text, y m d h s (runs), [h] elapsed, AM/PM, fractions of a second
+  const out = []; let i = 0;
+  while(i < code.length){
+    const c = code[i], rest = code.slice(i);
+    if(c === '"'){ let j = code.indexOf('"', i + 1); if(j < 0) j = code.length; out.push({k:'lit', t:code.slice(i + 1, j)}); i = j + 1; }
+    else if(c === '\\'){ out.push({k:'lit', t:code[i + 1] || ''}); i += 2; }
+    else if(c === '_'){ out.push({k:'lit', t:' '}); i += 2; }
+    else if(c === '*'){ i += 2; }
+    else if(c === '['){ const j = code.indexOf(']', i), b = j < 0 ? '' : code.slice(i + 1, j), m = /^(h+|m+|s+)$/i.exec(b); if(j < 0){ out.push({k:'lit', t:c}); i++; } else { if(m) out.push({k:'el', u:m[1][0].toLowerCase(), n:m[1].length}); i = j + 1; } }
+    else if(/^(AM\/PM|A\/P)/i.test(rest)){ const m = /^(AM\/PM|A\/P)/i.exec(rest); out.push({k:'ap', t:m[1]}); i += m[1].length; }
+    else if(/[ymdhs]/i.test(c)){ let j = i; while(j < code.length && code[j].toLowerCase() === c.toLowerCase()) j++; out.push({k:c.toLowerCase(), n:j - i}); i = j; }
+    else if(c === '.' && /^\.0{1,3}/.test(rest) && out.length && (out[out.length - 1].k === 's' || (out[out.length - 1].k === 'el' && out[out.length - 1].u === 's'))){ const m = /^\.(0{1,3})/.exec(rest); out.push({k:'ms', n:m[1].length}); i += m[0].length; }
+    else { out.push({k:'lit', t:c}); i++; }
+  }
+  return out;
+}
+const shIsTimeCode = tk => tk.some(t => ['y', 'd', 'h', 's', 'ap', 'el', 'ms'].includes(t.k)) || tk.some((t, k) => t.k === 'm');
+function shDateCode(v, tk){
+  if(!(v >= 0) && !tk.some(t => t.k === 'el')) return '########';
+  if(v >= 2958466) return '########';
+  const neg = v < 0; v = Math.abs(v);
+  const ms = tk.find(t => t.k === 'ms'), sc = ms ? Math.pow(10, ms.n) : 1, T = Math.round(v * 86400 * sc), sec = Math.floor(T / sc), fr = T - sec * sc;
+  const day = Math.floor(sec / 86400), rem = sec - day * 86400, h24 = Math.floor(rem / 3600), mi = Math.floor(rem % 3600 / 60), se = rem % 60;
+  const ymd = day >= 1 ? shYmd(day) : [1900, 1, 0], dow = day >= 1 ? new Date(Date.UTC(ymd[0], ymd[1] - 1, ymd[2])).getUTCDay() : 6;
+  const ap = tk.some(t => t.k === 'ap'), p2 = n => String(n).padStart(2, '0'), real = tk.filter(t => t.k !== 'lit' && t.k !== 'ms');
+  let out = neg ? '-' : '';
+  tk.forEach((t, k) => {
+    switch(t.k){
+      case 'lit': out += t.t; break;
+      case 'y': out += t.n <= 2 ? p2(ymd[0] % 100) : String(ymd[0]).padStart(4, '0'); break;
+      case 'd': out += t.n === 1 ? ymd[2] : t.n === 2 ? p2(ymd[2]) : t.n === 3 ? SH_DAYS[dow].slice(0, 3) : SH_DAYS[dow]; break;
+      case 'h': { const h = ap ? (h24 % 12 || 12) : h24; out += t.n >= 2 ? p2(h) : h; break; }
+      case 's': out += t.n >= 2 ? p2(se) : se; break;
+      case 'ms': out += String(fr).padStart(t.n, '0'); break;
+      case 'ap': out += ap && h24 >= 12 ? (/am\/pm/i.test(t.t) ? (t.t === t.t.toLowerCase() ? 'pm' : 'PM') : (t.t === t.t.toLowerCase() ? 'p' : 'P')) : (/am\/pm/i.test(t.t) ? (t.t === t.t.toLowerCase() ? 'am' : 'AM') : (t.t === t.t.toLowerCase() ? 'a' : 'A')); break;
+      case 'el': { const n = t.u === 'h' ? Math.floor(sec / 3600) : t.u === 'm' ? Math.floor(sec / 60) : sec; out += t.n >= 2 ? String(n).padStart(t.n, '0') : n; break; }
+      case 'm': {                                       // minutes when it follows hours or comes before seconds, otherwise the month
+        let before = null, after = null; for(let j = k - 1; j >= 0; j--) if(tk[j].k !== 'lit'){ before = tk[j]; break; } for(let j = k + 1; j < tk.length; j++) if(tk[j].k !== 'lit'){ after = tk[j]; break; }
+        const isMin = (before && (before.k === 'h' || (before.k === 'el' && before.u === 'h'))) || (after && (after.k === 's' || (after.k === 'el' && after.u === 's')));
+        if(isMin) out += t.n >= 2 ? p2(mi) : mi;
+        else out += t.n === 1 ? ymd[1] : t.n === 2 ? p2(ymd[1]) : t.n === 3 ? SH_MONTHS[ymd[1] - 1].slice(0, 3) : t.n === 4 ? SH_MONTHS[ymd[1] - 1] : SH_MONTHS[ymd[1] - 1][0];
+        break;
+      }
+    }
+  });
+  return out;
+}
+function shNumCode(v, tk, sections){                       // 0.00  #,##0  0%  0.0E+00  "$"#,##0.00  000-0000
+  let neg = v < 0; v = Math.abs(v);
+  let pct = 0; tk.forEach(t => { if(t.k === 'lit' && t.t === '%') pct++; });
+  const dot = tk.findIndex(t => t.k === 'lit' && t.t === '.'), isPH = t => t.k === 'lit' && (t.t === '0' || t.t === '#' || t.t === '?');
+  const intIdx = [], fracIdx = []; tk.forEach((t, k) => { if(isPH(t)){ if(dot >= 0 && k > dot) fracIdx.push(k); else intIdx.push(k); } });
+  if(!intIdx.length && !fracIdx.length) return tk.map(t => t.k === 'lit' ? t.t : '').join('');          // plain text, no digits
+  const lastInt = intIdx.length ? intIdx[intIdx.length - 1] : -1, lastAny = Math.max(lastInt, fracIdx.length ? fracIdx[fracIdx.length - 1] : -1); let scale = 0; for(let k = lastAny + 1; k < tk.length && tk[k].k === 'lit' && tk[k].t === ','; k++) scale++;
+  const thousands = intIdx.length > 1 && tk.some((t, k) => t.k === 'lit' && t.t === ',' && k > intIdx[0] && k < lastInt);
+  const ePos = tk.findIndex((t, k) => t.k === 'lit' && /^[Ee]$/.test(t.t) && tk[k + 1] && tk[k + 1].k === 'lit' && /^[+-]$/.test(tk[k + 1].t));
+  v = v * Math.pow(100, pct) / Math.pow(1000, scale);
+  let expText = '';
+  if(ePos >= 0){                                          // scientific: 0.00E+00
+    const ed = tk.slice(ePos + 2).filter(t => t.k === 'lit' && t.t === '0').length, idig = Math.max(1, intIdx.filter(k => k < ePos).length);
+    let ex = v === 0 ? 0 : Math.floor(Math.log10(v)) - (idig - 1); v = v / Math.pow(10, ex);
+    expText = 'E' + (ex < 0 ? '-' : tk[ePos + 1].t === '+' ? '+' : '') + String(Math.abs(ex)).padStart(ed, '0');
+  }
+  const fd = fracIdx.filter(k => ePos < 0 || k < ePos).length;
+  let s = (Math.round((v + 1e-12 * Math.max(1, v)) * Math.pow(10, fd)) / Math.pow(10, fd)).toFixed(fd), [is, fs = ''] = s.split('.');
+  const zeros = intIdx.filter(k => tk[k].t === '0').length;
+  if(is === '0' && zeros === 0) is = '';
+  is = is.padStart(zeros, '0');
+  if(thousands) is = is.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  let fl = fs.split(''); for(let k = fracIdx.length - 1; k >= 0 && fl.length; k--){ if(tk[fracIdx[k]].t !== '0' && fl[k] === '0') fl[k] = tk[fracIdx[k]].t === '?' ? ' ' : ''; else break; } fs = fl.join('');
+  let out = '', ip = 0, fp = 0; const nI = intIdx.filter(k => ePos < 0 || k < ePos).length, fill = new Array(nI), d = is.split('');
+  for(let k = nI - 1; k >= 0; k--){ const t = tk[intIdx[k]], pad = t.t === '0' ? '0' : t.t === '?' ? ' ' : ''; if(k === 0){ fill[k] = d.join('') || pad; d.length = 0; } else fill[k] = d.length ? d.pop() : pad; }
+  tk.forEach((t, k) => {
+    if(t.k !== 'lit'){ return; }
+    if(ePos >= 0 && k === ePos){ out += expText; return; } if(ePos >= 0 && k === ePos + 1) return; if(ePos >= 0 && k > ePos + 1 && /^[0#?]$/.test(t.t)) return;
+    if(t.t === ','){ if(thousands && k > intIdx[0] && k < lastInt) return; if(k > lastAny && k <= lastAny + scale) return; out += ','; return; }
+    if(t.t === '.'){ if(k === dot){ out += fd || fracIdx.length ? '.' : ''; return; } out += '.'; return; }
+    if(isPH(t)){
+      if(dot >= 0 && k > dot){ out += fp < fs.length ? fs[fp++] : (t.t === '0' ? '0' : t.t === '?' ? ' ' : ''); return; }
+      const at = ip++; if(at >= nI) return;
+      if(thousands){ if(at === 0) out += is; return; }
+      out += fill[at]; return;
+    }
+    out += t.t;
+  });
+  out = out.replace(/\.$/, (m) => fd === 0 && dot >= 0 && !fracIdx.length ? '' : m);
+  return (neg && sections === 1 && /[1-9]/.test(out) ? '-' : '') + out;
+}
+function shFormatCode(v, code){
+  code = String(code == null ? '' : code); if(code === '' || /^general$/i.test(code)) return shNumText(v, '');
+  const parts = []; { let cur = '', q = false; for(const ch of code){ if(ch === '"') q = !q; if(ch === ';' && !q){ parts.push(cur); cur = ''; } else cur += ch; } parts.push(cur); }
+  let use = parts[0], n = v;
+  if(v < 0 && parts.length > 1){ use = parts[1]; n = Math.abs(v); } else if(v === 0 && parts.length > 2) use = parts[2];
+  const tk = shTokens(use);
+  if(shIsTimeCode(tk)) return shDateCode(n, tk);
+  return shNumCode(n, tk, parts.length > 1 && v < 0 ? 2 : 1);
+}
+function shTimeParse(raw){                                 // 9 am, 9:30 PM, 13:45, 9:30:15, 30:15 (over a day: a duration) -> {v: fraction of a day, auto: format}
+  const t = String(raw).trim(), m = /^(\d{1,3})(?::(\d{1,2}))?(?::(\d{1,2})(?:\.\d+)?)?(?:\s*([AaPp])\.?[Mm]?\.?)?$/.exec(t); if(!m) return null;
+  const h = +m[1], mi = m[2] === undefined ? 0 : +m[2], se = m[3] === undefined ? 0 : +m[3], ap = m[4] ? m[4].toLowerCase() : '';
+  if(m[2] === undefined && !ap) return null;                      // a bare number is a number
+  if(mi > 59 || se > 59 || (m[2] !== undefined && m[2].length !== 2 && !ap)) return null;
+  if(ap){ if(h < 1 || h > 12) return null; return {v: (((h % 12) + (ap === 'p' ? 12 : 0)) * 3600 + mi * 60 + se) / 86400, auto: m[3] === undefined ? 't1' : 't2'}; }
+  if(h >= 24) return {v: (h * 3600 + mi * 60 + se) / 86400, auto: m[3] === undefined ? 'u1' : 'u2'};
+  return {v: (h * 3600 + mi * 60 + se) / 86400, auto: m[3] === undefined ? 't3' : 't4'};
+}
 const SH_LIT = /^(-|\+)?(\$)?(-|\+)?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)(%)?$/;
 function shLiteral(raw){                                 // what typing this means: a number or date (with the format it suggests) or plain text
   const t = String(raw).trim();
@@ -6822,6 +7094,9 @@ function shLiteral(raw){                                 // what typing this mea
   if(d && shMonthNo(d[1]) && dOK(+d[3], shMonthNo(d[1]), +d[2])) return {v: shSerial(+d[3], shMonthNo(d[1]), +d[2]), auto:'d2'};
   d = /^(\d{1,2}) ([A-Za-z]{3,9})\.? (\d{4})$/.exec(t);                      // 17 Nov 2026
   if(d && shMonthNo(d[2]) && dOK(+d[3], shMonthNo(d[2]), +d[1])) return {v: shSerial(+d[3], shMonthNo(d[2]), +d[1]), auto:'d4'};
+  const tm = shTimeParse(t); if(tm) return tm;                              // 9 am, 9:30 PM, 13:45, 30:15
+  const dt = /^(.*\S)(?:\s+|T)(\d{1,2}(?::\d{2}){0,2}(?:\.\d+)?(?:\s*[AaPp]\.?[Mm]?\.?)?)$/.exec(t);          // 2026-11-17 9:30, Nov 17, 2026 9 am
+  if(dt){ const dl = shLiteral(dt[1]), tl = shTimeParse(dt[2]); if(dl && typeof dl.v === 'number' && /^d\d?$|^dw$/.test(dl.auto) && tl && /^t/.test(tl.auto)) return {v: dl.v + tl.v, auto: tl.auto === 't1' || tl.auto === 't2' ? 'dt' : 'dt2'}; }
   return {v:String(raw), auto:''};
 }
 
@@ -7090,6 +7365,33 @@ function shRun(src, cellAt, rangeAt, gridAt){          // cellAt(r, c, sheetName
         const v = g[r - 1][c - 1]; if(v instanceof ShErr) throw v; return v;
       }
       case 'TODAY': argc(A, 0, 0); { const d = new Date(); return shSerial(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+      case 'NOW': argc(A, 0, 0); { const d = new Date(); return shSerial(d.getFullYear(), d.getMonth() + 1, d.getDate()) + (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / 86400; }
+      case 'TIME': { argc(A, 3, 3); const h = Math.trunc(num(ev(A[0]))), mi = Math.trunc(num(ev(A[1]))), se = Math.trunc(num(ev(A[2]))), t = h * 3600 + mi * 60 + se; if(t < 0 || h > 32767) throw E('#NUM!'); return (t % 86400) / 86400; }
+      case 'HOUR': case 'MINUTE': case 'SECOND': {
+        argc(A, 1, 1); const x = ev(A[0]); let n; if(typeof x === 'string'){ const l = shLiteral(x); if(typeof l.v !== 'number') throw E('#VALUE!'); n = l.v; } else n = num(x);
+        const t = Math.round((n - Math.floor(n)) * 86400) % 86400; return f === 'HOUR' ? Math.floor(t / 3600) : f === 'MINUTE' ? Math.floor(t % 3600 / 60) : t % 60;
+      }
+      case 'TIMEVALUE': case 'DATEVALUE': {
+        argc(A, 1, 1); const l = shLiteral(txt(ev(A[0]))); if(typeof l.v !== 'number' || !/^(d|t|u)/.test(l.auto)) throw E('#VALUE!');
+        if(f === 'DATEVALUE'){ if(!/^d/.test(l.auto)) throw E('#VALUE!'); return Math.floor(l.v); } return l.v - Math.floor(l.v);
+      }
+      case 'TEXT': { argc(A, 2, 2); const v = ev(A[0]); if(v instanceof ShErr) throw v; const code = txt(ev(A[1])); if(typeof v === 'number') return shFormatCode(v, code); if(v === null) return shFormatCode(0, code); if(typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'; return String(v); }
+      case 'NETWORKDAYS': case 'WORKDAY': {
+        argc(A, 2, 3); const a = Math.trunc(num(ev(A[0]))), b = Math.trunc(num(ev(A[1]))), hol = new Set(A.length > 2 ? nums([A[2]]).map(Math.trunc) : []), work = d => { const w = (((d - SH_EPOCH) % 7) + 11) % 7; return w !== 0 && w !== 6 && !hol.has(d); };
+        if(f === 'NETWORKDAYS'){ const lo = Math.min(a, b), hi = Math.max(a, b); if(hi - lo > 40000) throw E('#NUM!'); let n = 0; for(let d = lo; d <= hi; d++) if(work(d)) n++; return a <= b ? n : -n; }
+        let d = a, left = Math.abs(b), step = b < 0 ? -1 : 1; if(left > 40000) throw E('#NUM!'); while(left > 0){ d += step; if(work(d)) left--; } return d;
+      }
+      case 'DATEDIF': {
+        argc(A, 3, 3); const a = Math.trunc(num(ev(A[0]))), b = Math.trunc(num(ev(A[1]))), u = txt(ev(A[2])).toUpperCase(); if(a > b) throw E('#NUM!');
+        const [y1, m1, d1] = shYmd(a), [y2, m2, d2] = shYmd(b); let months = (y2 - y1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0);
+        switch(u){
+          case 'Y': return Math.floor(months / 12); case 'M': return months; case 'D': return b - a;
+          case 'YM': return ((months % 12) + 12) % 12;
+          case 'MD': { const tm = (y1 * 12 + (m1 - 1)) + months, ny = Math.floor(tm / 12), nm = (tm % 12 + 12) % 12 + 1; return b - shSerial(ny, nm, Math.min(d1, new Date(Date.UTC(ny, nm, 0)).getUTCDate())); }
+          case 'YD': { let y = y2; let st = shSerial(y, m1, Math.min(d1, new Date(Date.UTC(y, m1, 0)).getUTCDate())); if(st > b){ y--; st = shSerial(y, m1, Math.min(d1, new Date(Date.UTC(y, m1, 0)).getUTCDate())); } return b - st; }
+        }
+        throw E('#NUM!');
+      }
       case 'DAYS': argc(A, 2, 2); return Math.trunc(num(ev(A[0]))) - Math.trunc(num(ev(A[1])));
       case 'EDATE': {
         argc(A, 2, 2); const [y, m, d] = shYmd(num(ev(A[0]))), n = Math.trunc(num(ev(A[1]))), tm = (y * 12 + (m - 1)) + n, ny = Math.floor(tm / 12), nm = (tm % 12 + 12) % 12 + 1;
@@ -7163,15 +7465,39 @@ function shNumText(v, f){
   if(f === 'p0') return rnd(v * 100) + '%';
   if(f === 'c0') return (v < 0 ? '-$' : '$') + Math.abs(rnd(v)).toLocaleString('en-US');
   if(f === 'i') return rnd(v).toLocaleString('en-US');
+  if(f && f[0] === 'x') return shFormatCode(v, f.slice(2));
+  if(f && SH_CODE[f] !== undefined) return shFormatCode(v, SH_CODE[f]);
   if(f && f[0] === 'd' && v >= 1 && v < 2958466) return shDateFmt(v, f);
   return String(+v.toPrecision(15));
 }
 const shShow = (v, f) => v instanceof ShErr ? v.e : v === null || v === undefined ? '' : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : typeof v === 'number' ? shNumText(v, f) : String(v);          // what the cell displays
-function shFmtOf(s, k, raw){ return s.f[k] || (raw ? (raw[0] === '=' ? (/^=\s*(TODAY|EDATE|EOMONTH|DATE)\s*\(/i.test(raw) ? 'd' : '') : shLiteral(raw).auto) : ''); }
+function shFmtOf(s, k, raw, depth = 0){
+  if(s.f[k]) return s.f[k]; if(!raw) return '';
+  if(raw[0] !== '=') return shLiteral(raw).auto;
+  if(/^=\s*(TODAY|EDATE|EOMONTH|DATE|WORKDAY)\s*\(/i.test(raw)) return 'd';
+  if(/^=\s*NOW\s*\(/i.test(raw)) return 'dt';
+  if(/^=\s*(TIME|TIMEVALUE)\s*\(/i.test(raw) && shWholeCall(raw)) return 't1';
+  return depth < 3 ? shInferFmt(s, raw, depth) : '';
+}
+function shWholeCall(raw){                                // is the formula just one function call, like =TIME(9,0,0), with nothing calculated around it?
+  const t = raw.replace(/"(?:[^"]|"")*"/g, '""'), o = t.indexOf('('); if(o < 0) return false; let d = 0;
+  for(let i = o; i < t.length; i++){ if(t[i] === '(') d++; else if(t[i] === ')'){ d--; if(d === 0) return t.slice(i + 1).trim() === ''; } }
+  return false;
+}
+const shIsTimeFmt = f => /^(t[1-4]|u[1-3]|dt2?)$/.test(f || '');
+const shDurOf = f => f === 'u3' ? 'u3' : (f === 't2' || f === 't4' || f === 'u2') ? 'u2' : 'u1';          // the duration format that goes with a time format
+function shInferFmt(s, raw, depth){                        // a formula over times shows as a time or duration, as in Excel (=B2-A2 is a duration, =SUM(C2:C9) of durations is one too)
+  const R = '\\$?[A-Za-z]{1,2}\\$?\\d{1,4}', fo = ref => { const p = /^\$?([A-Za-z]{1,2})\$?(\d{1,4})$/.exec(ref); if(!p) return ''; const kk = shKey(+p[2] - 1, shColNum(p[1].toUpperCase())); return shFmtOf(s, kk, s.cells[kk], depth + 1); };
+  let m = new RegExp('^=\\s*(' + R + ')\\s*([-+])\\s*(' + R + ')\\s*$').exec(raw);
+  if(m){ const a = fo(m[1]), b = fo(m[3]); if(shIsTimeFmt(a) && shIsTimeFmt(b)) return shDurOf(a); if(shIsTimeFmt(a)) return a; if(m[2] === '+' && shIsTimeFmt(b)) return b; return ''; }
+  m = new RegExp('^=\\s*(SUM|AVERAGE|AVG|MIN|MAX|MEDIAN)\\s*\\(\\s*(' + R + ')').exec(raw);
+  if(m){ const a = fo(m[2]); if(!shIsTimeFmt(a)) return ''; return m[1].toUpperCase() === 'SUM' ? shDurOf(a) : a; }
+  return '';
+}
 function shPlain(v, f){                                  // what goes into a CSV or onto the clipboard: numbers without thousands separators
   if(v instanceof ShErr) return v.e; if(v === null || v === undefined) return '';
   if(typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
-  if(typeof v === 'number'){ if(f === 'p' || f === 'p0' || (f && f[0] === 'd')) return shNumText(v, f); if(f === 'c' || f === 'n') return String(+v.toFixed(2)); if(f === 'c0' || f === 'i') return String((v < 0 ? -1 : 1) * Math.round(Math.abs(v) + 1e-9)); return shNumText(v, ''); }
+  if(typeof v === 'number'){ if(f === 'p' || f === 'p0' || (f && /^[dtux]/.test(f))) return shNumText(v, f); if(f === 'c' || f === 'n') return String(+v.toFixed(2)); if(f === 'c0' || f === 'i') return String((v < 0 ? -1 : 1) * Math.round(Math.abs(v) + 1e-9)); return shNumText(v, ''); }
   return String(v);
 }
 
@@ -7309,7 +7635,7 @@ function shTabSet(t, save){
   document.querySelectorAll('#detail .shtab').forEach(b => b.classList.toggle('on', b.dataset.shtab === t));
   if(save) try { localStorage.setItem('notebook-shtab', t); } catch {}
 }
-const SH_FMT_OPTS = '<option value="g">General</option><optgroup label="Numbers"><option value="n">Number 1,234.50</option><option value="i">Whole number 1,235</option><option value="p">Percent 12.5%</option><option value="p0">Percent, no decimals 13%</option><option value="c">Currency $1,234.50</option><option value="c0">Currency, no cents $1,235</option></optgroup><optgroup label="Dates"><option value="d">2026-11-17</option><option value="d3">11/17/2026</option><option value="d2">Nov 17, 2026</option><option value="d4">17 Nov 2026</option><option value="d6">Nov 17</option><option value="d7">November 2026</option><option value="d5">Tuesday, November 17, 2026</option><option value="dw">Tuesday</option></optgroup>';
+const SH_FMT_OPTS = '<option value="g">General</option><optgroup label="Numbers"><option value="n">Number 1,234.50</option><option value="i">Whole number 1,235</option><option value="p">Percent 12.5%</option><option value="p0">Percent, no decimals 13%</option><option value="c">Currency $1,234.50</option><option value="c0">Currency, no cents $1,235</option></optgroup><optgroup label="Dates"><option value="d">2026-11-17</option><option value="d3">11/17/2026</option><option value="d2">Nov 17, 2026</option><option value="d4">17 Nov 2026</option><option value="d6">Nov 17</option><option value="d7">November 2026</option><option value="d5">Tuesday, November 17, 2026</option><option value="dw">Tuesday</option></optgroup><optgroup label="Times and durations"><option value="t1">Time 9:30 AM</option><option value="t3">Time 9:30 (24-hour)</option><option value="t2">Time 9:30:15 AM</option><option value="t4">Time 09:30:15 (24-hour)</option><option value="u1">Duration 36:15</option><option value="u2">Duration 36:15:30</option><option value="u3">Minutes and seconds 15:30</option></optgroup><optgroup label="Date and time"><option value="dt">2026-11-17 9:30 AM</option><option value="dt2">2026-11-17 9:30 (24-hour)</option></optgroup><optgroup label="Your own"><option value="x">Custom format…</option></optgroup>';
 function shHtml(i){
   const s = i.sheet; shFit(s); const vals = shValues(s), w = c => s.w[c] || SH_W; shShown = new Map();
   const ctx = shCtx(s, vals); let total = 46, cols = '', ths = '';
@@ -7388,7 +7714,7 @@ function shShowSel(i){
   const k = shKey(sel.ar, sel.ac), nm = document.querySelector('#detail .shname'), fx = document.querySelector('#detail .shfxin'), fm = document.querySelector('#detail [data-shfmt]');
   if(nm) nm.textContent = sel.r1 === sel.r2 && sel.c1 === sel.c2 ? k : shKey(sel.r1, sel.c1) + ':' + shKey(sel.r2, sel.c2);
   if(fx && document.activeElement !== fx){ fx.value = i.sheet.cells[k] || ''; fx.dataset.k = k; }
-  if(fm) fm.value = i.sheet.f[k] || (i.sheet.cells[k] ? shLiteral(i.sheet.cells[k]).auto : '') || 'g';
+  if(fm){ const fv = i.sheet.f[k] || (i.sheet.cells[k] ? shFmtOf(i.sheet, k, i.sheet.cells[k]) : '') || 'g', xo = fm.querySelector('option[value=x]'); if(xo) xo.textContent = fv[0] === 'x' ? 'Custom: ' + fv.slice(2) : 'Custom format…'; fm.value = fv[0] === 'x' ? 'x' : fv; if(fm.value !== (fv[0] === 'x' ? 'x' : fv)) fm.value = 'g'; }
   const wb = document.querySelector('#detail [data-sh=wrap]'); if(wb) wb.classList.toggle('on', !!i.sheet.wr[k]);
   shToolbarState(i); shGuideIdle(i);
   const fz = document.querySelector('#detail [data-shfz]'), z = i.sheet.fz; if(fz){ fz.options[0].textContent = z ? 'Frozen: ' + [z.r ? z.r + (z.r === 1 ? ' row' : ' rows') : '', z.c ? z.c + (z.c === 1 ? ' column' : ' columns') : ''].filter(Boolean).join(', ') : 'Freeze: off'; fz.value = ''; }
@@ -7507,9 +7833,9 @@ const SH_FNS = [['IF', 'test, if_true, if_false', 'one answer or the other'], ['
   ['COUNT', 'range', 'how many cells hold a number'], ['COUNTA', 'range', 'how many cells are not empty'], ['PRODUCT', 'numbers', 'multiplies them'], ['ABS', 'number', 'without its minus sign'], ['ROUND', 'number, digits', 'rounds'], ['ROUNDUP', 'number, digits', 'rounds away from zero'], ['ROUNDDOWN', 'number, digits', 'rounds toward zero'],
   ['SQRT', 'number', 'square root'], ['POWER', 'number, power', 'raises to a power'], ['MOD', 'number, divisor', 'the remainder'], ['LARGE', 'range, k', 'the k-th biggest'], ['SMALL', 'range, k', 'the k-th smallest'], ['RANK', 'value, range', 'its place in the range, 1 = biggest'],
   ['CONCAT', 'text, text, …', 'joins text together'], ['LEFT', 'text, count', 'the first letters'], ['RIGHT', 'text, count', 'the last letters'], ['UPPER', 'text', 'CAPITALS'], ['LEN', 'text', 'how many characters'], ['TRIM', 'text', 'removes extra spaces'],
-  ['TEXTBEFORE', 'text, delimiter', 'what comes before it'], ['TEXTAFTER', 'text, delimiter', 'what comes after it'], ['TEXTSPLIT', 'text, column_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]', 'splits into cells to the right and below'],
+  ['TEXT', 'value, format', 'shows a number or date in a format, like "h:mm AM/PM"'], ['TEXTBEFORE', 'text, delimiter', 'what comes before it'], ['TEXTAFTER', 'text, delimiter', 'what comes after it'], ['TEXTSPLIT', 'text, column_delimiter, [row_delimiter], [ignore_empty], [match_mode], [pad_with]', 'splits into cells to the right and below'],
   ['XLOOKUP', 'find, look_in, return_from, if_not_found', 'look up and give back the match'], ['INDEX', 'range, row, column', 'the value at that place in the range'], ['AVERAGEIF', 'range, criteria, average_range', 'average of the matching cells'], ['AVERAGEIFS', 'average_range, range, criteria, …', 'average with several conditions'], ['SUMIFS', 'sum_range, range, criteria, …', 'add up with several conditions'], ['COUNTIFS', 'range, criteria, …', 'count with several conditions'], ['SUMPRODUCT', 'range, range, …', 'multiply, then add up'], ['VLOOKUP', 'find, table, column, 0', 'look up in the first column of a table'], ['FILTER', 'range, test, if_empty', 'only the rows that pass a test (fills cells)'], ['SORT', 'range, column, order', 'the rows sorted (fills cells)'], ['DATE', 'year, month, day', 'a date'], ['YEAR', 'date', 'the year'], ['MONTH', 'date', 'the month, 1 to 12'], ['DAY', 'date', 'the day of the month'], ['WEEKDAY', 'date, type', 'day of the week, 1 to 7'], ['EOMONTH', 'date, months', 'the last day of a month'],
-  ['MATCH', 'find, range, 0', 'the position of a value in a list (0 = exact)'], ['SEQUENCE', 'rows, columns, start, step', 'a run of numbers, filling cells'], ['TODAY', '', 'today’s date'], ['DAYS', 'end, start', 'days between two dates'], ['EDATE', 'date, months', 'a date some months later']];
+  ['MATCH', 'find, range, 0', 'the position of a value in a list (0 = exact)'], ['SEQUENCE', 'rows, columns, start, step', 'a run of numbers, filling cells'], ['TODAY', '', 'today’s date'], ['DAYS', 'end, start', 'days between two dates'], ['EDATE', 'date, months', 'a date some months later'], ['NOW', '', 'today’s date and the time right now'], ['TIME', 'hour, minute, second', 'a time of day'], ['TIMEVALUE', 'text', 'the time written in some text'], ['HOUR', 'time', 'the hour of a time'], ['MINUTE', 'time', 'the minute of a time'], ['SECOND', 'time', 'the second of a time'], ['DATEVALUE', 'text', 'the date written in some text'], ['NETWORKDAYS', 'start, end, [holidays]', 'working days between two dates'], ['WORKDAY', 'start, days, [holidays]', 'the date some working days away'], ['DATEDIF', 'start, end, unit', 'years (Y), months (M), days (D) between dates']];
 let shAcIdx = 0, shAcFor = null, shPoint = null;
 /* ---- the formula guide: a line under the formula bar that stays in view. While you write a formula it shows the function you are inside and which part comes next; otherwise a reminder, or the function of the selected cell ---- */
 const SH_GUIDE_INTRO = 'Formulas start with =. Type a function name and press Tab to fill it in; click or drag over cells to add them.';
@@ -7712,6 +8038,14 @@ function shFreeze(i){                                      // frozen rows and co
     if(frozenRow) top += h;
   }
 }
+function shCustomFormat(i){                                 // type your own format code, like Excel's Custom
+  const sel = shSelOf(i), k = shKey(sel.ar, sel.ac), s = i.sheet, cur = s.f[k] && s.f[k][0] === 'x' ? s.f[k].slice(2) : '', v = shValues(s).get(k), sample = typeof v === 'number' ? v : 45978.5625;
+  const ex = [['h:mm AM/PM', 'Time'], ['[h]:mm', 'Hours over 24'], ['[h]:mm:ss', 'Hours, minutes, seconds'], ['yyyy-mm-dd hh:mm', 'Date and time'], ['dddd, mmmm d', 'Tuesday, November 17'], ['0.00', 'Two decimals'], ['#,##0', 'Thousands'], ['0.0%', 'Percent'], ['"$"#,##0.00', 'Dollars'], ['0.0" kg"', 'With a unit'], ['[h]" h "mm" min"', 'Hours and minutes in words']];
+  const d = shDialog('Custom format', `<p style="margin:0 0 8px;color:var(--mute);font-size:13px">Write a format the way Excel does. The cell keeps its value; only how it shows changes.</p><input type="text" class="shfcode" value="${esc(cur)}" placeholder="for example h:mm AM/PM" maxlength="60" spellcheck="false" style="width:100%"><p class="shfprev" style="margin:8px 0"></p><div class="shfex">${ex.map(([c, l]) => `<button data-code="${esc(c)}" title="${esc(l)}">${esc(c)}</button>`).join(' ')}</div>`, {ok:'Apply', close:'Cancel', onOk: dd => { const c = dd.querySelector('.shfcode').value.trim(); if(!c){ shMsg(dd, 'Type a format, or press Cancel.'); return false; } shSetFormat(i, 'x:' + c); } });
+  const inp = d.querySelector('.shfcode'), pv = d.querySelector('.shfprev'), upd = () => { const c = inp.value.trim(); pv.textContent = c ? 'Looks like: ' + shFormatCode(sample, c) : ''; };
+  d.addEventListener('input', upd); d.addEventListener('click', e => { const b = e.target.closest('[data-code]'); if(b){ inp.value = b.dataset.code; upd(); inp.focus(); } });
+  upd(); inp.focus(); d.addEventListener('close', () => { try { shToolbarState(i); } catch {} });
+}
 function shSetFormat(i, f){
   const sel = shSelOf(i), area = (sel.r2 - sel.r1 + 1) * (sel.c2 - sel.c1 + 1);
   shDo(i, s => {
@@ -7844,7 +8178,7 @@ $('#detail').addEventListener('click', e => {
 $('#detail').addEventListener('change', e => {
   const t = e.target; if(MOBILE || !t.matches) return;
   if(t.matches('[data-shfz]')){ const i = shItem(); const v = t.value; t.value = ''; if(i && v) shFreezeSet(i, v); shFocus(); return; }
-  if(t.matches('[data-shfmt]')){ const i = shItem(); if(i){ shSetFormat(i, t.value); shFocus(); } }
+  if(t.matches('[data-shfmt]')){ const i = shItem(); if(i){ if(t.value === 'x') shCustomFormat(i); else { shSetFormat(i, t.value); shFocus(); } } }
   else if(t.id === 'shfile'){ const i = shItem(), f = t.files && t.files[0]; t.value = ''; if(i && f) shImportFile(i, f); }
 });
 $('#detail').addEventListener('input', e => {
@@ -7997,7 +8331,7 @@ function shStat(i){
   if(n < 2){ el.textContent = 'Ready · select several cells to see their count, sum and average'; el.hidden = false; return; }
   const vals = shValues(s); let cnt = 0, num = 0, sum = 0, min = Infinity, max = -Infinity;
   for(let r = sel.r1; r <= sel.r2; r++) for(let c = sel.c1; c <= sel.c2; c++){ const v = vals.get(shKey(r, c)); if(shBlank(v)) continue; cnt++; if(typeof v === 'number'){ num++; sum += v; if(v < min) min = v; if(v > max) max = v; } }
-  const ak = shKey(sel.ar, sel.ac), f = shFmtOf(s, ak, s.cells[ak]), nf = f && f[0] !== 'd' ? f : '', fmt = x => shNumText(+x.toPrecision(12), nf);
+  const ak = shKey(sel.ar, sel.ac), f = shFmtOf(s, ak, s.cells[ak]), nf = shIsTimeFmt(f) ? shDurOf(f) : (f && f[0] !== 'd' ? f : ''), fmt = x => shNumText(+x.toPrecision(12), nf);
   el.hidden = false;
   el.innerHTML = num ? `<span>Sum <b>${esc(fmt(sum))}</b></span><span>Average <b>${esc(fmt(sum / num))}</b></span><span>Count <b>${cnt}</b></span><span>Min <b>${esc(fmt(min))}</b></span><span>Max <b>${esc(fmt(max))}</b></span>` : `<span>Count <b>${cnt}</b></span>`;
 }
@@ -8226,7 +8560,7 @@ function shFhPlace(i){
 function shSeriesOf(raws, s, ks){                         // how a run of cells goes on: numbers, dates and "Row 1, Row 2" continue; anything else repeats. Returns (steps, forward) -> text, or null
   const lit = raws.map(r => r === undefined || r[0] === '=' ? null : shLiteral(r));
   const nums = lit.every(l => l && typeof l.v === 'number');
-  const fmtNum = (v, k0) => { const l = lit[k0], raw = raws[k0], auto = (s.f[ks[k0]]) || l.auto; if(auto && auto[0] === 'd') return shDateFmt(Math.round(v), auto); if(l.auto === 'p' || /%\s*$/.test(raw)) return +(v * 100).toFixed(8) + '%'; if(l.auto === 'c' || /^\s*[-+]?\$/.test(raw)) return (v < 0 ? '-$' : '$') + Math.abs(+v.toFixed(6)); return String(+v.toPrecision(12)); };
+  const fmtNum = (v, k0) => { const l = lit[k0], raw = raws[k0], auto = (s.f[ks[k0]]) || l.auto; if(auto && SH_CODE[auto] !== undefined) return shNumText(Math.round(v * 86400) / 86400, auto); if(auto && auto[0] === 'd') return shDateFmt(Math.round(v), auto); if(l.auto === 'p' || /%\s*$/.test(raw)) return +(v * 100).toFixed(8) + '%'; if(l.auto === 'c' || /^\s*[-+]?\$/.test(raw)) return (v < 0 ? '-$' : '$') + Math.abs(+v.toFixed(6)); return String(+v.toPrecision(12)); };
   if(nums && raws.length >= 2){
     const step = lit[1].v - lit[0].v; if(lit.every((l, k) => Math.abs(l.v - lit[0].v - step * k) < 1e-9)) return (m, fwd) => fmtNum(fwd ? lit[lit.length - 1].v + step * m : lit[0].v - step * m, fwd ? lit.length - 1 : 0);
     return null;
@@ -9093,7 +9427,7 @@ function xlsxBuild(i){
   const fonts = ['<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>'], fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'], nfs = [], xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'], xfKey = new Map([['{}', 0]]), dxfs = [];
   const fontOf = st => { const h = `<font>${st.b ? '<b/>' : ''}${st.i ? '<i/>' : ''}${st.u ? '<u/>' : ''}<sz val="11"/>${st.c ? `<color rgb="${xlRgb(SH_INK[st.c])}"/>` : st.bg ? '<color rgb="FF1D1D1B"/>' : ''}<name val="Calibri"/><family val="2"/></font>`; let k = fonts.indexOf(h); if(k < 0){ fonts.push(h); k = fonts.length - 1; } return k; };
   const fillOf = bg => { const h = `<fill><patternFill patternType="solid"><fgColor rgb="${xlRgb(SH_FILL[bg])}"/><bgColor indexed="64"/></patternFill></fill>`; let k = fills.indexOf(h); if(k < 0){ fills.push(h); k = fills.length - 1; } return k; };
-  const nfOf = f => { const c = XL_NF[f]; if(c === undefined) return 0; if(typeof c === 'number') return c; let k = nfs.indexOf(c); if(k < 0){ nfs.push(c); k = nfs.length - 1; } return 164 + k; };
+  const nfOf = f => { const c = f && f[0] === 'x' ? f.slice(2) : SH_CODE[f] !== undefined ? SH_CODE[f] : XL_NF[f]; if(c === undefined) return 0; if(typeof c === 'number') return c; let k = nfs.indexOf(c); if(k < 0){ nfs.push(c); k = nfs.length - 1; } return 164 + k; };
   const xfFor = (f, st, wrap) => {
     st = st || {}; const key = JSON.stringify([f || '', st.b || 0, st.i || 0, st.u || 0, st.c || '', st.bg || '', st.al || '', wrap ? 1 : 0]); if(xfKey.has(key)) return xfKey.get(key);
     const nf = nfOf(f), fo = st.b || st.i || st.u || st.c || st.bg ? fontOf(st) : 0, fi = st.bg ? fillOf(st.bg) : 0, al = st.al || wrap;
@@ -9483,7 +9817,7 @@ $('#detail').addEventListener('input', e => {
     if(f === 'tags') v = parseTags(v);
     if(f === 'done'){ const rolled = completeToggle(i, i, v); edited(i); if(rolled) renderDetail(); return; }
     if(f === 'assignee') return;
-    i[f] = v; if(f === 'sfolder') lastSF = v; if(f === 'date' || f === 'time') i.autoDt = false;          // you set it yourself, so it counts now
+    i[f] = v; if(f === 'sfolder'){ lastSF = v; if(sfShown()) sfView = sfKey(i); } if(f === 'date' || f === 'time') i.autoDt = false;          // you set it yourself, so it counts now
     if(f === 'body'){ grow(t); scheduleTagSync(i.id); }
     edited(i);
   } else if(t.dataset.ci){ const c = i.checklist.find(x => x.id === t.dataset.ci); if(c){ c.text = t.value; edited(i); } }
@@ -9562,13 +9896,14 @@ document.addEventListener('keydown', e => {                       // Timeline: l
 $('#tlt').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); saveBlockDlg(); } });
 document.addEventListener('click', e => {
   const n = e.target.closest('[data-new]'); if(n){ $('#newmenu').classList.remove('open'); if(n.dataset.new === 'sticky') quickSticky(); else newItem(n.dataset.new); return; }
-  const o = e.target.closest('[data-open]'); if(o){ const oi = byId(o.dataset.open) || {}; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
+  const o = e.target.closest('[data-open]'); if(o){ const oi = byId(o.dataset.open) || {}; filter = viewFor(oi); if(filter === 'note' && oi.type === 'note') nbView = nbKey(oi); if(filter === 'sheet') sfView = sfKey(oi); selId = o.dataset.open; selCk = ''; search = ''; saveUi(); renderAll(); return; }
   const tc = e.target.closest('[data-tlcat]'); if(tc && tlEdit){ tlEdit.b.cat = tlEdit.b.cat === tc.dataset.tlcat ? '' : tc.dataset.tlcat; renderTlDlg(); return; }
   const sb = e.target.closest('[data-sort]'); if(sb){ sortMode = sb.dataset.sort; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const lcat = e.target.closest('[data-lcat]'); if(lcat){ listCat = listCat === lcat.dataset.lcat ? '' : lcat.dataset.lcat; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const ch = e.target.closest('[data-chip]');
   if(ch){ const v = chipView(), s = new Set(chipsOff[v]); if(s.has(ch.dataset.chip)) s.delete(ch.dataset.chip); else s.add(ch.dataset.chip); chipsOff[v] = [...s]; saveUi(); fixSelection(); renderList(); renderDetail(); return; }
   const pgf = e.target.closest('[data-pgfold]'); if(pgf){ const k = pgf.dataset.pgfold; if(pgFold.has(k)) pgFold.delete(k); else pgFold.add(k); pgSave(); renderRail(); return; }
+  const so = e.target.closest('[data-sfopen]'); if(so && !e.target.closest('button')){ sfView = so.dataset.sfopen; fixSelection(); renderList(); renderDetail(); return; }
   const sf = e.target.closest('[data-sheetfold]'); if(sf){ const id = sf.dataset.sheetfold; if(sheetFold.has(id)) sheetFold.delete(id); else sheetFold.add(id); renderList(); return; }
   const gh = e.target.closest('.nbgh[data-nbfold]'); if(gh && !e.target.closest('button')){ const id = gh.dataset.nbfold; if(nbById(id)){ nbView = id; lastNb = id; saveUi(); fixSelection(); renderList(); renderDetail(); } return; }
   const pp = e.target.closest('[data-person]'); if(pp){ filter = 'person'; actPerson = pp.dataset.person; saveUi(); applyMode(); renderRail(); renderList(); renderDetail(); return; }
@@ -9597,6 +9932,7 @@ document.addEventListener('click', e => {
     else if(act === 'snaprestore') restoreSnapItem(+a.dataset.i, a.dataset.id); else if(act === 'snapdl') downloadSnap(+a.dataset.i);
     else if(act === 'clearafilters'){ actCat = ''; actPerson = ''; actNb = ''; actDone = false; pageQ = ''; pageDate = ''; pageDF = ''; pageDT = ''; saveUi(); renderDetail(); }
     else if(act === 'addnotetoggle'){ const nf = $('#anotefld'); if(nf){ nf.hidden = !nf.hidden; a.classList.toggle('on', !nf.hidden); if(!nf.hidden) nf.focus(); } }
+    else if(act === 'qanodate' || act === 'qadateon'){ qaNoDate = act === 'qanodate'; const pv = a.closest('.qapv'), bx = pv && document.getElementById(QA_BOXES[pv.id] || ''); qaPvRefresh(bx); if(bx) bx.focus(); }
     else if(act === 'autoon'){ autoDates = true; saveUi(); const an = $('#anew'); renderDetail(); const n2 = $('#anew'); if(n2 && an){ n2.value = an.value; n2.dispatchEvent(new Event('input', {bubbles:true})); n2.focus(); } }
     else if(act === 'pinfold'){ const k = a.dataset.nb || ''; if(pinFold.has(k)) pinFold.delete(k); else pinFold.add(k); saveUi(); renderList(); }
     else if(act === 'propok') decideProposal(a.dataset.key, true);
@@ -9636,9 +9972,11 @@ document.addEventListener('click', e => {
     else if(act === 'teammerge') mergePerson(a.dataset.from, a.dataset.to);
     else if(act === 'feedremove') removePerson(a.dataset.p);
     else if(act === 'pgidle'){ pgIdle = !pgIdle; pgSave(); renderRail(); }
-    else if(act === 'newsf'){ const nm = (prompt('Name the new folder:', '') || '').trim().slice(0, 60); if(nm){ const f = {id: uid(), name: nm}; (db.sfolders = db.sfolders || []).push(f); touch(); renderList(); toast(`Made the folder “${nm}”. Pick it in a spreadsheet’s Folder box, or when you press + while it is the last one used.`); lastSF = f.id; } }
-    else if(act === 'sfrename'){ const f = (db.sfolders || []).find(x => x.id === a.dataset.id); if(f){ const nm = (prompt('Rename the folder:', f.name) || '').trim().slice(0, 60); if(nm && nm !== f.name){ f.name = nm; touch(); renderList(); renderDetail(); } } }
-    else if(act === 'sfdelete'){ const f = (db.sfolders || []).find(x => x.id === a.dataset.id); if(f){ const n = db.items.filter(i => i.sheet && i.sfolder === f.id).length; if(confirm(`Delete the folder “${f.name}”?${n ? ` Its ${n} spreadsheet${n === 1 ? '' : 's'} move to Unfiled; none is deleted.` : ''}`)){ db.items.forEach(i => { if(i.sheet && i.sfolder === f.id){ i.sfolder = ''; i.updated = now(); } }); db.sfolders = db.sfolders.filter(x => x !== f); if(lastSF === f.id) lastSF = ''; touch(); renderList(); renderDetail(); } } }
+    else if(act === 'newsf') sfNew();
+    else if(act === 'sfrename') sfRename(a.dataset.id);
+    else if(act === 'sfdelete') sfDelete(a.dataset.id);
+    else if(act === 'sfall'){ sfView = ''; renderList(); }
+    else if(act === 'sfnewhere') newItem('sheet');
     else if(act === 'feedretry'){ feedProblems().forEach(f => feedRetry.delete(personKey(f.person))); toast('Trying the feeds again…', null, 'Undo', undefined, 3000); runShareWrites(true).then(() => { const bad = feedProblems(); if(!bad.length) toast('✓ The feeds are writing again.', null, 'Undo', undefined, 5000); }); }
     else if(act === 'feedteam') openSettings('team');
     else if(act === 'feedwrite'){ feedWritten.delete(a.dataset.p); toast(`Writing ${a.dataset.p}’s feed…`); runShareWrites(true, personKey(a.dataset.p)).then(() => { const st = feedStat.get(personKey(a.dataset.p)); toast(st && st.ok ? `Wrote ${a.dataset.p}’s feed.` : `Couldn’t write ${a.dataset.p}’s feed: ${(st && st.err) || 'unknown reason'}`); }); }
@@ -9724,9 +10062,9 @@ document.addEventListener('click', e => {
     else if(act === 'nbshare'){ const nb = nbById(a.dataset.id); if(nb){ const r = a.getBoundingClientRect(); if($('#nbdlg').open && nb.shared && nb.shared.on){ $('#nbdlg').close(); } nbShareAction(nb, r.left, r.bottom + 4); } }
     else if(act === 'nbexport') openNbExport([a.dataset.id]); else if(act === 'nbexportall') openNbExport(db.notebooks.map(n => n.id));
     else if(act === 'nbexpgo') runNbExport(); else if(act === 'nbexpcancel') $('#nbexp').close();
-    else if(act === 'sendact') openSend(); else if(act === 'sendsave') sendSaveFile(); else if(act === 'sendcopy') sendCopyText(); else if(act === 'sendclose') $('#senddlg').close();
-    else if(act === 'bringact') openBring(); else if(act === 'bringfile') $('#bringfile').click(); else if(act === 'bringread'){ let j = null; try { j = JSON.parse($('#bringtext').value.trim()); } catch {} readBring(j, ''); } else if(act === 'bringgo') runBring(); else if(act === 'bringclose'){ bring = null; $('#bringdlg').close(); }
-    else if(act === 'nbimport') $('#nbfile').click(); else if(act === 'nbimpgo') runImport(); else if(act === 'nbimpcancel'){ importPack = null; $('#nbimp').close(); }
+    else if(act === 'sendact') openSend(a.dataset.who || ''); else if(act === 'sendsave') sendSaveFile(); else if(act === 'sendcopy') sendCopyText(); else if(act === 'sendclose') $('#senddlg').close();
+    else if(act === 'bringact') openBring(a.dataset.who || ''); else if(act === 'bringfile') $('#bringfile').click(); else if(act === 'bringread'){ let j = null; try { j = JSON.parse($('#bringtext').value.trim()); } catch {} readBring(j, ''); } else if(act === 'bringgo') runBring(); else if(act === 'bringclose'){ bring = null; $('#bringdlg').close(); }
+    else if(act === 'nbimport') openImportBox(); else if(act === 'nbpastefile') $('#nbfile').click(); else if(act === 'nbpasteread') readPasted(); else if(act === 'nbpasteclose') $('#nbpaste').close(); else if(act === 'nbimpgo') runImport(); else if(act === 'nbimpcancel'){ importPack = null; $('#nbimp').close(); }
     else if(act === 'nbup') moveNotebookBy(a.dataset.id, -1); else if(act === 'nbdown') moveNotebookBy(a.dataset.id, 1);
     else if(act === 'editpeople'){ renderPeople(); $('#pdlg').showModal(); } else if(act === 'closepeople') $('#pdlg').close();
     else if(act === 'addperson'){ let n = 'New person', k = 2; while(db.people.some(x => x.toLowerCase() === n.toLowerCase())) n = 'New person ' + k++; db.people.push(n); touch(); renderPeople(); const r = $('#prows').querySelector(`[data-pn="${n}"]`); if(r){ r.focus(); r.select(); } }
@@ -9753,6 +10091,7 @@ document.addEventListener('click', e => {
 });
 $('#q').addEventListener('input', e => { search = e.target.value; fixSelection(); renderList(); renderDetail(); });
 const dateChanged = () => { saveUi(); fixSelection(); renderList(); renderDetail(); };
+$('#autocap').addEventListener('change', e => { try { localStorage.setItem('notebook-autocap', e.target.checked ? '1' : '0'); } catch {} });
 $('#settheme').addEventListener('change', e => { theme = e.target.value; applyTheme(); saveUi(); renderFileInfo(); });
 $('#dfield').addEventListener('change', e => { dateField = e.target.value; dateChanged(); });
 $('#dpreset').addEventListener('change', e => { datePreset = e.target.value; dateChanged(); });
@@ -10122,7 +10461,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261120145110';</script>
+<script>window.NB_BUILD = '20261124095244';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

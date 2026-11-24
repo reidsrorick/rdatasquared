@@ -1,4 +1,59 @@
-{"version":"1.70.0","build":"20261120145110","changelog":[
+{"version":"1.72.0","build":"20261124095244","changelog":[
+ {
+  "v": "1.72.0",
+  "title": "Times, durations and custom formats in spreadsheets",
+  "items": [
+   "Spreadsheet times work like Excel. Type 9 am, 9:30 PM, 13:45 or 9:30:15 and the cell becomes a real time (it shows 9:00 AM, 9:30 PM, 13:45, 09:30:15). Type 36:15 for a duration, or 2026-11-17 9:30 AM (also Nov 17, 2026 9 am) for a date with a time.",
+   "Subtracting or adding times gives a duration: =B2-A2 shows 8:30, and SUM of durations goes past 24 hours (28:15) instead of wrapping. Multiply by 24 for hours as a number.",
+   "The format box has Time, Duration, Minutes and seconds and Date and time styles, plus Custom format…: write any Excel code such as h:mm AM/PM, [h]:mm, yyyy-mm-dd hh:mm, dddd, mmmm d, #,##0.00 or 0.0% and see how it looks before applying.",
+   "New functions: NOW, TIME, HOUR, MINUTE, SECOND, TIMEVALUE, DATEVALUE, TEXT (any format code), NETWORKDAYS, WORKDAY (both with a holiday list) and DATEDIF.",
+   "Drag the fill square across times to continue them (9:00, 9:30, then 10:00…). Excel export keeps the time formats, and CSV export writes what the cells show."
+  ]
+ },
+ {
+  "v": "1.71.3",
+  "title": "Remove the date and time when adding an action",
+  "items": [
+   "When what you type in an add box has a date or time in it (like “call Ann Friday 3pm”), the line under the box now shows what it picked up with a ✕ Remove date & time link. Press it and the words stay in the action but no due date, time or repeat is set from them. Use them brings it back.",
+   "Works in Quick add (Ctrl + Q), the Today and person-page add boxes, and the Actions add box. It resets after each add."
+  ]
+ },
+ {
+  "v": "1.71.2",
+  "title": "Wider answers on Waiting for your OK",
+  "items": [
+   "On the Waiting for your OK page (and anywhere else an action has an answer from someone), the answer and its Confirm / Not yet buttons now take the full width under the action instead of only the narrow text column. Long answers are easy to read, even with several waiting."
+  ]
+ },
+ {
+  "v": "1.71.1",
+  "title": "Capital letter at the start of a line",
+  "items": [
+   "The first word of a line now starts with a capital letter. When you finish it (press Space) in a note, a title or a quick-add box, its first letter is capitalised. Ctrl + Z takes it back.",
+   "It leaves alone anything that is not a plain lower-case word (for example a date, a name that already has capitals, a spreadsheet cell, or a line starting with @ or a number).",
+   "Switch it off in Settings > Look > Typing (per computer)."
+  ]
+ },
+ {
+  "v": "1.71.0",
+  "title": "Move notes and actions between devices",
+  "items": [
+   "Move one note to another device: open a note's Export menu and choose Copy for another device (text) or Save for another device (.json). On the other device go to Notes, press ⤒ Import and paste the text (or choose the file).",
+   "The Notes Import box now takes pasted text as well as files, and shows what is in it before anything is added.",
+   "Moving actions between devices: every person's page (team members and Claude projects) has Export actions and Import actions buttons. Export copies the text or saves a file; Import on the other device adds them to that person, and you can change who they go to.",
+   "Nothing is ever overwritten by an import, and Undo removes exactly what was added."
+  ]
+ },
+ {
+  "v": "1.70.1",
+  "title": "Spreadsheet folders you open, like Notebooks",
+  "items": [
+   "Spreadsheet folders now work like Notebooks. The Spreadsheets list shows your folders; click one to see the spreadsheets inside, and use ‹ Folders to go back.",
+   "Press ＋ inside a folder to make a spreadsheet there (from the list of folders it goes to Unfiled).",
+   "Right-click a spreadsheet to move it to a folder (or Unfiled, or a new folder). Right-click a folder to add a spreadsheet, rename, move it up or down, or delete it.",
+   "Folders are called folders, not notebooks. Deleting a folder moves its spreadsheets to Unfiled; none is deleted."
+  ]
+ },
  {
   "v": "1.70.0",
   "title": "Feeds retry by themselves and warn you",
