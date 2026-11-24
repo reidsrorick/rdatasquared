@@ -32,17 +32,19 @@
     masked: maskedPref,
     folderName: "",
     rows: { apartment: [], requests: [], subscriptions: [], thirdparty: [] },
-    dirty: { data: false }, // unsaved changes vs budget.json
+    dirty: { data: false }, // unsaved changes vs budget.xlsx
     links: [],
-    migrations: {}, // one-time data fixes already applied (stored in budget.json)
-    groups: [], // saved names of expense groups / trips (stored in budget.json)
+    migrations: {}, // one-time data fixes already applied (stored in budget.xlsx)
+    groups: [], // saved names of expense groups / trips (stored in budget.xlsx)
+    settings: BB.model.blankSettings(), // names, split rules, categories (set up on first run)
+    saveError: "", // why the last save failed (e.g. the file is open in Excel); cleared on success
     autosave: autosavePref,
     saving: false,
     lastSavedAt: null,
     pendingHandle: null, // remembered folder awaiting a one-click re-grant
     pendingName: "",
     fileMode: "none", // 'fs' = in-place writes, 'download' = fallback, 'none'
-    conflict: { data: false }, // budget.json changed on disk vs our copy
+    conflict: { data: false }, // budget.xlsx changed on disk vs our copy
   };
 
   const S = BB.state;
@@ -57,7 +59,7 @@
   function autosaveOn() {
     return S.autosave && BB.store.supportsFS;
   }
-  // (a connected folder is enough — the first save creates budget.json if it isn't there yet)
+  // (a connected folder is enough — the first save creates budget.xlsx if it isn't there yet)
   function canAutosave() {
     const st = BB.store.state;
     return autosaveOn() && !!(st.files.data.handle || st.dir);
@@ -77,6 +79,7 @@
     try {
       const res = await BB.store.saveFile(fileKey, S);
       S.dirty[fileKey] = false;
+      S.saveError = "";
       S.lastSavedAt = new Date();
       if (res.backup) BB.ui.toast(`Backup saved before autosave.`, "");
     } catch (e) {
@@ -84,9 +87,8 @@
         S.conflict[fileKey] = true; // pause autosave for this file, surface a banner
       } else {
         console.error(e);
-        BB.ui.toast("Autosave failed — click Save to retry. " + (e.message || e), "warn");
-        S.autosave = false; // stop retry loops; let the user re-enable
-        persistAutosave();
+        S.saveError = e.message || String(e);
+        BB.ui.toast(S.saveError, "warn");
       }
     } finally {
       pending.delete(fileKey);
@@ -279,7 +281,7 @@
     BB.ui.toast(`${plural(n, "expense")} in “${name}” marked ${status.toLowerCase()}.`, "ok");
   }
 
-  // ---- apartment months in the Expense Tracker (Luke's share, driven by Requests) ----
+  // ---- shared-bill months in the Expense Tracker (the other person's share, driven by Requests) ----
   const owedLine = (key) =>
     BB.model.apartmentOwedLines(S.rows.apartment, S.rows.requests).find((l) => l.key === key);
 
@@ -294,7 +296,7 @@
     BB.ui.toast(`${line.label} marked settled.`, "ok");
   }
 
-  // Luke paid the request for this month.
+  // They paid the request for this month.
   function markMonthPaid(key) {
     const line = owedLine(key);
     if (!line || line.requestIndex == null) return;
@@ -379,26 +381,27 @@
 
   async function finishLoad(found, how) {
     const dir = BB.store.state.dir;
-    const nothingThere = !found || (!found.json && !found.apartment && !found.expenses);
+    const nothingThere = !found || (!found.data && !found.json && !found.apartment && !found.expenses);
     if (nothingThere) {
       if (how === "restore") return false; // never prompt on page load
       if (
         !window.confirm(
-          `No ${BB.store.DATA_FILE} or spreadsheets found in “${dir.name}”.\n\nStart a new, empty budget in this folder?`
+          `No ${BB.store.DATA_FILE} found in “${dir.name}”.\n\nStart a new, empty budget in this folder?`
         )
       )
         return false;
     }
 
-    const res = await BB.store.loadAll(); // throws (and changes nothing) if budget.json is unreadable
+    const res = await BB.store.loadAll(); // throws (and changes nothing) if budget.xlsx is unreadable
     ingest(res);
     S.folderName = dir.name;
     S.fileMode = "fs";
     S.loaded = true;
 
-    // First run in this folder: create budget.json from what we just read. The old .xlsx
-    // files are only ever read, never changed.
-    if (res.source !== "json") {
+    // First run in this folder: create budget.xlsx from what we just read (an older budget.json
+    // or the two original spreadsheets, or a blank budget). Those older files are only ever
+    // read, never changed.
+    if (res.source !== "xlsx") {
       try {
         await BB.store.saveFile("data", S);
         S.lastSavedAt = new Date();
@@ -408,24 +411,30 @@
         pending.delete("data");
         S.saving = false;
       } catch (e) {
-        if (e && e.code === "CONFLICT") S.conflict.data = true; // a budget.json appeared meanwhile
+        if (e && e.code === "CONFLICT") S.conflict.data = true; // a budget.xlsx appeared meanwhile
         else {
           console.error(e);
-          BB.ui.toast("Could not create budget.json: " + (e.message || e), "warn");
+          BB.ui.toast("Could not create budget.xlsx: " + (e.message || e), "warn");
         }
       }
     }
     BB.ui.render();
 
-    if (res.source === "xlsx")
+    if (res.source === "json" || res.source === "legacy")
       BB.ui.toast(
-        `Imported ${res.imported.join(" + ")} into ${BB.store.DATA_FILE}. Your spreadsheets were not changed.`,
+        `Moved ${res.imported.join(" + ")} into ${BB.store.DATA_FILE}. The original file${res.imported.length > 1 ? "s were" : " was"} not changed.`,
         "ok"
       );
     else if (res.source === "new") BB.ui.toast(`Started a new ${BB.store.DATA_FILE}.`, "ok");
     else if (how === "restore") BB.ui.toast(`Reconnected to ${S.folderName}.`, "");
     else BB.ui.toast("Folder connected.", "");
+    maybeSetup();
     return true;
+  }
+
+  // brand-new budgets start with the setup screen (names, split rules, categories)
+  function maybeSetup() {
+    if (S.loaded && S.fileMode !== "demo" && !S.settings.setupDone) BB.ui.openSetup({ first: true });
   }
 
   // On load, try to silently re-open the folder we used last time.
@@ -445,7 +454,7 @@
       }
     } catch (e) {
       console.warn("restore failed", e);
-      // a corrupt budget.json shouldn't fail silently at startup
+      // a corrupt budget.xlsx shouldn't fail silently at startup
       if (e && e.message && e.message.includes(BB.store.DATA_FILE)) BB.ui.toast(e.message, "warn");
     }
   }
@@ -460,18 +469,33 @@
       BB.ui.render();
       BB.ui.toast(
         res.source === "xlsx"
-          ? `Imported ${res.imported.join(" + ")}. Saving downloads a ${BB.store.DATA_FILE}.`
-          : `${BB.store.DATA_FILE} loaded. Saving downloads an updated copy.`,
+          ? `${BB.store.DATA_FILE} loaded. Saving downloads an updated copy.`
+          : `Imported ${res.imported.join(" + ")}. Saving downloads a ${BB.store.DATA_FILE}.`,
         ""
       );
+      if (res.source !== "xlsx") S.dirty.data = true;
+      BB.ui.render();
+      maybeSetup();
     } catch (e) {
       console.error(e);
       BB.ui.toast("Could not read files: " + (e.message || e), "warn");
     }
   }
 
-  // replace the in-memory data with what was just read: { rowsBySchema, links, migrations }
-  function ingest({ rowsBySchema, links, migrations, groups }) {
+  // replace the in-memory data with what was just read:
+  // { rowsBySchema, links, migrations, groups, settings }
+  // A file that predates the setup screen has no settings; if it holds data it keeps the rules it
+  // was built on (so every number stays the same), and a blank one starts at the setup screen.
+  function ingest({ rowsBySchema, links, migrations, groups, settings }) {
+    const hasData = Object.values(rowsBySchema || {}).some((a) => a && a.length);
+    let st = settings;
+    let carried = false;
+    if (!st) {
+      st = hasData ? BB.model.legacySettings() : BB.model.blankSettings();
+      carried = hasData;
+    }
+    S.settings = st;
+    BB.model.setSettings(st); // before the rows are normalized: defaults depend on it
     S.rows.apartment = rowsBySchema.apartment || [];
     S.rows.requests = (rowsBySchema.requests || []).map(BB.model.normalizeRequest);
     S.rows.subscriptions = rowsBySchema.subscriptions || [];
@@ -481,13 +505,28 @@
     S.groups = [...(groups || [])];
     S.dirty = { data: false };
     S.conflict = { data: false };
+    S.saveError = "";
     applyMigrations();
+    if (carried) markDirty("data"); // write the carried-over settings into the file
   }
 
-  // One-time data fixes, remembered in budget.json so each only ever runs once.
-  //  • settledBeforeFirstRequest: apartment months before your first tracked Venmo request
-  //    were settled before you started tracking — mark them settled so Luke isn't "owing"
-  //    them in the Expense Tracker. They show up as ordinary Complete requests (delete any
+  // Change names, split rules or categories (from the setup / settings dialog).
+  function saveSettings(next) {
+    const st = BB.model.normalizeSettings(next);
+    st.setupDone = true;
+    S.settings = st;
+    BB.model.setSettings(st);
+    // a hidden tab can't stay the active one
+    if (!st.sharedEnabled && S.activeTab === "apartment") S.activeTab = "dashboard";
+    S.rows.thirdparty.forEach(BB.model.normalizeExpense);
+    markDirty("data");
+    BB.ui.render();
+  }
+
+  // One-time data fixes, remembered in budget.xlsx so each only ever runs once.
+  //  • settledBeforeFirstRequest: shared-bill months before your first tracked payment request
+  //    were settled before you started tracking — mark them settled so they aren't "owed"
+  //    in the Expense Tracker. They show up as ordinary Complete requests (delete any
   //    you disagree with).
   function applyMigrations() {
     if (S.migrations.settledBeforeFirstRequest) return;
@@ -555,6 +594,7 @@
       const res = await BB.store.saveFile(fileKey, S, opts);
       S.dirty[fileKey] = false;
       S.conflict[fileKey] = false;
+      S.saveError = "";
       S.lastSavedAt = new Date();
       BB.ui.render();
       if (res.mode === "saved")
@@ -567,11 +607,13 @@
         return;
       }
       console.error(e);
-      BB.ui.toast("Save failed: " + (e.message || e), "warn");
+      S.saveError = e.message || String(e);
+      BB.ui.render();
+      BB.ui.toast(S.saveError.startsWith("Couldn't") ? S.saveError : "Save failed: " + S.saveError, "warn");
     }
   }
 
-  // Pull the latest budget.json from disk, discarding our in-memory copy.
+  // Pull the latest budget.xlsx from disk, discarding our in-memory copy.
   async function reloadFile() {
     const res = await BB.store.loadFile();
     if (!res) return;
@@ -611,6 +653,8 @@
   let checking = false;
   let unreadableWarned = false;
   async function checkExternalChanges() {
+    // a save that failed (file open in Excel, OneDrive busy) is retried quietly
+    if (S.loaded && S.saveError && S.dirty.data && !pending.size && autosaveOn() && !S.conflict.data) scheduleAutosave("data", 0);
     if (checking || !S.loaded || S.fileMode !== "fs") return;
     checking = true;
     try {
@@ -693,7 +737,7 @@
   }
 
   BB.app = {
-    setTab, connect, startDemo, loadFallback, commitRow, commitRows, deleteRow, save, reload,
+    setTab, connect, startDemo, loadFallback, saveSettings, commitRow, commitRows, deleteRow, save, reload,
     setAutosave, setMasked, autosaveOn, canAutosave,
     attachReceipts, unlinkReceipt, openReceiptByName, setExpenseStatus, settleMonth, markMonthPaid,
     createGroup, assignGroup, renameGroup, deleteGroup, setGroupStatus, groupList,

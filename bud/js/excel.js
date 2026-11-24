@@ -1,13 +1,13 @@
-/* excel.js — Excel in and out. Exposed on window.BB.excel
-   - importFiles: one-time read of the old Apartment Breakdown.xlsx / Expenses.xlsx
-   - exportWorkbook / downloadExport: build a fresh .xlsx from the app's data
-   The app's own storage is budget.json (see store.js); Excel is never written in place. */
+/* excel.js — the budget workbook. Exposed on window.BB.excel
+   - readWorkbook / writeWorkbook: budget.xlsx IS the app's saved file (data + settings)
+   - importFiles: one-time read of the older Apartment Breakdown.xlsx / Expenses.xlsx
+   - exportWorkbook / downloadExport: a spare copy to download */
 (function () {
   "use strict";
   const model = window.BB.model;
   const schemas = model.schemas;
 
-  // ---------------- import (legacy workbooks → rows) ----------------
+  // ---------------- reading ----------------
   function parseSheet(ws) {
     if (!ws) return [];
     const aoa = XLSX.utils.sheet_to_json(ws, {
@@ -33,7 +33,7 @@
   }
 
   // keep only the columns the app models, with clean types (computed split columns are
-  // recalculated, never imported)
+  // recalculated, never read back)
   function cleanRow(schemaName, raw) {
     const out = {};
     for (const c of schemas[schemaName].columns) {
@@ -54,7 +54,76 @@
     return out;
   }
 
-  // files: { apartment?: File, expenses?: File } — either may be missing
+  // a schema's sheet, under its current name or the name older workbooks used
+  const sheetFor = (wb, schema) =>
+    [schema.sheet, ...(schema.altSheets || [])].map((n) => wb.Sheets[n]).find(Boolean) || null;
+
+  const truthy = (v) => v === true || /^(true|yes|1|y)$/i.test(String(v == null ? "" : v).trim());
+
+  function readLinks(wb) {
+    return parseSheet(wb.Sheets["Links"]).map((l) => {
+      const o = {};
+      for (const [k, v] of Object.entries(l)) if (v != null && v !== "") o[k] = String(v);
+      return o;
+    });
+  }
+
+  // budget.xlsx → everything the app holds. `settings` is null for a workbook that has no
+  // Settings sheet (the older two-file workbooks).
+  function readWorkbook(buf) {
+    let wb;
+    try {
+      wb = XLSX.read(buf, { cellDates: true });
+    } catch (e) {
+      throw new Error("budget.xlsx couldn't be read — nothing was changed.");
+    }
+    const rowsBySchema = {};
+    for (const [name, schema] of Object.entries(schemas)) {
+      rowsBySchema[name] = parseSheet(sheetFor(wb, schema))
+        .map((r) => cleanRow(name, r))
+        .filter((r) => Object.keys(r).length);
+    }
+    const groups = parseSheet(wb.Sheets["Groups"])
+      .map((r) => String(r.Group == null ? "" : r.Group).trim())
+      .filter(Boolean);
+
+    let settings = null;
+    const migrations = {};
+    if (wb.Sheets["Settings"]) {
+      const kv = {};
+      parseSheet(wb.Sheets["Settings"]).forEach((r) => {
+        const k = String(r.Setting == null ? "" : r.Setting).trim();
+        if (!k) return;
+        if (k.startsWith("migration:")) {
+          if (truthy(r.Value)) migrations[k.slice(10)] = true;
+        } else kv[k] = r.Value;
+      });
+      const methodId = (txt) => {
+        const t = String(txt == null ? "" : txt).trim().toLowerCase();
+        const hit = model.RULE_METHODS.find((m) => m.id === t || m.label.toLowerCase() === t);
+        return hit ? hit.id : "equal";
+      };
+      settings = model.normalizeSettings({
+        setupDone: truthy(kv.setupDone),
+        me: kv.me,
+        partner: kv.partner,
+        sharedEnabled: truthy(kv.sharedEnabled),
+        sharedLabel: kv.sharedLabel,
+        sharedCategory: kv.sharedCategory,
+        categories: parseSheet(wb.Sheets["Categories"]).map((r) => r.Category),
+        rules: parseSheet(wb.Sheets["Split Rules"]).map((r) => ({
+          item: r.Item,
+          method: methodId(r.Rule),
+          value: r["Amount or %"],
+          label: r["Shown as"],
+          up: truthy(r["Round each share up"]),
+        })),
+      });
+    }
+    return { rowsBySchema, links: readLinks(wb), groups, settings, migrations };
+  }
+
+  // files: { apartment?: File, expenses?: File } — either may be missing (the older workbooks)
   async function importFiles(files) {
     const wbs = {};
     for (const key of ["apartment", "expenses"]) {
@@ -64,22 +133,15 @@
     for (const [name, schema] of Object.entries(schemas)) {
       const wb = wbs[schema.file];
       if (!wb) continue;
-      rowsBySchema[name] = parseSheet(wb.Sheets[schema.sheet])
+      rowsBySchema[name] = parseSheet(sheetFor(wb, schema))
         .map((r) => cleanRow(name, r))
         .filter((r) => Object.keys(r).length);
     }
-    let links = [];
-    if (wbs.apartment) {
-      links = parseSheet(wbs.apartment.Sheets["Links"]).map((l) => {
-        const o = {};
-        for (const [k, v] of Object.entries(l)) if (v != null && v !== "") o[k] = String(v);
-        return o;
-      });
-    }
+    const links = wbs.apartment ? readLinks(wbs.apartment) : [];
     return { rowsBySchema, links };
   }
 
-  // ---------------- export (rows → .xlsx) ----------------
+  // ---------------- writing ----------------
   function toCell(val, type) {
     if (val == null || val === "") return null;
     if (type === "date") return model.toDate(val) || null;
@@ -124,7 +186,7 @@
   // one worksheet for a table schema (stored columns + persisted computed ones)
   function buildSheet(schema, rows) {
     const persist = (schema.computed || []).filter((c) => c.persist);
-    const header = [...schema.columns.map((c) => c.key), ...persist.map((c) => c.key)];
+    const header = [...schema.columns.map((c) => c.key), ...persist.map((c) => c.label)];
     const aoa = [header];
     for (const r of rows) {
       const line = schema.columns.map((c) => toCell(r[c.key], c.type));
@@ -139,20 +201,20 @@
 
   function summarySheet(rows) {
     const sum = model.summarize(rows);
-    const aoa = [["Month", "Reid", "Luke", "Total"]];
-    sum.months.forEach((m) => aoa.push([m.label, m.reid, m.luke, m.total]));
-    aoa.push(["Year total", sum.year.reid, sum.year.luke, sum.year.total]);
+    const aoa = [["Month", model.meName(), model.partnerName(), "Total"]];
+    sum.months.forEach((m) => aoa.push([m.label, m.me, m.other, m.total]));
+    aoa.push(["Year total", sum.year.me, sum.year.other, sum.year.total]);
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     formatSheet(ws, ["text", "money", "money", "money"]);
     ws["!cols"] = widths(aoa[0], aoa);
     return ws;
   }
 
-  // `lines` = Luke's apartment share by month (derived), counted under Friends/Family
+  // `lines` = the other person's shared-bill months (derived), counted under the shared category
   function owedSheet(rows, lines) {
     const sum = model.expenseSummary(rows, lines);
     const aoa = [["Who pays me back", "Pending", "Submitted", "Paid", "Still owed"]];
-    model.EXPENSE_CATEGORIES.forEach((c) => {
+    sum.cats.forEach((c) => {
       const b = sum.byCat[c];
       aoa.push([c, b.Pending, b.Submitted, b.Paid, b.outstanding]);
     });
@@ -161,10 +223,9 @@
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     formatSheet(ws, ["text", "money", "money", "money", "money"]);
 
-    // second table: Luke's apartment share, one row per month (it's inside Friends/Family above)
     if (lines && lines.length) {
       const start = aoa.length + 1; // leave a blank row
-      const head = ["Apartment — Luke's share", "Amount", "Status", "Request sent", "Payment received"];
+      const head = [`${model.sharedLabel()} — ${model.partnerName()}'s share`, "Amount", "Status", "Request sent", "Payment received"];
       const block = [head, ...lines.map((l) => [l.label, l.amount, l.status, model.toDate(l.sentOn) || null, model.toDate(l.paidOn) || null])];
       XLSX.utils.sheet_add_aoa(ws, block, { origin: { r: start, c: 0 }, cellDates: true });
       block.forEach((row, i) => {
@@ -209,20 +270,83 @@
     return ws;
   }
 
-  // S = { rows: {apartment, requests, subscriptions, thirdparty}, links }
-  function exportWorkbook(S) {
+  // the settings that make the numbers come out the way they do
+  function settingsSheets(S) {
+    const cfg = S.settings || model.blankSettings();
+    const kv = [
+      ["Setting", "Value"],
+      ["setupDone", !!cfg.setupDone],
+      ["me", cfg.me || ""],
+      ["partner", cfg.partner || ""],
+      ["sharedEnabled", !!cfg.sharedEnabled],
+      ["sharedLabel", cfg.sharedLabel || ""],
+      ["sharedCategory", cfg.sharedCategory || ""],
+    ];
+    Object.keys(S.migrations || {}).forEach((k) => S.migrations[k] && kv.push([`migration:${k}`, true]));
+    const settings = XLSX.utils.aoa_to_sheet(kv);
+    settings["!cols"] = [{ wch: 30 }, { wch: 30 }];
+
+    const label = (id) => (model.RULE_METHODS.find((m) => m.id === id) || model.RULE_METHODS[0]).label;
+    const rules = [["Item", "Rule", "Amount or %", "Shown as", "Round each share up"]].concat(
+      cfg.rules.map((r) => [r.item, label(r.method), r.value, r.label || null, r.up ? true : null])
+    );
+    const rulesWs = XLSX.utils.aoa_to_sheet(rules);
+    rulesWs["!cols"] = widths(rules[0], rules);
+
+    const cats = [["Category"], ...cfg.categories.map((c) => [c])];
+    const catsWs = XLSX.utils.aoa_to_sheet(cats);
+    catsWs["!cols"] = [{ wch: 28 }];
+
+    const grp = [["Group"], ...(S.groups || []).map((g) => [String(g).trim()]).filter((r) => r[0])];
+    const grpWs = XLSX.utils.aoa_to_sheet(grp);
+    grpWs["!cols"] = [{ wch: 34 }];
+    return { settings, rulesWs, catsWs, grpWs };
+  }
+
+  function aboutSheet() {
+    const lines = [
+      ["Budget workbook"],
+      ["This file is the saved copy of your budget. The app reads it when you open your folder and writes every change straight back."],
+      [""],
+      ["You can edit these sheets in Excel (close the file in Excel before using the app):"],
+      ["  Shared Bills, Requests, Subscriptions-Bills, Expense Tracker, Links, Groups, Split Rules, Categories, Settings"],
+      ["Rewritten on every save, so edits to them are overwritten:"],
+      ["  Summary, Owed Summary, Trips, About"],
+      [""],
+      ["Split Rules: Rule is one of Split equally, I pay all, They pay all, I pay a percentage, Equal but I pay more or less, I pay a fixed amount."],
+      ["Anything without a rule is split in half."],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(lines);
+    ws["!cols"] = [{ wch: 120 }];
+    return ws;
+  }
+
+  // S = { rows, links, groups, settings, migrations }
+  function buildWorkbook(S) {
     const wb = XLSX.utils.book_new();
     const add = (name, ws) => XLSX.utils.book_append_sheet(wb, ws, name);
-    add("Data Entry", buildSheet(schemas.apartment, S.rows.apartment || []));
-    add("Summary", summarySheet(S.rows.apartment || []));
-    add("Requests", buildSheet(schemas.requests, S.rows.requests || []));
-    add("Subscriptions-Bills", buildSheet(schemas.subscriptions, S.rows.subscriptions || []));
-    add("Expense Tracker", buildSheet(schemas.thirdparty, S.rows.thirdparty || []));
-    add("Owed Summary", owedSheet(S.rows.thirdparty || [], model.apartmentOwedLines(S.rows.apartment || [], S.rows.requests || [])));
-    const trips = tripsSheet(S.rows.thirdparty || [], S.groups || []);
+    const rows = S.rows || {};
+    add(schemas.apartment.sheet, buildSheet(schemas.apartment, rows.apartment || []));
+    add("Summary", summarySheet(rows.apartment || []));
+    add("Requests", buildSheet(schemas.requests, rows.requests || []));
+    add("Subscriptions-Bills", buildSheet(schemas.subscriptions, rows.subscriptions || []));
+    add(schemas.thirdparty.sheet, buildSheet(schemas.thirdparty, rows.thirdparty || []));
+    add("Owed Summary", owedSheet(rows.thirdparty || [], model.apartmentOwedLines(rows.apartment || [], rows.requests || [])));
+    const trips = tripsSheet(rows.thirdparty || [], S.groups || []);
     if (trips) add("Trips", trips);
     add("Links", linksSheet(S.links || []));
+    const st = settingsSheets(S);
+    add("Groups", st.grpWs);
+    add("Split Rules", st.rulesWs);
+    add("Categories", st.catsWs);
+    add("Settings", st.settings);
+    add("About", aboutSheet());
     return wb;
+  }
+
+  // the bytes of budget.xlsx
+  function writeWorkbook(S) {
+    return XLSX.write(buildWorkbook(S), { bookType: "xlsx", type: "array", cellDates: true });
   }
 
   function exportName() {
@@ -231,13 +355,8 @@
     return `Budget Export ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.xlsx`;
   }
 
-  function downloadExport(S) {
-    const wb = exportWorkbook(S);
-    const bytes = XLSX.write(wb, { bookType: "xlsx", type: "array", cellDates: true });
-    const name = exportName();
-    const blob = new Blob([bytes], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+  function saveBlob(bytes, name) {
+    const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -246,8 +365,14 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  // a dated spare copy
+  function downloadExport(S) {
+    const name = exportName();
+    saveBlob(writeWorkbook(S), name);
     return name;
   }
 
-  window.BB.excel = { importFiles, exportWorkbook, downloadExport, exportName };
+  window.BB.excel = { readWorkbook, writeWorkbook, importFiles, buildWorkbook, downloadExport, exportName, saveBlob };
 })();

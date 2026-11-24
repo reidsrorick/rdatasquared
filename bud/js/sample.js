@@ -12,10 +12,10 @@
     const apartment = [];
     for (let m = 3; m >= 0; m--) {
       apartment.push({ Date: day(m, 1), Item: "Rent", "Total Amount": 1900 });
-      apartment.push({ Date: day(m, 6), Item: "uelec", "Total Amount": [96.4, 84.15, 71.8, 102.37][3 - m] });
-      apartment.push({ Date: day(m, 8), Item: "uwater", "Total Amount": 48.2 });
+      apartment.push({ Date: day(m, 6), Item: "Electric", "Total Amount": [96.4, 84.15, 71.8, 102.37][3 - m] });
+      apartment.push({ Date: day(m, 8), Item: "Water", "Total Amount": 48.2 });
       apartment.push({ Date: day(m, 12), Item: "Internet", "Total Amount": 64.99 });
-      if (m === 3) apartment.push({ Date: day(m, 3), Item: "Renter's Insurance", "Total Amount": 14 });
+      if (m === 3) apartment.push({ Date: day(m, 3), Item: "Renters insurance", "Total Amount": 14 });
     }
 
     // Venmo requests: older months settled, last month still out
@@ -44,12 +44,28 @@
       { "Date of Original Purchase": day(0, 3), Activity: "Flight to Austin", Description: "Round trip", Amount: 412.6, Category: "Client", "Owed By": "Northwind Ltd", Purpose: "Kickoff onsite", Group: trip, Status: "Pending" },
       { "Date of Original Purchase": day(0, 3), Activity: "Hotel — 2 nights", Amount: 389.2, Category: "Client", "Owed By": "Northwind Ltd", Purpose: "Kickoff onsite", Group: trip, Status: "Pending" },
       { "Date of Original Purchase": day(0, 4), Activity: "Rideshare", Amount: 46.75, Category: "Client", "Owed By": "Northwind Ltd", Purpose: "Kickoff onsite", Group: trip, Status: "Submitted", "Date Submitted": day(0, 5) },
-      { "Date of Original Purchase": day(1, 20), Activity: "Conference ticket", Amount: 249, Category: "Work (internal)", "Owed By": "Employer", Purpose: "Learning budget", Status: "Submitted", "Date Submitted": day(1, 22) },
-      { "Date of Original Purchase": day(2, 9), Activity: "Concert tickets", Description: "Two seats", Amount: 168, Category: "Friends/Family", "Owed By": "Sam", Status: "Paid", "Date Submitted": day(2, 10), "Date Paid": day(2, 14) },
-      { "Date of Original Purchase": day(0, 1), Activity: "Groceries for the cabin weekend", Amount: 94.3, Category: "Friends/Family", "Owed By": "Jordan", Status: "Pending" },
+      { "Date of Original Purchase": day(1, 20), Activity: "Conference ticket", Amount: 249, Category: "Work", "Owed By": "Employer", Purpose: "Learning budget", Status: "Submitted", "Date Submitted": day(1, 22) },
+      { "Date of Original Purchase": day(2, 9), Activity: "Concert tickets", Description: "Two seats", Amount: 168, Category: "Friends & family", "Owed By": "Casey", Status: "Paid", "Date Submitted": day(2, 10), "Date Paid": day(2, 14) },
+      { "Date of Original Purchase": day(0, 1), Activity: "Groceries for the cabin weekend", Amount: 94.3, Category: "Friends & family", "Owed By": "Jordan", Status: "Pending" },
     ];
 
+    // the demo is set up the way a new user might: a roommate, a couple of rules, three categories
+    const settings = {
+      setupDone: true,
+      me: "Alex",
+      partner: "Riley",
+      sharedEnabled: true,
+      sharedLabel: "Apartment",
+      sharedCategory: "Friends & family",
+      categories: ["Friends & family", "Work", "Client"],
+      rules: [
+        { item: "Rent", method: "offset", value: 100 },
+        { item: "Renters insurance", method: "mine" },
+      ],
+    };
+
     return {
+      settings,
       rowsBySchema: { apartment, requests, subscriptions, thirdparty: expenses },
       links: [
         { Place: "Electric company", Link: "https://example.com/electric", Purpose: "Pay the power bill" },

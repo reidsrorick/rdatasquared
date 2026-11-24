@@ -1,93 +1,108 @@
 # Budget
 
-A local, no-build web app for your shared apartment costs, subscriptions, and reimbursable
-expenses. Everything lives in **one file — `budget.json`** — in your OneDrive budget folder, read
-and written right in the browser. No server, no database, no upload; your data never leaves your
-machine. When you need Excel, the **Excel** button exports everything to a workbook.
+A local, no-build web app for tracking shared bills, subscriptions, and expenses people owe you
+back. Your data lives in **one Excel workbook, `budget.xlsx`**, in a folder you choose (such as a
+OneDrive folder). The app reads it and writes every change straight back, right in the browser.
+No server, no database, no upload; your data never leaves your machine. Open the same file in
+Excel any time.
 
-- **Dashboard** — this month's apartment split, what Luke owes you, recurring monthly cost, what's still owed back to you.
-- **Apartment** — the Data Entry table with automatic Reid/Luke splits, a monthly summary, biller-portal links.
-- **Summary** — the overall picture across everything you track, by year: where the apartment money goes, what you spend on recurring costs, and how much you've fronted for others versus gotten back.
+Nothing about you is built in. On first run a short **setup** asks your name, whether you share
+bills with someone (and how each bill splits), and who pays you back. Everything is editable later
+in **Settings**.
+
+- **Dashboard** — this month's shared-bill split, what the other person owes you, recurring monthly cost, what's still owed back to you.
+- **Shared bills** (you name it: Apartment, House…) — a table of bills with an automatic split, a monthly summary, biller links. Only appears if you said you share bills.
+- **Summary** — the overall picture across everything you track, by year.
 - **Subscriptions & Bills** — recurring items, each normalized to a monthly cost, with an Active toggle.
-- **Expense Tracker** — everything someone owes you back: things you paid for (friends/family, work, a client) with a status and receipts for each, plus Luke's share of the apartment each month and the Venmo request behind it.
+- **Expense Tracker** — everything someone owes you back: things you paid for, with a status and receipts for each, grouped into trips if you like, plus the other person's share of the shared bills each month and the payment request behind it.
 
 ## Layout
 
 The app is laid out like the [Residence Tracker](https://www.rdatasquared.com/residence/):
 
-- A translucent **top bar** with the app name, a **save chip** (`Budgeting · Saved 3:42 PM`, pulsing while it saves), the privacy eye, reload, **Excel** export and **Switch folder**. On phones the chip, eye and Excel stay; reload and folder move into Settings.
+- A translucent **top bar** with the app name, a **save chip** (`Budgeting · Saved 3:42 PM`, pulsing while it saves), the privacy eye, reload, **Copy** (a dated copy of the workbook) and **Switch folder**. On phones the chip, eye and Copy stay; reload and folder move into Settings.
 - A **side nav** of colored icon tiles (a row of tabs on narrow screens). The Expense Tracker shows a count of expenses you haven't requested yet. **Settings** sits at the bottom.
 - Every page starts with a small label, the title, and a one-line description of what it's for, with that page's buttons on the right. Stat cards carry an icon tile and a colored top edge; everything else sits in rounded floating cards.
 - Light or dark follows your system. The app **remembers the tab you were on** and reopens it after a refresh.
 
 **First screen.** Before a folder is connected you get a welcome card: **Open budget folder** (or **Reconnect <folder>** when your browser just needs a one-click OK), or **Start with sample data**.
 
-**Sample data.** *Start with sample data* — or opening `index.html?demo` — loads made-up numbers so you can look around. Nothing is read or written; Excel export still works. **Open my folder** leaves it.
+**Sample data.** *Start with sample data* — or opening `index.html?demo` — loads made-up numbers so you can look around. Nothing is read or written. **Open my folder** leaves it.
 
-**Settings** holds the Autosave switch, Hide amounts, the connected folder (Switch / Reload) and Excel export.
+**Settings** holds your setup (names, split rules, categories), the Autosave switch, Hide amounts, the connected folder (Switch / Reload) and a download-a-copy button.
 
-## Your data: `budget.json`
+## Setup (first run)
 
-All five tables plus the biller links are stored in a single readable JSON file, one row per line:
+Open a folder with no `budget.xlsx` and the setup appears. It asks:
 
-```json
-{
-  "app": "budget",
-  "version": 1,
-  "savedAt": "2026-11-13T20:44:53.000Z",
-  "migrations": { "settledBeforeFirstRequest": true },
-  "groups": ["Amarillo trip"],
-  "apartment": [
-    {"Date":"2026-11-01","Item":"Rent","Total Amount":1957}
-  ],
-  "requests": [ … ],
-  "subscriptions": [ … ],
-  "expenses": [ … ],
-  "links": [ … ]
-}
-```
+1. **Your name**, used for column headings.
+2. **Do you share bills with someone?** If yes: their name, what you call it (Apartment, House, Shared bills…), and your **split rules** (below). If no, the shared-bills tab and everything tied to it stays hidden.
+3. **Who pays you back?** Your own categories for expenses you cover and get reimbursed for (friends, an employer, clients…). Start from the suggestions or add your own.
 
-Dates are plain `YYYY-MM-DD`. The apartment splits (50/50, Reid, Luke) aren't stored — they're
-calculated from the total, so they can never drift out of sync. It's an ordinary text file, so it
-syncs through OneDrive, diffs cleanly, and is easy to back up.
+*Skip for now* leaves everything blank. Reopen it any time from **Settings → Names, split rules, categories**,
+or the **Edit** button on the shared-bills page. Changing a category or name never rewrites old rows; anything
+already on an expense keeps showing.
 
-### Moving over from the spreadsheets
+### Split rules
 
-The first time you connect a folder that has **no `budget.json`**, the app imports your existing
-`Apartment Breakdown.xlsx` and `Expenses.xlsx` into a new `budget.json` and tells you so. After
-that, `budget.json` is the source of truth.
+Out of the box there are **no rules**: every shared bill is split in half. Add a rule for any item that
+splits differently. The item is whatever you type when adding a bill (suggestions come from your rules and past bills):
 
-- **Your `.xlsx` files are only ever read — never written.** They're left exactly as they were
-  (including the pasted screenshots in the *Screenshots* sheet, which the app can't carry over).
-  They're just no longer updated; use the **Excel** button when you want a current workbook.
-- If a folder has neither `budget.json` nor spreadsheets, the app asks before starting a new,
-  empty budget there.
+| Rule | Meaning |
+|------|---------|
+| Split equally | each person pays half |
+| I pay all / They pay all | the whole bill is yours / theirs |
+| I pay a percentage | e.g. 60 → you pay 60%, they pay 40% |
+| Equal, but I pay more or less | half each, then you pay $X more (a minus amount means less) and they pay less |
+| I pay a fixed amount | you pay $X each time, they pay the rest |
 
-## Export to Excel
+An optional **Shown as** name replaces the item in the Summary. Amounts are kept at full precision and shown to
+2 decimals. A month's **Total** is the sum of the actual bill amounts. (A rule saved with *Round each share up*
+in the workbook charges each person `total − INT(total ÷ 2)`, which can add up to a cent more than the bill;
+the setup screen doesn't offer it, it exists so older data keeps adding up.)
 
-the **Excel** button in the top bar (or in Settings) builds a fresh workbook from what's on screen and downloads it as
-`Budget Export YYYY-MM-DD.xlsx` (check your Downloads folder). It contains:
+## Your data: `budget.xlsx`
 
-| Sheet | What's in it |
-|-------|--------------|
-| **Data Entry** | every apartment entry, with the 50/50, Reid and Luke columns calculated |
-| **Summary** | monthly Reid / Luke / Total, and the year total |
-| **Requests** | Venmo requests |
-| **Subscriptions-Bills** | recurring items |
-| **Expense Tracker** | every reimbursable expense, including status, dates and receipt filenames |
-| **Owed Summary** | pending / submitted / paid / still owed, by who pays you back (including Luke's apartment share), plus Luke's share month by month |
-| **Trips** | one row per group: items, total, paid back, still owed |
-| **Links** | biller portals |
+The workbook is the app's only saved file. Edit its data sheets in Excel if you like (**close it in Excel
+first**: Excel locks an open file, and the app will tell you "Couldn't write budget.xlsx" until you do; it retries on its own).
 
-Dates and dollar amounts are real Excel dates and currency, so they sort and sum normally. The
-export is a one-way snapshot — editing the workbook doesn't change `budget.json`.
+| Sheet | What's in it | Editable? |
+|-------|--------------|-----------|
+| **Shared Bills** | every bill, with the split columns calculated | yes (Date, Item, Total Amount) |
+| **Requests** | payment requests (which month, status, dates) | yes |
+| **Subscriptions-Bills** | recurring items | yes |
+| **Expense Tracker** | every reimbursable expense: status, dates, receipt filenames, group | yes |
+| **Links** | biller links | yes |
+| **Groups** | trip / group names (so an empty group survives) | yes |
+| **Split Rules** | your rules | yes |
+| **Categories** | your "who pays you back" list | yes |
+| **Settings** | names, setup flags | yes |
+| **Summary**, **Owed Summary**, **Trips**, **About** | reports | **no**, rewritten on every save |
+
+Dates and dollar amounts are real Excel dates and currency. The split columns are calculated from the
+rules, so they can't drift out of sync.
+
+### Moving over from earlier versions
+
+The first time you connect a folder that has **no `budget.xlsx`**, the app creates one from the first of these it finds, and says so:
+
+1. an older **`budget.json`** (this app's previous format). Your numbers are unchanged: the names and split rules that file was built on are carried into the new Settings automatically.
+2. your original **`Apartment Breakdown.xlsx`** and **`Expenses.xlsx`**, imported the same way.
+
+Those older files are only ever **read, never written or deleted**; after the move, `budget.xlsx` is the source of truth.
+A folder with none of them starts the setup.
+
+## Download a copy
+
+The **Copy** button (top bar, or Settings → Download a copy) saves a dated copy of the whole workbook,
+`Budget Export YYYY-MM-DD.xlsx`, to your Downloads folder. The live `budget.xlsx` stays where it is.
 
 ## Adding entries
 
 Each data tab has a blue **+ Add** (one row via a form) and a **Bulk add** button. Bulk add
 opens an Excel-style grid where you can type multiple rows or **paste straight from Excel** —
 copy a block of cells, click the first box, and Ctrl+V. Dates accept `11/15/2026` or
-`2026-11-15`; the item column matches your allowed items (case-insensitive); computed splits
+`2026-11-15`; item and category boxes suggest what you've used before; computed splits
 are filled in automatically. Edit a row with ✎, delete with ✕.
 
 Tables are laid out to fit without a sideways scrollbar. Long text wraps, and details such as a subscription's
@@ -100,38 +115,26 @@ you change the status.
 each value with its label ("Amount  $134.00"), with the row's buttons at the bottom. The bulk-add grid does the
 same on screens under about 980px, with one card per row to fill in.
 
-## How the split works (mirrors your sheet's formulas)
+## How the split works
 
-| Item | Reid | Luke |
-|------|------|------|
-| **Rent** | half + $75 | half − $75 |
-| **Renter's Insurance** | full amount | $0 |
-| **Internet** | total − INT(total ÷ 2) | same |
-| everything else (uelec, uwater, ugarb) | half | half |
-
-Values are kept at full precision and displayed to 2 decimals — identical to the workbook. A
-month's **Total** is the sum of the actual bill amounts, like your workbook's Summary sheet. It can
-differ from Reid + Luke by a few cents, because the Internet rule above charges each person
-`total − INT(total ÷ 2)`, which adds up to slightly more than the bill.
+See **Split rules** above. The split is calculated per bill from your rules; with no rules everything is 50/50.
 
 ## Summary tab
 
 Pick a **calendar year** (or **All time**) at the top; the year picker remembers your choice and
 defaults to the newest year with data. Four cards and three panels:
 
-- **Apartment — your share** — what the apartment cost you that year, your monthly average, and Luke's share.
+- **Shared bills — your share** — what the shared bills cost you that year, your monthly average, and the other person's share. (Only if you share bills.)
 - **Recurring / month** — what your active subscriptions and bills cost now, per month and per year.
   This is a *current* figure, so it doesn't change with the year you pick.
 - **Fronted for others** and **Still owed to you** — what you paid for other people (expenses you bought that
-  year, plus Luke's apartment share), how much has come back, and the percentage recovered.
-- **Where the apartment money goes** — each kind of bill (rent, electric, water, …) with its total, your share,
-  Luke's share, and its percentage of all apartment bills.
+  year, plus the other person's share of the shared bills), how much has come back, and the percentage recovered.
+- **Where the shared-bill money goes** — each kind of bill with its total, your share, theirs, and its percentage of all shared bills.
 - **Recurring costs** — every active item as a monthly and yearly cost, biggest first.
-- **Fronted for others** — by who pays you back (Friends/Family, Work, Client): fronted, paid back, still owed, recovered.
+- **Fronted for others** — by who pays you back (your categories): fronted, paid back, still owed, recovered.
 
-The month-by-month apartment table is on the Dashboard and Apartment tabs, so it isn't repeated here.
-One caution: your rent, internet and renter's insurance show up in **both** the apartment numbers and the
-recurring list (they're in your Subscriptions & Bills sheet too) — don't add those two together.
+The month-by-month table is on the Dashboard and the shared-bills tab, so it isn't repeated here.
+One caution: a bill that's in both your shared bills and your Subscriptions & Bills list shows up in both places, so don't add the two together.
 
 ## Privacy mode (hide amounts)
 
@@ -156,22 +159,22 @@ in-place file writing — see Fallback below).
 3. Edit anything — with **Autosave** on (the default) it writes itself; otherwise click
    **Save now** in the top bar.
 
-OneDrive then syncs `budget.json` up to the cloud like any other change.
+OneDrive then syncs `budget.xlsx` up to the cloud like any other change.
 
 ## Autosave
 
-The **Autosave** switch in **Settings** (on by default) writes your changes to `budget.json`
+The **Autosave** switch in **Settings** (on by default) writes your changes to `budget.xlsx`
 automatically about 1.2 seconds after you stop editing. The save chip in the top bar shows
 `Saving…` then `Saved 3:42 PM`. Your preference is remembered between visits.
 
 - Autosave needs a connected folder (Chrome/Edge). In the download-only fallback it stays
-  off so it can't spam your downloads — use the **Download budget.json** button there.
+  off so it can't spam your downloads — use the **Download budget.xlsx** button there.
 - If a save ever fails (e.g. the folder permission was revoked), autosave switches itself
   off and tells you, so it never loops.
 
 ## Multi-device safety (conflict detection)
 
-Because `budget.json` lives in OneDrive and syncs across devices, the app guards against
+Because `budget.xlsx` lives in OneDrive and syncs across devices, the app guards against
 overwriting newer changes. It records the file's modified-time when it loads, and:
 
 - **Returning to the tab** (or every ~20s) it checks whether the file changed on disk — from
@@ -180,7 +183,7 @@ overwriting newer changes. It records the file's modified-time when it loads, an
 - **Before any save** (manual or autosave) it re-checks. If the file changed underneath you,
   the save is blocked and a red banner appears: **Reload latest** (take the disk version) or
   **Keep my version** (overwrite the disk). Autosave pauses until you choose.
-- If `budget.json` can't be read (invalid JSON, or OneDrive is mid-sync), the app keeps the data
+- If `budget.xlsx` can't be read (invalid JSON, or OneDrive is mid-sync), the app keeps the data
   you have, says so, and tries again — it never overwrites a file it couldn't read.
 
 So switching between your laptop and another device won't clobber whichever you edited last —
@@ -193,18 +196,18 @@ A banner appears above the page when something needs attention:
 - **Sample data** — you're looking at the demo; nothing is saved.
 - **Autosave is off** — you turned it off; changes stay in the browser until you Save. (Turn it back on, or Save now.)
 - **Download mode** — the browser can't write in place (fallback); saving downloads a copy.
-- **Conflict** (red) — `budget.json` changed elsewhere; choose which version wins.
+- **Conflict** (red) — `budget.xlsx` changed elsewhere; choose which version wins.
 
 ## Backups
 
-The first save of an editing session writes a timestamped copy of the previous `budget.json` into a
+The first save of an editing session writes a timestamped copy of the previous `budget.xlsx` into a
 **`backups/`** subfolder (`budget 2026-11-13T20-44-53.json`), then at most one backup per 10 minutes
-(so autosave doesn't flood it); the last 20 are kept. To roll back, copy a backup over `budget.json`.
+(so autosave doesn't flood it); the last 20 are kept. To roll back, copy a backup over `budget.xlsx`.
 
 ## Fallback (browsers without File System Access)
 
-If your browser can't write files directly, **Open budget file** lets you pick `budget.json` (or your
-two old `.xlsx` files, to import them). **Save** downloads an updated `budget.json` that you put
+If your browser can't write files directly, **Open budget file** lets you pick `budget.xlsx` (or your
+two old `.xlsx` files, to import them). **Save** downloads an updated `budget.xlsx` that you put
 back in your folder yourself.
 
 ## Install as an app (PWA)
@@ -226,9 +229,9 @@ offline), and the versioned URLs make sure an old cached file can never be paire
 
 For anything you paid for that someone else should pay back. Each expense has:
 
-- **Who pays me back** — *Friends/Family*, *Work (internal)* (your employer's expense report), or *Client*.
+- **Who pays me back** — one of your own categories (set up in Settings, e.g. friends, your employer, a client). You can also just type a new one on an expense.
 - **Owed by** — the person or client's name.
-- **Status** — *Pending* (you paid, haven't asked yet) → *Submitted* (expense report / invoice sent, or Venmo requested) → *Paid*. Change it right from the dropdown on the row; the **Submitted on** / **Paid on** dates are filled in for you.
+- **Status** — *Pending* (you paid, haven't asked yet) → *Submitted* (expense report / invoice sent, or payment requested) → *Paid*. Change it right from the dropdown on the row; the **Submitted on** / **Paid on** dates are filled in for you.
 
 The top of the page shows how much is **still owed**, how much you haven't requested yet, how much is awaiting payment, and how much has been paid back — plus a breakdown by who pays. Use the filter chips to look at just one category or status (the default view is everything still owed).
 
@@ -255,22 +258,22 @@ There are two ways to fill a group:
 
 Each block's **More…** menu has **Mark all submitted** (moves every *Pending* expense forward), **Mark all paid**,
 **Rename…** (naming it after another group merges the two) and **Delete group…**. Deleting a group never deletes
-its expenses — they just become ungrouped. Group names ignore case and spacing, so "amarillo trip" joins
-"Amarillo trip". The category and status filters still apply inside groups; a header always shows the group's
+its expenses — they just become ungrouped. Group names ignore case and spacing, so "austin trip" joins
+"Austin trip". The category and status filters still apply inside groups; a header always shows the group's
 full total, and says "(3 shown)" when a filter is hiding some of its expenses.
 
-Groups are saved in `budget.json` (the list of names under `groups`, and each expense's `Group`), so an empty group
-survives until you use it, and the Excel export has a **Group** column and a **Trips** sheet.
+Groups are saved in `budget.xlsx` (the **Groups** sheet, and each expense's *Group* column), so an empty group
+survives until you use it, and the workbook has a **Trips** report sheet.
 
-## Apartment in the Expense Tracker (Luke's share)
+## Shared bills in the Expense Tracker (their share)
 
-You front the whole apartment bill and Luke pays his share by Venmo request, so that's an expense
-someone owes you too. Each **month of apartment bills** appears in the Expense Tracker as one line —
-*Apartment — November 2026, owed by Luke, $980.27* — filed under Friends/Family and counted in the
+If you said you share bills, you front the whole bill and the other person pays their share by payment
+request, so that's an expense they owe you too. Each **month of shared bills** appears in the Expense Tracker as one line —
+*Apartment — November 2026, owed by Sam, $485.00* — filed under the category you picked for it in setup and counted in the
 totals, the "Who owes me" table, and the dashboard's **Owed back to me** card.
 
-Nothing is entered twice. The line is **calculated** from your Apartment entries (Luke's share of that
-month's bills, using the split rules) and takes its **status from that month's Venmo request**, which
+Nothing is entered twice. The line is **calculated** from your shared bills (their share of that
+month's bills, using your split rules) and takes its **status from that month's payment request**, which
 you manage right on the line:
 
 | Status | When |
@@ -281,25 +284,25 @@ you manage right on the line:
 
 The buttons on these lines update that request for you:
 
-- **Request…** — opens the Venmo request form pre-filled for that month (title, month, Luke's share, status Draft).
-- **Mark paid** — Luke paid: stamps today as *Payment Received* and sets the status to Paid.
+- **Request…** — opens the payment-request form pre-filled for that month (title, month, their share, status Draft).
+- **Mark paid** — they paid: stamps today as *Payment Received* and sets the status to Paid.
 - **Settled** — the month was already taken care of and has no request; records a Complete request so it stops showing as owed.
-- **✎** — edit the request: its status, the *sent* / *paid* dates, and the *account transferred* date for moving the money from Venmo to your bank (shown on the line as "in bank 11/14").
+- **✎** — edit the request: its status, the *sent* / *paid* dates, and the *account transferred* date (shown on the line as "in bank 11/14").
 - **✕** — remove the request. That month goes back to *no request yet*, which is how you undo a **Settled** you clicked by mistake.
 
-The receipts for the bills themselves still go on the Apartment entries.
+The receipts for the bills themselves go on the shared-bill entries.
 
-**One-time catch-up.** The first time this version loads your data, every month of bills *before your first
+**One-time catch-up.** The first time data loads, every month of bills *before your first
 tracked request* (with no request of its own) is marked **settled** — it assumes you were paid before you
 started tracking. Each shows up as an ordinary *Complete* request titled e.g. "September 2026 Bills"
 (description "Marked settled (before tracking started)"); use **✕** on any you disagree with and that month
-goes back to Pending. This runs once and is remembered in `budget.json` (`migrations`), so it never re-creates
+goes back to Pending. This runs once and is remembered in the workbook (a `migration:` row on the Settings sheet), so it never re-creates
 a record you deleted.
 
 ## Hosting on GitHub
 
 This `app/` folder is self-contained (code only — no data). Make **`app/`** the repository root
-and enable GitHub Pages; your `budget.json` and spreadsheets stay in OneDrive and are never
+and enable GitHub Pages; your `budget.xlsx` and spreadsheets stay in OneDrive and are never
 committed. The hosted page still reads/writes your local OneDrive folder through the folder
 picker, exactly like the local version.
 
@@ -311,9 +314,9 @@ app/
   styles.css        theme (light/dark), layout
   sw.js             service worker (offline app shell)
   js/
-    model.js        split logic, summaries, formatting, table schemas
-    excel.js        Excel import (one-time migration) and export
-    store.js        budget.json in your folder: load/save, backups, change detection, receipt files
+    model.js        settings, split rules, summaries, formatting, table schemas
+    excel.js        reads and writes budget.xlsx (data + settings), older-file import, dated copy
+    store.js        budget.xlsx in your folder: load/save, backups, change detection, receipt files
     sample.js       made-up data for "Start with sample data" / ?demo
     ui.js           rendering: welcome, nav, pages, tables, forms, settings
     app.js          state + actions + bootstrap
@@ -324,6 +327,6 @@ app/
 ## Adding a new item type or column
 
 Edit the `schemas` object in `js/model.js`. Each table lists its stored `columns` (saved to
-`budget.json` and included in the Excel export) and optional `computed` columns (derived; set
+`budget.xlsx`) and optional `computed` columns (derived; set
 `persist: true` to also include them in the export, like the apartment splits). The Item dropdown
-comes from `APARTMENT_ITEMS`.
+comes from your split rules and past bills (free text).

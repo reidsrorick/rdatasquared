@@ -71,26 +71,167 @@
     return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
   };
 
-  // ---------- apartment split logic (mirrors the SWITCH formulas) ----------
-  // Items: Rent, uelec, uwater, ugarb, Internet, Renter's Insurance
-  const APARTMENT_ITEMS = ["Rent", "uelec", "uwater", "ugarb", "Internet", "Renter's Insurance"];
+  // ---------- settings: who's who, how shared bills split, who pays you back ----------
+  // Nothing is built in. A new budget starts blank and the setup screen fills these in; they
+  // are saved in the workbook's Settings / Split Rules / Categories sheets.
+  const RULE_METHODS = [
+    { id: "equal", label: "Split equally", unit: "", hint: "Each person pays half." },
+    { id: "mine", label: "I pay all", unit: "", hint: "The whole bill is yours." },
+    { id: "theirs", label: "They pay all", unit: "", hint: "The whole bill is theirs." },
+    { id: "percent", label: "I pay a percentage", unit: "%", hint: "Your share of the bill, as a percent." },
+    { id: "offset", label: "Equal, but I pay more or less", unit: "$", hint: "Half each, then you pay this much more (use a minus for less) and they pay less." },
+    { id: "fixed", label: "I pay a fixed amount", unit: "$", hint: "You pay this amount each time; they pay the rest." },
+  ];
 
+  const blankSettings = () => ({
+    setupDone: false,
+    me: "",
+    partner: "",
+    sharedEnabled: false,
+    sharedLabel: "",
+    sharedCategory: "",
+    categories: [],
+    rules: [],
+  });
+
+  function normalizeSettings(raw) {
+    const o = blankSettings();
+    if (!raw || typeof raw !== "object") return o;
+    const str = (v) => String(v == null ? "" : v).trim();
+    o.setupDone = !!raw.setupDone;
+    o.me = str(raw.me);
+    o.partner = str(raw.partner);
+    o.sharedEnabled = !!raw.sharedEnabled;
+    o.sharedLabel = str(raw.sharedLabel);
+    o.sharedCategory = str(raw.sharedCategory);
+    const seen = [];
+    (Array.isArray(raw.categories) ? raw.categories : []).forEach((c) => {
+      c = str(c);
+      if (c && !seen.some((x) => x.toLowerCase() === c.toLowerCase())) seen.push(c);
+    });
+    o.categories = seen;
+    const ids = RULE_METHODS.map((m) => m.id);
+    o.rules = (Array.isArray(raw.rules) ? raw.rules : [])
+      .map((r) => {
+        const method = ids.includes(r && r.method) ? r.method : "equal";
+        const v = r && r.value != null && r.value !== "" ? Number(r.value) : null;
+        return {
+          item: str(r && r.item),
+          method,
+          value: v != null && !isNaN(v) ? v : null,
+          label: str(r && r.label),
+          up: !!(r && r.up),
+        };
+      })
+      .filter((r) => r.item);
+    return o;
+  }
+
+  let cfg = blankSettings();
+  const setSettings = (s) => {
+    cfg = normalizeSettings(s);
+  };
+  const getSettings = () => cfg;
+  const meName = () => cfg.me || "You";
+  const partnerName = () => cfg.partner || "Roommate";
+  const sharedLabel = () => cfg.sharedLabel || "Shared bills";
+  const sharedCategory = () => cfg.sharedCategory || cfg.categories[0] || partnerName();
+
+  // The settings an older budget.json (made before there was a setup screen) was built on, so
+  // that existing data keeps adding up exactly as it did.
+  function legacySettings() {
+    return normalizeSettings({
+      setupDone: true,
+      me: "Reid",
+      partner: "Luke",
+      sharedEnabled: true,
+      sharedLabel: "Apartment",
+      sharedCategory: "Friends/Family",
+      categories: ["Friends/Family", "Work (internal)", "Client"],
+      rules: [
+        { item: "Rent", method: "offset", value: 75 },
+        { item: "uelec", method: "equal", label: "Electric" },
+        { item: "uwater", method: "equal", label: "Water" },
+        { item: "ugarb", method: "equal", label: "Garbage" },
+        { item: "Internet", method: "equal", up: true },
+        { item: "Renter's Insurance", method: "mine", label: "Renter's insurance" },
+      ],
+    });
+  }
+
+  const ruleFor = (item) => {
+    const k = String(item || "").trim().toLowerCase();
+    return cfg.rules.find((r) => r.item.toLowerCase() === k) || null;
+  };
+  const itemLabel = (item) => {
+    const r = ruleFor(item);
+    return (r && r.label) || item || "";
+  };
+
+  // One line saying what a rule does, for the rules list
+  function ruleSummary(r) {
+    const v = Number(r.value) || 0;
+    const them = partnerName();
+    switch (r.method) {
+      case "mine":
+        return "you pay all";
+      case "theirs":
+        return `${them} pays all`;
+      case "percent":
+        return `you pay ${v}%, ${them} ${Math.round((100 - v) * 100) / 100}%`;
+      case "offset":
+        return v >= 0
+          ? `you pay ${money(v)} more than half`
+          : `you pay ${money(-v)} less than half`;
+      case "fixed":
+        return `you pay ${money(v)}, ${them} the rest`;
+      default:
+        return r.up ? "split equally (each rounded up)" : "split equally";
+    }
+  }
+
+  // How one shared bill splits. Anything without a rule is simply split in half.
+  // Raw precision here; display rounds to 2dp.
   function split(item, total) {
     total = Number(total) || 0;
     const half = total / 2;
-    // Raw precision (matching the spreadsheet's SWITCH formulas); display rounds to 2dp.
-    switch (item) {
-      case "Rent":
-        return { half, reid: half + 75, luke: half - 75 };
-      case "Internet": {
-        const each = total - Math.floor(half); // = C - INT(C/2)
-        return { half, reid: each, luke: each };
+    const rule = ruleFor(item);
+    const v = rule && rule.value != null ? Number(rule.value) : 0;
+    switch (rule && rule.method) {
+      case "mine":
+        return { half, me: total, other: 0 };
+      case "theirs":
+        return { half, me: 0, other: total };
+      case "percent": {
+        const me = (total * Math.min(100, Math.max(0, v))) / 100;
+        return { half, me, other: total - me };
       }
-      case "Renter's Insurance":
-        return { half, reid: total, luke: 0 };
+      case "offset":
+        return { half, me: half + v, other: half - v };
+      case "fixed": {
+        const me = Math.min(total, Math.max(0, v));
+        return { half, me, other: total - me };
+      }
       default:
-        return { half, reid: half, luke: half };
+        if (rule && rule.up) {
+          const each = total - Math.floor(half); // both pay the rounded-up half
+          return { half, me: each, other: each };
+        }
+        return { half, me: half, other: half };
     }
+  }
+
+  // every "who pays me back" category in use: the ones you set up plus any named on an expense
+  function categories(rows) {
+    const out = [];
+    const add = (n) => {
+      n = String(n || "").trim();
+      if (n && !out.some((x) => x.toLowerCase() === n.toLowerCase())) out.push(n);
+    };
+    cfg.categories.forEach(add);
+    (rows || []).forEach((r) => add(r.Category));
+    if (cfg.sharedEnabled) add(sharedCategory());
+    return out;
   }
 
   // ---------- monthly summary from apartment rows ----------
@@ -100,18 +241,18 @@
       const s = split(r.Item, r["Total Amount"]);
       const key = monthKey(r.Date);
       if (!map.has(key))
-        map.set(key, { key, label: monthLabel(r.Date), date: toDate(r.Date), reid: 0, luke: 0, total: 0 });
+        map.set(key, { key, label: monthLabel(r.Date), date: toDate(r.Date), me: 0, other: 0, total: 0 });
       const m = map.get(key);
-      m.reid += s.reid; // accumulate raw; round only for display
-      m.luke += s.luke;
+      m.me += s.me; // accumulate raw; round only for display
+      m.other += s.other;
       // Total is the sum of the actual bill amounts (like the workbook's Summary sheet) — NOT
-      // reid + luke, which runs a few cents over because of the Internet split rule.
+      // me + other, which can run a few cents over when a rule rounds each share up.
       m.total += Number(r["Total Amount"]) || 0;
     }
     const months = [...map.values()].sort((a, b) => (a.date || 0) - (b.date || 0));
     const year = {
-      reid: months.reduce((a, m) => a + m.reid, 0),
-      luke: months.reduce((a, m) => a + m.luke, 0),
+      me: months.reduce((a, m) => a + m.me, 0),
+      other: months.reduce((a, m) => a + m.other, 0),
       total: months.reduce((a, m) => a + m.total, 0),
     };
     return { months, year };
@@ -137,26 +278,27 @@
 
   // ---------- table schemas ----------
   // Each table knows its sheet, its columns, and (optionally) computed columns.
-  const APARTMENT_ITEM_OPTIONS = APARTMENT_ITEMS.slice();
-  const EXPENSE_CATEGORIES = ["Friends/Family", "Work (internal)", "Client"];
   const EXPENSE_STATUSES = ["Pending", "Submitted", "Paid"];
 
   const schemas = {
     apartment: {
       file: "apartment",
-      sheet: "Data Entry",
-      title: "Apartment — Data Entry",
+      sheet: "Shared Bills",
+      altSheets: ["Data Entry"], // what the older workbooks called it
+      get title() {
+        return sharedLabel();
+      },
       // stored columns (written back to the sheet, in this order)
       columns: [
         { key: "Date", label: "Date", type: "date", required: true },
-        { key: "Item", label: "Item", type: "select", options: APARTMENT_ITEM_OPTIONS, required: true },
+        { key: "Item", label: "Item", type: "text", suggest: "items", required: true },
         { key: "Total Amount", label: "Total Amount", type: "money", required: true },
       ],
-      // derived columns shown in the grid + written back to the 50/50, Reid, Luke columns
+      // derived columns shown in the grid and in the Excel export (labels follow the names you set)
       computed: [
-        { key: "50/50", label: "50/50", calc: (r) => split(r.Item, r["Total Amount"]).half, persist: true },
-        { key: "Reid", label: "Reid", calc: (r) => split(r.Item, r["Total Amount"]).reid, strong: true, persist: true },
-        { key: "Luke", label: "Luke", calc: (r) => split(r.Item, r["Total Amount"]).luke, persist: true },
+        { key: "half", get label() { return "50/50"; }, calc: (r) => split(r.Item, r["Total Amount"]).half, persist: true },
+        { key: "me", get label() { return meName(); }, calc: (r) => split(r.Item, r["Total Amount"]).me, strong: true, persist: true },
+        { key: "other", get label() { return partnerName(); }, calc: (r) => split(r.Item, r["Total Amount"]).other, persist: true },
       ],
       sortBy: (a, b) => (toDate(b.Date) || 0) - (toDate(a.Date) || 0),
     },
@@ -164,7 +306,7 @@
     requests: {
       file: "apartment",
       sheet: "Requests",
-      title: "Venmo request",
+      title: "Payment request",
       columns: [
         { key: "Title", label: "Title", type: "text", required: true },
         // which month's apartment bills this request collects (ties it to the Expense Tracker)
@@ -214,7 +356,8 @@
     // still reads it); the rest were added for tracking who owes what and whether it's paid.
     thirdparty: {
       file: "expenses",
-      sheet: "Third Party",
+      sheet: "Expense Tracker",
+      altSheets: ["Third Party"],
       title: "Expense Tracker",
       columns: [
         { key: "Date of Original Purchase", label: "Purchased", type: "date" },
@@ -223,7 +366,7 @@
         { key: "Description", label: "Details", type: "text", wide: true },
         { key: "Amount", label: "Amount", type: "money", required: true },
         { key: "Purpose", label: "Project / Purpose", type: "text" },
-        { key: "Category", label: "Who pays me back", type: "select", options: EXPENSE_CATEGORIES, required: true },
+        { key: "Category", label: "Who pays me back", type: "text", suggest: "categories", required: true },
         { key: "Owed By", label: "Owed by (person / client)", type: "text" },
         // which trip / batch this expense belongs to (suggests the groups you already have)
         { key: "Group", label: "Trip / group", type: "text", suggest: "groups" },
@@ -251,7 +394,7 @@
       r.Group = String(r.Group).trim();
       if (!r.Group) delete r.Group;
     }
-    if (!r.Category) r.Category = "Work (internal)";
+    if (!r.Category) r.Category = cfg.categories[0] || "Other";
     if (!r["Owed By"] && r.Purpose) r["Owed By"] = r.Purpose;
     if (!EXPENSE_STATUSES.includes(r.Status)) r.Status = "Pending";
     return r;
@@ -271,10 +414,10 @@
     return r;
   }
 
-  // ---------- apartment → "Luke owes me" ----------
-  // You front the whole apartment bill and Luke pays his share by Venmo request, so each
-  // month of apartment bills is one reimbursable line: Luke's share, with a status taken
-  // from that month's Venmo request. Nothing is copied — it's all derived.
+  // ---------- shared bills → "they owe me" ----------
+  // You front the whole bill and the other person pays their share by payment request, so
+  // each month of shared bills is one reimbursable line: their share, with a status taken
+  // from that month's request. Nothing is copied — it's all derived.
   const MONTH_RE =
     /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept|sep|oct|nov|dec)\b/i;
   const MONTH_INDEX = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
@@ -306,7 +449,7 @@
     return r;
   }
 
-  // Has Luke paid? A payment-received date or a Paid/Complete status says yes; a sent
+  // Have they paid? A payment-received date or a Paid/Complete status says yes; a sent
   // request (or "Awaiting Transfer") means we're waiting on him.
   function requestState(r) {
     const st = String(r.Status || "");
@@ -317,8 +460,9 @@
 
   const longMonth = (d) => d.toLocaleDateString("en-US", { month: "long" });
 
-  // One line per month of apartment bills: what Luke owes you and where it stands.
+  // One line per month of shared bills: what they owe you and where it stands.
   function apartmentOwedLines(aptRows, reqRows) {
+    if (!cfg.sharedEnabled) return [];
     const rank = { Pending: 0, Submitted: 1, Paid: 2 };
     const reqsByMonth = new Map();
     (reqRows || []).forEach((r, idx) => {
@@ -331,7 +475,7 @@
     for (const r of aptRows) billCount.set(monthKey(r.Date), (billCount.get(monthKey(r.Date)) || 0) + 1);
 
     return summarize(aptRows)
-      .months.filter((m) => m.key !== "—" && m.luke > 0.005)
+      .months.filter((m) => m.key !== "—" && m.other > 0.005)
       .map((m) => {
         let best = null;
         for (const q of reqsByMonth.get(m.key) || []) {
@@ -342,7 +486,7 @@
           key: m.key,
           label: m.label,
           date: new Date(m.date.getFullYear(), m.date.getMonth(), 1),
-          amount: m.luke,
+          amount: m.other,
           count: billCount.get(m.key) || 0,
           status: req ? requestState(req) : "Pending",
           requestIndex: best ? best.idx : null,
@@ -438,22 +582,22 @@
   // Apartment money by bill type (rent, electric, …) for a year (or all time if year is null).
   function apartmentByItem(aptRows, year) {
     const map = new Map();
-    const total = { count: 0, total: 0, reid: 0, luke: 0 };
+    const total = { count: 0, total: 0, me: 0, other: 0 };
     for (const r of aptRows) {
       if (year != null && yearOf(r.Date) !== year) continue;
       const s = split(r.Item, r["Total Amount"]);
       const amt = Number(r["Total Amount"]) || 0;
       const key = r.Item || "(no item)";
-      const o = map.get(key) || { item: key, count: 0, total: 0, reid: 0, luke: 0 };
+      const o = map.get(key) || { item: key, count: 0, total: 0, me: 0, other: 0 };
       o.count++;
       o.total += amt;
-      o.reid += s.reid;
-      o.luke += s.luke;
+      o.me += s.me;
+      o.other += s.other;
       map.set(key, o);
       total.count++;
       total.total += amt;
-      total.reid += s.reid;
-      total.luke += s.luke;
+      total.me += s.me;
+      total.other += s.other;
     }
     return { items: [...map.values()].sort((a, b) => b.total - a.total), total };
   }
@@ -480,7 +624,7 @@
   }
 
   // What you fronted for others in a year (or all time), how much came back, how much is
-  // still owed — expenses plus Luke's apartment months. Each bucket gets `fronted` and
+  // still owed — expenses plus the other person's shared-bill months. Each bucket gets `fronted` and
   // `recovered` (share paid back, or null if nothing was fronted).
   function frontedSummary(expenseRows, aptLines, year) {
     const exps = year == null ? expenseRows : expenseRows.filter((r) => expenseYear(r) === year);
@@ -491,37 +635,48 @@
       o.recovered = o.fronted > 0.005 ? o.Paid / o.fronted : null;
       return o;
     };
-    EXPENSE_CATEGORIES.forEach((c) => finish(sum.byCat[c]));
+    sum.cats.forEach((c) => finish(sum.byCat[c]));
     finish(sum.total);
     return sum;
   }
 
-  // Totals per category and status — what's still owed to you. `aptLines` (optional) adds
-  // Luke's apartment share under Friends/Family.
+  // Totals per category and status — what's still owed to you. `aptLines` (optional) adds the
+  // other person's shared-bill months under the shared category.
   function expenseSummary(rows, aptLines) {
     const empty = () => ({ Pending: 0, Submitted: 0, Paid: 0, count: 0 });
+    const cats = categories(rows);
     const byCat = {};
-    EXPENSE_CATEGORIES.forEach((c) => (byCat[c] = empty()));
+    cats.forEach((c) => (byCat[c] = empty()));
+    const canon = (name) => cats.find((c) => c.toLowerCase() === String(name || "").trim().toLowerCase());
+    const bucket = (name) => {
+      const c = canon(name) || "Other";
+      if (!byCat[c]) {
+        byCat[c] = empty();
+        cats.push(c);
+      }
+      return byCat[c];
+    };
     const total = empty();
     for (const r of rows) {
-      const cat = byCat[r.Category] ? r.Category : "Work (internal)";
       const st = EXPENSE_STATUSES.includes(r.Status) ? r.Status : "Pending";
       const amt = Number(r.Amount) || 0;
-      byCat[cat][st] += amt;
-      byCat[cat].count++;
+      const b = bucket(r.Category);
+      b[st] += amt;
+      b.count++;
       total[st] += amt;
       total.count++;
     }
     for (const l of aptLines || []) {
-      byCat["Friends/Family"][l.status] += l.amount;
-      byCat["Friends/Family"].count++;
+      const b = bucket(sharedCategory());
+      b[l.status] += l.amount;
+      b.count++;
       total[l.status] += l.amount;
       total.count++;
     }
     const outstanding = (o) => o.Pending + o.Submitted;
-    EXPENSE_CATEGORIES.forEach((c) => (byCat[c].outstanding = outstanding(byCat[c])));
+    cats.forEach((c) => (byCat[c].outstanding = outstanding(byCat[c])));
     total.outstanding = outstanding(total);
-    return { byCat, total };
+    return { byCat, total, cats };
   }
 
   const splitReceipts = (s) =>
@@ -547,9 +702,21 @@
     summarize,
     monthlyEquivalent,
     schemas,
-    APARTMENT_ITEMS,
-    EXPENSE_CATEGORIES,
     EXPENSE_STATUSES,
+    RULE_METHODS,
+    blankSettings,
+    normalizeSettings,
+    setSettings,
+    getSettings,
+    legacySettings,
+    meName,
+    partnerName,
+    sharedLabel,
+    sharedCategory,
+    ruleFor,
+    itemLabel,
+    ruleSummary,
+    categories,
     normalizeExpense,
     normalizeRequest,
     applyStatusDates,
