@@ -1116,6 +1116,7 @@ body.mobile #mobwelcome .bad{color:var(--red)}
   <div class="setsec"><h4>Move actions between notebooks</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">Send the actions assigned to one person from this notebook, and bring them into another one, without sharing any notes or pages. For example, ideas you jot down at home that you want in your work notebook.</div><div class="setbtns"><button data-act="sendact">Send actions…</button><button data-act="bringact">Bring in actions…</button></div></div>
 </div><div class="setpane" role="tabpanel" data-spane="look" hidden>
   <div class="setsec"><h4>Appearance</h4><label class="setline">Theme <select id="settheme"><option value="auto">Match my computer</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div>
+  <div class="setsec"><h4>Typing</h4><label class="setline"><input type="checkbox" id="autocap"> Start each line with a capital letter <small style="color:var(--mute)">When you finish the first word of a line (press Space) in a note, a title or a quick-add box, its first letter is capitalised. Undo (Ctrl + Z) takes it back.</small></label></div>
 </div><div class="setpane" role="tabpanel" data-spane="team" hidden>
   <div class="setsec"><h4>Team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">The people and Claude projects you can assign actions to. Turn on <b>Keep a feed</b> for one and the app writes a file, in a folder you choose and share with them, listing their actions, so they can answer “done?”. You always confirm. A feed holds each action’s text, date, notes and status, not your notes.</div><div id="setfeeds"></div></div>
   <div class="setsec"><h4>From the team</h4><div class="setline" style="font-size:13px;color:var(--mute);display:block">If someone shared a folder with you, connect it here. Then you see what is assigned to you and the pages shared with you, and can send “done?” requests and suggestions back.</div><div id="setinbox"></div></div>
@@ -1201,8 +1202,17 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.71.0';
+const APP_VERSION = '1.71.1';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.71.1",
+  "title": "Capital letter at the start of a line",
+  "items": [
+   "The first word of a line now starts with a capital letter. When you finish it (press Space) in a note, a title or a quick-add box, its first letter is capitalised. Ctrl + Z takes it back.",
+   "It leaves alone anything that is not a plain lower-case word (for example a date, a name that already has capitals, a spreadsheet cell, or a line starting with @ or a number).",
+   "Switch it off in Settings > Look > Typing (per computer)."
+  ]
+ },
  {
   "v": "1.71.0",
   "title": "Move notes and actions between devices",
@@ -3289,7 +3299,7 @@ function renderSettings(){
   const ok = fileState === 'ready' && !writeError;
   $('#setfile').innerHTML = (fileHandle ? `<div class="setline">${ok ? 'Autosaving to' : '<span class="bad">Not saving to</span>'} <b>${esc(fileHandle.name)}</b></div>` : '<div class="setline"><b class="bad">No save file chosen</b></div>')
     + `<div class="setbtns"><button data-act="${fileHandle ? 'open' : 'create'}">${fileHandle ? 'Change file…' : 'Choose file…'}</button><button data-act="backup" title="Download a copy of all your notes">Download a backup</button></div>`;
-  $('#settheme').value = theme; try { renderBackupSettings(); } catch {} try { renderCalSettings(); } catch {} try { renderInstallHelp(); } catch {} renderInboxSettings(); renderRaidSettings(); renderAlertSettings(); renderKeySettings(); try { renderSetup(); } catch {}
+  $('#settheme').value = theme; $('#autocap').checked = autoCapOn(); try { renderBackupSettings(); } catch {} try { renderCalSettings(); } catch {} try { renderInstallHelp(); } catch {} renderInboxSettings(); renderRaidSettings(); renderAlertSettings(); renderKeySettings(); try { renderSetup(); } catch {}
   const hasClaude = [...db.people, ...(db.feeds || []).map(f => f.person)].some(n => /^claude/i.test(n) || claudeStem(n)) || (db.feeds || []).some(f => f.claude), names = [...new Set([...(hasClaude ? [] : ['Claude']), ...db.people, ...(db.feeds || []).map(f => f.person)])].sort((a, b) => a.localeCompare(b));
   const sl = srcSlug(), onTeam = n => db.people.some(p => personKey(p) === personKey(n)), feedOf = n => (db.feeds || []).find(x => personKey(x.person) === personKey(n));
   const openOf = n => feedItems({person:n, titles:false}).filter(x => !x.done).length, openUnder = n => allEntries().filter(x => !x.done && (x.assignee || '').toLowerCase() === n.toLowerCase()).length;
@@ -6217,6 +6227,36 @@ document.addEventListener('input', e => {
     const L = tm[2].length + 2; el.setSelectionRange(pos - L, pos);
     let ok = false; try { ok = document.execCommand('insertText', false, todayStr()); } catch {}
     if(!ok){ el.setRangeText(todayStr(), pos - L, pos, 'end'); el.dispatchEvent(new Event('input', {bubbles:true})); }
+  }
+});
+/* ---- the first word of a line starts with a capital (on by default; Settings > Look > Typing) ---- */
+const autoCapOn = () => { try { return localStorage.getItem('notebook-autocap') !== '0'; } catch { return true; } };
+const AC_WORD = /^([\s\u00a0]*)([a-z])([a-z']*)[\s\u00a0]$/;          // only: optional spaces, one plain lower-case word, then the space just typed
+document.addEventListener('input', e => {
+  if(e.inputType !== 'insertText' || !/^[\s\u00a0]$/.test(e.data || '') || e.isComposing || !autoCapOn()) return;
+  const el = e.target; if(!el || MOBILE) return;
+  if(el.isContentEditable){
+    if(!el.classList.contains('rt')) return;
+    const sel = getSelection(); if(!sel.rangeCount || !sel.isCollapsed) return;
+    const n = sel.anchorNode, off = sel.anchorOffset; if(!n || n.nodeType !== 3) return;
+    let blk = n.parentNode; while(blk && blk !== el && !/^(DIV|P|LI|H[1-6]|BLOCKQUOTE|TD|TH)$/.test(blk.nodeName)) blk = blk.parentNode; if(!blk) return;
+    if(blk.closest && blk.closest('pre, code')) return;
+    const pre = document.createRange(); pre.selectNodeContents(blk); pre.setEnd(n, off);
+    const m = AC_WORD.exec(pre.toString()); if(!m) return;
+    const want = m[1].length; let seen = 0, tn = null, to = 0;          // find the text node and offset of the first letter
+    const w = document.createTreeWalker(blk, NodeFilter.SHOW_TEXT);
+    for(let x = w.nextNode(); x; x = w.nextNode()){ const L = x === n ? off : x.nodeValue.length; if(seen + L > want){ tn = x; to = want - seen; break; } seen += L; if(x === n) break; }
+    if(!tn || tn.nodeValue[to] !== m[2]) return;
+    const keep = {n, off: off}, r = document.createRange(); r.setStart(tn, to); r.setEnd(tn, to + 1); sel.removeAllRanges(); sel.addRange(r);
+    let ok = false; try { ok = document.execCommand('insertText', false, m[2].toUpperCase()); } catch {}
+    if(!ok){ tn.replaceData(to, 1, m[2].toUpperCase()); }
+    const c = document.createRange(); try { c.setStart(keep.n, Math.min(keep.off, keep.n.nodeValue.length)); } catch { return; } c.collapse(true); sel.removeAllRanges(); sel.addRange(c);
+  } else if(el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.getAttribute('type') || ''))){
+    if(el.readOnly || el.disabled || el.classList.contains('shin') || el.classList.contains('shfxin') || el.classList.contains('shfind')) return;
+    if(!(el.classList.contains('title') || el.classList.contains('qawrap'))) return;
+    const pos = el.selectionStart; if(pos == null || pos !== el.selectionEnd) return;
+    const lineStart = el.value.lastIndexOf('\n', pos - 1) + 1, m = AC_WORD.exec(el.value.slice(lineStart, pos)); if(!m) return;
+    const at = lineStart + m[1].length; el.setRangeText(m[2].toUpperCase(), at, at + 1, 'preserve');
   }
 });
 function insertToday(){
@@ -9842,6 +9882,7 @@ document.addEventListener('click', e => {
 });
 $('#q').addEventListener('input', e => { search = e.target.value; fixSelection(); renderList(); renderDetail(); });
 const dateChanged = () => { saveUi(); fixSelection(); renderList(); renderDetail(); };
+$('#autocap').addEventListener('change', e => { try { localStorage.setItem('notebook-autocap', e.target.checked ? '1' : '0'); } catch {} });
 $('#settheme').addEventListener('change', e => { theme = e.target.value; applyTheme(); saveUi(); renderFileInfo(); });
 $('#dfield').addEventListener('change', e => { dateField = e.target.value; dateChanged(); });
 $('#dpreset').addEventListener('change', e => { datePreset = e.target.value; dateChanged(); });
@@ -10211,7 +10252,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261124093341';</script>
+<script>window.NB_BUILD = '20261124093639';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

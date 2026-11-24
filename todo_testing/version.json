@@ -1,4 +1,13 @@
-{"version":"1.71.0","build":"20261124093341","changelog":[
+{"version":"1.71.1","build":"20261124093639","changelog":[
+ {
+  "v": "1.71.1",
+  "title": "Capital letter at the start of a line",
+  "items": [
+   "The first word of a line now starts with a capital letter. When you finish it (press Space) in a note, a title or a quick-add box, its first letter is capitalised. Ctrl + Z takes it back.",
+   "It leaves alone anything that is not a plain lower-case word (for example a date, a name that already has capitals, a spreadsheet cell, or a line starting with @ or a number).",
+   "Switch it off in Settings > Look > Typing (per computer)."
+  ]
+ },
  {
   "v": "1.71.0",
   "title": "Move notes and actions between devices",
