@@ -1,4 +1,4 @@
-/* model.js — parsing, formatting, split logic, schemas, summaries.
+/* model.js: parsing, formatting, split logic, schemas, summaries.
    No DOM here; pure data. Exposed on window.BB.model */
 (function () {
   "use strict";
@@ -62,12 +62,12 @@
 
   const monthKey = (v) => {
     const d = toDate(v);
-    if (!d) return "—";
+    if (!d) return "-";
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   };
   const monthLabel = (v) => {
     const d = toDate(v);
-    if (!d) return "—";
+    if (!d) return "-";
     return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
   };
 
@@ -316,7 +316,7 @@
       const m = map.get(key);
       m.me += s.me; // accumulate raw; round only for display
       m.other += s.other;
-      // Total is the sum of the actual bill amounts (like the workbook's Summary sheet) — NOT
+      // Total is the sum of the actual bill amounts (like the workbook's Summary sheet), NOT
       // me + others, which can run a few cents over when a split rounds each share up.
       m.total += Number(r["Total Amount"]) || 0;
     }
@@ -452,11 +452,11 @@
         // which trip / batch this expense belongs to (suggests the groups you already have)
         { key: "Group", label: "Trip / group", type: "text", suggest: "groups" },
         // status + its dates are set automatically (new expenses start Pending), so the bulk
-        // entry grid leaves them out — they're still in the single add/edit form
+        // entry grid leaves them out, they're still in the single add/edit form
         { key: "Status", label: "Status", type: "select", options: EXPENSE_STATUSES, bulk: false },
         { key: "Date Submitted", label: "Submitted on", type: "date", bulk: false },
         { key: "Date Paid", label: "Paid on", type: "date", bulk: false },
-        // receipt filenames (in the Receipts/ folder), separated by "; " — managed by the
+        // receipt filenames (in the Receipts/ folder), separated by "; ", managed by the
         // attach button, not the add/edit form
         { key: "Receipt", label: "Receipts", type: "text", noForm: true },
       ],
@@ -517,7 +517,7 @@
   // ---------- shared bills → "they owe me" ----------
   // You front the whole bill and the other person pays their share by payment request, so
   // each month of shared bills is one reimbursable line: their share, with a status taken
-  // from that month's request. Nothing is copied — it's all derived.
+  // from that month's request. Nothing is copied, it's all derived.
   const MONTH_RE =
     /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept|sep|oct|nov|dec)\b/i;
   const MONTH_INDEX = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
@@ -567,7 +567,7 @@
     const per = new Map();
     for (const row of logRows || []) {
       const mk = monthKey(row.Date);
-      if (mk === "—") continue;
+      if (mk === "-") continue;
       const s = split(row.Item, row["Total Amount"]);
       for (const part of s.parts) {
         if (part.amount <= 0.005) continue;
@@ -618,7 +618,7 @@
   }
 
   // One-time catch-up: every month of bills before your first tracked request, with no
-  // request of its own, was settled before you started tracking — mark those settled so
+  // request of its own, was settled before you started tracking, mark those settled so
   // they don't show up as owed.
   function catchUpRequests(logRows, reqRows) {
     const keys = (reqRows || []).filter((r) => r.Month).map((r) => monthKey(r.Month)).sort();
@@ -730,7 +730,7 @@
   }
 
   // What you fronted for others in a year (or all time), how much came back, how much is
-  // still owed — expenses plus the other person's shared-bill months. Each bucket gets `fronted` and
+  // still owed, expenses plus the other person's shared-bill months. Each bucket gets `fronted` and
   // `recovered` (share paid back, or null if nothing was fronted).
   function frontedSummary(expenseRows, aptLines, year) {
     const exps = year == null ? expenseRows : expenseRows.filter((r) => expenseYear(r) === year);
@@ -762,7 +762,7 @@
     return out;
   }
 
-  // Totals per person (`cats`, in the order above) and status — what's still owed to you.
+  // Totals per person (`cats`, in the order above) and status, what's still owed to you.
   // `aptLines` (optional) adds each person's share of the bills you logged.
   function expenseSummary(rows, aptLines) {
     const empty = () => ({ Pending: 0, Submitted: 0, Paid: 0, count: 0 });

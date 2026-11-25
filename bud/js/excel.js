@@ -1,4 +1,4 @@
-/* excel.js — the budget workbook. Exposed on window.BB.excel
+/* excel.js: the budget workbook. Exposed on window.BB.excel
    - readWorkbook / writeWorkbook: budget.xlsx IS the app's saved file (data + settings)
    - importFiles: one-time read of the older Apartment Breakdown.xlsx / Expenses.xlsx
    - exportWorkbook / downloadExport: a spare copy to download */
@@ -75,7 +75,7 @@
     try {
       wb = XLSX.read(buf, { cellDates: true });
     } catch (e) {
-      throw new Error("budget.xlsx couldn't be read — nothing was changed.");
+      throw new Error("budget.xlsx couldn't be read. Nothing was changed.");
     }
     const rowsBySchema = {};
     for (const [name, schema] of Object.entries(schemas)) {
@@ -136,7 +136,7 @@
     return { rowsBySchema, links: readLinks(wb), groups, settings, legacy, migrations };
   }
 
-  // files: { apartment?: File, expenses?: File } — either may be missing (the older workbooks)
+  // files: { apartment?: File, expenses?: File }, either may be missing (the older workbooks)
   async function importFiles(files) {
     const wbs = {};
     for (const key of ["apartment", "expenses"]) {

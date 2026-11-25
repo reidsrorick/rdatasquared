@@ -1,4 +1,4 @@
-/* store.js — budget.xlsx is the saved file: an ordinary Excel workbook in your folder.
+/* store.js: budget.xlsx is the saved file: an ordinary Excel workbook in your folder.
    File System Access (in-place read/write in your OneDrive folder), backups, change
    detection, and receipt files. Exposed on window.BB.store */
 (function () {
@@ -7,7 +7,7 @@
   const schemas = model.schemas;
 
   const DATA_FILE = "budget.xlsx";
-  // earlier formats — read once to migrate, never written
+  // earlier formats, read once to migrate, never written
   const LEGACY_JSON = "budget.json";
   const LEGACY = { apartment: "Apartment Breakdown.xlsx", expenses: "Expenses.xlsx" };
   const FILES = { data: { name: DATA_FILE } };
@@ -169,10 +169,10 @@
     try {
       obj = JSON.parse(text);
     } catch {
-      throw new Error(`${LEGACY_JSON} isn't valid JSON — nothing was changed.`);
+      throw new Error(`${LEGACY_JSON} isn't valid JSON. Nothing was changed.`);
     }
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
-      throw new Error(`${LEGACY_JSON} isn't a budget file — nothing was changed.`);
+      throw new Error(`${LEGACY_JSON} isn't a budget file. Nothing was changed.`);
     }
     const rowsBySchema = emptyRows();
     for (const [name, key] of Object.entries(JSON_KEYS)) {
@@ -196,7 +196,7 @@
     return parsed;
   }
 
-  // source: 'xlsx' (normal), 'json' (first run — migrated from budget.json), 'legacy' (first run —
+  // source: 'xlsx' (normal), 'json' (first run, migrated from budget.json), 'legacy' (first run:
   // migrated from the two original spreadsheets), 'new' (nothing there: show the setup screen)
   async function loadAll() {
     const f = state.files.data;
@@ -310,7 +310,7 @@
     // Guard: refuse to overwrite a file that changed on disk since we loaded it.
     if (f.handle && !force && (await diskChanged())) throw conflictError();
 
-    // First save into a folder with no budget.xlsx yet — but if one appeared meanwhile
+    // First save into a folder with no budget.xlsx yet, but if one appeared meanwhile
     // (another device), don't clobber it.
     if (!f.handle && state.dir) {
       let existing = null;
@@ -331,7 +331,7 @@
         await w.close();
       } catch (e) {
         // Excel (or OneDrive mid-sync) holds the file open
-        const err = new Error(`Couldn't write ${DATA_FILE} — if it's open in Excel, close it and try again.`);
+        const err = new Error(`Couldn't write ${DATA_FILE}. If it's open in Excel, close it and try again.`);
         err.code = "LOCKED";
         err.cause = e;
         throw err;

@@ -1,4 +1,4 @@
-/* app.js — state + actions + bootstrap. Exposed on window.BB.app */
+/* app.js: state + actions + bootstrap. Exposed on window.BB.app */
 (function () {
   "use strict";
   const BB = window.BB;
@@ -59,7 +59,7 @@
   function autosaveOn() {
     return S.autosave && BB.store.supportsFS;
   }
-  // (a connected folder is enough — the first save creates budget.xlsx if it isn't there yet)
+  // (a connected folder is enough, the first save creates budget.xlsx if it isn't there yet)
   function canAutosave() {
     const st = BB.store.state;
     return autosaveOn() && !!(st.files.data.handle || st.dir);
@@ -135,7 +135,7 @@
     const row = S.rows.thirdparty[index];
     if (!row) return;
     if (!BB.store.canReceipts()) {
-      BB.ui.toast("Connect your budget folder first — receipts save into it.", "warn");
+      BB.ui.toast("Connect your budget folder first. Receipts save into it.", "warn");
       return;
     }
     try {
@@ -160,7 +160,7 @@
     }
   }
 
-  // Remove the link from the row. The file stays in Receipts/ — nothing is deleted.
+  // Remove the link from the row. The file stays in Receipts/, nothing is deleted.
   function unlinkReceipt(index, name) {
     const row = S.rows.thirdparty[index];
     if (!row) return;
@@ -247,7 +247,7 @@
     BB.ui.toast(clash ? `Merged into “${target}”.` : `Renamed to “${target}”.`, "ok");
   }
 
-  // delete the group, not its expenses — they stay in your list, just ungrouped
+  // delete the group, not its expenses, they stay in your list, just ungrouped
   function deleteGroup(name) {
     const n = rowsIn(name).length;
     const msg = n
@@ -285,7 +285,7 @@
   const owedLine = (key) =>
     BB.model.apartmentOwedLines(S.rows.apartment, S.rows.requests).find((l) => l.key === key);
 
-  // "This month is already settled" — records a Complete request for the month.
+  // "This month is already settled", records a Complete request for the month.
   function settleMonth(key) {
     const line = owedLine(key);
     if (!line) return;
@@ -447,7 +447,7 @@
       if (found) {
         await finishLoad(found, "restore");
       } else {
-        // permission needs a click — show a Reconnect button instead of the full picker
+        // permission needs a click, show a Reconnect button instead of the full picker
         S.pendingHandle = dir;
         S.pendingName = dir.name;
         BB.ui.render();
@@ -573,7 +573,7 @@
 
   // One-time data fixes, remembered in budget.xlsx so each only ever runs once.
   //  • settledBeforeFirstRequest: shared-bill months before your first tracked payment request
-  //    were settled before you started tracking — mark them settled so they aren't "owed"
+  //    were settled before you started tracking, mark them settled so they aren't "owed"
   //    in the Expense Tracker. They show up as ordinary Complete requests (delete any
   //    you disagree with).
   function applyMigrations() {
@@ -588,7 +588,7 @@
       setTimeout(
         () =>
           BB.ui.toast(
-            `Marked ${months} as settled (before your first tracked request). Review them in the Expense Tracker — ✕ undoes one.`,
+            `Marked ${months} as settled (before your first tracked request). Review them in the Expense Tracker. ✕ undoes one.`,
             "ok"
           ),
         3500
@@ -672,7 +672,7 @@
       BB.ui.render();
       if (res.mode === "saved")
         BB.ui.toast(`Saved ${res.file}${res.backup ? " (backup made)" : ""}.`, "ok");
-      else BB.ui.toast(`Downloaded ${res.file} — replace the one in your folder with it.`, "");
+      else BB.ui.toast(`Downloaded ${res.file}. Replace the one in your folder with it.`, "");
     } catch (e) {
       if (e && e.code === "CONFLICT") {
         S.conflict[fileKey] = true;
@@ -698,7 +698,7 @@
   function exportExcel() {
     try {
       const name = BB.excel.downloadExport(S);
-      BB.ui.toast(`Exported ${name} — check your Downloads folder.`, "ok");
+      BB.ui.toast(`Exported ${name}. Check your Downloads folder.`, "ok");
     } catch (e) {
       console.error(e);
       BB.ui.toast("Export failed: " + (e.message || e), "warn");
@@ -739,7 +739,7 @@
         } catch {}
         if (!changed) continue;
         if (S.dirty[fileKey] || pending.has(fileKey)) {
-          S.conflict[fileKey] = true; // can't auto-pull — would lose local edits
+          S.conflict[fileKey] = true; // can't auto-pull, would lose local edits
         } else {
           try {
             await reloadFile(fileKey);
@@ -750,7 +750,7 @@
             // the baseline isn't advanced, so this retries on the next check.
             if (!unreadableWarned) {
               unreadableWarned = true;
-              BB.ui.toast(`${BB.store.FILES[fileKey].name} changed but can't be read yet — will retry.`, "warn");
+              BB.ui.toast(`${BB.store.FILES[fileKey].name} changed but can't be read yet, will retry.`, "warn");
             }
           }
         }

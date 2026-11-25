@@ -1,7 +1,7 @@
 {
   "name": "Budget",
   "short_name": "Budget",
-  "description": "Apartment splits, subscriptions, and reimbursables — reads and writes your OneDrive spreadsheets locally.",
+  "description": "Apartment splits, subscriptions, and reimbursables. Reads and writes your OneDrive spreadsheets locally.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

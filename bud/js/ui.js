@@ -1,4 +1,4 @@
-/* ui.js — all DOM rendering. Exposed on window.BB.ui */
+/* ui.js: all DOM rendering. Exposed on window.BB.ui */
 (function () {
   "use strict";
   const M = window.BB.model;
@@ -6,7 +6,7 @@
     String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const el = (id) => document.getElementById(id);
 
-  // Minimal line icons — they inherit the surrounding text color.
+  // Minimal line icons, they inherit the surrounding text color.
   const svg = (paths) =>
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
   const ICON = {
@@ -219,7 +219,7 @@
     if (latest)
       cards.push(
         card(
-          `Bill Log — ${esc(latest.label)}`,
+          `Bill Log: ${esc(latest.label)}`,
           M.money(latest.total),
           `You ${M.money(latest.me)}${latest.other > 0.005 ? ` · Others ${M.money(latest.other)}` : ""}`,
           "accent",
@@ -282,7 +282,7 @@
   // ---------------- Summary tab ----------------
   // The overall picture across everything you track. Dated data (the bill log, expenses) is
   // scoped to a calendar year; "All time" shows everything.
-  const pct = (x) => (x == null ? "—" : `${Math.round(x * 100)}%`);
+  const pct = (x) => (x == null ? "-" : `${Math.round(x * 100)}%`);
 
   let sumPeriod = "latest";
   try {
@@ -481,7 +481,7 @@
   // ---- groups / trips on the tracker ----
   // Expenses you've ticked (kept as the row objects, so a reload or an edit naturally clears them)
   const selected = new Set();
-  // Which group blocks are folded shut — remembered on this device
+  // Which group blocks are folded shut, remembered on this device
   let grpCollapsed = new Set();
   try {
     grpCollapsed = new Set(JSON.parse(localStorage.getItem("bb.grpCollapsed")) || []);
@@ -619,19 +619,19 @@
               ? `<button class="btn sm" data-aptpaid="${esc(l.key)}" title="${esc(l.person)} paid this request">Mark paid</button>`
               : `<button class="btn sm" data-aptreq="${esc(l.key)}" title="Create the payment request for this month">Request…</button> <button class="btn ghost sm" data-aptsettle="${esc(
                   l.key
-                )}" title="Already settled — no request needed">Settled</button>`);
+                )}" title="Already settled, no request needed">Settled</button>`);
       const edit =
         l.requestIndex != null
-          ? `<button class="icon" data-aptedit="${l.requestIndex}" title="Edit the request (dates, status, bank transfer)">✎</button><button class="icon danger" data-aptdel="${l.requestIndex}" title="Remove this request — the month goes back to unrequested">✕</button>`
+          ? `<button class="icon" data-aptedit="${l.requestIndex}" title="Edit the request (dates, status, bank transfer)">✎</button><button class="icon danger" data-aptdel="${l.requestIndex}" title="Remove this request (the month goes back to unrequested)">✕</button>`
           : "";
       return `<tr class="apt-line">
         <td class="nw">${esc(l.label)}</td>
-        <td class="ex-what"><div class="ex-title">Shared bills — ${esc(longName)}</div><div class="ex-desc">${esc(l.person)}'s share of ${l.count} bill${
+        <td class="ex-what"><div class="ex-title">Shared bills: ${esc(longName)}</div><div class="ex-desc">${esc(l.person)}'s share of ${l.count} bill${
         l.count === 1 ? "" : "s"
       }${esc(differs)}</div><div class="ex-meta">${catPill(l.person)}${M.personKind(l.person) ? `<span>${esc(M.personKind(l.person))}</span>` : ""}</div></td>
         <td class="num strong">${M.money(l.amount)}</td>
         <td class="ex-status"><span class="status-pill ${STATUS_CLASS[l.status]}">${esc(l.status)}</span><div class="ex-note">${esc(note)}</div></td>
-        <td class="muted" title="Receipts for the bills themselves go with the Bill Log entries">—</td>
+        <td class="muted" title="Receipts for the bills themselves go with the Bill Log entries">-</td>
         <td class="act apt-actions">${actions} ${edit}</td>
       </tr>`;
     };
@@ -659,7 +659,7 @@
       </tr>`;
     };
     const rowHtml = (it) => (it.kind === "apt" ? aptRow(it.l) : expenseRow(it));
-    const emptyNote = items.length ? "Nothing matches these filters." : "No expenses yet — click “Add expense”.";
+    const emptyNote = items.length ? "Nothing matches these filters." : "No expenses yet. Click “Add expense”.";
     const THEAD = `<thead><tr><th>Purchased</th><th>What</th><th class="num">Amount</th><th>Status</th><th>Receipts</th><th class="act"></th></tr></thead>`;
     // one floating card's table (every card shares the same column widths so they line up)
     const tableOf = (rowsHtml, foot) =>
@@ -712,7 +712,7 @@
         }) +
         (all.length
           ? tableOf(vis.map(rowHtml).join(""))
-          : `<p class="grp-empty muted">Nothing in this group yet — click “+ Add expense” above, or tick expenses in the list and choose “Add to group”.</p>`) +
+          : `<p class="grp-empty muted">Nothing in this group yet. Click “+ Add expense” above, or tick expenses in the list and choose “Add to group”.</p>`) +
         `</section>`
       );
     };
@@ -957,7 +957,7 @@
     host.innerHTML = `
       <div class="modal-backdrop"></div>
       <div class="modal-card rc-card" id="rcCard" data-index="${index}">
-        <h3>Receipts — ${esc(row.Activity || "expense")}</h3>
+        <h3>Receipts: ${esc(row.Activity || "expense")}</h3>
         <p class="muted rc-sub">${esc(M.fmtDate(row["Date of Original Purchase"]))}${
           row.Amount != null ? " · " + M.money(row.Amount) : ""
         }${row["Owed By"] ? " · " + esc(row["Owed By"]) : ""}</p>
@@ -1061,7 +1061,7 @@
     const usedIn = (name) => {
       const splits = S.subscriptions.filter((b) => M.splitList(b["Split With"]).some((n) => M.sameName(n, name))).length;
       const exps = S.thirdparty.filter((r) => M.sameName(M.payerOf(r), name)).length;
-      return [splits && plural(splits, "split bill"), exps && plural(exps, "expense")].filter(Boolean).join(" · ") || "—";
+      return [splits && plural(splits, "split bill"), exps && plural(exps, "expense")].filter(Boolean).join(" · ") || "-";
     };
     const rows = S.people.length
       ? S.people
@@ -1070,8 +1070,8 @@
             const owes = b ? b.outstanding : 0;
             return `<tr>
               <td><span class="person"><span class="avatar" style="--c:${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${esc(initials(p.Name))}</span><b>${esc(p.Name)}</b></span></td>
-              <td>${p.Kind ? `<span class="tag">${esc(p.Kind)}</span>` : '<span class="muted">—</span>'}</td>
-              <td class="num strong">${owes > 0.005 ? M.money(owes) : '<span class="muted">—</span>'}</td>
+              <td>${p.Kind ? `<span class="tag">${esc(p.Kind)}</span>` : '<span class="muted">-</span>'}</td>
+              <td class="num strong">${owes > 0.005 ? M.money(owes) : '<span class="muted">-</span>'}</td>
               <td class="muted">${esc(usedIn(p.Name))}</td>
               <td class="act"><button class="icon" data-edit="${i}" title="Edit">✎</button><button class="icon danger" data-del="${i}" title="Delete">✕</button></td>
             </tr>`;
@@ -1219,12 +1219,12 @@
   function renderCell(r, c) {
     if (c.calc) {
       const v = c.calc(r);
-      return c.text ? (v ? esc(v) : '<span class="muted">—</span>') : M.money(v);
+      return c.text ? (v ? esc(v) : '<span class="muted">-</span>') : M.money(v);
     }
     const v = r[c.key];
     if (c.type === "date") return c.month ? (v ? esc(M.monthLabel(v)) : "") : esc(M.fmtDate(v));
     if (c.type === "money") return M.money(v);
-    if (c.type === "bool") return v === false ? "—" : v ? "✓" : "—";
+    if (c.type === "bool") return v === false ? "-" : v ? "✓" : "-";
     if (c.type === "select" && c.key === "Status") {
       const paid = /paid|complete/i.test(v || "");
       return `<span class="pill ${paid ? "pill-ok" : "pill-wait"}">${esc(v || "")}</span>`;
@@ -1434,7 +1434,7 @@
             v === false ? "" : v ? "checked" : "checked"
           }> active</label>`;
         } else if (c.type === "date" && c.month) {
-          // a whole month (stored as the 1st) — e.g. which month's bills a request covers
+          // a whole month (stored as the 1st), e.g. which month's bills a request covers
           input = `<input type="month" name="${esc(c.key)}" value="${esc(M.dateInputValue(v).slice(0, 7))}">`;
         } else if (c.type === "date") {
           input = `<input type="date" name="${esc(c.key)}" value="${esc(M.dateInputValue(v))}">`;
@@ -1459,12 +1459,12 @@
       const can = BB.store.canReceipts();
       const have = editing ? M.splitReceipts(row.Receipt).length : 0;
       receiptField = `<label class="field wide"><span>Receipts${
-        have ? ` <em class="muted">(${have} already attached — manage them with the paperclip on the row)</em>` : ""
+        have ? ` <em class="muted">(${have} already attached; manage them with the paperclip on the row)</em>` : ""
       }</span>
         <input type="file" name="__receipts" multiple accept="image/*,application/pdf"${can ? "" : " disabled"} />
         <small class="field-hint">${
           can
-            ? "Optional. Choose one or more images / PDFs — they're saved to your Receipts folder and linked to this expense."
+            ? "Optional. Choose one or more images / PDFs. They're saved to your Receipts folder and linked to this expense."
             : "Connect your budget folder (Chrome / Edge) to attach receipts."
         }</small></label>`;
     }
@@ -1473,7 +1473,7 @@
     host.innerHTML = `
       <div class="modal-backdrop"></div>
       <form class="modal-card" id="rowForm">
-        <h3>${editing ? "Edit" : "Add"} — ${esc(schema.title)}</h3>
+        <h3>${editing ? "Edit" : "Add"}: ${esc(schema.title)}</h3>
         <div class="form-grid">${fields}${schemaName === "subscriptions" ? splitEditorHtml(row) : ""}${receiptField}</div>
         ${groupDatalist(formCols)}${schemaName === "subscriptions" ? groupDatalist([{ suggest: "people" }]) : ""}
         <div class="modal-actions">
@@ -1609,7 +1609,7 @@
     host.innerHTML = `
       <div class="modal-backdrop"></div>
       <form class="modal-card bulk-card" id="bulkForm">
-        <h3>Bulk add — ${esc(schema.title)}</h3>
+        <h3>Bulk add: ${esc(schema.title)}</h3>
         <p class="bulk-hint">Type rows, or <strong>paste straight from Excel</strong> (copy cells, click the first box, Ctrl+V). Computed splits are added automatically.${
           schemaName === "thirdparty" ? " Attach receipts afterward with the paperclip on each row." : ""
         }</p>
@@ -1659,7 +1659,7 @@
     // paste from Excel: TSV into the grid starting at the focused cell
     body.addEventListener("paste", (e) => {
       const text = (e.clipboardData || window.clipboardData).getData("text");
-      if (!text || !/[\t\n]/.test(text)) return; // single cell — normal paste
+      if (!text || !/[\t\n]/.test(text)) return; // single cell, normal paste
       const target = e.target.closest(".bcell");
       if (!target) return;
       e.preventDefault();
@@ -1908,7 +1908,7 @@
         `<div class="banner danger">
           <span class="banner-msg"><b>${esc(name)}</b> was changed somewhere else (probably another device). ${
           dirty
-            ? "You also have unsaved changes here — pick which version to keep."
+            ? "You also have unsaved changes here. Pick which version to keep."
             : "Pull the newer version before you keep editing."
         }</span>
           <span class="banner-actions">
@@ -1924,7 +1924,7 @@
         // 2) looking at sample data
         parts.push(
           `<div class="banner">
-            <span class="banner-msg"><b>Sample data.</b> Look around and try things out — nothing is saved. Open your budget folder to work with the real thing.</span>
+            <span class="banner-msg"><b>Sample data.</b> Look around and try things out. Nothing is saved. Open your budget folder to work with the real thing.</span>
             <span class="banner-actions"><button class="btn sm primary" data-act="connect">Open my folder</button></span>
           </div>`
         );
@@ -1932,13 +1932,13 @@
         // 3) autosave-not-hooked-up
         parts.push(
           `<div class="banner warn">
-            <span class="banner-msg"><b>Download mode</b> — this browser can't write to your file directly, so changes aren't saved automatically. Use <b>Download budget.xlsx</b> and replace the one in your folder.</span>
+            <span class="banner-msg"><b>Download mode.</b> This browser can't write to your file directly, so changes aren't saved automatically. Use <b>Download budget.xlsx</b> and replace the one in your folder.</span>
           </div>`
         );
       } else if (S.fileMode === "fs" && !S.autosave) {
         parts.push(
           `<div class="banner warn">
-            <span class="banner-msg"><b>Autosave is off</b> — changes stay in your browser until you save them.</span>
+            <span class="banner-msg"><b>Autosave is off.</b> Changes stay in your browser until you save them.</span>
             <span class="banner-actions"><button class="btn sm" data-autoon>Turn on autosave</button></span>
           </div>`
         );

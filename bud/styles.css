@@ -1,4 +1,4 @@
-/* Budget — styles.
+/* Budget: styles.
    Same look as the Residence Tracker: soft gradient accent, rounded floating cards,
    colored icon tiles, a translucent top bar. Light and dark follow the system. */
 
@@ -667,7 +667,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
 }
 
 /* ---------- phones: every table row becomes a small labelled card ----------
-   (cells get their data-label from the column header — see labelTables() in ui.js) */
+   (cells get their data-label from the column header, see labelTables() in ui.js) */
 @media (max-width: 720px) {
   .modal-card { margin: 3vh 10px; padding: 0 18px 18px; }
   .modal-card h3 { margin-left: -18px; margin-right: -18px; padding: 14px 18px; }

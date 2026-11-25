@@ -1,4 +1,4 @@
-/* sample.js — made-up data for "Start with sample data" and ?demo.
+/* sample.js: made-up data for "Start with sample data" and ?demo.
    Nothing here is real; it lets you look around without connecting a folder. Exposed on window.BB.sample */
 (function () {
   "use strict";
