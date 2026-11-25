@@ -270,7 +270,8 @@ body.focus #panelrevs,body.focus #paneledge{display:none !important}}
 .propln{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 2px;padding:5px 8px;border-radius:8px;background:color-mix(in srgb,#e0a82e 16%,transparent);font-size:13px}.propln .pn{flex:1 1 180px;min-width:0}.propln small{color:var(--mute)}
 .propln.info{background:var(--hover2)}
 .act>.propln{grid-column:1/-1;margin:2px 0 0 34px}
-@media(max-width:1500px){.act>.propln{flex:0 0 calc(100% - 34px);box-sizing:border-box;margin-left:34px}}.ai>.propln{flex:0 0 100%;box-sizing:border-box;margin-left:28px;width:calc(100% - 28px)}
+.act>.trail{grid-column:1/-1;margin:2px 0 4px 34px;padding:6px 10px;border-left:3px solid var(--line);font-size:12.5px;display:flex;flex-direction:column;gap:3px}.trail .tr.me{margin-left:16px;color:var(--text)}.trail small{color:var(--mute)}.psnzchip{color:var(--mute);cursor:default}
+@media(max-width:1500px){.act>.propln{flex:0 0 calc(100% - 34px);box-sizing:border-box;margin-left:34px}.act>.trail{flex:0 0 calc(100% - 34px);box-sizing:border-box;margin-left:34px}}.ai>.propln{flex:0 0 100%;box-sizing:border-box;margin-left:28px;width:calc(100% - 28px)}
 .propln button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font:inherit;font-size:12.5px}.propln button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .ai .nb{border:0;background:none;font-size:14px;opacity:.35;padding:0 4px}
 .ai .nb:hover,.ai .nb.has{opacity:1}
@@ -384,6 +385,7 @@ input.who:focus{border-color:var(--accent)}
 .nbhead2 button{border:0;background:none;color:var(--mute);font-size:18px;line-height:1;padding:0 6px;border-radius:6px}.nbhead2 button:hover{color:var(--accent);background:var(--hover)}
 .pgh{display:flex;gap:6px;align-items:center;padding:6px 10px 2px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);cursor:pointer;user-select:none}.pgh small{text-transform:none;letter-spacing:0}.pgh:hover{color:var(--text)}.tag.idle{opacity:.55}.tag.idle.on{opacity:1}.pgtool{padding:4px 10px}.pgtool a{font-size:11.5px;color:var(--mute);cursor:pointer}.pgtool a:hover{color:var(--text);text-decoration:underline}
 .sfhead{display:flex;align-items:center}.sfhead .pinhead{flex:1}.sfbtns{display:flex;gap:2px;padding-right:8px}.sfbtns button{border:0;background:none;color:var(--mute);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px}.sfbtns button:hover{background:var(--hover2);color:var(--text)}
+.impto{margin:-2px 0 8px 28px;font-size:12.5px;color:var(--mute)}.impto select{font:inherit;max-width:60%}
 .pxfer{margin-left:auto;display:inline-flex;gap:6px}.pxfer button{border:1px solid var(--line);background:var(--field);color:var(--text);border-radius:7px;padding:3px 10px;font-size:12.5px;cursor:pointer}.pxfer button:hover{background:var(--hover2)}
 .nbempty{padding:10px 16px 12px 30px;color:var(--mute);font-size:12.5px;border-bottom:1px solid var(--line)}
 [data-nbdrop].over{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--soft)}
@@ -1204,8 +1206,18 @@ body.mobile #mobwelcome .bad{color:var(--red)}
 const MOBILE = /[?&]mobile=1\b/.test(location.search) || (!(typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function') && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform))));
 if(MOBILE) document.body.classList.add('mobile');
 const SHEETS_APART = !MOBILE;                              // spreadsheets have their own section (the phone copy has no such section, so there they stay in Notes)
-const APP_VERSION = '1.72.0';
+const APP_VERSION = '1.73.0';
 const CHANGELOG = /*CL*/[
+ {
+  "v": "1.73.0",
+  "title": "Choose the notebook on import, snooze answers, history",
+  "items": [
+   "Importing a note or notebook now lets you choose where it goes: under each notebook in the Import box there is a Put it in menu. It starts on your notebook of the same name, or offers to make a new one, and you can pick any other notebook instead.",
+   "The capital letter at the start of a line also works after a list marker you type yourself (- text, * text, • text, 1. text, a) text or a ☐ box).",
+   "To confirm: each answer waiting for you has a ⏰ Snooze button (1 hour, 3 hours, tomorrow morning, Monday, next week, or a time you pick). A snoozed answer leaves To confirm and the alerts until then, and a Show snoozed box brings it back into view. The action itself is not changed.",
+   "History: an action that has had answers (done, hand back, notes) shows a 💬 History link. It lists, oldest first, what they said and how you replied (confirmed, not yet and your reason), on the People pages, Actions, Today and To confirm."
+  ]
+ },
  {
   "v": "1.72.0",
   "title": "Times, durations and custom formats in spreadsheets",
@@ -2828,7 +2840,7 @@ function normalizeBody(d){
     id: i.id || uid(), type: i.type === 'task' ? 'task' : 'note',      // older files had a separate "meeting" type: meetings are now just notes that have a date
     title: i.title || '', body: conv(i.body), tags: Array.isArray(i.tags) ? i.tags : [], category: i.category || '',
     due: i.due || '', date: i.date || '', time: i.time || '', attendees: i.attendees || '', repeat: cleanRepeat(i.repeat),
-    done: !!i.done, doneAt: i.done ? (okIso(i.doneAt) || '') : '', doneBy: i.done ? clipS(i.doneBy, 40).trim() : '', pinned: !!i.pinned, pinAll: !!i.pinned && !!i.pinAll, proposed: cleanProposed(i.proposed), rv: okDate(i.rv), pr: i.pr === 'h' || i.pr === 'l' ? i.pr : '', fl: !!i.fl, snz: okIso(i.snz), fu: okDate(i.fu), todayPin: i.type !== 'task' && !!i.todayPin, shared: i.shared && i.shared.on ? cleanShared(i.shared) : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', sfolder: typeof i.sfolder === 'string' ? i.sfolder : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: isRaidKind(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, doneAt:c.done ? (okIso(c.doneAt) || '') : '', doneBy:c.done ? clipS(c.doneBy, 40).trim() : '', due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: isRaidKind(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat), proposed:cleanProposed(c.proposed), rv: okDate(c.rv), pr: c.pr === 'h' || c.pr === 'l' ? c.pr : '', fl: !!c.fl, snz: okIso(c.snz), fu: okDate(c.fu)})) : [],
+    done: !!i.done, doneAt: i.done ? (okIso(i.doneAt) || '') : '', doneBy: i.done ? clipS(i.doneBy, 40).trim() : '', pinned: !!i.pinned, pinAll: !!i.pinned && !!i.pinAll, proposed: cleanProposed(i.proposed), rv: okDate(i.rv), pr: i.pr === 'h' || i.pr === 'l' ? i.pr : '', fl: !!i.fl, snz: okIso(i.snz), psnz: okIso(i.psnz), fu: okDate(i.fu), todayPin: i.type !== 'task' && !!i.todayPin, shared: i.shared && i.shared.on ? cleanShared(i.shared) : null, notebook: typeof i.notebook === 'string' ? i.notebook : '', sfolder: typeof i.sfolder === 'string' ? i.sfolder : '', assignee: typeof i.assignee === 'string' ? i.assignee.trim() : '', raid: isRaidKind(i.raid) ? i.raid : '', checklist: Array.isArray(i.checklist) ? i.checklist.map(c => ({id:c.id || uid(), text:c.text || '', done:!!c.done, doneAt:c.done ? (okIso(c.doneAt) || '') : '', doneBy:c.done ? clipS(c.doneBy, 40).trim() : '', due:c.due || '', time:c.time || '', cat:c.cat || '', assignee: typeof c.assignee === 'string' ? c.assignee.trim() : '', raid: isRaidKind(c.raid) ? c.raid : '', src: c.src === 'tag' ? 'tag' : '', note:conv(c.note), repeat:cleanRepeat(c.repeat), proposed:cleanProposed(c.proposed), rv: okDate(c.rv), pr: c.pr === 'h' || c.pr === 'l' ? c.pr : '', fl: !!c.fl, snz: okIso(c.snz), psnz: okIso(c.psnz), fu: okDate(c.fu)})) : [],
     replies: cleanReplies(i.replies), autoDt: i.type === 'note' && !!i.autoDt && !!(i.date || i.time), created: i.created || now(), updated: i.updated || now(), ...(sh ? {sheet: sh} : {})
   }); };          // a spreadsheet note keeps its cells in `sheet` (only notes that are spreadsheets have one)
   d.items = (d.items || []).map(item);
@@ -2902,6 +2914,7 @@ const pinFold = new Set();          // where the Pinned strip is collapsed ('' =
 const nbFold = new Set();          // notebooks folded closed in the Notes list
 let tlWork = false, tlCat = '', tlHideDone = false, tlLayer = 'blocks';        // tlLayer: 'blocks' (your plan only), 'due' (tasks and actions on their due dates), or 'both'                                           // Timeline: true hides Saturday and Sunday (a Mon–Fri work week)
 let chipsOff = {all:[], note:[]}, listCat = '', datedOnly = false;     // list filter bar: which type chips are switched off (remembered), category, dated-only
+const openTrail = new Set();       // ids of actions whose history of answers is open (not saved)
 const openNotes = new Set();       // ids of actions whose notes box is expanded (not saved)
 try { const u = JSON.parse(localStorage.getItem('notebook-ui') || '{}'); filter = u.filter === 'meeting' || String(u.filter).startsWith('nb:') ? 'note' : (u.filter && u.filter !== 'all' ? u.filter : 'today'); sortMode = ['updated', 'date', 'az', 'za'].includes(u.sort) ? u.sort : 'updated'; hideDone = !!u.hideDone; actGroup = u.actGroup || 'due'; actCat = u.actCat || ''; actDone = !!u.actDone; autoDates = u.autoDates !== false; railOff = !!u.railOff; listOff = !!u.listOff; listCat = u.listCat || ''; datedOnly = !!u.datedOnly; tlWork = !!u.tlWork; tlCat = u.tlCat || ''; tlHideDone = !!u.tlHideDone; tlLayer = ['blocks', 'due', 'both'].includes(u.tlLayer) ? u.tlLayer : 'blocks'; theme = ['light', 'dark'].includes(u.theme) ? u.theme : 'auto'; actPerson = u.actPerson || ''; todayMine = !!u.todayMine; actNb = u.actNb || ''; lastNb = u.lastNb || ''; nbView = typeof u.nbView === 'string' ? u.nbView : ''; lastNoteSel = typeof u.lastNoteSel === 'string' ? u.lastNoteSel : ''; hideCkDone = !!u.hideCkDone; metaOff = !!u.metaOff; dateField = ['updated', 'created', 'page'].includes(u.dateField) ? u.dateField : 'updated'; datePreset = ['today', 'week', 'month', 'thismonth', 'custom'].includes(u.datePreset) ? u.datePreset : ''; dateFrom = /^\d{4}-\d\d-\d\d$/.test(u.dateFrom || '') ? u.dateFrom : ''; dateTo = /^\d{4}-\d\d-\d\d$/.test(u.dateTo || '') ? u.dateTo : ''; (Array.isArray(u.nbFold) ? u.nbFold : []).forEach(x => nbFold.add(x)); (Array.isArray(u.pinFold) ? u.pinFold : []).forEach(x => pinFold.add(x));
   if(u.chipsOff){ const ok = a => Array.isArray(a) ? a.filter(k => ['note','action'].includes(k)) : []; chipsOff = {all: ok(u.chipsOff.all), note: ok(u.chipsOff.note)}; } } catch {}
@@ -3688,9 +3701,9 @@ const propPill = o => { const p = proposalOf(o); return p && p.kind === 'done' ?
 const propLine = (o, key) => {
   const p = proposalOf(o); if(!p) return '';
   const when = p.at ? new Date(p.at).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : '';
-  if(p.kind === 'back') return `<div class="propln"><span class="pn"><b>${esc(p.by)}</b> hands this back${p.note ? ': ' + esc(p.note) : ''} <small>${esc(when)}</small></span><span class="pbtns"><button class="ok" data-act="propok" data-key="${esc(key)}">↩ Take it back</button><button data-act="propno" data-key="${esc(key)}">✕ Keep with ${esc(p.by)}</button></span><span class="pwhy" hidden><input class="whyin" placeholder="Why? (optional)" autocomplete="off"><button class="ok" data-act="propsend" data-key="${esc(key)}">Send</button><button data-act="propback">Back</button></span></div>`;
+  if(p.kind === 'back') return `<div class="propln"><span class="pn"><b>${esc(p.by)}</b> hands this back${p.note ? ': ' + esc(p.note) : ''} <small>${esc(when)}</small></span><span class="pbtns"><button class="ok" data-act="propok" data-key="${esc(key)}">↩ Take it back</button><button data-act="propno" data-key="${esc(key)}">✕ Keep with ${esc(p.by)}</button><button data-act="propsnz" data-key="${esc(key)}" title="Put this off until later">⏰ Snooze</button></span><span class="pwhy" hidden><input class="whyin" placeholder="Why? (optional)" autocomplete="off"><button class="ok" data-act="propsend" data-key="${esc(key)}">Send</button><button data-act="propback">Back</button></span></div>`;
   return p.kind === 'done'
-    ? `<div class="propln"><span class="pn"><b>${esc(p.by)}</b> says this is done${p.note ? ': ' + esc(p.note) : ''} <small>${esc(when)}</small></span><span class="pbtns"><button class="ok" data-act="propok" data-key="${esc(key)}">✓ Confirm</button><button data-act="propno" data-key="${esc(key)}">✕ Not yet</button></span><span class="pwhy" hidden><input class="whyin" placeholder="Why not yet? (optional)" autocomplete="off"><button class="ok" data-act="propsend" data-key="${esc(key)}">Send</button><button data-act="propback">Back</button></span></div>`
+    ? `<div class="propln"><span class="pn"><b>${esc(p.by)}</b> says this is done${p.note ? ': ' + esc(p.note) : ''} <small>${esc(when)}</small></span><span class="pbtns"><button class="ok" data-act="propok" data-key="${esc(key)}">✓ Confirm</button><button data-act="propno" data-key="${esc(key)}">✕ Not yet</button><button data-act="propsnz" data-key="${esc(key)}" title="Put this off until later, for example until you have tested it">⏰ Snooze</button></span>${psnoozed(o) ? `<small class="psnzchip" title="Click to change">⏰ snoozed until ${esc(snoozeLabel(o, 'psnz'))}</small>` : ''}<span class="pwhy" hidden><input class="whyin" placeholder="Why not yet? (optional)" autocomplete="off"><button class="ok" data-act="propsend" data-key="${esc(key)}">Send</button><button data-act="propback">Back</button></span></div>`
     : `<div class="propln info"><span class="pn"><b>${esc(p.by)}</b>: ${esc(p.note)} <small>${esc(when)}</small></span><button data-act="propdismiss" data-key="${esc(key)}">Dismiss</button></div>`;
 };
 function decideProposal(key, ok, why){
@@ -3721,15 +3734,26 @@ const sugRow = sg => {
     <span class="sgbtns"><button class="ok" data-act="sugyes" data-id="${esc(sg.id)}">✓ Add it</button><button data-act="sugno" data-id="${esc(sg.id)}">✕ No thanks</button></span>
     <span class="pwhy" hidden><input class="whyin" placeholder="Why not? (optional)" autocomplete="off"><button class="ok" data-act="sugsend" data-id="${esc(sg.id)}">Send</button><button data-act="propback">Back</button></span></div>`;
 };
-function waitingEntries(){ return allEntries().filter(x => x.text.trim() && proposalOf(x.kind === 'task' ? x.item : x.ck)); }
+const psnoozed = o => !!o && !!o.psnz && Date.parse(o.psnz) > Date.now();          // an answer waiting for you, put off until later (the action itself is untouched)
+function waitingEntries(withSnoozed){ return allEntries().filter(x => x.text.trim() && proposalOf(x.kind === 'task' ? x.item : x.ck) && (withSnoozed || !psnoozed(x.kind === 'task' ? x.item : x.ck))); }
+let waitSnz = false;
 const waitingRailHtml = () => { const n = waitingEntries().filter(x => proposalOf(x.kind === 'task' ? x.item : x.ck).kind !== 'note').length + waitingSuggestions().length; return n ? `<div class="f ${filter === 'waiting' ? 'on' : ''}" data-filter="waiting" title="Actions that someone says are done, or hands back, for you to confirm"><span>✓ To confirm</span> <small class="amb">${n}</small></div>` : ''; };
 function renderWaiting(){
-  const all = waitingEntries(), groups = {};
+  const all = waitingEntries(waitSnz), groups = {};
   all.forEach(x => { const p = proposalOf(x.kind === 'task' ? x.item : x.ck); (groups[p.by] = groups[p.by] || []).push(x); });
   $('#detail').innerHTML = `<div class="type">Waiting</div><h1 class="ptitle">Waiting for your OK</h1>
     <p class="psub">Actions that the person they are assigned to says are done, and notes from them. Nothing changes until you confirm.</p>
+    ${(() => { const n = waitingEntries(true).length - waitingEntries().length; return n || waitSnz ? `<div class="afilters" style="margin-bottom:6px"><label title="Answers you snoozed are hidden until their time comes"><input type="checkbox" id="wsnz" ${waitSnz ? 'checked' : ''}> Show snoozed${n ? ' (' + n + ')' : ''}</label></div>` : ''; })()}
     ${waitingSuggestions().length ? `<h4 class="gh">Suggested actions <small>${waitingSuggestions().length}</small></h4>${waitingSuggestions().map(sugRow).join('')}` : ''}
     ${Object.keys(groups).sort((a, b) => a.localeCompare(b)).map(by => `<h4 class="gh">${esc(by)} <small>${groups[by].length}</small></h4>${groups[by].map(actRow).join('')}`).join('') || (waitingSuggestions().length ? '' : '<div class="empty">Nothing is waiting for you. 🎉</div>')}`;
+}
+const trailOf = key => (db.proposals || []).filter(e => e.item === key && e.kind !== 'new').sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+const trailWhen = iso => { try { return new Date(iso).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}); } catch { return ''; } };
+function trailBlock(key){                                   // what was said about this action, oldest first: their answers and what you replied
+  if(!openTrail.has(key)) return ''; const list = trailOf(key);
+  const verb = {done:'says this is done', back:'hands this back', note:'wrote'};
+  const mine = e => e.status === 'confirmed' ? (e.kind === 'back' ? 'Took it back' : e.kind === 'note' ? 'Seen' : 'Confirmed') : e.status === 'declined' ? (e.kind === 'back' ? 'Kept it with them' : 'Said not yet') : e.status === 'dismissed' ? 'Dismissed' : '';
+  return `<div class="trail"><b>History</b>${list.length ? list.map(e => `<div class="tr"><b>${esc(e.by)}</b> <small>${esc(trailWhen(e.at))}</small> ${esc(verb[e.kind] || e.kind)}${e.note ? ': ' + esc(e.note) : ''}</div>${e.status === 'pending' ? '<div class="tr me"><small>waiting for you</small></div>' : mine(e) ? `<div class="tr me">↳ <b>${esc(e.decidedBy || 'You')}</b> <small>${esc(trailWhen(e.decidedAt))}</small> ${esc(mine(e))}${e.why ? ': ' + esc(e.why) : ''}</div>` : e.status === 'ignored' ? `<div class="tr me"><small>ignored (${esc(e.why || '')})</small></div>` : ''}`).join('') : '<div class="tr"><small>No answers yet.</small></div>'}</div>`;
 }
 function actRow(x){
   const late = !x.done && x.due && dayDiff(x.due) < 0, c = catById(x.cat), inh = x.kind === 'ck' ? catById(x.item.category) : null;
@@ -3738,13 +3762,13 @@ function actRow(x){
   const po = x.kind === 'task' ? x.item : x.ck, pp = proposalOf(po);
   return `<div class="act ${x.done?'done':''} ${late ? 'late' : !x.done && x.due === todayStr() ? 'today' : ''} ${pp && pp.kind === 'done' ? 'hasprop' : ''}" data-key="${x.key}">
     <input type="checkbox" data-ax="done" class="${pp && pp.kind === 'done' ? 'pcb' : ''}" ${x.done?'checked':''}>
-    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a><a class="nlink" data-act="flpin" data-key="${x.key}" title="Keep this action in the floating window">⇱ ${po.fl ? 'Pinned' : 'Float'}</a><a class="nlink" data-act="fuset" data-key="${x.key}" title="Pick a day to check back on this. If it is not done by then it shows on Today.">↻ ${po.fu ? 'Change check-back' : 'Check back'}</a><a class="nlink" data-act="snzopen" data-key="${x.key}" title="Hide this for a while">⏰ Snooze</a>${chipsFor(po, x.key)}${doneText(po) ? `<small class="donewhen">✓ ${esc(doneText(po))}</small>` : ''}</div></div>
+    <div class="atext"><textarea class="tx" rows="1" data-ax="text">${esc(x.text)}</textarea><div class="srcline">${x.raid ? raidBadge(x.raid) : ''}<a class="src" data-open="${x.item.id}" title="Open the original">${src}</a><a class="nlink ${isBlank(x.note) ? '' : 'has'}" data-act="anote" data-key="${x.key}">📝 ${isBlank(x.note) ? 'Add note' : 'Notes'}</a><a class="nlink" data-act="flpin" data-key="${x.key}" title="Keep this action in the floating window">⇱ ${po.fl ? 'Pinned' : 'Float'}</a><a class="nlink" data-act="fuset" data-key="${x.key}" title="Pick a day to check back on this. If it is not done by then it shows on Today.">↻ ${po.fu ? 'Change check-back' : 'Check back'}</a><a class="nlink" data-act="snzopen" data-key="${x.key}" title="Hide this for a while">⏰ Snooze</a>${trailOf(x.key).length ? `<a class="nlink" data-act="trail" data-key="${x.key}" title="What was said about this action, and how you answered">💬 History (${trailOf(x.key).length})</a>` : ''}${chipsFor(po, x.key)}${doneText(po) ? `<small class="donewhen">✓ ${esc(doneText(po))}</small>` : ''}</div></div>
     <input type="date" class="${late?'late':''}" data-ax="due" value="${esc(x.due)}">
     <input type="time" data-ax="time" value="${esc(x.time)}" title="Time">
     <select data-ax="repeat" title="Repeat">${repeatOptions(x.repeat)}</select>
     <select data-ax="cat" title="Category: ${esc(catById(x.own) ? catById(x.own).name : blank)}" style="border-left:4px solid ${c ? esc(c.color) : 'transparent'}">${catOptions(x.own, blank)}</select>
     <input type="text" class="who" autocomplete="off" data-ax="assignee" value="${esc(x.assignee || '')}" placeholder="Assign…" title="Assigned to (try typing @Sam in the action)">
-    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}${propLine(po, x.key)}</div>`;
+    ${openNotes.has(x.key) ? `<div class="rt anote" contenteditable="true" spellcheck="true" data-ax="note" data-ph="Notes for this action…" ${isBlank(x.note)?'data-empty':''}>${forEditor(x.note)}</div>` : ''}${propLine(po, x.key)}${trailBlock(x.key)}</div>`;
 }
 function renderActions(){
   let list = allActions().filter(x => x.text.trim());
@@ -4667,7 +4691,8 @@ function openImport(pack, fileName){
     const st = {new:0, newer:0, same:0, older:0}; n.items.forEach(p => st[pageStatus(sanitizePage(p))]++);
     const here = nbById(n.id) || db.notebooks.find(x => x.name.toLowerCase() === n.name.toLowerCase());
     const bits = [st.new && `${st.new} new`, st.newer && `${st.newer} newer than yours`, st.older && `${st.older} older than yours`, st.same && `${st.same} already here`].filter(Boolean).join(' · ') || 'no pages';
-    return `<label class="improw"><input type="checkbox" data-impnb="${k}" ${n.items.length ? 'checked' : ''}> <span><b>${esc(n.name)}</b> <span class="pcnt">${n.items.length} page${n.items.length === 1 ? '' : 's'}</span><small>${here ? `Goes into your “${esc(here.name)}” notebook` : 'Becomes a new notebook'} · ${esc(bits)}</small></span></label>`;
+    const dest = `<div class="impto">Put ${n.items.length === 1 ? 'it' : 'them'} in <select data-impto="${k}">${here ? '' : `<option value="__new">a new notebook “${esc(n.name)}”</option>`}${db.notebooks.map(x => `<option value="${esc(x.id)}" ${here && here.id === x.id ? 'selected' : ''}>${esc(x.name)}${here && here.id === x.id ? ' (same name)' : ''}</option>`).join('')}</select></div>`;
+    return `<label class="improw"><input type="checkbox" data-impnb="${k}" ${n.items.length ? 'checked' : ''}> <span><b>${esc(n.name)}</b> <span class="pcnt">${n.items.length} page${n.items.length === 1 ? '' : 's'}</span><small>${esc(bits)}</small></span></label>${dest}`;
   }).join('');
   if(!taskRow && !pack.notebooks.length) $('#nbimplist').innerHTML = '<p>That file has no notebooks or actions in it.</p>';
   $('#nbimp').showModal();
@@ -4698,7 +4723,8 @@ function runImport(){
   };
   if(withTasks) for(const p of pack.tasks) bring(p, '', true);
   for(const n of chosen){
-    let nb = nbById(n.id) || db.notebooks.find(x => x.name.toLowerCase() === n.name.toLowerCase());
+    const pick = (document.querySelector(`#nbimplist [data-impto="${pack.notebooks.indexOf(n)}"]`) || {}).value;          // where you chose to put it
+    let nb = pick && pick !== '__new' && nbById(pick) ? nbById(pick) : (pick === '__new' ? null : nbById(n.id) || db.notebooks.find(x => x.name.toLowerCase() === n.name.toLowerCase()));
     if(!nb){ nb = {id: n.id && !nbById(n.id) ? n.id : uid(), name:n.name, color:/^#[0-9a-f]{6}$/i.test(n.color || '') ? n.color : nextNbColor()}; db.notebooks.push(nb); undo.nbs.push(nb); }
     for(const p of n.items) bring(p, nb.id, false);
     lastNb = nb.id; nbFold.delete(nb.id);
@@ -5276,7 +5302,7 @@ function ingestProposalFile(data, folderSlug){
     if(!o){ entry.status = 'ignored'; entry.why = 'no such action'; }
     else if((o.assignee || '').toLowerCase() !== from.toLowerCase()){ entry.status = 'ignored'; entry.why = 'not assigned to ' + from; }
     else if((kind === 'done' || kind === 'back') && o.done){ entry.status = 'ignored'; entry.why = 'already done'; }
-    else { o.proposed = {id, kind, by:from, at, note}; ent.item.updated = ent.item.updated; n++; }
+    else { o.proposed = {id, kind, by:from, at, note}; o.psnz = ''; ent.item.updated = ent.item.updated; n++; }
     logProposal(entry);
   }
   return n;
@@ -5434,6 +5460,8 @@ const replyBanner = i => { const n = pendingOf(i); return n ? `<div class="repba
 setInterval(() => { if(!document.hidden) checkReplies(false); }, 20000);
 window.addEventListener('focus', () => checkReplies(false));
 window.addEventListener('focus', () => { if(feedProblems().length) runShareWrites(true); });          // coming back to the window is a good time to try again
+let lastWaitN = -1;
+setInterval(() => { try { const wn = waitingEntries().length; if(lastWaitN >= 0 && wn !== lastWaitN){ renderRail(); if(filter === 'waiting') renderDetail(); } lastWaitN = wn; } catch {} }, 30000);          // a snoozed answer comes back by itself
 setInterval(() => { try { if(fileState === 'ready' && !MOBILE) for(const f of (db.feeds || [])) if(f.on && !feedRetry.has(personKey(f.person))){ const st = feedStat.get(personKey(f.person)); if(!st || (!st.ok && !st.soft)) runShareWrites(true, personKey(f.person)); } renderBanner(); } catch {} }, 60000);          // a feed that has not been written since the page opened, or has no retry waiting, is tried again
 setTimeout(() => checkReplies(false), 3000);
 function moveNotebookTo(id, targetId){                     // put a notebook where another one is (drag a heading onto it)
@@ -6269,7 +6297,7 @@ document.addEventListener('input', e => {
 });
 /* ---- the first word of a line starts with a capital (on by default; Settings > Look > Typing) ---- */
 const autoCapOn = () => { try { return localStorage.getItem('notebook-autocap') !== '0'; } catch { return true; } };
-const AC_WORD = /^([\s\u00a0]*)([a-z])([a-z']*)[\s\u00a0]$/;          // only: optional spaces, one plain lower-case word, then the space just typed
+const AC_WORD = /^([\s\u00a0]*(?:(?:[-*•–—>☐☑☒]|\d{1,3}[.)]|[a-z][.)]|\[[ xX]?\])[\s\u00a0]+)?)([a-z])([a-z']*)[\s\u00a0]$/;          // only: optional spaces, one plain lower-case word, then the space just typed
 document.addEventListener('input', e => {
   if(e.inputType !== 'insertText' || !/^[\s\u00a0]$/.test(e.data || '') || e.isComposing || !autoCapOn()) return;
   const el = e.target; if(!el || MOBILE) return;
@@ -9672,22 +9700,23 @@ document.addEventListener('change', e => { if(e.target && e.target.id === 'start
 
 /* ================= v1.61: snooze on every action, a tidier bulk-edit bar, separate calendars ================= */
 /* ---- snooze (any action): hidden from Today, the Actions page and the floating list until the time comes ---- */
-function snoozeLabel(o){ const d = new Date(o.snz); return d.toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric'}) + ' ' + d.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}); }
-function snoozeSet(o, item, iso){ o.snz = iso || ''; edited(item); refreshViews(); }
-function snoozeDialog(o, item){
+function snoozeLabel(o, fld = 'snz'){ const d = new Date(o[fld]); return d.toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric'}) + ' ' + d.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}); }
+function snoozeSet(o, item, iso, fld = 'snz'){ o[fld] = iso || ''; edited(item); refreshViews(); renderRail(); }
+function snoozeDialog(o, item, fld = 'snz'){
+  const P = fld === 'psnz', on = P ? psnoozed(o) : snoozed(o);
   const hrs = n => new Date(Date.now() + n * 3600e3).toISOString(), wk = () => { const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(8, 0, 0, 0); return d.toISOString(); };
   const opts = [['1 hour', hrs(1)], ['3 hours', hrs(3)], ['Tomorrow morning', snoozeUntil('tom')], ['Monday morning', snoozeUntil('mon')], ['Next week', wk()]];
-  const d = shDialog('Snooze this action', `<p>Hides it from Today, the Actions page, the floating window and the start screen until the time you pick. The action itself, its due date and the note it lives in are not changed.${snoozed(o) ? '<br><b>Snoozed until ' + esc(snoozeLabel(o)) + '.</b>' : ''}</p>
+  const d = shDialog(P ? 'Snooze this answer' : 'Snooze this action', `<p>${P ? 'Hides it from To confirm and the alerts until the time you pick, for when you need to test it first or check it later. The action itself is not changed and stays where it is everywhere else.' : 'Hides it from Today, the Actions page, the floating window and the start screen until the time you pick. The action itself, its due date and the note it lives in are not changed.'}${on ? '<br><b>Snoozed until ' + esc(snoozeLabel(o, fld)) + '.</b>' : ''}</p>
     <div class="shform">${opts.map(([l, v], k) => `<button data-sz="${k}">${l}</button>`).join('')}</div>
     <div class="shform">Until <input type="date" id="szdate" min="${todayStr()}"> <input type="time" id="sztime" value="08:00"> <button class="pri" id="szgo">Snooze until then</button></div>`, {});
   d.addEventListener('click', e => {
-    const b = e.target.closest('[data-sz]'); if(b){ snoozeSet(o, item, opts[+b.dataset.sz][1]); d.close(); return; }
-    if(e.target.id === 'szgo'){ const dv = d.querySelector('#szdate').value, tv = d.querySelector('#sztime').value || '08:00'; if(!dv) return shMsg(d, 'Pick a day.'); const t = new Date(dv + 'T' + tv); if(!(t > new Date())) return shMsg(d, 'Pick a time in the future.'); snoozeSet(o, item, t.toISOString()); d.close(); }
+    const b = e.target.closest('[data-sz]'); if(b){ snoozeSet(o, item, opts[+b.dataset.sz][1], fld); d.close(); return; }
+    if(e.target.id === 'szgo'){ const dv = d.querySelector('#szdate').value, tv = d.querySelector('#sztime').value || '08:00'; if(!dv) return shMsg(d, 'Pick a day.'); const t = new Date(dv + 'T' + tv); if(!(t > new Date())) return shMsg(d, 'Pick a time in the future.'); snoozeSet(o, item, t.toISOString(), fld); d.close(); }
   });
-  if(snoozed(o)){ const w = document.createElement('button'); w.textContent = 'Wake it now'; w.addEventListener('click', e => { e.stopPropagation(); snoozeSet(o, item, ''); d.close(); }); d.querySelector('.dfoot span').appendChild(w); }
+  if(on){ const w = document.createElement('button'); w.textContent = 'Wake it now'; w.addEventListener('click', e => { e.stopPropagation(); snoozeSet(o, item, '', fld); d.close(); }); d.querySelector('.dfoot span').appendChild(w); }
 }
 let actSnz = false;
-document.addEventListener('change', e => { if(e.target && e.target.id === 'asnz'){ actSnz = e.target.checked; renderDetail(); } });
+document.addEventListener('change', e => { if(e.target && e.target.id === 'asnz'){ actSnz = e.target.checked; renderDetail(); } if(e.target && e.target.id === 'wsnz'){ waitSnz = e.target.checked; renderDetail(); } });
 
 /* ---- bulk edit: one tidy bar, each choice in a small menu ---- */
 let bulkLast = '';
@@ -10021,6 +10050,8 @@ document.addEventListener('click', e => {
     else if(act === 'goproc'){ procDoneN = 0; procSkip = new Set(); goView('procinbox'); }
     else if(act === 'procback'){ goView('note'); nbView = inboxIdQuiet() || nbView; saveUi(); renderRail(); renderList(); renderDetail(); }
     else if(act === 'flpin') pinToggle(a.dataset.key);
+    else if(act === 'trail'){ const k = a.dataset.key; if(openTrail.has(k)) openTrail.delete(k); else openTrail.add(k); renderDetail(); }
+    else if(act === 'propsnz'){ const x = findEntry(a.dataset.key); if(x) snoozeDialog(oOf(x), x.item, 'psnz'); }
     else if(act === 'snzopen'){ const x = findEntry(a.dataset.key); if(x) snoozeDialog(oOf(x), x.item); }
     else if(act === 'floatopen') openFloat({note: stickyId || ''});
     else if(act === 'startnow') startScreen(true);
@@ -10461,7 +10492,7 @@ if(MOBILE){          // these run on window (capture), so they get every event b
 }
 (MOBILE ? mobInit : init)();
 </script>
-<script>window.NB_BUILD = '20261124095244';</script>
+<script>window.NB_BUILD = '20261124111842';</script>
 <script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

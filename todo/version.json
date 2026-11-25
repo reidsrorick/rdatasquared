@@ -1,4 +1,14 @@
-{"version":"1.72.0","build":"20261124095244","changelog":[
+{"version":"1.73.0","build":"20261124111842","changelog":[
+ {
+  "v": "1.73.0",
+  "title": "Choose the notebook on import, snooze answers, history",
+  "items": [
+   "Importing a note or notebook now lets you choose where it goes: under each notebook in the Import box there is a Put it in menu. It starts on your notebook of the same name, or offers to make a new one, and you can pick any other notebook instead.",
+   "The capital letter at the start of a line also works after a list marker you type yourself (- text, * text, • text, 1. text, a) text or a ☐ box).",
+   "To confirm: each answer waiting for you has a ⏰ Snooze button (1 hour, 3 hours, tomorrow morning, Monday, next week, or a time you pick). A snoozed answer leaves To confirm and the alerts until then, and a Show snoozed box brings it back into view. The action itself is not changed.",
+   "History: an action that has had answers (done, hand back, notes) shows a 💬 History link. It lists, oldest first, what they said and how you replied (confirmed, not yet and your reason), on the People pages, Actions, Today and To confirm."
+  ]
+ },
  {
   "v": "1.72.0",
   "title": "Times, durations and custom formats in spreadsheets",
