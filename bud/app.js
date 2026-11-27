@@ -14,10 +14,10 @@ const dim = (y, m) => new Date(y, m, 0).getDate();
 const mk = (y, m, d) => { const f = new Date(y, m - 1, 1), yy = f.getFullYear(), mm = f.getMonth() + 1; return toISO(new Date(yy, mm - 1, Math.min(d, dim(yy, mm)))); }; // month may overflow (13 = next January)
 const fmt = s => { const d = new Date(s + 'T00:00:00'); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
 
-function savedView() { try { const v = sessionStorage.getItem('view'); return v === 'roommate' ? 'owed' : ['dashboard', 'transactions', 'recurring', 'owed', 'trends'].includes(v) ? v : 'dashboard'; } catch { return 'dashboard'; } } // opening the app lands on the dashboard; refreshing keeps the page you were on
+function savedView() { try { const v = sessionStorage.getItem('view'); return v === 'roommate' ? 'owed' : ['dashboard', 'transactions', 'recurring', 'owed', 'trends', 'settings'].includes(v) ? v : 'dashboard'; } catch { return 'dashboard'; } } // opening the app lands on the dashboard; refreshing keeps the page you were on
 /* ───────── state ───────── */
-let handle = null, D = null, mtime = 0, pending = null, view = savedView(), recOrder = null, queue = Promise.resolve();
-const F = { q: '', month: '', cat: '', review: false, rec: '', limit: 300 }; // the Transactions filters; kept for a page refresh
+let demo = false, freshUser = false, handle = null, D = null, mtime = 0, pending = null, view = savedView(), recOrder = null, queue = Promise.resolve();
+const F = { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }; // the Transactions filters; kept for a page refresh
 try { const f = JSON.parse(sessionStorage.getItem('filters')); if (f && typeof f === 'object') for (const k in F) if (typeof f[k] === typeof F[k]) F[k] = f[k]; } catch {}
 
 /* ───────── remembered file handle (IndexedDB) ───────── */
@@ -28,7 +28,7 @@ const kv = async (mode, fn) => { const db = await idb(); return new Promise((res
    transactions: { id, date, desc, cat, amt, from, to, notes, work, rec, parts? }   rec = name of a recurring item ('' if none)
                  parts (optional) = line items under one charge: [{ id, desc, amt (same sign as the charge), rec, excluded? }] — they inherit its category
                  excluded (optional, true) = a charge tagged to a recurring item that is kept in the history but left out of the item's calculations
-   recurring:    { id, name, group, dueDay (1-31, optional), active, url? (where you pay it) } — no amount: it's worked out from the charges tagged with the item
+   recurring:    { id, name, group, dueDay (1-31, optional), active, url? (where you pay it), period? ('year' = charged once a year; absent = monthly), dueMonth? (1-12, yearly items) } — no amount: it's worked out from the charges tagged with the item
    groups:       ['Home', 'Subscriptions', ...]  the list of groups items are sorted into (yours to define)
    people:       [{ id, name }]  whoever you split things with
    settings:     { txnColumns: ['date','desc',...], txnEdit: false, txnSort: { k: 'date', dir: -1 }, trendMonths: 6, showInactive: false, recView: 'mine'|'full', catKinds: { category: 'spend'|'income'|'skip' } }
@@ -71,9 +71,11 @@ function migrate(d) {
 
 /* ───────── status / gate / storage (JSON is the source of truth) ───────── */
 const setStatus = (t, err) => { const s = $('#status'); s.textContent = t; s.className = 'status' + (err ? ' err' : ''); if (!err && /^(Saved|Exported)/.test(t)) setTimeout(() => { if (s.textContent === t) s.textContent = ''; }, 4000); };
-const gate = html => { $('#export').hidden = true; $('#nav').hidden = true; $('#view').innerHTML = `<div class="card">${html}</div>`; };
-const startHtml = () => `<h2>Set up your data file</h2><p>Your transactions are saved in a JSON file you choose, and you can export to Excel any time. Start by importing your workbook (one time), or open an existing data file.</p>
-  <button class="btn" id="import">Import from Excel…</button> <button class="btn ghost" id="open">Open data file…</button>`;
+const gate = html => { $('#export').hidden = true; $('#nav').hidden = true; $('#demobar').hidden = true; $('#view').innerHTML = `<div class="card">${html}</div>`; };
+const startHtml = () => `<h2>Set up your data file</h2><p>Your transactions are saved in a JSON file you choose, and you can export to Excel any time. Open your data file, or start a new one.</p>
+  <button class="btn" id="open">Open data file…</button> <button class="btn ghost" id="create">Start a new data file…</button>
+  <p class="muted small">Just looking? <a href="#" id="sample">Try it with sample data</a> — a made-up budget to click around in. Nothing is saved.</p>`;
+const emptyData = () => ({ version: 8, updated: '', groups: [], people: [], settings: {}, lists: { accounts: ['Checking', 'Savings', 'Credit Card'], categories: ['Food & Dining', 'Shopping', 'Bills & Utilities', 'Transportation', 'Entertainment', 'Income', 'Transfer', 'Other'] }, recurring: [], transactions: [] });
 const XLSX_TYPE = [{ description: 'Excel workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }];
 const JSON_TYPE = [{ description: 'Budget data (JSON)', accept: { 'application/json': ['.json'] } }];
 const serialize = d => {
@@ -86,10 +88,28 @@ const parseData = txt => {
   return migrate(d);
 };
 
+const tourDone = () => { try { return localStorage.getItem('tourDone') === '1'; } catch { return true; } };
+const markTourDone = () => { try { localStorage.setItem('tourDone', '1'); } catch {} };
+function sampleData() { // the made-up budget, with its dates shifted so the newest month is this month (and nothing is in the future)
+  const d = JSON.parse(JSON.stringify(window.SAMPLE_DATA)), T = today(), base = d.transactions.reduce((m, t) => (t.date > m ? t.date : m), '').slice(0, 7), cur = T.slice(0, 7);
+  const n = (+cur.slice(0, 4) - +base.slice(0, 4)) * 12 + (+cur.slice(5, 7) - +base.slice(5, 7)), sh = ds => { const x = mk(+ds.slice(0, 4), +ds.slice(5, 7) + n, +ds.slice(8, 10)); return x > T ? T : x; };
+  for (const t of d.transactions) { t.date = sh(t.date); for (const o of [t, ...(t.parts || [])]) if (o.split?.requested) o.split.requested = sh(o.split.requested); }
+  d.updated = new Date().toISOString(); return d;
+}
+function enterDemo(withTour, keep) {
+  if (!window.SAMPLE_DATA) return setStatus('The sample data file (sample.js) is missing.', true);
+  demo = true; try { sessionStorage.setItem('demo', '1'); } catch {}
+  if (!keep) { closeCard(); Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }); view = 'dashboard'; }
+  D = migrate(sampleData()); $('#file').textContent = 'Sample data'; render();
+  if (withTour) startTour();
+}
+async function exitDemo() { demo = false; try { sessionStorage.removeItem('demo'); } catch {} D = null; closeCard(); Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }); view = 'dashboard'; $('#file').textContent = ''; setStatus(''); await boot(); }
 async function boot() {
-  if (!('showOpenFilePicker' in window)) return gate('<h2>Chrome or Edge required</h2><p>This app saves straight to a file on your computer, which needs the File System Access API.</p>');
+  try { if (sessionStorage.getItem('demo') === '1' && window.SAMPLE_DATA) return enterDemo(false, true); } catch {}
+  if (!('showOpenFilePicker' in window)) return gate('<h2>Chrome or Edge required</h2><p>Saving to a file on your computer needs the File System Access API, which this browser doesn\'t have.</p><p class="muted small">You can still <a href="#" id="sample">look around with sample data</a> (nothing is saved).</p>');
   try { handle = await kv('readonly', s => s.get('handle')); } catch { handle = null; }
-  if (!handle || typeof handle.queryPermission !== 'function') return gate(startHtml());
+  if (!handle || typeof handle.queryPermission !== 'function') { freshUser = !tourDone(); return gate(startHtml()); }
+  if (!tourDone()) markTourDone(); // someone who already uses the app doesn't need the first-run tour
   let perm = 'prompt'; try { perm = await handle.queryPermission({ mode: 'readwrite' }); } catch {}
   if (perm === 'granted') return start();
   gate(`<h2>Reconnect</h2><p>${esc(handle.name)}</p><button class="btn" id="reconnect">Allow access</button> <button class="btn ghost" id="open">Open a different file…</button>`);
@@ -97,13 +117,12 @@ async function boot() {
 document.addEventListener('click', async e => {
   const id = e.target.id; if (!id) return;
   try {
-    if (id === 'import') { // step 1: read the workbook, keep a copy to export into later
-      const [h] = await showOpenFilePicker({ types: XLSX_TYPE }), file = await h.getFile(), buf = await file.arrayBuffer();
-      pending = migrate((await Workbook.load(new Blob([buf]))).readAll()); await kv('readwrite', s => s.put(buf, 'template'));
-      gate(`<h2>Found your data</h2><p>${pending.transactions.length} transactions, ${pending.recurring.length} recurring items. Now choose where to save your data file (a OneDrive folder is a good home).</p><button class="btn" id="create">Save data file…</button>`);
-    } else if (id === 'create') { // step 2
+    if (id === 'sample') { e.preventDefault(); enterDemo(freshUser && !tourDone()); }
+    else if (id === 'demoexit') await exitDemo();
+    else if (id === 'demotour') startTour();
+    else if (id === 'create') { // step 2
       const h = await showSaveFilePicker({ suggestedName: 'budget-data.json', types: JSON_TYPE });
-      const w = await h.createWritable(); await w.write(serialize(pending)); await w.close();
+      const w = await h.createWritable(); await w.write(serialize(pending || emptyData())); await w.close();
       handle = h; pending = null; await kv('readwrite', s => s.put(h, 'handle')); start();
     } else if (id === 'open') {
       const [h] = await showOpenFilePicker({ types: JSON_TYPE });
@@ -123,16 +142,21 @@ async function start() {
     return gate(`<p><b>Couldn't open the remembered file.</b> ${esc(e.message)}</p>` + startHtml());
   }
   render();
+  if (freshUser && !tourDone()) startTour();
 }
 async function reload() { const file = await handle.getFile(); D = parseData(await file.text()); mtime = file.lastModified; }
 window.addEventListener('focus', async () => { // pick up changes made to the data file elsewhere
-  if (!handle || !D || document.activeElement?.closest?.('td')) return;
+  if (demo || !handle || !D || document.activeElement?.closest?.('td')) return;
   try { const f = await handle.getFile(); if (f.lastModified !== mtime) { await reload(); render(); } } catch {}
 });
 
 /* every edit changes the data and writes the JSON file straight away */
 function commit(fn, { redraw = true } = {}) {
   queue = queue.then(async () => {
+    if (demo) { // sample data: changes live only in memory
+      try { fn(D); setStatus('Sample — not saved'); if (redraw) render(); } catch (err) { setStatus(err.message, true); render(); }
+      return;
+    }
     if (!handle) return;
     try {
       setStatus('Saving…');
@@ -163,7 +187,7 @@ async function exportXlsx() {
 
 /* ───────── table helpers: fixed, draggable column widths + spreadsheet-style keys ───────── */
 const TABLES = { // [id, label, default width]
-  rec: [['dueDay', 'Day', 50], ['name', 'Name', 170], ['group', 'Group', 120], ['monthly', 'Monthly', 130], ['last', 'Last charge', 175], ['next', 'Next charge', 90], ['url', 'Pay link', 120], ['active', 'Active', 50], ['view', 'Charges', 76], ['del', '', 36]],
+  rec: [['dueDay', 'Due', 122], ['name', 'Name', 150], ['group', 'Group', 110], ['repeats', 'Repeats', 92], ['monthly', 'Monthly', 120], ['last', 'Last charge', 160], ['next', 'Next charge', 100], ['url', 'Pay link', 100], ['active', 'Active', 50], ['view', 'Charges', 76], ['del', '', 36]],
 };
 const savedWidths = key => { try { const m = JSON.parse(localStorage.getItem('cw:' + key)); return m && !Array.isArray(m) ? m : {}; } catch { return {}; } };
 function tableHtml(key, bodyId, cols, sort, fit) { // sort (optional) = { k, dir } makes the headers clickable · fit = the columns share the window's width instead of having a fixed one (so the page never scrolls sideways)
@@ -209,11 +233,11 @@ const flash = (el, p) => p.then(() => { if (el.isConnected && !$('#status').clas
 /* ───────── render / navigation ───────── */
 function render() {
   if (!D) return;
-  $('#export').hidden = false; $('#nav').hidden = false;
+  $('#export').hidden = demo; $('#nav').hidden = false; $('#demobar').hidden = !demo;
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   try { sessionStorage.setItem('view', view); sessionStorage.setItem('filters', JSON.stringify(F)); } catch {}
   const a = document.activeElement, tr = a?.closest?.('#view tr'), key = tr && a.dataset?.f ? [tr.dataset.id, a.dataset.f] : null; // keep focus across redraws
-  (view === 'dashboard' ? vDashboard : view === 'recurring' ? vRecurring : view === 'trends' ? vTrends : view === 'owed' ? vOwed : vTransactions)();
+  (view === 'settings' ? vSettings : view === 'dashboard' ? vDashboard : view === 'recurring' ? vRecurring : view === 'trends' ? vTrends : view === 'owed' ? vOwed : vTransactions)();
   if (key) $(`#view tr[data-id="${key[0]}"] [data-f="${key[1]}"]`)?.focus();
   if (cardId != null) { if (view === 'transactions' || view === 'owed') renderCard(); else closeCard(); } // an open card follows the data
 }
@@ -221,7 +245,7 @@ $('#nav').addEventListener('click', e => { const b = e.target.closest('button');
 
 /* ───────── transactions: a compact list; click a row for its card ───────── */
 const DEFAULT_COLS = ['date', 'desc', 'cat', 'amt', 'from'], LOCKED = ['desc', 'amt'];
-const txnSel = (list, f) => t => `<select data-f="${f}">${opts(list(), t[f])}</select>`;
+const txnSel = (list, f) => t => comboHtml(f, f, t[f]);
 const TXN_COLS = { // what each optional column shows (read) and how it edits (edit)
   date: { h: 'Date', w: 115, read: t => fmt(t.date), edit: t => `<input type="date" data-f="date" value="${t.date}">` },
   desc: { h: 'Description', w: 340, read: t => esc(t.desc) + ((t.parts || []).length ? ` <span class="chip" title="Split into ${t.parts.length} line items">÷${t.parts.length}</span>` : ''), edit: t => `<input data-f="desc" value="${esc(t.desc)}" title="${esc(t.desc)}">` },
@@ -229,19 +253,25 @@ const TXN_COLS = { // what each optional column shows (read) and how it edits (e
   amt: { h: 'Amount', w: 120, num: true, read: t => `<span class="${t.amt < 0 ? 'neg' : 'pos'}">${money(t.amt)}</span>`, edit: t => `<input type="number" step="0.01" data-f="amt" class="num${t.amt < 0 ? ' neg' : ' pos'}" value="${t.amt ?? ''}">` },
   from: { h: 'From', w: 140, read: t => esc(t.from), edit: txnSel(() => D.lists.accounts, 'from') },
   to: { h: 'To', w: 140, read: t => esc(t.to), edit: txnSel(() => D.lists.accounts, 'to') },
-  work: { h: 'Work exp.', w: 130, read: t => esc(t.work), edit: txnSel(() => D.lists.work, 'work') },
+  split: { h: 'Split with', w: 150, read: t => esc(splitNames(t)), edit: t => esc(splitNames(t)) },
   rec: { h: 'Recurring', w: 190, read: t => esc(t.rec), edit: txnSel(() => D.recurring.map(r => r.name).filter(Boolean), 'rec') },
   notes: { h: 'Notes', w: 240, read: t => esc(String(t.notes ?? '').replace(/\s+/g, ' ')), edit: t => `<input data-f="notes" value="${esc(t.notes)}">` },
 };
+const splitNames = t => [...new Set([t, ...(t.parts || [])].filter(o => o.split).map(o => whoName(D, o.split.who)))].join(', ');
 const txnCols = () => { const s = D.settings?.txnColumns, keys = Array.isArray(s) ? s.filter(k => TXN_COLS[k]) : [...DEFAULT_COLS]; for (const k of LOCKED) if (!keys.includes(k)) keys.push(k); return Object.keys(TXN_COLS).filter(k => keys.includes(k)); };
 const txnEdit = () => !!D.settings?.txnEdit;
 const txnSort = () => { const s = D.settings?.txnSort; return s && (TXN_COLS[s.k] || s.k === 'counted') && (s.dir === 1 || s.dir === -1) ? s : { k: 'date', dir: -1 }; };
 const txnCmp = () => { // empty values always sort last
-  const { k, dir } = txnSort(), val = t => k === 'counted' ? countedParts(t, F.rec)?.kept : k === 'amt' ? t.amt : String(t[k] ?? '').toLowerCase();
+  const { k, dir } = txnSort(), val = t => k === 'counted' ? countedParts(t, F.rec)?.kept : k === 'amt' ? t.amt : k === 'split' ? splitNames(t).toLowerCase() : String(t[k] ?? '').toLowerCase();
   const tie = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id); // equal values: newest first
   return (a, b) => { const x = val(a), y = val(b), xe = x == null || x === '', ye = y == null || y === ''; if (xe || ye) return xe === ye ? tie(a, b) : xe ? 1 : -1; const r = x < y ? -1 : x > y ? 1 : 0; return r ? r * dir : tie(a, b); };
 };
 const setSetting = (k, v) => commit(d => { d.settings = { ...(d.settings || {}), [k]: v }; });
+const filtersOn = () => !!(F.q || F.month || F.cat || F.review || F.rec || F.split);
+const splitOk = t => { // the Transactions split filter
+  if (!F.split) return true; const os = [t, ...(t.parts || [])].filter(o => o.split);
+  return F.split === 'none' ? !os.length : F.split === 'any' ? os.length > 0 : os.some(o => 'p' + o.split.who === F.split);
+};
 const hasTag = t => !!t.rec || (t.parts || []).some(p => p.rec);
 const needsReview = t => t.cat === 'Unknown' || ((t.cat === 'Subscription' || t.cat === 'Bills & Utilities') && !hasTag(t));
 // what a transaction contributes to a recurring item: cost = everything tagged, kept = the part not excluded from the calculations
@@ -276,7 +306,9 @@ function vTransactions() {
     <input id="q" type="search" placeholder="Search…" value="${esc(F.q)}">
     <select id="fm"><option value="">All months</option>${months.map(m => `<option${m === F.month ? ' selected' : ''}>${m}</option>`).join('')}</select>
     <select id="fc"><option value="">All categories</option>${opts(D.lists.categories, F.cat, false)}</select>
+    <select id="fs" title="Show only charges split with someone, or with one person"><option value="">Split: all</option><option value="any"${F.split === 'any' ? ' selected' : ''}>Split with anyone</option><option value="none"${F.split === 'none' ? ' selected' : ''}>Not split</option>${peopleList().map(p => `<option value="p${p.id}"${F.split === 'p' + p.id ? ' selected' : ''}>With ${esc(p.name)}</option>`).join('')}</select>
     <label><input id="fr" type="checkbox"${F.review ? ' checked' : ''}> Needs review</label>
+    <button class="btn ghost sm" id="clrall" title="Clear every filter"${filtersOn() ? '' : ' hidden'}>Clear filters</button>
     ${F.rec ? `<span class="chip filt" title="Showing only the charges counted toward this recurring item">Recurring: <b>${esc(F.rec)}</b> <button class="x" id="clrrec" title="Show all transactions">✕</button></span><button class="btn ghost sm" id="backrec">‹ Recurring</button>` : ''}
     <button class="btn ghost" id="cols">Columns</button>
     <label title="Turn the list into editable cells"><input id="editmode" type="checkbox"${txnEdit() ? ' checked' : ''}> Edit in table</label>
@@ -285,8 +317,8 @@ function vTransactions() {
   ${showCols ? `<div class="panel" id="colpanel"><b>Show columns</b> <span class="muted">— saved with your data</span><div class="chks">${Object.keys(TXN_COLS).map(k => `<label class="chk"><input type="checkbox" data-col="${k}"${cols.includes(k) ? ' checked' : ''}${LOCKED.includes(k) ? ' disabled' : ''}> ${TXN_COLS[k].h}</label>`).join('')}</div></div>` : ''}
   ${tableHtml('txn', 'tb', [...cols.map(k => [k, TXN_COLS[k].h, TXN_COLS[k].w]), ...(F.rec ? [['counted', 'Counted', 150]] : []), ['open', '', 44]], txnSort())}
   <p class="muted" id="more"></p>`;
-  const redraw = () => { F.q = $('#q').value; F.month = $('#fm').value; F.cat = $('#fc').value; F.review = $('#fr').checked; F.limit = 300; try { sessionStorage.setItem('filters', JSON.stringify(F)); } catch {} body(); };
-  ['#q', '#fm', '#fc', '#fr'].forEach(s => $(s).addEventListener('input', redraw));
+  const redraw = () => { F.q = $('#q').value; F.month = $('#fm').value; F.cat = $('#fc').value; F.review = $('#fr').checked; F.split = $('#fs').value; F.limit = 300; $('#clrall').hidden = !filtersOn(); try { sessionStorage.setItem('filters', JSON.stringify(F)); } catch {} body(); };
+  ['#q', '#fm', '#fc', '#fr', '#fs'].forEach(s => $(s).addEventListener('input', redraw));
   $('#tb').addEventListener('change', onEdit); cellKeys($('#tb'));
   $('#tb').addEventListener('click', e => { // a click on the row opens its card (in table-edit mode only the › button does, so cells can be edited)
     if (e.target.closest('input,select,textarea')) return;
@@ -301,6 +333,7 @@ function vTransactions() {
   });
   $('#add').addEventListener('click', addRow);
   $('#clrrec')?.addEventListener('click', () => { F.rec = ''; render(); });
+  $('#clrall').addEventListener('click', () => { Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }); render(); });
   $('#backrec')?.addEventListener('click', () => { closeCard(); view = 'recurring'; render(); });
   $('#cols').addEventListener('click', () => { showCols = !showCols; render(); });
   $('#editmode').addEventListener('change', e => setSetting('txnEdit', e.target.checked));
@@ -309,7 +342,7 @@ function vTransactions() {
 }
 function body() {
   const q = F.q.toLowerCase(), cols = txnCols(), edit = txnEdit();
-  const rows = D.transactions.filter(t => (!F.month || t.date.startsWith(F.month)) && (!F.cat || t.cat === F.cat) && (!F.review || needsReview(t)) && (!F.rec || counted(t, F.rec) != null) &&
+  const rows = D.transactions.filter(t => (!F.month || t.date.startsWith(F.month)) && (!F.cat || t.cat === F.cat) && (!F.review || needsReview(t)) && (!F.rec || counted(t, F.rec) != null) && splitOk(t) &&
     (!q || [t.desc, t.notes, t.cat, t.rec, t.from, t.to, ...(t.parts || []).flatMap(p => [p.desc, p.rec])].some(x => String(x ?? '').toLowerCase().includes(q)))).sort(txnCmp());
   cardIds = rows.map(t => t.id);
   $('#tb').innerHTML = rows.slice(0, F.limit).map(t => `<tr data-id="${t.id}" class="${edit ? '' : 'row'}${needsReview(t) ? ' review' : ''}"${edit ? '' : ' tabindex="0"'}>`
@@ -401,9 +434,10 @@ function renderCard() {
   const L = D.lists, names = D.recurring.map(r => r.name).filter(Boolean), ps = t.parts || [], a = document.activeElement, incoming = (t.amt || 0) > 0;
   const items = new Map(owedItems().map(i => [i.key, i]));
   const key = a && $('#drawer').contains(a) && a.dataset?.f ? [a.dataset.f, a.closest('.line')?.dataset.pid || ''] : null;
-  const sel = (f, list, label) => `<label>${label}<select data-f="${f}">${opts(list, t[f])}</select></label>`;
+  const sel = (f, list, label) => `<label>${label}${comboHtml(f, f, t[f])}</label>`;
+  const sug = suggestFor(t);
   const expLine = p => `<div class="line" data-pid="${p.id}"><input data-f="pdesc" value="${esc(p.desc)}" placeholder="Line item…"><input type="number" step="0.01" data-f="pamt" class="num" value="${p.amt ?? ''}">
-      <div class="cell"><select data-f="prec" title="Recurring item">${opts(names, p.rec)}</select>${p.rec ? `<label class="mini" title="Leave this out of “${esc(p.rec)}” calculations (it stays in the history)"><input type="checkbox" data-f="pexcl"${p.excluded ? ' checked' : ''}> exclude</label>` : ''}</div>
+      <div class="cell">${comboHtml('prec', 'rec', p.rec, ' title="Recurring item"')}${p.rec ? `<label class="mini" title="Leave this out of “${esc(p.rec)}” calculations (it stays in the history)"><input type="checkbox" data-f="pexcl"${p.excluded ? ' checked' : ''}> exclude</label>` : ''}</div>
       <div class="cell">${splitSel(t, p)}</div><div class="cell">${splitSumEl(t, p, items)}</div><button class="x" data-act="pdel" title="Remove line">✕</button></div>`;
   const table = !ps.length ? '' : incoming
     ? `<div class="lgrid cover"><div class="lhead"><span>Covers</span><span>Amount</span><span>Settles</span><span></span></div>${ps.map(p => coverLine(t, p, items)).join('')}</div>`
@@ -411,14 +445,14 @@ function renderCard() {
   $('#drawer').innerHTML = `
   <div class="dh"><button class="btn ghost sm" id="cprev" data-act="prev" title="Previous">‹</button><button class="btn ghost sm" id="cnext" data-act="next" title="Next">›</button><span class="muted" id="cpos"></span><button class="x" data-act="close" style="margin-left:auto" title="Close (Esc)">✕</button></div>
   <div class="cgrid">
-    <label class="span3">Description<input data-f="desc" value="${esc(t.desc)}"></label>
+    <label class="span3">Description${comboHtml('desc', 'desc', t.desc)}</label>
+    ${sug ? `<div class="span3 sugg">Looks like <b>${esc(sug.from.desc)}</b>: ${sug.fill.map(([k, v]) => `${esc(v)}`).join(' · ')} <button class="btn sm" data-act="suggest" title="Fill the empty fields from that transaction">Fill these in</button></div>` : ''}
     <label>Amount<input type="number" step="0.01" data-f="amt" value="${t.amt ?? ''}"></label>
     <label>Date<input type="date" data-f="date" value="${t.date}"></label>
     ${sel('cat', L.categories, 'Category')}
     ${sel('rec', names, 'Recurring item')}
     ${sel('from', L.accounts, 'From account')}
     ${sel('to', L.accounts, 'To account')}
-    ${sel('work', L.work, 'Work expense')}
     ${t.rec && !ps.length ? `<label class="row span2"><input type="checkbox" data-f="excluded"${t.excluded ? ' checked' : ''}> Exclude from “${esc(t.rec)}” calculations <span class="muted">(stays in the history)</span></label>` : ''}
     ${!incoming && !ps.length ? `<div class="splitwrap span3"><span class="lbl">Split with someone</span>${splitCtl(t, null, items)}</div>` : ''}
     <label class="span3">Notes<textarea data-f="notes" rows="2">${esc(t.notes)}</textarea></label>
@@ -430,6 +464,80 @@ function renderCard() {
   updCardNav();
   if (key) $(`#drawer ${key[1] ? `.line[data-pid="${key[1]}"] ` : ''}[data-f="${key[0]}"]`)?.focus();
 }
+/* ───────── helping you fill things in: type-to-search fields, and suggestions from similar past transactions ───────── */
+/* ───────── dropdowns you can type in ─────────
+   comboHtml() gives a field that shows a styled list: it narrows as you type, ↑ ↓ move, and Enter, Tab or a click takes the highlighted
+   (top) match. Category / account / recurring item / group fields only accept something on the list (anything else goes back).
+   A description is free text: its list holds earlier descriptions, and taking one also fills the empty details from that transaction. */
+const comboList = k => k === 'cat' ? D.lists?.categories || [] : k === 'from' || k === 'to' ? D.lists?.accounts || [] : k === 'rec' ? D.recurring.map(r => r.name).filter(Boolean) : k === 'group' ? D.groups || [] : k === 'desc' ? recentDescs() : [];
+const comboHtml = (f, kind, val, extra = '') => `<input data-f="${f}" data-combo="${kind}" autocomplete="off" spellcheck="false" value="${esc(val)}"${kind === 'desc' ? '' : ' placeholder="Type to search…"'}${extra}>`;
+let cb = null; // the open list: { inp, items, at, typed, nav }
+function cbPop() { let p = $('#cbpop'); if (!p) { p = document.createElement('div'); p.id = 'cbpop'; p.className = 'cbpop'; p.hidden = true; document.body.appendChild(p); } return p; }
+function cbMatches(kind, q) { // starts-with first, then contains
+  q = q.trim().toLowerCase(); const all = comboList(kind); if (!q) return kind === 'desc' ? [] : all.slice(0, 60);
+  const a = [], b = []; for (const x of all) { const l = x.toLowerCase(); if (l === q && kind === 'desc') continue; if (l.startsWith(q)) a.push(x); else if (l.includes(q)) b.push(x); } return [...a, ...b].slice(0, 60);
+}
+function cbDraw() {
+  const p = cbPop(); if (!cb || !cb.items.length) { p.hidden = true; return; }
+  const q = cb.typed ? cb.inp.value.trim() : '', hl = x => { const i = q ? x.toLowerCase().indexOf(q.toLowerCase()) : -1; return i < 0 ? esc(x) : esc(x.slice(0, i)) + '<mark>' + esc(x.slice(i, i + q.length)) + '</mark>' + esc(x.slice(i + q.length)); };
+  p.innerHTML = cb.items.map((x, i) => `<div class="cbi${i === cb.at ? ' on' : ''}" data-i="${i}">${hl(x)}</div>`).join('');
+  const r = cb.inp.getBoundingClientRect(); p.hidden = false; p.style.minWidth = Math.max(160, r.width) + 'px';
+  const h = Math.min(p.scrollHeight, 260), below = innerHeight - r.bottom;
+  p.style.left = Math.max(6, Math.min(r.left, innerWidth - p.offsetWidth - 6)) + 'px'; p.style.top = (below < h + 12 && r.top > h + 12 ? r.top - h - 4 : r.bottom + 3) + 'px';
+  p.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+}
+function cbOpen(inp, typed) { cb = { inp, typed, at: 0, nav: false, items: cbMatches(inp.dataset.combo, typed || inp.dataset.combo !== 'desc' ? (typed ? inp.value : '') : '') }; cbDraw(); }
+function cbClose() { cb = null; const p = $('#cbpop'); if (p) p.hidden = true; }
+function cbResolve(kind, v) { // strict lists: what was typed becomes the best match on the list ('' clears), or null if nothing fits
+  v = v.trim(); if (!v) return ''; const all = comboList(kind), lo = v.toLowerCase();
+  return all.find(x => x.toLowerCase() === lo) ?? cbMatches(kind, v)[0] ?? null;
+}
+function cbPick(inp, val) {
+  inp.value = val; cbClose();
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+  if (inp.dataset.combo === 'desc') autofillFrom(inp);
+}
+function autofillFrom(inp) { // took an earlier description: fill what's still empty from the latest transaction with that description
+  const tr = inp.closest('tr[data-id]'), id = tr ? +tr.dataset.id : cardId, line = inp.closest('.line'); if (id == null || line) return;
+  const want = inp.value.trim().toLowerCase(); if (!want) return;
+  commit(d => {
+    const x = d.transactions.find(t => t.id === id); if (!x) return;
+    const m = d.transactions.filter(t => t.id !== id && String(t.desc || '').trim().toLowerCase() === want).sort((a, b) => (a.date < b.date ? 1 : -1))[0]; if (!m) return;
+    for (const f of ['cat', 'rec', 'from', 'to']) if (!x[f] && m[f]) x[f] = m[f];
+    if (!x.amt && m.amt) { x.amt = m.amt; if (m.split && !(x.parts || []).length && !x.split) x.split = { ...m.split }; delete x.split?.requested; } // same amount (and the same split) as last time
+  });
+}
+document.addEventListener('focusin', e => { const inp = e.target.closest?.('[data-combo]'); if (!inp) return; inp.dataset.prev = inp.value; cbOpen(inp, false); });
+document.addEventListener('input', e => { const inp = e.target.closest?.('[data-combo]'); if (inp) cbOpen(inp, true); });
+document.addEventListener('focusout', e => { if (e.target.closest?.('[data-combo]')) setTimeout(() => { if (cb && document.activeElement !== cb.inp) cbClose(); }, 0); });
+document.addEventListener('mousedown', e => { const it = e.target.closest?.('.cbi'); if (it && cb) { e.preventDefault(); cbPick(cb.inp, cb.items[+it.dataset.i]); } else if (!e.target.closest?.('[data-combo]')) cbClose(); });
+document.addEventListener('keydown', e => {
+  const inp = e.target.closest?.('[data-combo]'); if (!inp) return; const kind = inp.dataset.combo, free = kind === 'desc';
+  if (!cb || cb.inp !== inp) { if (e.key === 'ArrowDown') { cbOpen(inp, false); e.preventDefault(); } return; }
+  const n = cb.items.length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { if (!n) return; cb.at = (cb.at + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; cb.nav = true; cbDraw(); e.preventDefault(); }
+  else if (e.key === 'Escape') { cbClose(); e.preventDefault(); e.stopPropagation(); }
+  else if (e.key === 'Enter') { if (n && (!free || cb.nav)) { cbPick(inp, cb.items[cb.at]); e.preventDefault(); e.stopPropagation(); } else cbClose(); }
+  else if (e.key === 'Tab' && !e.shiftKey && n && inp.value.trim() && (cb.typed || free)) { cbPick(inp, cb.items[cb.at]); } // Tab takes the top match, and moves on
+}, true);
+document.addEventListener('change', e => { // before anything saves it: a list field only keeps something that's on its list
+  const inp = e.target.closest?.('[data-combo]'); if (!inp || inp.dataset.combo === 'desc') return;
+  const r = cbResolve(inp.dataset.combo, inp.value);
+  if (r == null) { e.stopImmediatePropagation(); inp.value = inp.dataset.prev ?? ''; setStatus(inp.dataset.combo === 'group' ? 'Pick one of your groups (add more with “Edit groups”)' : inp.dataset.combo === 'rec' ? 'Pick a recurring item from the list' : 'Pick one from the list (add new ones in Settings)', true); }
+  else inp.value = r;
+}, true);
+window.addEventListener('resize', () => cbClose());
+
+const descKey = x => String(x || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length > 1).slice(0, 2).join(' ');
+const recentDescs = () => { const seen = new Set(), out = []; for (const t of D.transactions.slice().sort((a, b) => (a.date < b.date ? 1 : -1))) { const d = (t.desc || '').trim(); if (d && !seen.has(d)) { seen.add(d); out.push(d); if (out.length >= 200) break; } } return out; };
+function suggestFor(t) { // the most recent other transaction that starts the same way, and which of its details this one is missing
+  const k = descKey(t.desc); if (!k) return null;
+  const recent = D.transactions.filter(x => x.id !== t.id && (x.cat || x.rec)).sort((a, b) => (a.date < b.date ? 1 : -1)), first = k.split(' ')[0];
+  const m = recent.find(x => descKey(x.desc) === k) || (first.length >= 4 ? recent.find(x => descKey(x.desc).split(' ')[0] === first) : null); if (!m) return null; // the same two words, else the same first word
+  const fill = ['cat', 'rec', 'from', 'to'].filter(f => m[f] && !t[f]).map(f => [f, m[f]]);
+  return fill.length ? { from: m, fill } : null;
+}
+
 /* ───────── a small calculator for a custom split ───────── */
 const CALC_ICON = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="3.5" width="6" height="2.6" rx=".6" fill="currentColor"/><circle cx="5.8" cy="9" r=".9" fill="currentColor"/><circle cx="8" cy="9" r=".9" fill="currentColor"/><circle cx="10.2" cy="9" r=".9" fill="currentColor"/><circle cx="5.8" cy="11.7" r=".9" fill="currentColor"/><circle cx="8" cy="11.7" r=".9" fill="currentColor"/><circle cx="10.2" cy="11.7" r=".9" fill="currentColor"/></svg>';
 function calcEval(src) { // + − × ÷ and brackets, nothing else (no eval)
@@ -516,7 +624,7 @@ function onCardEdit(e) {
   const el = e.target, f = el.dataset.f; if (!f) return;
   if (['split', 'psplit', 'share', 'pshare', 'yours', 'pyours', 'pcover'].includes(f)) return onSplitEdit(el, f);
   const id = cardId, line = el.closest('.line'); let v = el.value, wasIncoming = (D.transactions.find(x => x.id === id)?.amt || 0) > 0;
-  const refresh = () => { if ($('#tb')) body(); const t = D.transactions.find(x => x.id === id); if (t && $('#crest')) $('#crest').innerHTML = restHtml(t); updSums(); if (f === 'rec' || f === 'prec' || (f === 'amt' && t && ((t.amt || 0) > 0) !== wasIncoming)) renderCard(); }; // an amount that turns a charge into a payment (or back) changes the whole card // update the list behind, the remainder and the split summaries, but never rebuild the card mid-typing
+  const refresh = () => { if ($('#tb')) body(); const t = D.transactions.find(x => x.id === id); if (t && $('#crest')) $('#crest').innerHTML = restHtml(t); updSums(); if (f === 'rec' || f === 'prec' || f === 'desc' || f === 'cat' || f === 'from' || f === 'to' || (f === 'amt' && t && ((t.amt || 0) > 0) !== wasIncoming)) renderCard(); }; // an amount that turns a charge into a payment (or back) changes the whole card // update the list behind, the remainder and the split summaries, but never rebuild the card mid-typing
   if (line) {
     const pid = +line.dataset.pid, key = { pdesc: 'desc', pamt: 'amt', prec: 'rec', pexcl: 'excluded' }[f], sign = Math.sign(D.transactions.find(x => x.id === id)?.amt) || -1;
     if (f === 'pexcl') v = el.checked;
@@ -538,6 +646,7 @@ function onCardEdit(e) {
 async function onCardClick(e) {
   const b = e.target.closest('[data-act]'); if (!b) return; const act = b.dataset.act, id = cardId, t = D.transactions.find(x => x.id === id);
   if (act === 'close') closeCard();
+  else if (act === 'suggest') { const sg = t && suggestFor(t); if (sg) commit(d => { const x = d.transactions.find(q => q.id === id); if (x) for (const [k, v] of sg.fill) if (!x[k]) x[k] = v; }); }
   else if (act === 'calc') openCalc(b);
   else if (act === 'prev' || act === 'next') { const i = cardIds.indexOf(id), j = act === 'prev' ? i - 1 : i + 1; if (cardIds[j] != null) { document.activeElement?.blur?.(); cardNew = null; openCard(cardIds[j]); } }
   else if (act === 'padd') {
@@ -601,10 +710,10 @@ const markRequested = keys => commit(() => { for (const i of owedItems()) if (ke
 
 /* ───────── the "Owed to me" tab ───────── */
 const PAY_APPS = /venmo|zelle|cash ?app|paypal|apple cash/i; // common person-to-person payment apps, used only to suggest which incoming transactions might be a payback
-let showPeople = false, showSettled = (() => { try { return localStorage.getItem('owed-settled') === '1'; } catch { return false; } })(), personFilter = (() => { try { const v = localStorage.getItem('owed-who'); return v && v !== 'all' ? +v : 'all'; } catch { return 'all'; } })();
+let owedPop = null, showPeople = false, showSettled = (() => { try { return localStorage.getItem('owed-settled') === '1'; } catch { return false; } })(), personFilter = (() => { try { const v = localStorage.getItem('owed-who'); return v && v !== 'all' ? +v : 'all'; } catch { return 'all'; } })();
 function vOwed() {
   const all = owedItems(), ids = [...new Set([...peopleList().map(p => p.id), ...all.map(i => i.who)])];
-  if (personFilter !== 'all' && !ids.includes(personFilter)) personFilter = 'all';
+  personFilter = 'all'; // (each person has their own card now)
   const items = personFilter === 'all' ? all : all.filter(i => i.who === personFilter), shownIds = personFilter === 'all' ? ids : [personFilter];
   const open = items.filter(i => itemStatus(i) === 'open'), asked = items.filter(i => ['requested', 'partial'].includes(itemStatus(i)));
   const owed = sumOf(items.map(i => i.owes)), paid = sumOf(items.map(i => Math.min(i.paid, i.owes))), outstanding = round2(owed - paid);
@@ -619,37 +728,45 @@ function vOwed() {
       ${un.length ? `<button class="btn sm" data-act="reqmonth">Request this month (${un.length})</button>` : ''}${out.length ? '<button class="btn ghost sm" data-act="copymonth">Copy message</button>' : ''}</div>
       <div class="wrap"><table class="plain"><thead><tr><th>Date</th><th>Item</th><th class="r">Total</th><th class="r">Owes you</th><th>Status</th><th></th></tr></thead><tbody>${its.map(row).join('')}</tbody></table></div></div>`;
   };
-  const block = id => {
-    const mine = items.filter(i => i.who === id), months = [...new Set(mine.filter(i => showSettled || i.out > 0.004).map(i => i.date.slice(0, 7)))].sort().reverse(), o = sumOf(mine.map(i => i.owes)), p = sumOf(mine.map(i => Math.min(i.paid, i.owes)));
-    const un = mine.filter(i => itemStatus(i) === 'open'), out = mine.filter(i => i.out > 0.004);
-    return `<div class="pblock" data-who="${id}"><div class="ph"><h2>${esc(whoName(D, id))}</h2><span class="muted">Outstanding <b>${money(round2(o - p))}</b> · Paid back <b>${money(p)}</b></span>
-      ${un.length ? `<button class="btn sm" data-act="reqperson">Request all unrequested (${un.length})</button>` : ''}${out.length ? '<button class="btn ghost sm" data-act="copyperson">Copy message</button>' : ''}</div>
-      ${months.map(m => section(m, mine)).join('') || `<p class="muted">${mine.length ? 'All settled ✓' : 'Nothing split with them yet.'}</p>`}</div>`;
+  const stLine = (np, aw, p) => `${np > 0.004 ? `<span class="st st-open">${money(np)} not requested</span>` : ''}${aw > 0.004 ? `<span class="st st-req">${money(aw)} awaiting payment</span>` : ''}${p > 0.004 ? `<span class="muted">${money(p)} paid back</span>` : ''}`;
+  const stats = id => { const mine = items.filter(i => i.who === id), live = mine.filter(i => i.out > 0.004), un = mine.filter(i => itemStatus(i) === 'open');
+    return { mine, live, un, out: sumOf(live.map(i => i.out)), np: sumOf(un.map(i => i.out)), aw: sumOf(mine.filter(i => ['requested', 'partial'].includes(itemStatus(i))).map(i => i.out)), p: sumOf(mine.map(i => Math.min(i.paid, i.owes))) }; };
+  const block = id => { // one card per person: what they owe, where it stands, and the actions; "Show items" pops their items out
+    const { live, un, out, np, aw, p } = stats(id);
+    return `<section class="pblock pcard" data-who="${id}">
+      <div class="pc-top" data-act="pshow" title="Show the items"><div><h2>${esc(whoName(D, id))}</h2><span class="muted">${live.length ? `${live.length} item${live.length === 1 ? '' : 's'} owed` : 'All settled ✓'}</span></div><div class="pc-amt"><b class="${out > 0.004 ? '' : 'muted'}">${money(out)}</b><span>owes you</span></div></div>
+      <div class="pc-st">${stLine(np, aw, p)}</div>
+      <div class="pc-btns">${un.length ? `<button class="btn sm" data-act="reqperson">Request all (${un.length})</button>` : ''}${live.length ? '<button class="btn ghost sm" data-act="copyperson">Copy message</button>' : ''}<button class="btn ghost sm" data-act="pshow">Show items</button></div></section>`;
   };
-  const live = id => showSettled || items.some(i => i.who === id && i.out > 0.004), blocks = personFilter === 'all' ? shownIds.filter(live) : shownIds;
-  const sumRows = ids.map(id => { const mine = all.filter(i => i.who === id), np = sumOf(mine.filter(i => itemStatus(i) === 'open').map(i => i.out)), aw = sumOf(mine.filter(i => ['requested', 'partial'].includes(itemStatus(i))).map(i => i.out)), z = v => (v > 0.004 ? money(v) : '<span class="muted">—</span>');
-    return `<tr data-pf="${id}" title="Show only ${esc(whoName(D, id))}"><td class="t"><b>${esc(whoName(D, id))}</b></td><td class="num">${z(np)}</td><td class="num">${z(aw)}</td><td class="num"><b>${z(sumOf(mine.map(i => i.out)))}</b></td><td class="num muted">${money(sumOf(mine.map(i => Math.min(i.paid, i.owes))))}</td></tr>`; }).join('');
-  const sumTable = ids.length > 1 && personFilter === 'all' ? `<div class="wrap"><table class="plain sumtbl"><thead><tr><th>Who</th><th class="r">Not requested</th><th class="r">Awaiting payment</th><th class="r">Owes you</th><th class="r">Paid back</th></tr></thead><tbody>${sumRows}</tbody></table></div>` : '';
-  const pills = ids.length > 1 ? `<div class="pills"><button class="pill${personFilter === 'all' ? ' on' : ''}" data-pf="all">Everyone</button>${ids.map(id => `<button class="pill${personFilter === id ? ' on' : ''}" data-pf="${id}">${esc(whoName(D, id))}</button>`).join('')}</div>` : '';
+  const popup = id => { // the pop-out: everything for one person, by month
+    const { mine, live, un, out, np, aw, p } = stats(id), months = [...new Set(mine.filter(i => showSettled || i.out > 0.004).map(i => i.date.slice(0, 7)))].sort().reverse();
+    return `<div class="opscrim" id="opscrim"><div class="oppop pblock" data-who="${id}">
+      <div class="oph"><div><h2>${esc(whoName(D, id))}</h2><div class="pc-st">${stLine(np, aw, p)}</div></div><div class="pc-amt"><b class="${out > 0.004 ? '' : 'muted'}">${money(out)}</b><span>owes you</span></div><button class="x" data-act="pclose" title="Close (Esc)">✕</button></div>
+      <div class="pc-btns">${un.length ? `<button class="btn sm" data-act="reqperson">Request all (${un.length})</button>` : ''}${live.length ? '<button class="btn ghost sm" data-act="copyperson">Copy message</button>' : ''}</div>
+      ${months.map(m => section(m, mine)).join('') || `<p class="muted">${mine.length ? 'Nothing outstanding. Tick “Show settled” to see what has been paid.' : 'Nothing split with them yet.'}</p>`}</div></div>`;
+  };
+  const blocks = shownIds.filter(id => showSettled || items.some(i => i.who === id && i.out > 0.004));
   const peoplePanel = showPeople ? `<div class="panel" id="ppanel"><b>People</b> <span class="muted">— whoever you split things with</span>
     ${peopleList().map(p => `<div class="rrow" data-person="${p.id}"><input data-pn value="${esc(p.name)}" placeholder="Name"><button class="x" data-act="delperson" title="Remove this person">✕</button></div>`).join('')}
     <form class="rrow" id="pnew"><input name="n" placeholder="Add a person…" required><button class="btn sm">Add</button></form></div>` : '';
   $('#view').innerHTML = `<div id="rm">
   <div class="cards"><div><b>${money(outstanding)}</b><span>owed to you${personFilter === 'all' ? '' : ` by ${esc(whoName(D, personFilter))}`}</span></div><div><b>${money(sumOf(open.map(i => i.out)))}</b><span>not yet requested</span></div><div><b>${money(sumOf(asked.map(i => i.out)))}</b><span>requested, awaiting payment</span></div><div><b>${money(paid)}</b><span>paid back so far</span></div></div>
-  ${sumTable}
-  <div class="bar">${pills}<label title="Also show items that are fully paid back"><input id="settled" type="checkbox"${showSettled ? ' checked' : ''}> Show settled</label><button class="btn ghost" id="people">${showPeople ? 'Hide people' : 'People'}</button></div>
+  <div class="bar"><label title="Also show items that are fully paid back"><input id="settled" type="checkbox"${showSettled ? ' checked' : ''}> Show settled</label><button class="btn ghost" id="people">${showPeople ? 'Hide people' : 'People'}</button></div>
   ${peoplePanel}
   ${hints.length ? `<div class="panel hint"><b>Incoming payments that aren't matched to anything yet</b>${hints.map(t => `<div class="grow"><span>${fmt(t.date)} · ${esc(t.desc.slice(0, 40))} · <b>${money(t.amt)}</b></span><button class="btn ghost sm" data-open="${t.id}">Match it…</button></div>`).join('')}</div>` : ''}
-  ${blocks.length ? blocks.map(block).join('') : shownIds.length ? '<p class="muted">Nothing outstanding — everyone has paid you back. Tick <b>Show settled</b> to see the history.</p>' : '<div class="card"><h2>Nothing split yet</h2><p>Open a transaction (or one of its line items) and choose <b>With someone new…</b> in the split menu. What each person owes you will collect here.</p></div>'}
-  ${pays.length ? `<h2>Payments received</h2><div class="wrap"><table class="plain pays"><thead><tr><th>Date</th><th>From</th><th>Payment</th><th class="r">Amount</th><th>Covers</th></tr></thead><tbody>${pays.map(t => `<tr><td class="t">${fmt(t.date)}</td><td class="t">${payers(t).map(w => esc(whoName(D, w))).join(', ')}</td><td class="t link" data-open="${t.id}">${esc(t.desc)}</td><td class="t num">${money(t.amt)}</td><td class="t cov">${t.parts.filter(p => p.covers).map(p => { const i = byKey.get(`${p.covers.tx}:${p.covers.part || 0}`); return `${esc(i ? i.desc : p.desc || 'an item')} ${money(p.amt)}`; }).join(' · ')}</td></tr>`).join('')}</tbody></table></div>${allPays.length > pays.length ? `<p class="muted small">${allPays.length - pays.length} earlier — tick <b>Show settled</b> to see them all.</p>` : ''}` : ''}</div>`;
+  ${blocks.length ? `<div class="pcards">${blocks.map(block).join('')}</div>` : shownIds.length ? '<p class="muted">Nothing outstanding — everyone has paid you back. Tick <b>Show settled</b> to see the history.</p>' : '<div class="card"><h2>Nothing split yet</h2><p>Open a transaction (or one of its line items) and choose <b>With someone new…</b> in the split menu. What each person owes you will collect here.</p></div>'}
+  ${pays.length ? `<h2>Payments received</h2><div class="wrap"><table class="plain pays"><thead><tr><th>Date</th><th>From</th><th>Payment</th><th class="r">Amount</th><th>Covers</th></tr></thead><tbody>${pays.map(t => `<tr><td class="t">${fmt(t.date)}</td><td class="t">${payers(t).map(w => esc(whoName(D, w))).join(', ')}</td><td class="t link" data-open="${t.id}">${esc(t.desc)}</td><td class="t num">${money(t.amt)}</td><td class="t cov">${t.parts.filter(p => p.covers).map(p => { const i = byKey.get(`${p.covers.tx}:${p.covers.part || 0}`); return `${esc(i ? i.desc : p.desc || 'an item')} ${money(p.amt)}`; }).join(' · ')}</td></tr>`).join('')}</tbody></table></div>${allPays.length > pays.length ? `<p class="muted small">${allPays.length - pays.length} earlier — tick <b>Show settled</b> to see them all.</p>` : ''}` : ''}${owedPop != null && ids.includes(owedPop) ? popup(owedPop) : ''}</div>`;
 
   const v = $('#rm'); // a fresh element each draw, so handlers never pile up
   const setFilter = f => { personFilter = f; try { localStorage.setItem('owed-who', String(f)); } catch {} render(); };
   v.addEventListener('click', e => {
+    if (e.target.id === 'opscrim') { owedPop = null; return render(); }
     const pf = e.target.closest('[data-pf]'); if (pf) return setFilter(pf.dataset.pf === 'all' ? 'all' : +pf.dataset.pf);
     const op = e.target.closest('[data-open]'); if (op) return openCard(+op.dataset.open);
     const b = e.target.closest('[data-act]'); if (!b) return; const act = b.dataset.act, tr = b.closest('tr'), sec = b.closest('.rmsec'), blk = b.closest('.pblock'), who = blk ? +blk.dataset.who : null;
     const mineOf = () => all.filter(i => i.who === who);
+    if (act === 'pshow') { owedPop = who; return render(); }
+    if (act === 'pclose') { owedPop = null; return render(); }
     if (act === 'req' || act === 'unreq') { const k = tr.dataset.key; if (act === 'req') markRequested([k]); else commit(() => { const i = owedItems().find(x => x.key === k); if (i) delete i.o.split.requested; }); }
     else if (act === 'reqmonth') { const its = mineOf().filter(i => i.date.startsWith(sec.dataset.m) && itemStatus(i) === 'open'); markRequested(its.map(i => i.key)).then(() => copyText(requestText(its))); }
     else if (act === 'copymonth') copyText(requestText(mineOf().filter(i => i.date.startsWith(sec.dataset.m) && i.out > 0.004)));
@@ -667,6 +784,9 @@ function vOwed() {
 }
 
 /* ───────── recurring: what you pay each month, worked out from the charges linked to each item ───────── */
+const nextYearly = (month, day) => { const T = today(), y = +T.slice(0, 4), d = mk(y, month, day); return d >= T ? d : mk(y + 1, month, day); };
+const nextOf = i => (i.isYearly ? (i.month && i.day ? nextYearly(i.month, i.day) : '') : i.day ? nextCharge(i.day) : '');
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const nextCharge = day => { const T = today(), y = +T.slice(0, 4), m = +T.slice(5, 7), d = mk(y, m, day); return d >= T ? d : mk(y, m + 1, day); };
 const sumOf = a => round2(a.reduce((s, x) => s + (x || 0), 0));
 function chargesByItem() { // { itemName: [{ date, cost, owes, mine, excluded }, …] newest first }. cost = the full charge, owes = the other person's share of it, mine = cost − owes. A charge with line items counts through its lines only, so nothing is counted twice
@@ -686,9 +806,12 @@ function actualsByItem(ch = chargesByItem(), keptOnly = false, field = 'cost') {
 function derive(r, ch, only) { // only = 'mine' | 'cost' to ignore the Show setting
   const all = ch[r.name] || [], list = all.filter(c => !c.excluded), excluded = all.length - list.length, field = only || viewField();
   const avg3 = f => { const m = {}; for (const c of list) { const k = c.date.slice(0, 7); m[k] = round2((m[k] || 0) + c[f]); } const v = Object.keys(m).sort().slice(-3).map(k => m[k]); return { avg: v.length ? round2(v.reduce((a, b) => a + b, 0) / v.length) : null, varies: v.length > 1 && v.some(x => Math.abs(x - v[0]) > 0.005), months: Object.keys(m).length }; };
-  const shown = avg3(field), full = avg3('cost'), lastDay = list[0]?.date;
+  const yearly = r.period === 'year', yr = f => { const d = list[0]?.date; return d ? round2(list.filter(c => c.date === d).reduce((x, c) => x + c[f], 0)) : null; }; // a yearly item: its latest charge, shown as a monthly share (÷ 12)
+  const mo12 = f => (yr(f) == null ? null : round2(yr(f) / 12));
+  const shown = yearly ? { avg: mo12(field), varies: false, months: list.length ? 1 : 0 } : avg3(field), full = yearly ? { avg: mo12('cost') } : avg3('cost'), lastDay = list[0]?.date;
   const last = lastDay ? { date: lastDay, cost: round2(list.filter(c => c.date === lastDay).reduce((x, c) => x + c[field], 0)) } : null; // everything charged on the newest day (a split charge's lines add up)
-  return { monthly: shown.avg, full: full.avg, shared: shown.avg != null && full.avg != null && Math.abs(full.avg - shown.avg) > 0.004, last, variable: shown.varies, day: r.dueDay || (lastDay ? +lastDay.slice(8, 10) : null), guessed: !r.dueDay && !!lastDay, months: shown.months, excluded };
+  return { monthly: shown.avg, full: full.avg, shared: shown.avg != null && full.avg != null && Math.abs(full.avg - shown.avg) > 0.004, last, variable: shown.varies, day: r.dueDay || (lastDay ? +lastDay.slice(8, 10) : null), guessed: !r.dueDay && !!lastDay, months: shown.months, excluded,
+    isYearly: yearly, yearly: yearly ? yr(field) : null, yearlyFull: yearly ? yr('cost') : null, month: yearly ? r.dueMonth || (lastDay ? +lastDay.slice(5, 7) : null) : null, guessedMonth: yearly && !r.dueMonth && !!lastDay };
 }
 let collapsed = {}; try { collapsed = JSON.parse(localStorage.getItem('rec-collapsed')) || {}; } catch {}
 const isCollapsed = key => collapsed[key] ?? (key === '#inactive'); // inactive items start folded away
@@ -696,17 +819,18 @@ let showGroups = false;
 
 function showCharges(r) { // jump to Transactions, filtered to what's counted toward this item
   if (!r || !r.name) return;
-  Object.assign(F, { q: '', month: '', cat: '', review: false, rec: r.name, limit: 300 }); closeCard(); view = 'transactions'; render(); scrollTo(0, 0);
+  Object.assign(F, { q: '', month: '', cat: '', review: false, rec: r.name, split: '', limit: 300 }); closeCard(); view = 'transactions'; render(); scrollTo(0, 0);
 }
 const safeUrl = u => { u = String(u || '').trim(); if (!u) return ''; if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u; try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; } }; // only web links
 function recRow(r, i) {
   return `<tr data-id="${r.id}"${r.active ? '' : ' class="dim"'}>
-    <td><input type="number" min="1" max="31" data-f="dueDay" class="num" value="${r.dueDay ?? ''}" placeholder="${i.guessed ? i.day : ''}" title="Day of the month it's charged. Grey = guessed from the last charge."></td>
+    <td>${i.isYearly ? `<div class="linkcell"><select data-f="dueMonth" title="The month it's charged each year (grey = guessed from the last charge)" class="${r.dueMonth ? '' : 'guess'}"><option value="">${i.guessedMonth ? MONTHS[i.month - 1] : ''}</option>${MONTHS.map((m, n) => `<option value="${n + 1}"${r.dueMonth === n + 1 ? ' selected' : ''}>${m}</option>`).join('')}</select><input type="number" min="1" max="31" data-f="dueDay" class="num" value="${r.dueDay ?? ''}" placeholder="${i.guessed ? i.day : ''}" title="Day of the month it's charged. Grey = guessed from the last charge."></div>` : `<input type="number" min="1" max="31" data-f="dueDay" class="num" value="${r.dueDay ?? ''}" placeholder="${i.guessed ? i.day : ''}" title="Day of the month it's charged. Grey = guessed from the last charge.">`}</td>
     <td><input data-f="name" value="${esc(r.name)}" title="${esc(r.name)}"></td>
-    <td><select data-f="group">${opts(D.groups, r.group)}</select></td>
-    <td class="t num">${i.monthly == null ? `<span class="muted" title="Tag a transaction or line item with this item and its amount appears here">${i.excluded ? 'all charges excluded' : 'no charges linked'}</span>` : `${i.variable ? '<span title="Varies month to month — average of the last 3">~</span>' : ''}${money(i.monthly)}${i.shared ? ` <span class="shr" title="Your share of ${money(i.full)} — switch to Full amount to see the whole bill">÷</span>` : ''}`}</td>
+    <td>${comboHtml('group', 'group', r.group)}</td>
+    <td><select data-f="period" title="How often it's charged"><option value=""${r.period ? '' : ' selected'}>Monthly</option><option value="year"${r.period === 'year' ? ' selected' : ''}>Yearly</option></select></td>
+    <td class="t num">${i.monthly == null ? `<span class="muted" title="Tag a transaction or line item with this item and its amount appears here">${i.excluded ? 'all charges excluded' : 'no charges linked'}</span>` : `${i.variable ? '<span title="Varies month to month — average of the last 3">~</span>' : ''}${money(i.monthly)}${i.isYearly ? ` <span class="shr" title="A yearly charge of ${money(i.yearly)}, counted here as a twelfth each month">/yr</span>` : ''}${i.shared ? ` <span class="shr" title="Your share of ${money(i.full)} — switch to Full amount to see the whole bill">÷</span>` : ''}`}</td>
     <td class="t">${i.last ? `${fmt(i.last.date)} · ${money(i.last.cost)}` : ''}</td>
-    <td class="t">${r.active && i.day ? fmt(nextCharge(i.day)) : ''}</td>
+    <td class="t">${r.active && nextOf(i) ? fmt(nextOf(i)) : ''}</td>
     <td><div class="linkcell"><input data-f="url" value="${esc(r.url || '')}" placeholder="Where you pay it…" title="A link to the page where you pay this">${safeUrl(r.url) ? `<a class="go" href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener noreferrer" title="Open ${esc(r.url)}">↗</a>` : ''}</div></td>
     <td class="c"><input type="checkbox" data-f="active"${r.active ? ' checked' : ''}></td>
     <td class="c"><button class="btn ghost sm" data-act="view" title="Show the transactions counted toward this item">View ›</button></td>
@@ -718,7 +842,7 @@ function vRecurring() {
   for (const r of items) if (!recOrder.includes(r.id)) recOrder.push(r.id);
   const byId = new Map(items.map(r => [r.id, r])), ordered = recOrder.filter(id => byId.has(id)).map(id => byId.get(id));
   const total = sumOf(active.map(r => info.get(r.id).monthly)), unlinked = active.filter(r => info.get(r.id).monthly == null).length;
-  const up = active.filter(r => info.get(r.id).day).map(r => ({ r, i: info.get(r.id), date: nextCharge(info.get(r.id).day) })).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))[0];
+  const up = active.filter(r => nextOf(info.get(r.id))).map(r => ({ r, i: info.get(r.id), date: nextOf(info.get(r.id)) })).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))[0];
 
   const names = D.groups.slice(); for (const r of ordered) if (r.active && r.group && !names.includes(r.group)) names.push(r.group); // a group named in the data but missing from the list still shows
   const sections = names.map(g => ({ key: g, name: g, items: ordered.filter(r => r.active && r.group === g) }));
@@ -728,7 +852,7 @@ function vRecurring() {
   $('#view').innerHTML = `
   <div class="cards"><div><b>${money(total)}</b><span>per month · ${viewField() === 'cost' ? 'full amount' : 'your share'}${unlinked ? ` · ${unlinked} item${unlinked === 1 ? '' : 's'} with no charges linked yet` : ''}</span></div>
     ${incomeCardHtml(today().slice(0, 7))}
-    <div><b>${up ? fmt(up.date) : '—'}</b><span>${up ? `next up: ${esc(up.r.name)} · ${money(up.i.monthly)}` : 'next charge'}</span></div></div>
+    <div><b>${up ? fmt(up.date) : '—'}</b><span>${up ? `next up: ${esc(up.r.name)} · ${money(up.i.yearly ?? up.i.monthly)}` : 'next charge'}</span></div></div>
   <div class="bar"><button class="btn" id="addrec">+ Add item</button><button class="btn ghost" id="grp">${showGroups ? 'Hide groups' : 'Edit groups'}</button>
     <button class="btn ghost" id="expall">Expand all</button><button class="btn ghost" id="colall">Collapse all</button>
     <label title="Inactive items are hidden unless this is ticked"><input id="showoff" type="checkbox"${showOff ? ' checked' : ''}> Show inactive${offCount ? ` (${offCount})` : ''}</label>${rviewSel()} ${incomeSelHtml()}</div>
@@ -739,8 +863,8 @@ function vRecurring() {
 
   $('#rb').innerHTML = sections.map(s => {
     const n = s.items.length, col = isCollapsed(s.key), sub = s.inactive ? '' : `<span class="gt">${money(sumOf(s.items.map(r => info.get(r.id).monthly)))}</span>`;
-    return `<tr class="grp" data-key="${esc(s.key)}"><td colspan="10"><div class="gh"><button class="tog" data-act="tog" title="Show / hide">${col ? '▸' : '▾'}</button><b>${esc(s.name)}</b><span class="muted">${n} item${n === 1 ? '' : 's'}</span>${sub}${s.inactive ? '' : '<button class="btn ghost sm" data-act="addto">+ Add</button>'}</div></td></tr>` + (col ? '' : s.items.map(r => recRow(r, info.get(r.id))).join(''));
-  }).join('') || '<tr><td colspan="10" class="t muted">No recurring items yet.</td></tr>';
+    return `<tr class="grp" data-key="${esc(s.key)}"><td colspan="11"><div class="gh"><button class="tog" data-act="tog" title="Show / hide">${col ? '▸' : '▾'}</button><b>${esc(s.name)}</b><span class="muted">${n} item${n === 1 ? '' : 's'}</span>${sub}${s.inactive ? '' : '<button class="btn ghost sm" data-act="addto">+ Add</button>'}</div></td></tr>` + (col ? '' : s.items.map(r => recRow(r, info.get(r.id))).join(''));
+  }).join('') || '<tr><td colspan="11" class="t muted">No recurring items yet.</td></tr>';
   cellKeys($('#rb'));
 
   const add = async group => {
@@ -759,11 +883,12 @@ function vRecurring() {
     const el = e.target, f = el.dataset.f; if (!f) return; const id = +el.closest('tr').dataset.id; let v = el.value;
     if (f === 'active') v = el.checked;
     else if (f === 'dueDay') v = v === '' ? null : Math.min(31, Math.max(1, Math.round(+v)));
+    else if (f === 'dueMonth') v = v === '' ? null : Math.min(12, Math.max(1, Math.round(+v)));
     else v = v.trim();
     flash(el, commit(d => {
       const r = d.recurring.find(x => x.id === id); if (!r) throw new Error('That item no longer exists — reloaded.');
       if (f === 'name' && v !== r.name) retag(d, r.name, v); // tagged transactions and line items follow the rename
-      r[f] = v;
+      if (f === 'period' && !v) delete r.period; else r[f] = v;
     }));
   });
   $('#rb').addEventListener('click', e => { // clicking an item's read-only cells (Monthly, Last charge, Next charge) also opens its charges
@@ -842,6 +967,103 @@ function vTrends() {
   $('#rview').addEventListener('change', e => setSetting('recView', e.target.value));
 }
 
+/* ───────── display options: light / dark, and hiding dollar amounts ───────── */
+const THEMES = [['', 'Match my computer'], ['light', 'Light'], ['dark', 'Dark']];
+const themeNow = () => { try { return localStorage.getItem('theme') || ''; } catch { return ''; } };
+function setTheme(t) { try { t ? localStorage.setItem('theme', t) : localStorage.removeItem('theme'); } catch {} if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
+$('#theme').addEventListener('click', () => { const dark = themeNow() ? themeNow() === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; setTheme(dark ? 'light' : 'dark'); if (view === 'settings') render(); });
+let hiding = false; try { hiding = localStorage.getItem('hide') === '1'; } catch {}
+const AMT_G = /-?\$\d[\d,]*(?:\.\d+)?/g, AMT_1 = /-?\$\d[\d,]*(?:\.\d+)?/;
+const amtObserver = new MutationObserver(() => maskAmounts());
+function maskAmounts() { // replace every dollar amount on screen with $••• (text and tooltips); turning it off redraws the page
+  if (!hiding) return; amtObserver.disconnect();
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())) if (AMT_1.test(n.nodeValue) && n.parentElement && !/^(SCRIPT|STYLE)$/.test(n.parentElement.tagName)) n.nodeValue = n.nodeValue.replace(AMT_G, () => '$•••');
+  for (const el of document.querySelectorAll('[title]')) if (AMT_1.test(el.title)) el.title = el.title.replace(AMT_G, () => '$•••');
+  amtObserver.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['title'] });
+}
+function setHide(on, redraw = true) {
+  hiding = on; try { localStorage.setItem('hide', on ? '1' : '0'); } catch {}
+  document.body.classList.toggle('hide-amts', on); $('#hide').classList.toggle('on', on); $('#hide').title = on ? 'Amounts are hidden — click to show them' : 'Hide dollar amounts (for showing the app to someone)';
+  if (on) maskAmounts(); else { amtObserver.disconnect(); if (redraw && D) render(); }
+}
+$('#tourbtn').addEventListener('click', () => startTour());
+$('#hide').addEventListener('click', () => { setHide(!hiding); if (view === 'settings') render(); });
+setHide(hiding, false);
+
+/* ───────── first-run tour ───────── */
+const TOUR = [
+  { view: 'dashboard', sel: '#nav [data-view=dashboard]', t: 'Dashboard', d: 'A month at a glance: what you spent, what recurring charges are still to come, where the money went, and who owes you.' },
+  { view: 'transactions', sel: '#nav [data-view=transactions]', t: 'Transactions', d: 'Every transaction. Click a row to open it, split it with someone, add line items or tag it to a recurring item. Search and filters are above the list.' },
+  { view: 'recurring', sel: '#nav [data-view=recurring]', t: 'Recurring', d: 'Your monthly commitments. Tag transactions with an item and its monthly amount works itself out; there is nothing to type. Add a link to where you pay each one.' },
+  { view: 'owed', sel: '#nav [data-view=owed]', t: 'Owed to me', d: 'Split a charge with someone and it collects here. Request what they owe, copy a message to send them, and match the payments you receive.' },
+  { view: 'trends', sel: '#nav [data-view=trends]', t: 'Trends', d: 'What each recurring item actually cost, month by month, so a bill that crept up stands out.' },
+  { view: 'settings', sel: '#nav [data-view=settings]', t: 'Settings', d: 'Your own categories and accounts, light or dark, and the sample data. Nothing here is specific to anyone.' },
+  { sel: '#hide', t: 'Hide amounts', d: 'Showing someone the app? Click this to replace every dollar amount with $•••. Click again to bring them back.' },
+  { sel: '#theme', t: 'Light or dark', d: 'Switch the look here.' },
+  { sel: '#tourbtn', t: 'That\'s the tour', d: 'Take it again any time with this ? button, or from Settings.' },
+];
+let tourAt = -1;
+function endTour() { tourAt = -1; document.querySelectorAll('.tour-hl').forEach(e => e.classList.remove('tour-hl')); $('#tour')?.remove(); markTourDone(); }
+function tourStep(i) {
+  if (i >= TOUR.length) return endTour();
+  i = Math.max(0, i); tourAt = i; const st = TOUR[i];
+  document.querySelectorAll('.tour-hl').forEach(e => e.classList.remove('tour-hl'));
+  if (st.view && view !== st.view) { closeCard(); view = st.view; render(); }
+  scrollTo(0, 0);
+  const el = st.sel ? $(st.sel) : null; el?.classList.add('tour-hl');
+  let box = $('#tour'); if (!box) { box = document.createElement('div'); box.id = 'tour'; box.className = 'tour'; document.body.appendChild(box); }
+  const last = i === TOUR.length - 1;
+  box.innerHTML = `<b>${st.t}</b><p>${st.d}${last && demo ? ' You\'re looking at made-up sample data; use <b>Exit sample data</b> at the top when you\'re ready to use your own.' : ''}</p><div class="trow"><span class="muted">${i + 1} of ${TOUR.length}</span><span><button class="btn ghost sm" data-t="skip">Skip</button> ${i ? '<button class="btn ghost sm" data-t="back">Back</button> ' : ''}<button class="btn sm" data-t="next">${last ? 'Done' : 'Next'}</button></span></div>`;
+  const r = el?.getBoundingClientRect();
+  const vw = innerWidth || 1000, vh = innerHeight || 700; // (guards against a window that reports no size yet)
+  box.style.top = (r ? Math.max(8, Math.min(r.bottom + 14, vh - 190)) : vh * 0.32) + 'px';
+  box.style.left = (r ? Math.max(12, Math.min(r.left, vw - 352)) : Math.max(12, (vw - 340) / 2)) + 'px';
+}
+function startTour() { if (D) tourStep(0); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (!b) return; if (b.dataset.t === 'skip') endTour(); else tourStep(tourAt + (b.dataset.t === 'back' ? -1 : 1)); });
+document.addEventListener('keydown', e => { if (tourAt >= 0 && e.key === 'Escape') endTour(); else if (e.key === 'Escape' && owedPop != null && view === 'owed' && cardId == null && !cb) { owedPop = null; render(); } });
+
+/* ───────── settings: appearance and your own lists ───────── */
+const LISTS = [['categories', 'Categories', 'What a transaction is for'], ['accounts', 'Accounts', 'Where money comes from and goes to']];
+function vSettings() {
+  const L = D.lists || {};
+  const listPanel = ([k, title, hint]) => `<section class="dsec" data-list="${k}"><h2>${title}</h2><p class="muted small">${hint}. Renaming one updates your transactions; removing one leaves them as they are.</p>
+    ${(L[k] || []).map((n, i) => `<div class="rrow" data-i="${i}"><input data-ln value="${esc(n)}"><button class="btn ghost sm" data-act="lup" title="Move up">↑</button><button class="btn ghost sm" data-act="ldown" title="Move down">↓</button><button class="x" data-act="ldel" title="Remove">✕</button></div>`).join('')}
+    <form class="rrow" data-lnew><input name="n" placeholder="Add one…" required><button class="btn sm">Add</button></form></section>`;
+  $('#view').innerHTML = `<div id="set">
+  <div class="dgrid"><section class="dsec"><h2>Appearance</h2>
+      <div class="rrow"><label>Theme <select id="sthe">${THEMES.map(([v, l]) => `<option value="${v}"${themeNow() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
+      <div class="rrow"><label title="Replaces every dollar amount with $••• so you can show someone the app"><input id="shide" type="checkbox"${hiding ? ' checked' : ''}> Hide dollar amounts</label></div></section>
+    <section class="dsec"><h2>Your data</h2><p class="muted small">${demo ? 'You are looking at the <b>sample data</b> (made up, not saved).' : `Saved in <b>${esc(handle?.name || 'your data file')}</b>.`} ${D.transactions.length} transactions · ${D.recurring.length} recurring items.</p></section>
+    <section class="dsec"><h2>Sample data &amp; tour</h2><p class="muted small">Look around a made-up budget without touching your own data, for trying the app or showing it to someone. Nothing in it is saved. (The same sample is in <b>sample-data.json</b>, which you can also open like any data file.)</p>
+      <div class="rrow">${demo ? '<button class="btn" id="sexit">Back to my data</button>' : '<button class="btn ghost" id="sdemo">Look at the sample data</button>'}<button class="btn ghost" id="stour">Take the tour</button></div></section></div>
+  <div class="dgrid">${LISTS.map(listPanel).join('')}</div></div>`;
+  const root = $('#set');
+  $('#sthe').addEventListener('change', e => { setTheme(e.target.value); });
+  $('#sdemo')?.addEventListener('click', () => enterDemo(false)); $('#sexit')?.addEventListener('click', () => exitDemo()); $('#stour').addEventListener('click', () => startTour());
+  $('#shide').addEventListener('change', e => { setHide(e.target.checked); if (view === 'settings') render(); });
+  const edit = (k, fn) => commit(d => { d.lists = d.lists || {}; d.lists[k] = d.lists[k] || []; fn(d.lists[k], d); });
+  const rename = (d, k, from, to) => { // a renamed category/account follows through every transaction
+    for (const t of d.transactions) { if (k === 'categories' && t.cat === from) t.cat = to; if (k === 'accounts') { if (t.from === from) t.from = to; if (t.to === from) t.to = to; } }
+    if (k === 'categories' && d.settings?.catKinds && from in d.settings.catKinds) { d.settings.catKinds[to] = d.settings.catKinds[from]; delete d.settings.catKinds[from]; }
+  };
+  root.addEventListener('change', e => {
+    const inp = e.target.closest('[data-ln]'); if (!inp) return; const row = inp.closest('.rrow'), k = inp.closest('[data-list]').dataset.list, i = +row.dataset.i, v = inp.value.trim();
+    edit(k, (a, d) => { if (!v) throw new Error('A name can’t be empty.'); if (a.includes(v) && a[i] !== v) throw new Error(`“${v}” is already in the list.`); const old = a[i]; a[i] = v; rename(d, k, old, v); });
+  });
+  root.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return; const row = b.closest('.rrow'), k = b.closest('[data-list]').dataset.list, i = +row.dataset.i, act = b.dataset.act;
+    if (act === 'ldel') {
+      const name = (L[k] || [])[i], used = D.transactions.filter(t => (k === 'categories' ? t.cat === name : t.from === name || t.to === name)).length;
+      if (used && !confirm(`${used} transaction${used === 1 ? '' : 's'} use “${name}”. They'll keep it, but it won't be in the list any more. Remove it?`)) return;
+      edit(k, a => { a.splice(i, 1); });
+    } else if (act === 'lup' && i > 0) edit(k, a => { [a[i - 1], a[i]] = [a[i], a[i - 1]]; });
+    else if (act === 'ldown') edit(k, a => { if (i < a.length - 1) [a[i + 1], a[i]] = [a[i], a[i + 1]]; });
+  });
+  root.addEventListener('submit', e => { const f = e.target.closest('[data-lnew]'); if (!f) return; e.preventDefault(); const k = f.closest('[data-list]').dataset.list, v = f.n.value.trim(); if (v) edit(k, a => { if (a.includes(v)) throw new Error(`“${v}” is already in the list.`); a.push(v); }); });
+}
+
 /* ───────── recurring vs income ───────── */
 const INCOME_BASES = [['this', 'This month'], ['last', 'Last month'], ['avg3', '3-month average'], ['fixed', 'A fixed amount']];
 const incomeBasis = () => (INCOME_BASES.some(b => b[0] === D.settings?.incomeBasis) ? D.settings.incomeBasis : 'this');
@@ -862,7 +1084,7 @@ function incomeCardHtml(M, link) { // recurring (your share) as a share of incom
   const tip = pct == null ? '' : `${money(c)} of ${money(inc.amt)} (${inc.label})`;
   const body = inc.unset ? '<b>—</b><span>Mark your income categories to compare</span>'
     : pct == null ? `<b>—</b><span>${inc.label === 'expected amount' ? 'Enter your monthly income' : /average$/.test(inc.label) ? 'No earlier month with income' : `No income in ${esc(inc.label)}`}</span>`
-    : `<b${pct > 100 ? ' class="neg"' : ''}>${pct}%</b><span>of income · ${esc(inc.label)}</span><i class="meter"><u style="width:${Math.min(100, pct)}%"></u></i><span>${money(round2(inc.amt - c))} left over</span>`;
+    : `<b${pct > 100 ? ' class="neg"' : ''}>${pct}%</b><span class="k">of income · ${esc(inc.label)}</span><i class="meter"><u style="width:${Math.min(100, pct)}%"></u></i><span>${money(round2(inc.amt - c))} left over</span>`;
   return `<div class="inc${link ? ' lnk' : ''}"${link ? ' data-go="recurring"' : ''} title="${esc(link ? (tip ? tip + ' — ' : '') + 'Change what it is compared with on the Recurring page' : tip)}">${body}</div>`;
 }
 const incomeSelHtml = () => `<label>Compare with income <select id="ibasis">${INCOME_BASES.map(([v, l]) => `<option value="${v}"${incomeBasis() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>${incomeBasis() === 'fixed' ? `<input id="ifixed" type="number" min="0" step="0.01" class="num" style="width:130px" placeholder="Monthly income" value="${D.settings?.incomeFixed || ''}">` : ''}`;
@@ -892,12 +1114,13 @@ function vDashboard() {
   const months = [...new Set([thisMonth, M, ...D.transactions.map(t => t.date.slice(0, 7))])].sort().reverse(), at = months.indexOf(M);
   const prev = toISO(new Date(+M.slice(0, 4), +M.slice(5, 7) - 2, 1)).slice(0, 7), upTo = M === thisMonth ? T.slice(8) : '';
   const cur = flows(M, '', full), was = flows(prev, upTo, full), net = round2(cur.income - cur.spent), diff = round2(cur.spent - was.spent);
+  const incB = incomeFor(M), pctSp = incB.amt ? Math.round(cur.spent / incB.amt * 100) : null;
   const first = D.transactions.reduce((m, t) => (t.date < m ? t.date : m), '9999'), hasPrev = first <= prev + '-07'; // only compare with a month your data covers from near its start
   // recurring items that haven't been charged in this month yet
   const ch = chargesByItem(), y = +M.slice(0, 4), mo = +M.slice(5, 7);
   const due = D.recurring.filter(r => r.active && r.name).map(r => ({ r, i: derive(r, ch) })).filter(x => x.i.day && !(ch[x.r.name] || []).some(c => !c.excluded && c.date.startsWith(M)) && (ch[x.r.name] || []).some(c => c.date.slice(0, 7) <= M)) // not before its first charge
-    .map(x => ({ ...x, date: mk(y, mo, x.i.day) })).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  const late = x => M < thisMonth || (M === thisMonth && x.date < T), coming = due.filter(x => !late(x)), toCome = sumOf(coming.map(x => x.i.monthly));
+    .filter(x => !x.i.isYearly || x.i.month === mo).map(x => ({ ...x, date: mk(y, mo, x.i.day) })).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const late = x => M < thisMonth || (M === thisMonth && x.date < T), coming = due.filter(x => !late(x)), toCome = sumOf(coming.map(x => x.i.yearly ?? x.i.monthly));
   const cats = Object.entries(cur.cats).sort((a, b) => b[1] - a[1]), top = Math.max(0, ...cats.map(c => c[1]));
   const owed = owedItems(), owedTotal = sumOf(owed.map(i => i.out)), byWho = {}; for (const i of owed) if (i.out > 0.004) byWho[i.who] = round2((byWho[i.who] || 0) + i.out);
   const review = D.transactions.filter(t => t.date.startsWith(M) && needsReview(t)).length, setUp = !D.settings?.catKinds;
@@ -907,18 +1130,17 @@ function vDashboard() {
   <div class="bar"><button class="btn ghost sm" id="dprev" title="Earlier month"${at >= months.length - 1 ? ' disabled' : ''}>‹</button>
     <select id="dmonth">${months.map(m => `<option value="${m}"${m === M ? ' selected' : ''}>${monthName(m)}</option>`).join('')}</select>
     <button class="btn ghost sm" id="dnext" title="Later month"${at <= 0 ? ' disabled' : ''}>›</button>
-    ${rviewSel()} <button class="btn ghost sm" id="dcats">${showCats ? 'Hide categories' : 'Categories'}</button></div>
+    ${rviewSel()} ${incomeSelHtml()} <button class="btn ghost sm" id="dcats">${showCats ? 'Hide categories' : 'Categories'}</button></div>
   ${setUp && !showCats ? `<div class="panel hint"><div class="grow"><span>Say which categories are <b>income</b> and which are <b>transfers between your accounts</b> (to leave out), or those will be counted as spending.</span> <button class="btn sm" id="dsetup">Set up</button></div></div>` : ''}
   ${showCats ? `<div class="panel"><b>What each category means</b><p class="muted small">Spending is what you spent, income is money in, and “Ignore” leaves it out entirely (moving money between your own accounts, paying a card, and so on). Payments from people paying you back are never counted as income.</p>${catNames().map(c => `<div class="rrow"><span class="t">${esc(c)}</span>${kindSel(c)}</div>`).join('')}</div>` : ''}
-  <div class="cards">
-    <div><b>${money(cur.spent)}</b><span>spent · ${full ? 'full amount' : 'your share'}${hasPrev && (cur.spent || was.spent) ? `<br>${diff === 0 ? 'same as' : `${money(Math.abs(diff))} ${diff > 0 ? 'more' : 'less'} than`} ${monthName(prev).split(' ')[0]}${upTo ? ' by now' : ''}` : ''}</span></div>
-    <div><b>${money(cur.income)}</b><span>money in</span></div>
-    <div><b class="${net < 0 ? 'neg' : ''}">${money(net)}</b><span>in minus spent</span></div>
-    <div><b>${money(toCome)}</b><span>still to come · ${coming.length} recurring charge${coming.length === 1 ? '' : 's'}</span></div>
+  <div class="cards kpi">
+    <div class="inc"><span class="k">Spent of income${incB.amt ? ' · ' + esc(incB.label) : ''}${full ? ' · full amount' : ''}</span>${pctSp != null ? `<b${pctSp > 100 ? ' class="neg"' : ''}>${pctSp}%</b><i class="meter"><u style="width:${Math.max(0, Math.min(100, pctSp))}%"></u></i><span class="d">${money(cur.spent)} of ${money(incB.amt)}</span>` : `<b>${money(cur.spent)}</b><span class="d">${incB.unset ? 'Mark your income categories to compare' : incB.label === 'expected amount' ? 'Enter your monthly income to compare' : 'No income for that choice. Try another below.'}</span>`}${hasPrev && (cur.spent || was.spent) ? `<span class="d ${diff > 0 ? 'bad' : diff < 0 ? 'good' : ''}">${diff === 0 ? 'Same as' : `${money(Math.abs(diff))} ${diff > 0 ? 'more' : 'less'} than`} ${monthName(prev).split(' ')[0]}${upTo ? ' so far' : ''}</span>` : ''}</div>
+    <div><span class="k">Net</span><b class="${net < 0 ? 'neg' : ''}">${money(net)}</b><span class="d">Money in minus spent</span></div>
+    <div><span class="k">Still to come</span><b>${money(toCome)}</b><span class="d">${coming.length} recurring charge${coming.length === 1 ? '' : 's'}</span></div>
     ${incomeCardHtml(M, true)}</div>
   <div class="dgrid">
     <section class="dsec"><h2>Recurring not yet charged</h2>
-      ${due.length ? due.map(x => `<div class="drow${late(x) ? ' late' : ''}"><span class="t">${fmt(x.date)}</span><span class="t">${esc(x.r.name)}${safeUrl(x.r.url) ? ` <a class="go sm" href="${esc(safeUrl(x.r.url))}" target="_blank" rel="noopener noreferrer" title="Open ${esc(x.r.url)}">↗</a>` : ''}${late(x) ? ` <span class="muted">${M < thisMonth ? 'no charge found' : 'not seen yet'}</span>` : ''}</span><span class="num">${x.i.monthly == null ? '' : money(x.i.monthly)}</span></div>`).join('') : '<p class="muted">Every recurring item with a due day has been charged this month.</p>'}</section>
+      ${due.length ? due.map(x => `<div class="drow${late(x) ? ' late' : ''}"><span class="t">${fmt(x.date)}</span><span class="t">${esc(x.r.name)}${safeUrl(x.r.url) ? ` <a class="go sm" href="${esc(safeUrl(x.r.url))}" target="_blank" rel="noopener noreferrer" title="Open ${esc(x.r.url)}">↗</a>` : ''}${late(x) ? ` <span class="muted">${M < thisMonth ? 'no charge found' : 'not seen yet'}</span>` : ''}</span><span class="num">${(x.i.yearly ?? x.i.monthly) == null ? '' : money(x.i.yearly ?? x.i.monthly)}</span></div>`).join('') : '<p class="muted">Every recurring item with a due day has been charged this month.</p>'}</section>
     <section class="dsec"><h2>Spending by category</h2>
       ${cats.length ? cats.map(([c, v]) => `<button class="brow" data-cat="${esc(c)}" title="See these transactions"><span class="t">${esc(c || 'Uncategorized')}</span><span class="track"><i style="width:${top > 0 && v > 0 ? Math.max(2, Math.round(v / top * 100)) : 0}%"></i></span><span class="num">${money(v)}</span></button>`).join('') : '<p class="muted">Nothing spent in this month.</p>'}</section></div>
   <div class="dgrid">
@@ -932,13 +1154,14 @@ function vDashboard() {
   $('#dprev').addEventListener('click', () => go(months[at + 1]));
   $('#dnext').addEventListener('click', () => go(months[at - 1]));
   $('#rview').addEventListener('change', e => setSetting('recView', e.target.value));
+  wireIncomeSel();
   $('#dcats').addEventListener('click', () => { showCats = !showCats; render(); });
   $('#dsetup')?.addEventListener('click', () => { showCats = true; render(); });
   $('#dash').addEventListener('change', e => { const s = e.target.closest('[data-ck]'); if (!s) return; const m = {}; for (const c of catNames()) m[c] = catKind(c); m[s.dataset.ck] = s.value; setSetting('catKinds', m); });
   $('#dash').addEventListener('click', e => {
     const b = e.target.closest('[data-cat]'), g = e.target.closest('[data-go]');
-    if (b) { Object.assign(F, { q: '', month: M, cat: b.dataset.cat, review: false, rec: '', limit: 300 }); view = 'transactions'; render(); scrollTo(0, 0); }
-    else if (g) { if (g.dataset.go === 'review') { Object.assign(F, { q: '', month: M, cat: '', review: true, rec: '', limit: 300 }); view = 'transactions'; } else view = g.dataset.go; render(); scrollTo(0, 0); }
+    if (b) { Object.assign(F, { q: '', month: M, cat: b.dataset.cat, review: false, rec: '', split: '', limit: 300 }); view = 'transactions'; render(); scrollTo(0, 0); }
+    else if (g) { if (g.dataset.go === 'review') { Object.assign(F, { q: '', month: M, cat: '', review: true, rec: '', split: '', limit: 300 }); view = 'transactions'; } else view = g.dataset.go; render(); scrollTo(0, 0); }
   });
 }
 

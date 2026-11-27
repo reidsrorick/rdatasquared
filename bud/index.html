@@ -5,17 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Budget</title>
 <link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
 <header>
   <strong class="brand">Budget</strong>
-  <nav id="nav" hidden><button data-view="dashboard">Dashboard</button><button data-view="transactions">Transactions</button><button data-view="recurring">Recurring</button><button data-view="owed">Owed to me</button><button data-view="trends">Trends</button></nav>
+  <nav id="nav" hidden><button data-view="dashboard">Dashboard</button><button data-view="transactions">Transactions</button><button data-view="recurring">Recurring</button><button data-view="owed">Owed to me</button><button data-view="trends">Trends</button><button data-view="settings">Settings</button></nav>
   <span id="file" class="file"></span>
   <span id="status" class="status"></span>
+  <button class="btn ghost sm icon" id="tourbtn" title="Take the tour">?</button><button class="btn ghost sm icon" id="hide" title="Hide dollar amounts (for showing the app to someone)">👁</button><button class="btn ghost sm icon" id="theme" title="Switch light / dark">◐</button>
   <button class="btn ghost" id="export" hidden>Export to Excel</button>
 </header>
+<div id="demobar" class="demobar" hidden><span><b>Sample data</b> — it's made up, and nothing you change here is saved.</span><button class="btn ghost sm" id="demotour">Take the tour</button><button class="btn sm" id="demoexit">Exit sample data</button></div>
 <main id="view"></main>
 <script src="xlsx.js"></script>
+<script src="sample.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
