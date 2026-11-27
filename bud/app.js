@@ -683,8 +683,8 @@ function actualsByItem(ch = chargesByItem(), keptOnly = false, field = 'cost') {
   return out;
 }
 // an item's monthly cost = the average of its last 3 months of linked charges ("variable" when those months differ); its day comes from you, or from its last charge
-function derive(r, ch) {
-  const all = ch[r.name] || [], list = all.filter(c => !c.excluded), excluded = all.length - list.length, field = viewField();
+function derive(r, ch, only) { // only = 'mine' | 'cost' to ignore the Show setting
+  const all = ch[r.name] || [], list = all.filter(c => !c.excluded), excluded = all.length - list.length, field = only || viewField();
   const avg3 = f => { const m = {}; for (const c of list) { const k = c.date.slice(0, 7); m[k] = round2((m[k] || 0) + c[f]); } const v = Object.keys(m).sort().slice(-3).map(k => m[k]); return { avg: v.length ? round2(v.reduce((a, b) => a + b, 0) / v.length) : null, varies: v.length > 1 && v.some(x => Math.abs(x - v[0]) > 0.005), months: Object.keys(m).length }; };
   const shown = avg3(field), full = avg3('cost'), lastDay = list[0]?.date;
   const last = lastDay ? { date: lastDay, cost: round2(list.filter(c => c.date === lastDay).reduce((x, c) => x + c[field], 0)) } : null; // everything charged on the newest day (a split charge's lines add up)
@@ -727,10 +727,11 @@ function vRecurring() {
 
   $('#view').innerHTML = `
   <div class="cards"><div><b>${money(total)}</b><span>per month · ${viewField() === 'cost' ? 'full amount' : 'your share'}${unlinked ? ` · ${unlinked} item${unlinked === 1 ? '' : 's'} with no charges linked yet` : ''}</span></div>
+    ${incomeCardHtml(today().slice(0, 7))}
     <div><b>${up ? fmt(up.date) : '—'}</b><span>${up ? `next up: ${esc(up.r.name)} · ${money(up.i.monthly)}` : 'next charge'}</span></div></div>
   <div class="bar"><button class="btn" id="addrec">+ Add item</button><button class="btn ghost" id="grp">${showGroups ? 'Hide groups' : 'Edit groups'}</button>
     <button class="btn ghost" id="expall">Expand all</button><button class="btn ghost" id="colall">Collapse all</button>
-    <label title="Inactive items are hidden unless this is ticked"><input id="showoff" type="checkbox"${showOff ? ' checked' : ''}> Show inactive${offCount ? ` (${offCount})` : ''}</label>${rviewSel()}</div>
+    <label title="Inactive items are hidden unless this is ticked"><input id="showoff" type="checkbox"${showOff ? ' checked' : ''}> Show inactive${offCount ? ` (${offCount})` : ''}</label>${rviewSel()} ${incomeSelHtml()}</div>
   ${showGroups ? `<div class="panel" id="gpanel"><b>Groups</b> <span class="muted">— the categories your items are sorted into</span>
     ${D.groups.map(g => `<div class="grow" data-g="${esc(g)}"><input data-gname value="${esc(g)}"><button class="btn ghost sm" data-act="gup" title="Move up">↑</button><button class="btn ghost sm" data-act="gdown" title="Move down">↓</button><button class="x" data-act="gdel" title="Delete group">✕</button></div>`).join('')}
     <form class="grow" id="gnew"><input name="g" placeholder="New group…" required><button class="btn sm">Add</button></form></div>` : ''}
@@ -751,6 +752,7 @@ function vRecurring() {
   $('#expall').addEventListener('click', () => foldAll(false)); $('#colall').addEventListener('click', () => foldAll(true));
   $('#showoff').addEventListener('change', e => setSetting('showInactive', e.target.checked));
   $('#rview').addEventListener('change', e => setSetting('recView', e.target.value));
+  wireIncomeSel();
   $('#grp').addEventListener('click', () => { showGroups = !showGroups; render(); });
 
   $('#rb').addEventListener('change', e => {
@@ -840,6 +842,32 @@ function vTrends() {
   $('#rview').addEventListener('change', e => setSetting('recView', e.target.value));
 }
 
+/* ───────── recurring vs income ───────── */
+const INCOME_BASES = [['this', 'This month'], ['last', 'Last month'], ['avg3', '3-month average'], ['fixed', 'A fixed amount']];
+const incomeBasis = () => (INCOME_BASES.some(b => b[0] === D.settings?.incomeBasis) ? D.settings.incomeBasis : 'this');
+const monthAdd = (m, n) => toISO(new Date(+m.slice(0, 4), +m.slice(5, 7) - 1 + n, 1)).slice(0, 7);
+const covered = m => { const first = D.transactions.reduce((a, t) => (t.date < a ? t.date : a), '9999'); return first <= m + '-07'; }; // a month your data covers from near its start
+function incomeFor(M) { // { amt, label } — the income to compare recurring against, from the categories you marked as Income (or a fixed amount you enter)
+  const b = incomeBasis(), isNow = M === today().slice(0, 7), inc = m => flows(m, '', false).income;
+  if (b === 'fixed') { const v = +D.settings?.incomeFixed || 0; return { amt: v > 0 ? v : null, label: 'expected amount' }; }
+  if (!D.settings?.catKinds) return { amt: null, label: '', unset: true };
+  if (b === 'this') return { amt: inc(M) > 0 ? inc(M) : null, label: isNow ? 'this month' : monthName(M) };
+  if (b === 'last') { const m = monthAdd(M, -1); return { amt: covered(m) && inc(m) > 0 ? inc(m) : null, label: monthName(m).split(' ')[0] }; }
+  const ms = [1, 2, 3].map(n => monthAdd(M, -n)).filter(covered), v = ms.map(inc).filter(x => x > 0);
+  return { amt: v.length ? round2(v.reduce((a, x) => a + x, 0) / v.length) : null, label: v.length === 1 ? '1 month with income' : `${v.length}-month average` };
+}
+const commitments = ch => { ch = ch || chargesByItem(); return sumOf(D.recurring.filter(r => r.active).map(r => derive(r, ch, 'mine').monthly)); }; // your share of every active item
+function incomeCardHtml(M, link) { // recurring (your share) as a share of income: the % and a small bar; the amounts are in the tooltip
+  const c = commitments(), inc = incomeFor(M), pct = inc.amt ? Math.round(c / inc.amt * 100) : null;
+  const tip = pct == null ? '' : `${money(c)} of ${money(inc.amt)} (${inc.label})`;
+  const body = inc.unset ? '<b>—</b><span>Mark your income categories to compare</span>'
+    : pct == null ? `<b>—</b><span>${inc.label === 'expected amount' ? 'Enter your monthly income' : /average$/.test(inc.label) ? 'No earlier month with income' : `No income in ${esc(inc.label)}`}</span>`
+    : `<b${pct > 100 ? ' class="neg"' : ''}>${pct}%</b><span>of income · ${esc(inc.label)}</span><i class="meter"><u style="width:${Math.min(100, pct)}%"></u></i><span>${money(round2(inc.amt - c))} left over</span>`;
+  return `<div class="inc${link ? ' lnk' : ''}"${link ? ' data-go="recurring"' : ''} title="${esc(link ? (tip ? tip + ' — ' : '') + 'Change what it is compared with on the Recurring page' : tip)}">${body}</div>`;
+}
+const incomeSelHtml = () => `<label>Compare with income <select id="ibasis">${INCOME_BASES.map(([v, l]) => `<option value="${v}"${incomeBasis() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>${incomeBasis() === 'fixed' ? `<input id="ifixed" type="number" min="0" step="0.01" class="num" style="width:130px" placeholder="Monthly income" value="${D.settings?.incomeFixed || ''}">` : ''}`;
+const wireIncomeSel = () => { $('#ibasis')?.addEventListener('change', e => setSetting('incomeBasis', e.target.value)); $('#ifixed')?.addEventListener('change', e => setSetting('incomeFixed', Math.max(0, +e.target.value || 0))); };
+
 /* ───────── dashboard: a month at a glance ───────── */
 let dashMonth = '', showCats = false;
 const KINDS = [['spend', 'Spending'], ['income', 'Income'], ['skip', 'Ignore (e.g. transfers)']];
@@ -886,7 +914,8 @@ function vDashboard() {
     <div><b>${money(cur.spent)}</b><span>spent · ${full ? 'full amount' : 'your share'}${hasPrev && (cur.spent || was.spent) ? `<br>${diff === 0 ? 'same as' : `${money(Math.abs(diff))} ${diff > 0 ? 'more' : 'less'} than`} ${monthName(prev).split(' ')[0]}${upTo ? ' by now' : ''}` : ''}</span></div>
     <div><b>${money(cur.income)}</b><span>money in</span></div>
     <div><b class="${net < 0 ? 'neg' : ''}">${money(net)}</b><span>in minus spent</span></div>
-    <div><b>${money(toCome)}</b><span>still to come · ${coming.length} recurring charge${coming.length === 1 ? '' : 's'}</span></div></div>
+    <div><b>${money(toCome)}</b><span>still to come · ${coming.length} recurring charge${coming.length === 1 ? '' : 's'}</span></div>
+    ${incomeCardHtml(M, true)}</div>
   <div class="dgrid">
     <section class="dsec"><h2>Recurring not yet charged</h2>
       ${due.length ? due.map(x => `<div class="drow${late(x) ? ' late' : ''}"><span class="t">${fmt(x.date)}</span><span class="t">${esc(x.r.name)}${safeUrl(x.r.url) ? ` <a class="go sm" href="${esc(safeUrl(x.r.url))}" target="_blank" rel="noopener noreferrer" title="Open ${esc(x.r.url)}">↗</a>` : ''}${late(x) ? ` <span class="muted">${M < thisMonth ? 'no charge found' : 'not seen yet'}</span>` : ''}</span><span class="num">${x.i.monthly == null ? '' : money(x.i.monthly)}</span></div>`).join('') : '<p class="muted">Every recurring item with a due day has been charged this month.</p>'}</section>
