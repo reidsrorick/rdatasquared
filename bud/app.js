@@ -314,7 +314,7 @@ function vTransactions() {
     <label title="Turn the list into editable cells"><input id="editmode" type="checkbox"${txnEdit() ? ' checked' : ''}> Edit in table</label>
     <span class="sum" id="sum"></span>
   </div>
-  ${showCols ? `<div class="panel" id="colpanel"><b>Show columns</b> <span class="muted">— saved with your data</span><div class="chks">${Object.keys(TXN_COLS).map(k => `<label class="chk"><input type="checkbox" data-col="${k}"${cols.includes(k) ? ' checked' : ''}${LOCKED.includes(k) ? ' disabled' : ''}> ${TXN_COLS[k].h}</label>`).join('')}</div></div>` : ''}
+  ${showCols ? `<div class="panel pop" id="colpanel"><button class="x popx" data-act="popclose" title="Close (Esc)">✕</button><b>Show columns</b> <span class="muted">— saved with your data</span><div class="chks">${Object.keys(TXN_COLS).map(k => `<label class="chk"><input type="checkbox" data-col="${k}"${cols.includes(k) ? ' checked' : ''}${LOCKED.includes(k) ? ' disabled' : ''}> ${TXN_COLS[k].h}</label>`).join('')}</div></div>` : ''}
   ${tableHtml('txn', 'tb', [...cols.map(k => [k, TXN_COLS[k].h, TXN_COLS[k].w]), ...(F.rec ? [['counted', 'Counted', 150]] : []), ['open', '', 44]], txnSort())}
   <p class="muted" id="more"></p>`;
   const redraw = () => { F.q = $('#q').value; F.month = $('#fm').value; F.cat = $('#fc').value; F.review = $('#fr').checked; F.split = $('#fs').value; F.limit = 300; $('#clrall').hidden = !filtersOn(); try { sessionStorage.setItem('filters', JSON.stringify(F)); } catch {} body(); };
@@ -746,7 +746,7 @@ function vOwed() {
       ${months.map(m => section(m, mine)).join('') || `<p class="muted">${mine.length ? 'Nothing outstanding. Tick “Show settled” to see what has been paid.' : 'Nothing split with them yet.'}</p>`}</div></div>`;
   };
   const blocks = shownIds.filter(id => showSettled || items.some(i => i.who === id && i.out > 0.004));
-  const peoplePanel = showPeople ? `<div class="panel" id="ppanel"><b>People</b> <span class="muted">— whoever you split things with</span>
+  const peoplePanel = showPeople ? `<div class="panel pop" id="ppanel"><button class="x popx" data-act="popclose" title="Close (Esc)">✕</button><b>People</b> <span class="muted">— whoever you split things with</span>
     ${peopleList().map(p => `<div class="rrow" data-person="${p.id}"><input data-pn value="${esc(p.name)}" placeholder="Name"><button class="x" data-act="delperson" title="Remove this person">✕</button></div>`).join('')}
     <form class="rrow" id="pnew"><input name="n" placeholder="Add a person…" required><button class="btn sm">Add</button></form></div>` : '';
   $('#view').innerHTML = `<div id="rm">
@@ -856,7 +856,7 @@ function vRecurring() {
   <div class="bar"><button class="btn" id="addrec">+ Add item</button><button class="btn ghost" id="grp">${showGroups ? 'Hide groups' : 'Edit groups'}</button>
     <button class="btn ghost" id="expall">Expand all</button><button class="btn ghost" id="colall">Collapse all</button>
     <label title="Inactive items are hidden unless this is ticked"><input id="showoff" type="checkbox"${showOff ? ' checked' : ''}> Show inactive${offCount ? ` (${offCount})` : ''}</label>${rviewSel()} ${incomeSelHtml()}</div>
-  ${showGroups ? `<div class="panel" id="gpanel"><b>Groups</b> <span class="muted">— the categories your items are sorted into</span>
+  ${showGroups ? `<div class="panel pop" id="gpanel"><button class="x popx" data-act="popclose" title="Close (Esc)">✕</button><b>Groups</b> <span class="muted">— the categories your items are sorted into</span>
     ${D.groups.map(g => `<div class="grow" data-g="${esc(g)}"><input data-gname value="${esc(g)}"><button class="btn ghost sm" data-act="gup" title="Move up">↑</button><button class="btn ghost sm" data-act="gdown" title="Move down">↓</button><button class="x" data-act="gdel" title="Delete group">✕</button></div>`).join('')}
     <form class="grow" id="gnew"><input name="g" placeholder="New group…" required><button class="btn sm">Add</button></form></div>` : ''}
   ${tableHtml('rec', 'rb', TABLES.rec, null, true)}`;
@@ -917,7 +917,7 @@ function vRecurring() {
       });
     });
     gp.addEventListener('click', e => {
-      const b = e.target.closest('[data-act]'); if (!b) return; const g = b.closest('.grow').dataset.g, act = b.dataset.act;
+      const b = e.target.closest('[data-act]'); if (!b || !b.closest('.grow')) return; const g = b.closest('.grow').dataset.g, act = b.dataset.act;
       if (act === 'gup' || act === 'gdown') commit(d => { const i = d.groups.indexOf(g), j = act === 'gup' ? i - 1 : i + 1; if (i >= 0 && j >= 0 && j < d.groups.length) [d.groups[i], d.groups[j]] = [d.groups[j], d.groups[i]]; });
       else if (act === 'gdel') {
         const n = D.recurring.filter(r => r.group === g).length;
@@ -990,6 +990,17 @@ function setHide(on, redraw = true) {
 $('#tourbtn').addEventListener('click', () => startTour());
 $('#hide').addEventListener('click', () => { setHide(!hiding); if (view === 'settings') render(); });
 setHide(hiding, false);
+
+/* ───────── panels that pop out (Columns, People, Edit groups, Categories) ───────── */
+const popOpen = () => document.querySelector('.panel.pop');
+function closePops() { showCols = showPeople = showGroups = showCats = false; render(); }
+document.addEventListener('click', e => { // a click outside the open panel closes it (and does nothing else); its ✕ closes it too
+  const p = popOpen(); if (!p) return;
+  if (e.target.closest('[data-act=popclose]')) { e.preventDefault(); return closePops(); }
+  if (p.contains(e.target) || e.target.closest('#cols,#people,#grp,#dcats,#dsetup,#tour,.tour') || e.target.closest('.cbpop')) return;
+  e.preventDefault(); e.stopPropagation(); closePops();
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && popOpen() && !cb && tourAt < 0 && cardId == null) { closePops(); } });
 
 /* ───────── first-run tour ───────── */
 const TOUR = [
@@ -1140,7 +1151,7 @@ function vDashboard() {
     <button class="btn ghost sm" id="dnext" title="Later month"${at <= 0 ? ' disabled' : ''}>›</button>
     ${rviewSel()} ${incomeSelHtml()} <button class="btn ghost sm" id="dcats">${showCats ? 'Hide categories' : 'Categories'}</button></div>
   ${setUp && !showCats ? `<div class="panel hint"><div class="grow"><span>Say which categories are <b>income</b> and which are <b>transfers between your accounts</b> (to leave out), or those will be counted as spending.</span> <button class="btn sm" id="dsetup">Set up</button></div></div>` : ''}
-  ${showCats ? `<div class="panel"><b>What each category means</b><p class="muted small">Spending is what you spent, income is money in, and “Ignore” leaves it out entirely (moving money between your own accounts, paying a card, and so on). Payments from people paying you back are never counted as income.</p>${catNames().map(c => `<div class="rrow"><span class="t">${esc(c)}</span>${kindSel(c)}</div>`).join('')}</div>` : ''}
+  ${showCats ? `<div class="panel pop" id="cpanel"><button class="x popx" data-act="popclose" title="Close (Esc)">✕</button><b>What each category means</b><p class="muted small">Spending is what you spent, income is money in, and “Ignore” leaves it out entirely (moving money between your own accounts, paying a card, and so on). Payments from people paying you back are never counted as income.</p>${catNames().map(c => `<div class="rrow"><span class="t">${esc(c)}</span>${kindSel(c)}</div>`).join('')}</div>` : ''}
   <div class="cards kpi">
     <div class="inc"><span class="k">Spent of income${incB.amt ? ' · ' + esc(incB.label) : ''}${full ? ' · full amount' : ''}</span>${pctSp != null ? `<b${pctSp > 100 ? ' class="neg"' : ''}>${pctSp}%</b><i class="meter"><u style="width:${Math.max(0, Math.min(100, pctSp))}%"></u></i><span class="d">${money(cur.spent)} of ${money(incB.amt)}</span>` : `<b>${money(cur.spent)}</b><span class="d">${incB.unset ? 'Mark your income categories to compare' : incB.label === 'expected amount' ? 'Enter your monthly income to compare' : 'No income for that choice. Try another below.'}</span>`}${hasPrev && (cur.spent || was.spent) ? `<span class="d ${diff > 0 ? 'bad' : diff < 0 ? 'good' : ''}">${diff === 0 ? 'Same as' : `${money(Math.abs(diff))} ${diff > 0 ? 'more' : 'less'} than`} ${monthName(prev).split(' ')[0]}${upTo ? ' so far' : ''}</span>` : ''}</div>
     <div><span class="k">Net</span><b class="${net < 0 ? 'neg' : ''}">${money(net)}</b><span class="d">Money in minus spent</span></div>
