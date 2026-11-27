@@ -995,6 +995,9 @@ setHide(hiding, false);
 const TOUR = [
   { view: 'dashboard', sel: '#nav [data-view=dashboard]', t: 'Dashboard', d: 'A month at a glance: what you spent, what recurring charges are still to come, where the money went, and who owes you.' },
   { view: 'transactions', sel: '#nav [data-view=transactions]', t: 'Transactions', d: 'Every transaction. Click a row to open it, split it with someone, add line items or tag it to a recurring item. Search and filters are above the list.' },
+  { view: 'transactions', sel: '#add', t: 'Add a transaction', d: 'Click <b>+ Add</b> to start one. Type a description: your earlier ones appear, and <b>Tab</b> takes the top match and fills the category, accounts and amount for you. Category, accounts and recurring item are type-to-search lists too.' },
+  { view: 'transactions', open: true, sel: '#drawer [data-f=cat]', t: "A transaction's card", d: 'Click any row to open its card like this one. Fields save as you leave them, and ‹ › step through the list.' },
+  { view: 'transactions', open: true, sel: '#drawer [data-f=split]', t: 'Split it with someone', d: 'Choose <b>With someone new…</b> (or a person you already added) to split a charge. It starts 50/50: type either share, or use the calculator button for something like +75. It then shows up under <b>Owed to me</b>, where you request and track the payback. Use <b>+ Add line</b> to split one charge into line items.' },
   { view: 'recurring', sel: '#nav [data-view=recurring]', t: 'Recurring', d: 'Your monthly commitments. Tag transactions with an item and its monthly amount works itself out; there is nothing to type. Add a link to where you pay each one.' },
   { view: 'owed', sel: '#nav [data-view=owed]', t: 'Owed to me', d: 'Split a charge with someone and it collects here. Request what they owe, copy a message to send them, and match the payments you receive.' },
   { view: 'trends', sel: '#nav [data-view=trends]', t: 'Trends', d: 'What each recurring item actually cost, month by month, so a bill that crept up stands out.' },
@@ -1003,13 +1006,18 @@ const TOUR = [
   { sel: '#theme', t: 'Light or dark', d: 'Switch the look here.' },
   { sel: '#tourbtn', t: 'That\'s the tour', d: 'Take it again any time with this ? button, or from Settings.' },
 ];
-let tourAt = -1;
-function endTour() { tourAt = -1; document.querySelectorAll('.tour-hl').forEach(e => e.classList.remove('tour-hl')); $('#tour')?.remove(); markTourDone(); }
+let tourAt = -1, tourDir = 1;
+function endTour() { if (cardId != null && TOUR[tourAt]?.open) closeCard(); tourAt = -1; document.querySelectorAll('.tour-hl').forEach(e => e.classList.remove('tour-hl')); $('#tour')?.remove(); markTourDone(); }
 function tourStep(i) {
   if (i >= TOUR.length) return endTour();
-  i = Math.max(0, i); tourAt = i; const st = TOUR[i];
+  i = Math.max(0, i); tourDir = i >= tourAt ? 1 : -1; const prevStep = TOUR[tourAt]; tourAt = i; const st = TOUR[i];
   document.querySelectorAll('.tour-hl').forEach(e => e.classList.remove('tour-hl'));
   if (st.view && view !== st.view) { closeCard(); view = st.view; render(); }
+  if (st.open) { // show a real transaction's card (nothing is changed), one you can split
+    const ex = D.transactions.find(t => (t.amt || 0) < 0 && !(t.parts || []).length) || D.transactions[0];
+    if (!ex) { return tourStep(i + (tourDir < 0 ? -1 : 1)); }
+    if (cardId !== ex.id) { cardNew = null; openCard(ex.id); }
+  } else if (cardId != null && prevStep?.open) closeCard();
   scrollTo(0, 0);
   const el = st.sel ? $(st.sel) : null; el?.classList.add('tour-hl');
   let box = $('#tour'); if (!box) { box = document.createElement('div'); box.id = 'tour'; box.className = 'tour'; document.body.appendChild(box); }

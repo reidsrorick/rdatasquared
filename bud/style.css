@@ -41,7 +41,7 @@ td.c{text-align:center;padding:2px 6px}
 @media(max-width:700px){main{padding:8px}.file{display:none}}
 nav{display:flex;gap:4px;flex-wrap:wrap}nav button{white-space:nowrap;background:none;border:0;padding:6px 10px;border-radius:6px;color:var(--mute);cursor:pointer;font:inherit}nav button.on{background:var(--hl);color:var(--fg);font-weight:600}
 .btn.sm{padding:3px 8px;font-size:12px}
-.cards{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}.cards div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:150px}.cards b{display:block;font-size:20px}.cards span{color:var(--mute);font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:12px}.cards div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:0}.cards b{display:block;font-size:20px}.cards span{color:var(--mute);font-size:12px}
 tr.dim td{opacity:.5}
 td.t.num{text-align:right}
 td.t{white-space:nowrap;text-overflow:ellipsis}
@@ -150,7 +150,7 @@ body.hide-amts input[type=number]{filter:blur(6px)}
 .small{font-size:12px}
 .sugg{background:var(--hl);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .drawer input[data-combo]{width:100%}
-.kpi div{display:flex;flex-direction:column;gap:2px;min-width:170px}.kpi div>*{order:3}.kpi .k{order:1;font-weight:600;font-size:12px}.kpi b{order:2;font-size:24px}.kpi .d{font-size:12px}.kpi .d.good{color:var(--ok)}.kpi .d.bad{color:var(--bad)}
+.kpi div{display:flex;flex-direction:column;gap:2px;min-width:0}.kpi div>*{order:3}.kpi .k{order:1;font-weight:600;font-size:12px}.kpi b{order:2;font-size:24px}.kpi .d{font-size:12px}.kpi .d.good{color:var(--ok)}.kpi .d.bad{color:var(--bad)}
 /* owed: a card per person */
 .pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;margin:12px 0 20px;align-items:start}
 .pcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0}.pcard.open{grid-column:1/-1}
