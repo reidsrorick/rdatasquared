@@ -14,10 +14,13 @@ const dim = (y, m) => new Date(y, m, 0).getDate();
 const mk = (y, m, d) => { const f = new Date(y, m - 1, 1), yy = f.getFullYear(), mm = f.getMonth() + 1; return toISO(new Date(yy, mm - 1, Math.min(d, dim(yy, mm)))); }; // month may overflow (13 = next January)
 const fmt = s => { const d = new Date(s + 'T00:00:00'); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
 
-function savedView() { try { const v = sessionStorage.getItem('view'); return v === 'roommate' ? 'owed' : ['dashboard', 'transactions', 'recurring', 'owed', 'trends', 'settings'].includes(v) ? v : 'dashboard'; } catch { return 'dashboard'; } } // opening the app lands on the dashboard; refreshing keeps the page you were on
+const VERSION = '1.10.0', BUILT = '2026-11-27'; // bump these whenever the app changes: the number at the bottom of every page (and in Settings) shows whether the copy you host is behind
+const CHANGES = [['1.10.0', '2026-11-27', 'Bank CSV import: map the columns once per account, skip what you already have, guess categories'], ['1.9.0', '2026-11-27', 'Transfer matching: pair the two sides of a transfer so neither counts as spending or income'], ['1.8.0', '2026-11-27', 'Bulk edit: select several transactions to set category, accounts, recurring item, add a tag, or delete'], ['1.7.0', '2026-11-27', 'Undo and redo for edits and deletes (this session)'], ['1.6.0', '2026-11-27', 'Command palette (Ctrl+K): pages, commands, filters and transactions'], ['1.5.0', '2026-11-27', 'Tags: #words in the notes, filter by tag, tag totals on the Year page'], ['1.4.0', '2026-11-27', 'Inbox: sort uncategorized transactions one at a time from the keyboard'], ['1.3.0', '2026-11-27', 'Duplicate detector: flags look-alike transactions, with “not a duplicate”'], ['1.2.0', '2026-11-27', 'Year page: income, spent, saved, top categories and places, month by month'], ['1.1.0', '2026-11-27', 'Version number, N to add a transaction, category colors and icons, duplicate and templates']];
+{ const v = document.getElementById('ver'); if (v) v.textContent = `Version ${VERSION} · ${BUILT}`; }
+function savedView() { try { const v = sessionStorage.getItem('view'); return v === 'roommate' ? 'owed' : ['dashboard', 'transactions', 'recurring', 'owed', 'trends', 'year', 'settings'].includes(v) ? v : 'dashboard'; } catch { return 'dashboard'; } } // opening the app lands on the dashboard; refreshing keeps the page you were on
 /* ───────── state ───────── */
 let demo = false, freshUser = false, handle = null, D = null, mtime = 0, pending = null, view = savedView(), recOrder = null, queue = Promise.resolve();
-const F = { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }; // the Transactions filters; kept for a page refresh
+const F = { q: '', month: '', cat: '', review: false, rec: '', split: '', dups: false, tag: '', limit: 300 }; // the Transactions filters; kept for a page refresh
 try { const f = JSON.parse(sessionStorage.getItem('filters')); if (f && typeof f === 'object') for (const k in F) if (typeof f[k] === typeof F[k]) F[k] = f[k]; } catch {}
 
 /* ───────── remembered file handle (IndexedDB) ───────── */
@@ -28,10 +31,12 @@ const kv = async (mode, fn) => { const db = await idb(); return new Promise((res
    transactions: { id, date, desc, cat, amt, from, to, notes, work, rec, parts? }   rec = name of a recurring item ('' if none)
                  parts (optional) = line items under one charge: [{ id, desc, amt (same sign as the charge), rec, excluded? }] — they inherit its category
                  excluded (optional, true) = a charge tagged to a recurring item that is kept in the history but left out of the item's calculations
+                 dupOk (optional, true) = you said this isn't a duplicate of a look-alike transaction
+                 pair (optional) = id of the transaction on the other side of a transfer between your accounts; paired transactions are left out of spending and income · noPair (optional) = ids you said are not its other side
    recurring:    { id, name, group, dueDay (1-31, optional), active, url? (where you pay it), period? ('year' = charged once a year; absent = monthly), dueMonth? (1-12, yearly items) } — no amount: it's worked out from the charges tagged with the item
    groups:       ['Home', 'Subscriptions', ...]  the list of groups items are sorted into (yours to define)
    people:       [{ id, name }]  whoever you split things with
-   settings:     { txnColumns: ['date','desc',...], txnEdit: false, txnSort: { k: 'date', dir: -1 }, trendMonths: 6, showInactive: false, recView: 'mine'|'full', catKinds: { category: 'spend'|'income'|'skip' } }
+   settings:     { importMaps: { account: { mode, neg, order, date, desc, amt, debit, credit } } (the CSV columns each account used last), txnColumns: ['date','desc',...], txnEdit: false, txnSort: { k: 'date', dir: -1 }, trendMonths: 6, showInactive: false, recView: 'mine'|'full', catKinds: { category: 'spend'|'income'|'skip' } }
    splits:       o.split = { owes, who, even?, requested? } on a charge or line (owes = that person's share, who = their id; you pay the rest) · a payment's lines carry covers: { tx, part }                                       */
 function migrate(d) {
   d.recurring ??= []; d.lists ??= { accounts: [], categories: [], work: [] };
@@ -66,6 +71,7 @@ function migrate(d) {
   }
   d.groups ??= []; d.settings ??= {}; d.people ??= [];
   for (const t of d.transactions) t.rec ??= '';
+  const ids = new Set(d.transactions.map(t => t.id)); for (const t of d.transactions) if (t.pair != null && !ids.has(t.pair)) delete t.pair; // the other side was deleted
   return d;
 }
 
@@ -97,13 +103,14 @@ function sampleData() { // the made-up budget, with its dates shifted so the new
   d.updated = new Date().toISOString(); return d;
 }
 function enterDemo(withTour, keep) {
+  clearUndo();
   if (!window.SAMPLE_DATA) return setStatus('The sample data file (sample.js) is missing.', true);
   demo = true; try { sessionStorage.setItem('demo', '1'); } catch {}
-  if (!keep) { closeCard(); Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }); view = 'dashboard'; }
+  if (!keep) { closeCard(); Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 , dups: false, tag: ''}); view = 'dashboard'; }
   D = migrate(sampleData()); $('#file').textContent = 'Sample data'; render();
   if (withTour) startTour();
 }
-async function exitDemo() { demo = false; try { sessionStorage.removeItem('demo'); } catch {} D = null; closeCard(); Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }); view = 'dashboard'; $('#file').textContent = ''; setStatus(''); await boot(); }
+async function exitDemo() { clearUndo(); demo = false; try { sessionStorage.removeItem('demo'); } catch {} D = null; closeCard(); Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 , dups: false, tag: ''}); view = 'dashboard'; $('#file').textContent = ''; setStatus(''); await boot(); }
 async function boot() {
   try { if (sessionStorage.getItem('demo') === '1' && window.SAMPLE_DATA) return enterDemo(false, true); } catch {}
   if (!('showOpenFilePicker' in window)) return gate('<h2>Chrome or Edge required</h2><p>Saving to a file on your computer needs the File System Access API, which this browser doesn\'t have.</p><p class="muted small">You can still <a href="#" id="sample">look around with sample data</a> (nothing is saved).</p>');
@@ -144,24 +151,50 @@ async function start() {
   render();
   if (freshUser && !tourDone()) startTour();
 }
-async function reload() { const file = await handle.getFile(); D = parseData(await file.text()); mtime = file.lastModified; }
+async function reload() { const file = await handle.getFile(); D = parseData(await file.text()); mtime = file.lastModified; clearUndo(); }
 window.addEventListener('focus', async () => { // pick up changes made to the data file elsewhere
   if (demo || !handle || !D || document.activeElement?.closest?.('td')) return;
   try { const f = await handle.getFile(); if (f.lastModified !== mtime) { await reload(); render(); } } catch {}
 });
 
+/* undo: before each change we keep a copy of your data (this session only, the last 30 changes) */
+let undoStack = [], redoStack = [];
+const snap = () => JSON.stringify({ groups: D.groups, people: D.people, settings: D.settings, lists: D.lists, recurring: D.recurring, transactions: D.transactions });
+function updUndoBtn() { const b = $('#undo'); if (!b) return; const e = undoStack[undoStack.length - 1]; b.hidden = !e; if (e) b.title = `Undo: ${e.label} (Ctrl+Z)`; }
+function clearUndo() { undoStack = []; redoStack = []; updUndoBtn(); selMode = false; sel.clear(); }
+function track(before, n0, on) { // a change was just made: remember how to take it back (nothing, if it changed nothing)
+  if (!on || snap() === before) return;
+  const dn = D.transactions.length - n0; undoStack.push({ before, label: dn < 0 ? (dn === -1 ? 'deleted a transaction' : `deleted ${-dn} transactions`) : dn > 0 ? (dn === 1 ? 'added a transaction' : `added ${dn} transactions`) : 'edit' }); if (undoStack.length > 30) undoStack.shift(); redoStack = []; updUndoBtn();
+}
+function undoRedo(dir) {
+  const from = dir === 'undo' ? undoStack : redoStack, to = dir === 'undo' ? redoStack : undoStack;
+  if (!from.length) return setStatus(`Nothing to ${dir}`);
+  queue = queue.then(async () => {
+    try {
+      let f = null; if (!demo) { f = await handle.getFile(); if (f.lastModified !== mtime) { clearUndo(); D = parseData(await f.text()); mtime = f.lastModified; render(); return setStatus('The file was changed somewhere else, so undo was cleared.', true); } }
+      const e = from.pop(); to.push({ before: snap(), label: e.label }); Object.assign(D, JSON.parse(e.before)); D.updated = new Date().toISOString();
+      if (!demo) { const w = await handle.createWritable(); await w.write(serialize(D)); await w.close(); mtime = (await handle.getFile()).lastModified; }
+      updUndoBtn(); setStatus(demo ? `${dir === 'undo' ? 'Undid' : 'Redid'} — sample, not saved` : `${dir === 'undo' ? 'Undid' : 'Redid'} ${e.label} ✓`); render();
+    } catch (err) { setStatus(err.message, true); }
+  });
+}
+document.addEventListener('keydown', e => { // Ctrl+Z / Ctrl+Y outside text fields (inside them, the browser undoes your typing)
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || !D) return; const k = e.key.toLowerCase();
+  if (k !== 'z' && k !== 'y') return; const a = document.activeElement; if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+  e.preventDefault(); undoRedo(k === 'y' || e.shiftKey ? 'redo' : 'undo');
+});
 /* every edit changes the data and writes the JSON file straight away */
-function commit(fn, { redraw = true } = {}) {
+function commit(fn, { redraw = true, undo = true } = {}) {
   queue = queue.then(async () => {
     if (demo) { // sample data: changes live only in memory
-      try { fn(D); setStatus('Sample — not saved'); if (redraw) render(); } catch (err) { setStatus(err.message, true); render(); }
+      try { const b = undo ? snap() : '', n0 = D.transactions.length; fn(D); track(b, n0, undo); setStatus('Sample — not saved'); if (redraw) render(); } catch (err) { setStatus(err.message, true); render(); }
       return;
     }
     if (!handle) return;
     try {
       setStatus('Saving…');
-      const f = await handle.getFile(); if (f.lastModified !== mtime) D = parseData(await f.text()); // someone else changed it: start from theirs
-      fn(D); D.updated = new Date().toISOString();
+      const f = await handle.getFile(); if (f.lastModified !== mtime) { D = parseData(await f.text()); clearUndo(); } // someone else changed it: start from theirs
+      const b = undo ? snap() : '', n0 = D.transactions.length; fn(D); track(b, n0, undo); D.updated = new Date().toISOString();
       const w = await handle.createWritable(); await w.write(serialize(D)); await w.close();
       mtime = (await handle.getFile()).lastModified; setStatus('Saved');
       if (redraw) render();
@@ -192,7 +225,7 @@ const TABLES = { // [id, label, default width]
 const savedWidths = key => { try { const m = JSON.parse(localStorage.getItem('cw:' + key)); return m && !Array.isArray(m) ? m : {}; } catch { return {}; } };
 function tableHtml(key, bodyId, cols, sort, fit) { // sort (optional) = { k, dir } makes the headers clickable · fit = the columns share the window's width instead of having a fixed one (so the page never scrolls sideways)
   const saved = savedWidths(key), w = c => saved[c[0]] || c[2], total = cols.reduce((a, c) => a + w(c), 0);
-  return `<div class="wrap"><table data-key="${key}"${fit ? ' data-fit="1"' : ''} style="width:${fit ? '100%' : total + 'px'}"><colgroup>${cols.map(c => `<col data-k="${c[0]}" data-dw="${c[2]}" style="width:${fit ? (w(c) / total * 100).toFixed(3) + '%' : w(c) + 'px'}">`).join('')}</colgroup><thead><tr>${cols.map(c => `<th${sort && c[0] !== 'open' ? ` data-k="${c[0]}" class="sortable" title="Click to sort"` : ''}>${c[1]}${sort && sort.k === c[0] ? (sort.dir > 0 ? ' ▲' : ' ▼') : ''}<i class="rz" title="Drag to resize · double-click to reset"></i></th>`).join('')}</tr></thead><tbody id="${bodyId}"></tbody></table></div>`;
+  return `<div class="wrap"><table data-key="${key}"${fit ? ' data-fit="1"' : ''} style="width:${fit ? '100%' : total + 'px'}"><colgroup>${cols.map(c => `<col data-k="${c[0]}" data-dw="${c[2]}" style="width:${fit ? (w(c) / total * 100).toFixed(3) + '%' : w(c) + 'px'}">`).join('')}</colgroup><thead><tr>${cols.map(c => `<th${sort && !['open', 'sel'].includes(c[0]) ? ` data-k="${c[0]}" class="sortable" title="Click to sort"` : ''}>${c[1]}${sort && sort.k === c[0] ? (sort.dir > 0 ? ' ▲' : ' ▼') : ''}<i class="rz" title="Drag to resize · double-click to reset"></i></th>`).join('')}</tr></thead><tbody id="${bodyId}"></tbody></table></div>`;
 }
 function setColWidth(table, i, w, save = true) {
   const cols = [...table.querySelectorAll('col')], ths = [...table.querySelectorAll('thead th')];
@@ -237,7 +270,7 @@ function render() {
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   try { sessionStorage.setItem('view', view); sessionStorage.setItem('filters', JSON.stringify(F)); } catch {}
   const a = document.activeElement, tr = a?.closest?.('#view tr'), key = tr && a.dataset?.f ? [tr.dataset.id, a.dataset.f] : null; // keep focus across redraws
-  (view === 'settings' ? vSettings : view === 'dashboard' ? vDashboard : view === 'recurring' ? vRecurring : view === 'trends' ? vTrends : view === 'owed' ? vOwed : vTransactions)();
+  (view === 'settings' ? vSettings : view === 'year' ? vYear : view === 'dashboard' ? vDashboard : view === 'recurring' ? vRecurring : view === 'trends' ? vTrends : view === 'owed' ? vOwed : vTransactions)();
   if (key) $(`#view tr[data-id="${key[0]}"] [data-f="${key[1]}"]`)?.focus();
   if (cardId != null) { if (view === 'transactions' || view === 'owed') renderCard(); else closeCard(); } // an open card follows the data
 }
@@ -248,8 +281,8 @@ const DEFAULT_COLS = ['date', 'desc', 'cat', 'amt', 'from'], LOCKED = ['desc', '
 const txnSel = (list, f) => t => comboHtml(f, f, t[f]);
 const TXN_COLS = { // what each optional column shows (read) and how it edits (edit)
   date: { h: 'Date', w: 115, read: t => fmt(t.date), edit: t => `<input type="date" data-f="date" value="${t.date}">` },
-  desc: { h: 'Description', w: 340, read: t => esc(t.desc) + ((t.parts || []).length ? ` <span class="chip" title="Split into ${t.parts.length} line items">÷${t.parts.length}</span>` : ''), edit: t => `<input data-f="desc" value="${esc(t.desc)}" title="${esc(t.desc)}">` },
-  cat: { h: 'Category', w: 170, read: t => esc(t.cat), edit: txnSel(() => D.lists.categories, 'cat') },
+  desc: { h: 'Description', w: 340, read: t => esc(t.desc) + (t.pair != null ? ' <span class="chip dupchip pairchip" title="One side of a transfer between your accounts — left out of spending and income">⇄</span>' : '') + (DUPS.has(t.id) ? ' <span class="chip dupchip" title="Same date, amount and description as another transaction">dup?</span>' : '') + tagsOf(t).slice(0, 3).map(g => ` <span class="chip tagchip" data-tag="${esc(g)}" title="Show only ${esc(g)}">${esc(g)}</span>`).join('') + ((t.parts || []).length ? ` <span class="chip" title="Split into ${t.parts.length} line items">÷${t.parts.length}</span>` : ''), edit: t => `<input data-f="desc" value="${esc(t.desc)}" title="${esc(t.desc)}">` },
+  cat: { h: 'Category', w: 170, read: t => catTag(t.cat), edit: txnSel(() => D.lists.categories, 'cat') },
   amt: { h: 'Amount', w: 120, num: true, read: t => `<span class="${t.amt < 0 ? 'neg' : 'pos'}">${money(t.amt)}</span>`, edit: t => `<input type="number" step="0.01" data-f="amt" class="num${t.amt < 0 ? ' neg' : ' pos'}" value="${t.amt ?? ''}">` },
   from: { h: 'From', w: 140, read: t => esc(t.from), edit: txnSel(() => D.lists.accounts, 'from') },
   to: { h: 'To', w: 140, read: t => esc(t.to), edit: txnSel(() => D.lists.accounts, 'to') },
@@ -257,6 +290,9 @@ const TXN_COLS = { // what each optional column shows (read) and how it edits (e
   rec: { h: 'Recurring', w: 190, read: t => esc(t.rec), edit: txnSel(() => D.recurring.map(r => r.name).filter(Boolean), 'rec') },
   notes: { h: 'Notes', w: 240, read: t => esc(String(t.notes ?? '').replace(/\s+/g, ' ')), edit: t => `<input data-f="notes" value="${esc(t.notes)}">` },
 };
+const CAT_COLORS = [['Red', '#e5484d'], ['Orange', '#f76b15'], ['Amber', '#ffb300'], ['Green', '#30a46c'], ['Teal', '#12a594'], ['Blue', '#3e63dd'], ['Purple', '#8e4ec6'], ['Pink', '#d6409f'], ['Gray', '#8b8d98']];
+const catStyle = c => D?.settings?.catStyle?.[c] || null;
+const catTag = c => { const s = catStyle(c) || {}; return (/^#[0-9a-f]{6}$/i.test(s.color || '') ? `<i class="cdot" style="background:${s.color}"></i>` : '') + (s.icon ? `<span class="cicon">${esc(s.icon)}</span>` : '') + esc(c); }; // a category's name with its color dot and icon, if you gave it any
 const splitNames = t => [...new Set([t, ...(t.parts || [])].filter(o => o.split).map(o => whoName(D, o.split.who)))].join(', ');
 const txnCols = () => { const s = D.settings?.txnColumns, keys = Array.isArray(s) ? s.filter(k => TXN_COLS[k]) : [...DEFAULT_COLS]; for (const k of LOCKED) if (!keys.includes(k)) keys.push(k); return Object.keys(TXN_COLS).filter(k => keys.includes(k)); };
 const txnEdit = () => !!D.settings?.txnEdit;
@@ -266,12 +302,21 @@ const txnCmp = () => { // empty values always sort last
   const tie = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id); // equal values: newest first
   return (a, b) => { const x = val(a), y = val(b), xe = x == null || x === '', ye = y == null || y === ''; if (xe || ye) return xe === ye ? tie(a, b) : xe ? 1 : -1; const r = x < y ? -1 : x > y ? 1 : 0; return r ? r * dir : tie(a, b); };
 };
-const setSetting = (k, v) => commit(d => { d.settings = { ...(d.settings || {}), [k]: v }; });
-const filtersOn = () => !!(F.q || F.month || F.cat || F.review || F.rec || F.split);
+const setSetting = (k, v) => commit(d => { d.settings = { ...(d.settings || {}), [k]: v }; }, { undo: false }); // view preferences aren't part of undo
+const filtersOn = () => !!(F.q || F.month || F.cat || F.review || F.rec || F.split || F.dups || F.tag);
 const splitOk = t => { // the Transactions split filter
   if (!F.split) return true; const os = [t, ...(t.parts || [])].filter(o => o.split);
   return F.split === 'none' ? !os.length : F.split === 'any' ? os.length > 0 : os.some(o => 'p' + o.split.who === F.split);
 };
+const tagsOf = t => { const m = String(t.notes ?? '').toLowerCase().match(/(?:^|[\s,;(])#[\p{L}\p{N}_-]{1,30}/gu) || []; return [...new Set(m.map(x => x.trim().replace(/^[,;(]/, '')).filter(x => !/^#\d+$/.test(x)))]; }; // a tag is a #word in the notes (so “Order #1234” isn't one)
+const tagCounts = () => { const n = {}; for (const t of D.transactions) for (const g of tagsOf(t)) n[g] = (n[g] || 0) + 1; return Object.entries(n).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)); };
+let DUPS = new Map(); // id → the group of transactions sharing a date, amount and description (the ones you haven't marked "not a duplicate")
+function dupGroups() {
+  const g = new Map(), out = new Map();
+  for (const t of D.transactions) { if (t.dupOk || t.amt == null || !(t.desc || '').trim()) continue; const k = `${t.date}|${t.amt}|${t.desc.trim().toLowerCase()}`; if (!g.has(k)) g.set(k, []); g.get(k).push(t); }
+  for (const a of g.values()) if (a.length > 1) for (const t of a) out.set(t.id, a);
+  return out;
+}
 const hasTag = t => !!t.rec || (t.parts || []).some(p => p.rec);
 const needsReview = t => t.cat === 'Unknown' || ((t.cat === 'Subscription' || t.cat === 'Bills & Utilities') && !hasTag(t));
 // what a transaction contributes to a recurring item: cost = everything tagged, kept = the part not excluded from the calculations
@@ -296,34 +341,46 @@ function toggleExcluded(id) { // flip whether this charge (or, on a split charge
 }
 const partsSum = t => round2((t.parts || []).reduce((a, p) => a + (p.amt || 0), 0));
 let showCols = false, cardId = null, cardIds = [], cardNew = null;
+let selMode = false, selLast = null; const sel = new Set(); // Transactions: pick several rows to change at once
 
 function vTransactions() {
   if (F.rec && !D.recurring.some(r => r.name === F.rec)) F.rec = ''; // the item was renamed or deleted
-  const months = [...new Set(D.transactions.map(t => t.date.slice(0, 7)))].sort().reverse(), cols = txnCols();
+  DUPS = dupGroups(); const XN = transferPairs().length, TAGS = tagCounts(), months = [...new Set(D.transactions.map(t => t.date.slice(0, 7)))].sort().reverse(), cols = txnCols();
   $('#view').innerHTML = `
   <div class="bar">
-    <button class="btn" id="add">+ Add</button>
+    <button class="btn" id="add" title="Add a transaction (press N)">+ Add</button>
+    ${(D.settings?.templates || []).length ? `<select id="tpl" title="Add a transaction from a template"><option value="">From template…</option>${D.settings.templates.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select>` : ''}
     <input id="q" type="search" placeholder="Search…" value="${esc(F.q)}">
     <select id="fm"><option value="">All months</option>${months.map(m => `<option${m === F.month ? ' selected' : ''}>${m}</option>`).join('')}</select>
     <select id="fc"><option value="">All categories</option>${opts(D.lists.categories, F.cat, false)}</select>
     <select id="fs" title="Show only charges split with someone, or with one person"><option value="">Split: all</option><option value="any"${F.split === 'any' ? ' selected' : ''}>Split with anyone</option><option value="none"${F.split === 'none' ? ' selected' : ''}>Not split</option>${peopleList().map(p => `<option value="p${p.id}"${F.split === 'p' + p.id ? ' selected' : ''}>With ${esc(p.name)}</option>`).join('')}</select>
     <label><input id="fr" type="checkbox"${F.review ? ' checked' : ''}> Needs review</label>
+    ${TAGS.length || F.tag ? `<select id="ft" title="Show only transactions with this #tag (type #tags in a transaction's notes)"><option value="">All tags</option>${TAGS.map(([g, n]) => `<option value="${esc(g)}"${F.tag === g ? ' selected' : ''}>${esc(g)} (${n})</option>`).join('')}${F.tag && !TAGS.some(x => x[0] === F.tag) ? `<option value="${esc(F.tag)}" selected>${esc(F.tag)}</option>` : ''}</select>` : ''}
+    ${DUPS.size || F.dups ? `<label title="Transactions with the same date, amount and description as another"><input id="fd" type="checkbox"${F.dups ? ' checked' : ''}> Duplicates <span class="muted">(${DUPS.size})</span></label>` : ''}
     <button class="btn ghost sm" id="clrall" title="Clear every filter"${filtersOn() ? '' : ' hidden'}>Clear filters</button>
     ${F.rec ? `<span class="chip filt" title="Showing only the charges counted toward this recurring item">Recurring: <b>${esc(F.rec)}</b> <button class="x" id="clrrec" title="Show all transactions">✕</button></span><button class="btn ghost sm" id="backrec">‹ Recurring</button>` : ''}
+    ${XN ? `<button class="btn ghost sm" id="xferbtn" title="Match the two sides of transfers between your accounts">Transfers (${XN})</button>` : ''}
+    ${D.transactions.some(uncat) ? `<button class="btn ghost sm" id="inboxbtn" title="Sort the transactions with no category, one at a time">Inbox (${D.transactions.filter(uncat).length})</button>` : ''}
+    <button class="btn ghost sm" id="impbtn" title="Import transactions from a bank CSV file">Import…</button>
+    <button class="btn ghost${selMode ? ' on' : ''}" id="selmode" title="Pick several transactions to change or delete at once">${selMode ? 'Done selecting' : 'Select'}</button>
     <button class="btn ghost" id="cols">Columns</button>
     <label title="Turn the list into editable cells"><input id="editmode" type="checkbox"${txnEdit() ? ' checked' : ''}> Edit in table</label>
     <span class="sum" id="sum"></span>
   </div>
+  ${selMode ? bulkHtml() : ''}
   ${showCols ? `<div class="panel pop" id="colpanel"><button class="x popx" data-act="popclose" title="Close (Esc)">✕</button><b>Show columns</b> <span class="muted">— saved with your data</span><div class="chks">${Object.keys(TXN_COLS).map(k => `<label class="chk"><input type="checkbox" data-col="${k}"${cols.includes(k) ? ' checked' : ''}${LOCKED.includes(k) ? ' disabled' : ''}> ${TXN_COLS[k].h}</label>`).join('')}</div></div>` : ''}
-  ${tableHtml('txn', 'tb', [...cols.map(k => [k, TXN_COLS[k].h, TXN_COLS[k].w]), ...(F.rec ? [['counted', 'Counted', 150]] : []), ['open', '', 44]], txnSort())}
+  ${tableHtml('txn', 'tb', [...(selMode ? [['sel', '<input type="checkbox" id="selall" title="Select everything shown">', 34]] : []), ...cols.map(k => [k, TXN_COLS[k].h, TXN_COLS[k].w]), ...(F.rec ? [['counted', 'Counted', 150]] : []), ['open', '', 44]], txnSort())}
   <p class="muted" id="more"></p>`;
-  const redraw = () => { F.q = $('#q').value; F.month = $('#fm').value; F.cat = $('#fc').value; F.review = $('#fr').checked; F.split = $('#fs').value; F.limit = 300; $('#clrall').hidden = !filtersOn(); try { sessionStorage.setItem('filters', JSON.stringify(F)); } catch {} body(); };
-  ['#q', '#fm', '#fc', '#fr', '#fs'].forEach(s => $(s).addEventListener('input', redraw));
+  const redraw = () => { F.q = $('#q').value; F.month = $('#fm').value; F.cat = $('#fc').value; F.review = $('#fr').checked; F.dups = !!$('#fd')?.checked; F.tag = $('#ft')?.value || ''; F.split = $('#fs').value; F.limit = 300; $('#clrall').hidden = !filtersOn(); try { sessionStorage.setItem('filters', JSON.stringify(F)); } catch {} body(); };
+  ['#q', '#fm', '#fc', '#fr', '#fs', '#fd', '#ft'].forEach(s => $(s)?.addEventListener('input', redraw));
   $('#tb').addEventListener('change', onEdit); cellKeys($('#tb'));
   $('#tb').addEventListener('click', e => { // a click on the row opens its card (in table-edit mode only the › button does, so cells can be edited)
+    const sb = e.target.closest('[data-sel]'); if (sb) return pickRow(+sb.dataset.sel, e.shiftKey, sb.checked);
     if (e.target.closest('input,select,textarea')) return;
+    const tg = e.target.closest('[data-tag]'); if (tg) { F.tag = tg.dataset.tag; render(); return; }
     const ex = e.target.closest('[data-act=excl]'); if (ex) { toggleExcluded(+ex.closest('tr').dataset.id); return; }
-    const tr = e.target.closest('tr[data-id]'); if (tr && (!txnEdit() || e.target.closest('[data-act=open]'))) openCard(+tr.dataset.id);
+    const tr = e.target.closest('tr[data-id]'); if (tr && selMode && !e.target.closest('[data-act=open]')) return pickRow(+tr.dataset.id, e.shiftKey, !sel.has(+tr.dataset.id));
+    if (tr && (!txnEdit() || e.target.closest('[data-act=open]'))) openCard(+tr.dataset.id);
   });
   $('#tb').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('tr[data-id]')) openCard(+e.target.dataset.id); });
   $('#more').addEventListener('click', () => { F.limit += 300; body(); });
@@ -331,25 +388,60 @@ function vTransactions() {
     if (e.target.closest('.rz')) return; const th = e.target.closest('th.sortable'); if (!th) return;
     const cur = txnSort(), k = th.dataset.k; setSetting('txnSort', { k, dir: cur.k === k ? -cur.dir : (k === 'date' || k === 'counted' ? -1 : 1) }); // dates start newest-first, amounts biggest-spend first, text A→Z
   });
-  $('#add').addEventListener('click', addRow);
+  $('#add').addEventListener('click', addRow); $('#selmode').addEventListener('click', () => { selMode = !selMode; if (!selMode) sel.clear(); render(); });
+  $('table[data-key=txn] thead').addEventListener('change', e => { if (e.target.id === 'selall') { for (const id of cardIds) e.target.checked ? sel.add(id) : sel.delete(id); syncSel(); } }); $('#inboxbtn')?.addEventListener('click', openInbox); $('#xferbtn')?.addEventListener('click', openXfer); $('#impbtn').addEventListener('click', openImport);
+  $('#tpl')?.addEventListener('change', e => { if (e.target.value) addFromTemplate(+e.target.value); });
   $('#clrrec')?.addEventListener('click', () => { F.rec = ''; render(); });
-  $('#clrall').addEventListener('click', () => { Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 }); render(); });
+  $('#clrall').addEventListener('click', () => { Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', limit: 300 , dups: false, tag: ''}); render(); });
   $('#backrec')?.addEventListener('click', () => { closeCard(); view = 'recurring'; render(); });
   $('#cols').addEventListener('click', () => { showCols = !showCols; render(); });
   $('#editmode').addEventListener('change', e => setSetting('txnEdit', e.target.checked));
   const cp = $('#colpanel'); if (cp) cp.addEventListener('change', e => { const keys = [...cp.querySelectorAll('[data-col]')].filter(i => i.checked).map(i => i.dataset.col); setSetting('txnColumns', keys); });
-  body();
+  body(); wireBulk(); updBulk();
+}
+const bulkHtml = () => {
+  const L = D.lists, pick = (id, ph, list) => `<select id="${id}" title="${ph}"><option value="">${ph}</option><option value="__clear">(none)</option>${list.map(x => `<option>${esc(x)}</option>`).join('')}</select>`;
+  return `<div class="bar bulk" id="bulk"><b id="bn"></b>${pick('bcat', 'Set category…', L.categories || [])}${pick('bfrom', 'Set From…', L.accounts || [])}${pick('bto', 'Set To…', L.accounts || [])}${pick('brec', 'Set recurring item…', D.recurring.map(r => r.name).filter(Boolean))}<button class="btn ghost sm" id="btag">Add tag…</button><button class="btn ghost sm" id="bdel">Delete</button><span class="muted small">Shift-click selects a range · Ctrl+Z undoes</span></div>`;
+};
+function updBulk() {
+  const n = sel.size, b = $('#bn'); if (b) b.textContent = `${n} selected`;
+  document.querySelectorAll('#bulk select,#bulk button').forEach(x => { x.disabled = !n; });
+  const a = $('#selall'); if (a) { a.checked = n > 0 && n === cardIds.length; a.indeterminate = n > 0 && n < cardIds.length; }
+}
+function syncSel() { document.querySelectorAll('#tb tr[data-id]').forEach(r => { const on = sel.has(+r.dataset.id), cb = r.querySelector('[data-sel]'); r.classList.toggle('sel', on); if (cb) cb.checked = on; }); updBulk(); }
+function pickRow(id, shift, on) { // shift extends from the last row you picked
+  let ids = [id]; if (shift && selLast != null) { const a = cardIds.indexOf(selLast), b = cardIds.indexOf(id); if (a >= 0 && b >= 0) ids = cardIds.slice(Math.min(a, b), Math.max(a, b) + 1); }
+  for (const x of ids) on ? sel.add(x) : sel.delete(x); selLast = id; syncSel();
+}
+function wireBulk() {
+  const b = $('#bulk'); if (!b) return;
+  b.addEventListener('change', e => {
+    const el = e.target.closest('select'); if (!el || !el.value || !sel.size) return; const f = { bcat: 'cat', bfrom: 'from', bto: 'to', brec: 'rec' }[el.id], v = el.value === '__clear' ? '' : el.value, ids = new Set(sel); el.value = '';
+    commit(d => { for (const t of d.transactions) if (ids.has(t.id)) { if (f === 'rec' && (t.parts || []).length) continue; /* a split charge's recurring items live on its lines */ t[f] = v; if (f === 'rec') delete t.excluded; } }).then(() => setStatus(`Saved · updated ${ids.size} transaction${ids.size === 1 ? '' : 's'}`));
+  });
+  $('#btag').addEventListener('click', () => {
+    let g = (prompt('Tag to add (like vacation or tax):') || '').trim().toLowerCase().replace(/^#/, '').replace(/[^\p{L}\p{N}_-]/gu, ''); if (!g) return; g = '#' + g; const ids = new Set(sel);
+    commit(d => { for (const t of d.transactions) if (ids.has(t.id) && !tagsOf(t).includes(g)) t.notes = (String(t.notes ?? '').trim() + ' ' + g).trim(); }).then(() => setStatus(`Saved · tagged ${ids.size} with ${g}`));
+  });
+  $('#bdel').addEventListener('click', () => {
+    const ids = new Set(sel), n = ids.size; if (!n) return;
+    if (!confirm(`Delete ${n} transaction${n === 1 ? '' : 's'}${[...ids].some(id => (D.transactions.find(t => t.id === id)?.parts || []).length) ? ' and their line items' : ''}? You can undo this until you close the app.`)) return;
+    sel.clear(); closeCard(); commit(d => { d.transactions = d.transactions.filter(t => !ids.has(t.id)); for (const x of d.transactions) if (ids.has(x.pair)) delete x.pair; });
+  });
 }
 function body() {
+  DUPS = dupGroups();
   const q = F.q.toLowerCase(), cols = txnCols(), edit = txnEdit();
-  const rows = D.transactions.filter(t => (!F.month || t.date.startsWith(F.month)) && (!F.cat || t.cat === F.cat) && (!F.review || needsReview(t)) && (!F.rec || counted(t, F.rec) != null) && splitOk(t) &&
+  const rows = D.transactions.filter(t => (!F.month || t.date.startsWith(F.month)) && (!F.cat || t.cat === F.cat) && (!F.review || needsReview(t)) && (!F.dups || DUPS.has(t.id)) && (!F.tag || tagsOf(t).includes(F.tag)) && (!F.rec || counted(t, F.rec) != null) && splitOk(t) &&
     (!q || [t.desc, t.notes, t.cat, t.rec, t.from, t.to, ...(t.parts || []).flatMap(p => [p.desc, p.rec])].some(x => String(x ?? '').toLowerCase().includes(q)))).sort(txnCmp());
   cardIds = rows.map(t => t.id);
-  $('#tb').innerHTML = rows.slice(0, F.limit).map(t => `<tr data-id="${t.id}" class="${edit ? '' : 'row'}${needsReview(t) ? ' review' : ''}"${edit ? '' : ' tabindex="0"'}>`
+  if (selMode) { const vis = new Set(cardIds); for (const id of [...sel]) if (!vis.has(id)) sel.delete(id); } // only what you can see stays selected
+  $('#tb').innerHTML = rows.slice(0, F.limit).map(t => `<tr data-id="${t.id}" class="${edit ? '' : 'row'}${needsReview(t) ? ' review' : ''}${sel.has(t.id) ? ' sel' : ''}"${edit ? '' : ' tabindex="0"'}>`
+    + (selMode ? `<td class="c"><input type="checkbox" data-sel="${t.id}"${sel.has(t.id) ? ' checked' : ''}></td>` : '')
     + cols.map(k => edit ? `<td>${TXN_COLS[k].edit(t)}</td>` : `<td class="t${TXN_COLS[k].num ? ' num' : ''}">${TXN_COLS[k].read(t)}</td>`).join('')
     + (F.rec ? countedCell(t) : '')
-    + `<td class="c"><button class="x" data-act="open" title="Open">›</button></td></tr>`).join('') || `<tr><td colspan="${cols.length + 2}" class="t muted">Nothing matches.</td></tr>`;
-  $('#sum').textContent = F.rec ? (() => { const cps = rows.map(t => countedParts(t, F.rec)), kept = round2(cps.reduce((a, c) => a + c.kept, 0)), nEx = cps.filter(c => c.cost !== c.kept).length; return `${rows.length} charge${rows.length === 1 ? '' : 's'} · ${money(kept)} counted${nEx ? ` · ${nEx} excluded` : ''}`; })() : `${rows.length} rows · net ${money(round2(rows.reduce((a, t) => a + (t.amt || 0), 0)))}`;
+    + `<td class="c"><button class="x" data-act="open" title="Open">›</button></td></tr>`).join('') || `<tr><td colspan="${cols.length + 2 + (selMode ? 1 : 0)}" class="t muted">Nothing matches.</td></tr>`;
+  $('#sum').textContent = F.rec ? (() => { const cps = rows.map(t => countedParts(t, F.rec)), kept = round2(cps.reduce((a, c) => a + c.kept, 0)), nEx = cps.filter(c => c.cost !== c.kept).length; return `${rows.length} charge${rows.length === 1 ? '' : 's'} · ${money(kept)} counted${nEx ? ` · ${nEx} excluded` : ''}`; })() : `${rows.length} rows · net ${money(round2(rows.reduce((a, t) => a + (t.amt || 0), 0)))}${F.tag ? ` · ${money(round2(rows.reduce((a, t) => a + (['spend'].includes(catKind(t.cat)) ? mineOf(t) : 0), 0)))} spent` : ''}`;
   $('#more').textContent = rows.length > F.limit ? `Showing ${F.limit} of ${rows.length} — click to show more` : '';
   if (cardId != null) updCardNav();
 }
@@ -360,12 +452,29 @@ function onEdit(e) { // editing a cell in table-edit mode
   flash(el, commit(d => { const t = d.transactions.find(x => x.id === id); if (!t) throw new Error('That transaction no longer exists — reloaded.'); t[f] = v; if (f === 'rec') delete t.excluded; if (!(t.parts || []).length) { if (f === 'amt') resplit(d, t); } }, { redraw: false }));
   if (f === 'amt') el.className = 'num ' + (v < 0 ? 'neg' : 'pos');
 }
+async function addFromTemplate(tid) { // a new transaction filled in from a saved template (dated today)
+  const tp = (D.settings?.templates || []).find(x => x.id === tid); if (!tp) return;
+  Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '' , dups: false, tag: ''});
+  let id; await commit(d => {
+    id = d.transactions.reduce((m, t) => Math.max(m, t.id), 0) + 1;
+    const t = { id, date: today(), desc: tp.desc || '', cat: tp.cat || '', amt: tp.amt ?? null, from: tp.from || '', to: tp.to || '', notes: tp.notes || '', work: '', rec: tp.rec || '' };
+    if (tp.split && t.amt != null) t.split = newSplit(Math.abs(t.amt), null, tp.split.who);
+    d.transactions.push(t);
+  });
+  openCard(id);
+}
 async function addRow() {
-  Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '' });
+  Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '' , dups: false, tag: ''});
   let id; await commit(d => { id = d.transactions.reduce((m, t) => Math.max(m, t.id), 0) + 1; d.transactions.push({ id, date: today(), desc: '', cat: '', amt: null, from: '', to: '', notes: '', work: '', rec: '' }); });
   cardNew = id; openCard(id); $('#drawer [data-f="desc"]')?.focus();
 }
 
+document.addEventListener('keydown', e => { // N, on any page, starts a new transaction
+  if ((e.key !== 'n' && e.key !== 'N') || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || !D) return;
+  const a = document.activeElement; if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+  if (cardId != null || cb || tourAt >= 0 || popOpen() || inbox) return;
+  e.preventDefault(); view = 'transactions'; addRow();
+});
 /* ───────── the transaction card (slide-in panel) ───────── */
 function drawer() {
   let s = $('#scrim');
@@ -430,7 +539,7 @@ function coverButtons(t, items) { // one button per request that still has somet
   return Object.keys(by).sort().map(k => { const [dt, who] = k.split('|'); return `<button class="btn sm" data-act="coverreq" data-date="${dt}" data-who="${who}" title="Add a line for each item still owed from that request">Cover ${many ? esc(whoName(D, +who)) + '’s request' : 'request'} of ${fmt(dt)} · ${money(sumOf(by[k].map(i => i.out)))}</button>`; }).join('');
 }
 function renderCard() {
-  const t = D.transactions.find(x => x.id === cardId); if (!t) return closeCard();
+  const t = D.transactions.find(x => x.id === cardId); if (!t) return closeCard(); DUPS = dupGroups();
   const L = D.lists, names = D.recurring.map(r => r.name).filter(Boolean), ps = t.parts || [], a = document.activeElement, incoming = (t.amt || 0) > 0;
   const items = new Map(owedItems().map(i => [i.key, i]));
   const key = a && $('#drawer').contains(a) && a.dataset?.f ? [a.dataset.f, a.closest('.line')?.dataset.pid || ''] : null;
@@ -447,6 +556,8 @@ function renderCard() {
   <div class="cgrid">
     <label class="span3">Description${comboHtml('desc', 'desc', t.desc)}</label>
     ${sug ? `<div class="span3 sugg">Looks like <b>${esc(sug.from.desc)}</b>: ${sug.fill.map(([k, v]) => `${esc(v)}`).join(' · ')} <button class="btn sm" data-act="suggest" title="Fill the empty fields from that transaction">Fill these in</button></div>` : ''}
+    ${t.pair != null ? (() => { const o = D.transactions.find(x => x.id === t.pair); return `<div class="span3 sugg">⇄ Transfer: the other side is <b>${o ? esc(o.desc || 'No description') : 'gone'}</b>${o ? ` (${fmt(o.date)}, ${money(o.amt)})` : ''} — left out of spending and income. <button class="btn ghost sm" data-act="unpair">Unpair</button></div>`; })() : ''}
+    ${DUPS.has(t.id) ? `<div class="span3 sugg">Possible duplicate: ${DUPS.get(t.id).length} transactions on ${fmt(t.date)} for ${money(t.amt)} named “${esc(t.desc)}”. <button class="btn sm" data-act="notdup">Not a duplicate</button><button class="btn ghost sm" data-act="del">Delete this one</button></div>` : ''}
     <label>Amount<input type="number" step="0.01" data-f="amt" value="${t.amt ?? ''}"></label>
     <label>Date<input type="date" data-f="date" value="${t.date}"></label>
     ${sel('cat', L.categories, 'Category')}
@@ -456,11 +567,12 @@ function renderCard() {
     ${t.rec && !ps.length ? `<label class="row span2"><input type="checkbox" data-f="excluded"${t.excluded ? ' checked' : ''}> Exclude from “${esc(t.rec)}” calculations <span class="muted">(stays in the history)</span></label>` : ''}
     ${!incoming && !ps.length ? `<div class="splitwrap span3"><span class="lbl">Split with someone</span>${splitCtl(t, null, items)}</div>` : ''}
     <label class="span3">Notes<textarea data-f="notes" rows="2">${esc(t.notes)}</textarea></label>
+    <div class="span3 tagrow">${(() => { const all = tagCounts().map(x => x[0]), mine = tagsOf(t); return all.length ? all.slice(0, 10).map(g => `<button class="chip tagchip${mine.includes(g) ? ' on' : ''}" data-act="addtag" data-tag="${esc(g)}" title="${mine.includes(g) ? 'Already on this transaction' : 'Add to the notes'}">${esc(g)}</button>`).join('') : '<span class="muted small">Tip: type #tags in the notes (like #vacation or #tax) to group transactions across categories.</span>'; })()}</div>
   </div>
   <div class="lines"><div class="lh"><b>${incoming ? 'Covers' : 'Line items'}</b><span class="lbtns">${incoming ? coverButtons(t, items) : ''}<button class="btn ghost sm" data-act="padd">+ Add line</button></span></div>
     ${table}
     <div class="rest" id="crest">${restHtml(t)}</div><p class="muted small">${incoming ? 'Each line settles one thing you are owed. Nothing unallocated means this payment is fully matched.' : "Line items use this charge's category. Press Enter in the last amount to add another line."}</p></div>
-  <div class="dfoot"><button class="btn ghost" data-act="del">Delete transaction</button></div>`;
+  <div class="dfoot"><button class="btn ghost" data-act="dup" title="A copy of this transaction, dated today">Duplicate</button><button class="btn ghost" data-act="tpl" title="Reuse this later from “From template…” on the Transactions page">Save as template</button><button class="btn ghost" data-act="del">Delete transaction</button></div>`;
   updCardNav();
   if (key) $(`#drawer ${key[1] ? `.line[data-pid="${key[1]}"] ` : ''}[data-f="${key[0]}"]`)?.focus();
 }
@@ -664,8 +776,27 @@ async function onCardClick(e) {
       x.parts ??= []; let pid = x.parts.reduce((m, p) => Math.max(m, p.id), 0); const mine = new Set(x.parts.filter(p => p.covers).map(p => `${p.covers.tx}:${p.covers.part || 0}`));
       for (const i of owedItems()) if (i.requested === date && String(i.who) === who && i.out > 0.004 && !mine.has(i.key)) x.parts.push({ id: ++pid, desc: i.desc, amt: i.out, rec: '', covers: { tx: i.tx, part: i.part || null } });
     });
+  } else if (act === 'addtag') { const g = b.dataset.tag; if (!t || tagsOf(t).includes(g)) return; commit(d => { const x = d.transactions.find(q => q.id === id); if (x) x.notes = (String(x.notes ?? '').trim() + ' ' + g).trim(); });
+  } else if (act === 'unpair') { commit(d => unpairTx(d, id));
+  } else if (act === 'notdup') { commit(d => { const x = d.transactions.find(q => q.id === id); if (x) x.dupOk = true; });
+  } else if (act === 'dup') {
+    let nid; await commit(d => {
+      const x = d.transactions.find(q => q.id === id); if (!x) throw new Error('That transaction no longer exists — reloaded.');
+      nid = d.transactions.reduce((m, q) => Math.max(m, q.id), 0) + 1;
+      const cp = JSON.parse(JSON.stringify(x)); cp.id = nid; cp.date = today(); delete cp.excluded;
+      for (const o of [cp, ...(cp.parts || [])]) { if (o.split) delete o.split.requested; delete o.covers; } // a copy hasn't been requested or matched to anything yet
+      d.transactions.push(cp);
+    });
+    cardNew = null; openCard(nid); setStatus('Duplicated — dated today');
+  } else if (act === 'tpl') {
+    const name = (prompt('Name this template:', t.desc || 'Template') || '').trim(); if (!name) return;
+    commit(d => {
+      d.settings ??= {}; const L = d.settings.templates ??= [], x = d.transactions.find(q => q.id === id); if (!x) return;
+      const tp = { id: L.reduce((m, q) => Math.max(m, q.id), 0) + 1, name, desc: x.desc || '', cat: x.cat || '', amt: x.amt ?? null, from: x.from || '', to: x.to || '', rec: x.rec || '', notes: x.notes || '', ...(x.split ? { split: { who: x.split.who } } : {}) };
+      const i = L.findIndex(q => q.name === name); if (i >= 0) { tp.id = L[i].id; L[i] = tp; } else L.push(tp); // same name replaces
+    }).then(() => setStatus('Template saved'));
   } else if (act === 'del') {
-    if (confirm(`Delete "${t.desc || 'this transaction'}"${(t.parts || []).length ? ' and its line items' : ''}?`)) { cardNew = null; closeCard(); commit(d => { d.transactions = d.transactions.filter(x => x.id !== id); }); }
+    if (confirm(`Delete "${t.desc || 'this transaction'}"${(t.parts || []).length ? ' and its line items' : ''}?`)) { cardNew = null; closeCard(); commit(d => { d.transactions = d.transactions.filter(x => x.id !== id); for (const x of d.transactions) if (x.pair === id) delete x.pair; }); }
   }
 }
 // recurring-item tags live on transactions and on their line items
@@ -819,7 +950,7 @@ let showGroups = false;
 
 function showCharges(r) { // jump to Transactions, filtered to what's counted toward this item
   if (!r || !r.name) return;
-  Object.assign(F, { q: '', month: '', cat: '', review: false, rec: r.name, split: '', limit: 300 }); closeCard(); view = 'transactions'; render(); scrollTo(0, 0);
+  Object.assign(F, { q: '', month: '', cat: '', review: false, rec: r.name, split: '', limit: 300 , dups: false, tag: ''}); closeCard(); view = 'transactions'; render(); scrollTo(0, 0);
 }
 const safeUrl = u => { u = String(u || '').trim(); if (!u) return ''; if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u; try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; } }; // only web links
 function recRow(r, i) {
@@ -929,6 +1060,369 @@ function vRecurring() {
       commit(d => { if (d.groups.some(x => x.toLowerCase() === g.toLowerCase())) throw new Error(`There is already a group called "${g}".`); d.groups.push(g); });
     });
   }
+}
+
+/* ───────── inbox: sort what has no category, one at a time, from the keyboard ───────── */
+const uncat = t => !(t.cat || '').trim() || /^unknown$/i.test(t.cat.trim());
+let inbox = null; // { ids: the transactions to sort (newest first), i: where you are, done: how many you've sorted }
+const inboxCur = () => D.transactions.find(x => x.id === inbox?.ids[inbox.i]);
+function inboxCats() { // your categories, most-used first — the top nine get a number key
+  const n = {}; for (const t of D.transactions) if (!uncat(t)) n[t.cat] = (n[t.cat] || 0) + 1;
+  return (D.lists.categories || []).filter(x => !/^unknown$/i.test(x)).map((x, i) => [x, n[x] || 0, i]).sort((a, b) => b[1] - a[1] || a[2] - b[2]).slice(0, 9).map(x => x[0]);
+}
+function inboxGuess(t) { // the latest categorized transaction that looks like this one
+  const k = descKey(t.desc); if (!k) return null; const first = k.split(' ')[0];
+  const rec = D.transactions.filter(x => x.id !== t.id && !uncat(x)).sort((a, b) => (a.date < b.date ? 1 : -1));
+  return rec.find(x => descKey(x.desc) === k) || (first.length >= 4 ? rec.find(x => descKey(x.desc).split(' ')[0] === first) : null) || null;
+}
+function openInbox() {
+  const ids = D.transactions.filter(uncat).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id)).map(t => t.id);
+  if (!ids.length) { setStatus('Nothing to sort — every transaction has a category ✓'); return; }
+  closeCard(); inbox = { ids, i: 0, done: 0 };
+  const el = document.createElement('div'); el.id = 'inbox'; el.className = 'opscrim'; document.body.append(el);
+  el.addEventListener('mousedown', e => { if (e.target === el) closeInbox(); });
+  el.addEventListener('click', e => { const b = e.target.closest('[data-ia]'); if (!b) return; const a = b.dataset.ia; if (a === 'close') closeInbox(); else if (a === 'cat') inboxSet(b.dataset.c); else if (a === 'guess') inboxUseGuess(); else if (a === 'skip') inboxMove(1); else if (a === 'back') inboxMove(-1); else if (a === 'open') inboxOpenCard(); });
+  el.addEventListener('change', e => { if (e.target.matches('[data-isel]') && e.target.value) inboxSet(e.target.value); });
+  inboxDraw();
+}
+function closeInbox() { inbox = null; $('#inbox')?.remove(); render(); }
+function inboxMove(n) { inbox.i = Math.max(0, inbox.i + n); if (n > 0) while (inbox.i < inbox.ids.length && !inboxCur()) inbox.i++; inboxDraw(); }
+async function inboxSet(cat, rec) {
+  const t = inboxCur(); if (!t || !cat) return;
+  await commit(d => { const x = d.transactions.find(q => q.id === t.id); if (x) { x.cat = cat; if (rec && !x.rec) x.rec = rec; } }, { redraw: false });
+  inbox.done++; inboxMove(1);
+}
+function inboxUseGuess() { const t = inboxCur(), g = t && inboxGuess(t); if (g) inboxSet(g.cat, g.rec); }
+function inboxOpenCard() { const t = inboxCur(); if (!t) return; const id = t.id; inbox = null; $('#inbox')?.remove(); view = 'transactions'; render(); openCard(id); }
+function inboxDraw() {
+  const el = $('#inbox'); if (!el || !inbox) return; const t = inboxCur();
+  if (!t) { const left = D.transactions.filter(uncat).length; el.innerHTML = `<div class="oppop inbox"><div class="ihead"><b>Inbox</b><button class="x" data-ia="close" style="margin-left:auto" title="Close (Esc)">✕</button></div><p class="idone">${inbox.done ? `All caught up — you sorted <b>${inbox.done}</b>.` : 'All caught up.'}${left ? ` ${left} still have no category.` : ' Every transaction has a category ✓'}</p><div class="rrow"><button class="btn" data-ia="close">Done</button>${inbox.ids.length ? '<button class="btn ghost" data-ia="back">‹ Back</button>' : ''}</div></div>`; return; }
+  const cats = inboxCats(), g = inboxGuess(t);
+  el.innerHTML = `<div class="oppop inbox" role="dialog" aria-label="Inbox">
+    <div class="ihead"><b>Inbox</b><span class="muted small">${inbox.i + 1} of ${inbox.ids.length}${inbox.done ? ` · ${inbox.done} sorted` : ''}</span><button class="x" data-ia="close" style="margin-left:auto" title="Close (Esc)">✕</button></div>
+    <div class="imeta">${fmt(t.date)}${t.from ? ' · ' + esc(t.from) : ''}${t.to ? ' → ' + esc(t.to) : ''}${t.cat ? ' · now “' + esc(t.cat) + '”' : ''}</div>
+    <div class="idesc">${esc(t.desc || 'No description')}</div>
+    <div class="iamt ${t.amt < 0 ? 'neg' : 'pos'}">${money(t.amt)}</div>
+    ${t.notes ? `<div class="imeta">${esc(String(t.notes).replace(/\s+/g, ' '))}</div>` : ''}
+    ${g ? `<div class="sugg"><span>Looks like <b>${esc(g.desc)}</b> → ${catTag(g.cat)}${g.rec && !t.rec ? ' · ' + esc(g.rec) : ''}</span><button class="btn sm" data-ia="guess"><kbd>Enter</kbd> Use this</button></div>` : ''}
+    <div class="ichips">${cats.map((x, n) => `<button data-ia="cat" data-c="${esc(x)}"><kbd>${n + 1}</kbd>${catTag(x)}</button>`).join('')}</div>
+    <div class="rrow"><select data-isel title="Any other category"><option value="">More categories…</option>${(D.lists.categories || []).filter(x => !/^unknown$/i.test(x)).map(x => `<option>${esc(x)}</option>`).join('')}</select><button class="btn ghost sm" data-ia="skip">Skip</button><button class="btn ghost sm" data-ia="open">Open card</button></div>
+    <div class="ikeys"><kbd>1</kbd>–<kbd>9</kbd> pick · <kbd>Enter</kbd> use the guess · <kbd>S</kbd> skip · <kbd>←</kbd> back · <kbd>O</kbd> open card · <kbd>Esc</kbd> close</div></div>`;
+}
+document.addEventListener('keydown', e => {
+  if (!inbox || cardId != null || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key, tag = e.target.tagName;
+  if (k === 'Escape') { e.preventDefault(); e.stopPropagation(); return closeInbox(); }
+  if (/^(SELECT|INPUT|TEXTAREA)$/.test(tag)) return;
+  if (/^[1-9]$/.test(k)) { const x = inboxCats()[+k - 1]; if (x) { e.preventDefault(); inboxSet(x); } }
+  else if (k === 'Enter' && tag !== 'BUTTON') { e.preventDefault(); inboxUseGuess(); }
+  else if (k === 's' || k === 'S' || k === 'ArrowRight') { e.preventDefault(); inboxMove(1); }
+  else if (k === 'ArrowLeft') { e.preventDefault(); inboxMove(-1); }
+  else if (k === 'o' || k === 'O') { e.preventDefault(); inboxOpenCard(); }
+}, true);
+
+/* ───────── command palette: Ctrl+K (or the ⌕ button) — jump anywhere, run something, filter, or find a transaction ───────── */
+const CLEAR = { q: '', month: '', cat: '', review: false, rec: '', split: '', dups: false, tag: '', limit: 300 };
+let pal = null; // { q, at, list }
+function palItems(q) {
+  const items = [], add = (label, hint, run, g = 1, pre = false) => items.push({ label, hint, run, g, pre }); // pre = already matched on more than its label (a transaction's notes or category)
+  const goto = v => () => { closeCard(); view = v; if (v === 'transactions') F.rec = ''; if (v === 'recurring') recOrder = null; render(); scrollTo(0, 0); };
+  const filt = patch => () => { closeCard(); Object.assign(F, CLEAR, patch); view = 'transactions'; render(); scrollTo(0, 0); };
+  for (const [v, l] of [['dashboard', 'Dashboard'], ['transactions', 'Transactions'], ['recurring', 'Recurring'], ['owed', 'Owed to me'], ['trends', 'Trends'], ['year', 'Year'], ['settings', 'Settings']]) add('Go to ' + l, 'Page', goto(v), 0);
+  if (undoStack.length) add(`Undo: ${undoStack[undoStack.length - 1].label}`, 'Ctrl+Z', () => undoRedo('undo'), 0);
+  if (redoStack.length) add('Redo', 'Ctrl+Y', () => undoRedo('redo'), 0);
+  add('Add a transaction', 'N', () => { view = 'transactions'; addRow(); }, 0);
+  const xn = transferPairs().length; if (xn) add('Match transfers between accounts', `${xn} possible`, openXfer, 0);
+  const un = D.transactions.filter(uncat).length; if (un) add('Sort uncategorized transactions', `Inbox · ${un}`, openInbox, 0);
+  add('Import a bank file (CSV)', 'Data', openImport, 2);
+  add('Select several transactions', 'Bulk edit', () => { closeCard(); Object.assign(F, { tag: F.tag }); view = 'transactions'; selMode = true; render(); }, 2);
+  add('Clear all filters', 'Transactions', filt({}), 2);
+  add('Switch light / dark theme', 'Appearance', () => $('#theme').click(), 2);
+  add(hiding ? 'Show dollar amounts' : 'Hide dollar amounts', 'Appearance', () => $('#hide').click(), 2);
+  add('Take the tour', 'Help', () => startTour(), 2);
+  add(demo ? 'Exit the sample data' : 'Look at the sample data', 'Sample data', () => (demo ? exitDemo() : enterDemo(false)), 2);
+  if (!demo) add('Export to Excel', 'Data', () => $('#export').click(), 2);
+  add('Needs review', 'Filter', filt({ review: true })); add('Possible duplicates', 'Filter', filt({ dups: true }));
+  for (const cn of D.lists.categories || []) add('Category: ' + cn, 'Filter', filt({ cat: cn }));
+  for (const [g] of tagCounts()) add('Tag: ' + g, 'Filter', filt({ tag: g }));
+  for (const p of peopleList()) add('Split with ' + p.name, 'Filter', filt({ split: 'p' + p.id }));
+  add('Not split', 'Filter', filt({ split: 'none' }));
+  for (const r of D.recurring) if (r.name) add('Recurring: ' + r.name, 'Charges', filt({ rec: r.name }));
+  for (const m of [...new Set(D.transactions.map(t => t.date.slice(0, 7)))].sort().reverse().slice(0, 24)) add('Month: ' + monthName(m), 'Filter', filt({ month: m }));
+  const toks = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (q.trim().length >= 2) {
+    add(`Search transactions for “${q.trim()}”`, 'Search', filt({ q: q.trim() }), 1, true);
+    const hit = D.transactions.filter(t => toks.every(w => `${t.desc} ${t.notes} ${t.cat} ${t.rec}`.toLowerCase().includes(w))).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 8);
+    for (const t of hit) add(t.desc || 'No description', `${fmt(t.date)} · ${money(t.amt)}`, () => { closeCard(); Object.assign(F, CLEAR); view = 'transactions'; render(); openCard(t.id); }, 1, true);
+  }
+  if (!toks.length) return items.filter(x => x.g === 0).concat(items.filter(x => x.g === 2)).slice(0, 12);
+  return items.map((x, i) => { const l = x.label.toLowerCase(), hay = l + ' ' + x.hint.toLowerCase(); return x.pre || toks.every(w => hay.includes(w)) ? { ...x, score: (l.startsWith(toks[0]) ? 0 : l.includes(toks[0]) ? 1 : 2) * 100 + (x.hint === 'Search' ? 50 : 0) + i / 1000 } : null; }).filter(Boolean).sort((a, b) => a.score - b.score).slice(0, 12);
+}
+function palDraw() {
+  const el = $('#pallist'); if (!el || !pal) return; pal.at = Math.max(0, Math.min(pal.at, pal.list.length - 1));
+  el.innerHTML = pal.list.length ? pal.list.map((x, i) => `<div class="pali${i === pal.at ? ' on' : ''}" data-i="${i}"><span>${esc(x.label)}</span><span class="muted">${esc(x.hint)}</span></div>`).join('') : '<div class="pali muted">Nothing matches.</div>';
+  el.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+}
+function openPal() {
+  if (!D || pal) return;
+  pal = { q: '', at: 0, list: palItems('') };
+  const el = document.createElement('div'); el.id = 'pal'; el.className = 'palscrim';
+  el.innerHTML = '<div class="pal" role="dialog" aria-label="Search and commands"><input id="palq" placeholder="Type a page, command, category, tag or description…" autocomplete="off" spellcheck="false"><div id="pallist"></div><div class="palhint"><kbd>↑</kbd> <kbd>↓</kbd> move · <kbd>Enter</kbd> run · <kbd>Esc</kbd> close</div></div>';
+  document.body.append(el); palDraw(); $('#palq').focus();
+  el.addEventListener('mousedown', e => { if (e.target === el) closePal(); });
+  el.addEventListener('mousemove', e => { const r = e.target.closest('.pali[data-i]'); if (r && +r.dataset.i !== pal.at) { pal.at = +r.dataset.i; palDraw(); } });
+  el.addEventListener('click', e => { const r = e.target.closest('.pali[data-i]'); if (r) palRun(+r.dataset.i); });
+  $('#palq').addEventListener('input', e => { pal.q = e.target.value; pal.list = palItems(pal.q); pal.at = 0; palDraw(); });
+  $('#palq').addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePal(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); pal.at = (pal.at + 1) % Math.max(1, pal.list.length); palDraw(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); pal.at = (pal.at - 1 + pal.list.length) % Math.max(1, pal.list.length); palDraw(); }
+    else if (e.key === 'Enter') { e.preventDefault(); palRun(pal.at); }
+  });
+}
+function closePal() { pal = null; $('#pal')?.remove(); }
+function palRun(i) { const x = pal?.list[i]; if (!x) return; closePal(); inbox && closeInbox(); x.run(); }
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); if (pal) closePal(); else openPal(); } }, true);
+$('#palbtn').addEventListener('click', openPal); $('#undo').addEventListener('click', () => undoRedo('undo'));
+
+/* ───────── transfers: pair the two sides of money moved between your accounts ───────── */
+const dayDiff = (a, b) => Math.abs(Math.round((new Date(a + 'T00:00:00') - new Date(b + 'T00:00:00')) / 864e5));
+function transferPairs() { // likely pairs: the same amount out of one account and into another within a few days (not already paired, split or matched to a payback)
+  const ok = t => t.amt && t.pair == null && !t.split && !(t.parts || []).length, ins = new Map(), cand = [];
+  for (const t of D.transactions) if (ok(t) && t.amt > 0) { const k = round2(t.amt); if (!ins.has(k)) ins.set(k, []); ins.get(k).push(t); }
+  for (const o of D.transactions) {
+    if (!ok(o) || o.amt > 0) continue;
+    for (const i of ins.get(round2(-o.amt)) || []) {
+      const d = dayDiff(o.date, i.date); if (d > 4 || (o.from && i.to && o.from === i.to)) continue; // same account both ways isn't a transfer
+      if ((o.noPair || []).includes(i.id) || (i.noPair || []).includes(o.id)) continue;
+      if (catKind(o.cat) === 'skip' && catKind(i.cat) === 'skip') continue; // already left out of the totals
+      cand.push({ o, i, d });
+    }
+  }
+  cand.sort((a, b) => a.d - b.d || (a.o.date < b.o.date ? 1 : -1)); const used = new Set(), out = [];
+  for (const x of cand) if (!used.has(x.o.id) && !used.has(x.i.id)) { used.add(x.o.id); used.add(x.i.id); out.push(x); }
+  return out.sort((a, b) => (a.o.date < b.o.date ? 1 : -1));
+}
+const pairTx = (d, a, b) => { const x = d.transactions.find(t => t.id === a), y = d.transactions.find(t => t.id === b); if (x && y) { x.pair = y.id; y.pair = x.id; } };
+const unpairTx = (d, id) => { const x = d.transactions.find(t => t.id === id), y = x && d.transactions.find(t => t.id === x.pair); if (x) delete x.pair; if (y) delete y.pair; };
+let xfer = null; // the open "Transfers" window
+function openXfer() {
+  if (!transferPairs().length) { setStatus('No transfers to match right now'); return; }
+  closeCard(); xfer = true; const el = document.createElement('div'); el.id = 'xfer'; el.className = 'opscrim'; document.body.append(el);
+  el.addEventListener('mousedown', e => { if (e.target === el) closeXfer(); });
+  el.addEventListener('click', async e => {
+    const b = e.target.closest('[data-xa]'); if (!b) return; const a = b.dataset.xa, o = +b.dataset.o, i = +b.dataset.i;
+    if (a === 'close') return closeXfer();
+    if (a === 'all') { const ps = transferPairs(); await commit(d => { for (const p of ps) pairTx(d, p.o.id, p.i.id); }, { redraw: false }); setStatus(`Saved · paired ${ps.length} transfer${ps.length === 1 ? '' : 's'}`); }
+    else if (a === 'pair') await commit(d => pairTx(d, o, i), { redraw: false });
+    else if (a === 'no') await commit(d => { const x = d.transactions.find(t => t.id === o); if (x) x.noPair = [...(x.noPair || []), i]; }, { redraw: false });
+    xferDraw();
+  });
+  xferDraw();
+}
+function closeXfer() { xfer = null; $('#xfer')?.remove(); render(); }
+function xferDraw() {
+  const el = $('#xfer'); if (!el) return; const ps = transferPairs();
+  const side = t => `<div class="xs"><b class="${t.amt < 0 ? 'neg' : 'pos'}">${money(t.amt)}</b><span>${esc(t.desc || 'No description')}</span><span class="muted small">${fmt(t.date)}${t.amt < 0 ? (t.from ? ' · from ' + esc(t.from) : '') : (t.to ? ' · into ' + esc(t.to) : '')}${t.cat ? ' · ' + esc(t.cat) : ''}</span></div>`;
+  el.innerHTML = `<div class="oppop xfer" role="dialog" aria-label="Transfers"><div class="ihead"><b>Transfers between your accounts</b><button class="x" data-xa="close" style="margin-left:auto" title="Close (Esc)">✕</button></div>
+    ${ps.length ? `<p class="muted small">Each pair is the same amount going out of one account and into another. Pairing leaves both out of spending and income. ${ps.length > 1 ? '' : ''}</p>
+      <div class="rrow"><button class="btn" data-xa="all">Pair all ${ps.length}</button><span class="muted small">You can undo with Ctrl+Z.</span></div>
+      ${ps.map(p => `<div class="xrow">${side(p.o)}<span class="xarrow">⇄</span>${side(p.i)}<span class="xbtns"><button class="btn sm" data-xa="pair" data-o="${p.o.id}" data-i="${p.i.id}">Pair</button><button class="btn ghost sm" data-xa="no" data-o="${p.o.id}" data-i="${p.i.id}" title="These aren't two sides of one transfer">Not a pair</button></span></div>`).join('')}`
+    : '<p class="idone">All matched ✓</p><div class="rrow"><button class="btn" data-xa="close">Done</button></div>'}</div>`;
+}
+document.addEventListener('keydown', e => { if (xfer && e.key === 'Escape' && cardId == null) { e.preventDefault(); closeXfer(); } }, true);
+
+/* ───────── import a bank file (CSV): map its columns once, skip what you already have ───────── */
+let imp = null; // { step: 'pick'|'map'|'done', rows, name, account, header, skip, map, mode, neg, order, res, err }
+function parseCsv(text) {
+  text = text.replace(/^﻿/, ''); const first = text.split(/\r?\n/, 1)[0] || '';
+  const cnt = ch => { let n = 0, q = false; for (const x of first) { if (x === '"') q = !q; else if (!q && x === ch) n++; } return n; };
+  const delim = [',', ';', '\t'].map(d => [d, cnt(d)]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === delim) { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(x => x.trim() !== '')) rows.push(row); row = []; }
+    else cur += ch;
+  }
+  row.push(cur); if (row.some(x => x.trim() !== '')) rows.push(row);
+  return rows.map(r => r.map(x => x.trim()));
+}
+function parseAmt(x) { // "$1,234.50", "(12.00)", "12.00-", "-12,50" → a number
+  const t = String(x ?? '').trim(); if (!t) return null;
+  const neg = /-|−/.test(t) || /^\(.*\)$/.test(t), core = t.replace(/[^\d.,]/g, ''); if (!/\d/.test(core)) return null;
+  const dot = core.lastIndexOf('.'), com = core.lastIndexOf(','); let dec = null;
+  if (dot >= 0 && com >= 0) dec = dot > com ? '.' : ','; else if (com >= 0) dec = /,\d{1,2}$/.test(core) ? ',' : null; else if (dot >= 0) dec = '.';
+  let n = dec ? core.replace(new RegExp(dec === '.' ? ',' : '\\.', 'g'), '').replace(dec, '.') : core.replace(/[.,]/g, '');
+  n = parseFloat(n); return isNaN(n) ? null : (neg ? -n : n);
+}
+const ymdOk = (y, m, d) => (m >= 1 && m <= 12 && d >= 1 && d <= dim(y, m)) ? `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
+function parseDate(x, order) {
+  const t = String(x ?? '').trim(); let m; if (!t) return null;
+  if ((m = t.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) return ymdOk(+m[1], +m[2], +m[3]);
+  if ((m = t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})\b/))) { const y = +m[3] < 100 ? 2000 + +m[3] : +m[3]; return order === 'dmy' ? ymdOk(y, +m[2], +m[1]) : ymdOk(y, +m[1], +m[2]); }
+  if (/[a-z]{3}/i.test(t)) { const d = new Date(t); if (!isNaN(d)) return toISO(d); }
+  return null;
+}
+function impAutoMap() { // pick the columns from their names (or what this account used last time), and guess the date order and amount sign
+  const rows = imp.rows, hdr = rows[imp.skip] || [], low = hdr.map(x => x.toLowerCase()), find = re => low.findIndex(x => re.test(x));
+  imp.header = !hdr.some(x => parseDate(x, 'mdy')); // a first row with a date in it is data, not names
+  const saved = D.settings?.importMaps?.[imp.account || ''], byName = n => (n == null ? -1 : low.indexOf(String(n).toLowerCase()));
+  imp.saved = false;
+  if (saved && imp.header) {
+    const m = { date: byName(saved.date), desc: byName(saved.desc), amt: byName(saved.amt), debit: byName(saved.debit), credit: byName(saved.credit) };
+    if (m.date >= 0 && m.desc >= 0 && (saved.mode === 'two' ? m.debit >= 0 || m.credit >= 0 : m.amt >= 0)) { imp.map = m; imp.mode = saved.mode || 'one'; imp.neg = !!saved.neg; imp.saved = true; }
+  }
+  if (!imp.saved) {
+    const m = { date: find(/date|posted|posting/), desc: find(/desc|memo|payee|merchant|name|detail|narrat/), amt: find(/amount|amt/), debit: find(/debit|withdraw|paid out|money out/), credit: find(/credit|deposit|paid in|money in/) };
+    imp.map = m; imp.mode = m.amt < 0 && (m.debit >= 0 || m.credit >= 0) ? 'two' : 'one';
+  }
+  const data = rows.slice(imp.skip + (imp.header ? 1 : 0)), vals = data.map(r => r[imp.map.date] || '');
+  let a12 = false, b12 = false; for (const v of vals) { const mm = v.match(/^(\d{1,2})[-/.](\d{1,2})[-/.]\d{2,4}/); if (mm) { if (+mm[1] > 12) a12 = true; if (+mm[2] > 12) b12 = true; } }
+  imp.order = a12 && !b12 ? 'dmy' : 'mdy';
+  if (!imp.saved && imp.mode === 'one') { const a = data.map(r => parseAmt(r[imp.map.amt])).filter(x => x != null); imp.neg = a.length > 5 && a.filter(x => x > 0).length / a.length > 0.85; } // nearly all positive = a card that lists charges as positive
+}
+function impItems() {
+  const data = imp.rows.slice(imp.skip + (imp.header ? 1 : 0)), m = imp.map, items = []; let bad = 0;
+  for (const r of data) {
+    const date = parseDate(r[m.date], imp.order); let amt;
+    if (imp.mode === 'two') { const dr = parseAmt(r[m.debit]), cr = parseAmt(r[m.credit]); amt = dr == null && cr == null ? null : (cr ? Math.abs(cr) : 0) - (dr ? Math.abs(dr) : 0); }
+    else { amt = parseAmt(r[m.amt]); if (amt != null && imp.neg) amt = -amt; }
+    const desc = String(r[m.desc] ?? '').replace(/\s+/g, ' ').trim();
+    if (!date || !amt) { bad++; continue; } // blank, zero or unreadable rows (totals, balances…)
+    items.push({ date, desc, amt: round2(amt) });
+  }
+  return { items, bad };
+}
+function impClassify(items) { // mark what you already have (same date, amount and description — or, for this account, the same date and amount), and guess a category from earlier transactions
+  const norm = x => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(), acct = imp.account, k1 = new Map(), k2 = new Map(), used = new Set();
+  const add = (mp, k, id) => { if (!mp.has(k)) mp.set(k, []); mp.get(k).push(id); }, take = (mp, k) => { const id = (mp.get(k) || []).find(x => !used.has(x)); if (id == null) return false; used.add(id); return true; };
+  for (const t of D.transactions) { if (t.amt == null) continue; const a = round2(t.amt); add(k1, `${t.date}|${a}|${norm(t.desc)}`, t.id); if (acct && (t.from === acct || t.to === acct)) add(k2, `${t.date}|${a}`, t.id); }
+  const byKey = new Map(), byFirst = new Map();
+  for (const t of D.transactions.slice().sort((a, b) => (a.date < b.date ? -1 : 1))) { if (uncat(t)) continue; const k = descKey(t.desc); if (!k) continue; byKey.set(k, t); const f = k.split(' ')[0]; if (f.length >= 4) byFirst.set(f, t); }
+  return items.map(it => { const dup = take(k1, `${it.date}|${it.amt}|${norm(it.desc)}`) || (acct && take(k2, `${it.date}|${it.amt}`)), k = descKey(it.desc), g = !dup && k ? byKey.get(k) || byFirst.get(k.split(' ')[0]) : null; return { ...it, dup: !!dup, cat: g?.cat || '', rec: g?.rec || '' }; });
+}
+function openImport() {
+  if (!D || imp) return; closeCard();
+  imp = { step: 'pick', rows: [], name: '', account: '', header: true, skip: 0, map: { date: -1, desc: -1, amt: -1, debit: -1, credit: -1 }, mode: 'one', neg: false, order: 'mdy', res: null, err: '' };
+  const el = document.createElement('div'); el.id = 'imp'; el.className = 'opscrim'; document.body.append(el);
+  el.addEventListener('mousedown', e => { if (e.target === el) closeImport(); });
+  el.addEventListener('dragover', e => e.preventDefault());
+  el.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer?.files?.[0]; if (f) impLoad(f); });
+  el.addEventListener('change', e => {
+    const t = e.target; if (t.id === 'impfile') { if (t.files[0]) impLoad(t.files[0]); return; }
+    if (t.dataset.im) imp.map[t.dataset.im] = +t.value;
+    else if (t.id === 'impacct') { imp.account = t.value; impAutoMap(); }
+    else if (t.id === 'imphdr') { imp.header = t.checked; }
+    else if (t.id === 'impskip') { imp.skip = Math.max(0, Math.min(imp.rows.length - 1, +t.value || 0)); impAutoMap(); }
+    else if (t.id === 'impmode') imp.mode = t.value;
+    else if (t.id === 'impneg') imp.neg = t.checked;
+    else if (t.id === 'imporder') imp.order = t.value;
+    impDraw();
+  });
+  el.addEventListener('click', e => {
+    const b = e.target.closest('[data-ia]'); if (!b) return; const a = b.dataset.ia;
+    if (a === 'close') closeImport(); else if (a === 'back') { imp.step = 'pick'; imp.err = ''; impDraw(); } else if (a === 'run') impRun();
+    else if (a === 'inbox') { closeImport(); openInbox(); } else if (a === 'xfer') { closeImport(); openXfer(); }
+  });
+  impDraw();
+}
+function closeImport() { imp = null; $('#imp')?.remove(); render(); }
+async function impLoad(file) {
+  try {
+    const rows = parseCsv(await file.text()); if (rows.length < 2) throw new Error('That file has no rows to import. Is it the bank’s CSV download?');
+    const lens = {}; for (const r of rows.slice(0, 50)) lens[r.length] = (lens[r.length] || 0) + 1; const w = +Object.entries(lens).sort((a, b) => b[1] - a[1])[0][0];
+    Object.assign(imp, { rows, name: file.name, skip: Math.max(0, rows.findIndex(r => r.length === w)), step: 'map', err: '' }); impAutoMap();
+  } catch (e) { imp.err = e.message; }
+  impDraw();
+}
+function impDraw() {
+  const el = $('#imp'); if (!el || !imp) return; const sc = el.querySelector('.oppop')?.scrollTop || 0;
+  const head = '<div class="ihead"><b>Import from a bank file</b><button class="x" data-ia="close" style="margin-left:auto" title="Close (Esc)">✕</button></div>';
+  if (imp.step === 'pick') { el.innerHTML = `<div class="oppop imp">${head}<p class="muted small">Pick the CSV your bank lets you download. It’s read on this computer only — nothing is uploaded — and anything you already have is skipped.</p><label class="drop"><input type="file" id="impfile" accept=".csv,.txt,text/csv"><b>Choose a CSV file…</b><span class="muted small">or drop it here</span></label>${imp.err ? `<p class="neg">${esc(imp.err)}</p>` : ''}</div>`; return; }
+  if (imp.step === 'done') {
+    const r = imp.res, un = D.transactions.filter(uncat).length, xn = transferPairs().length;
+    el.innerHTML = `<div class="oppop imp">${head}<p class="idone">Imported <b>${r.n}</b> transaction${r.n === 1 ? '' : 's'}.${r.dup ? ` ${r.dup} you already had ${r.dup === 1 ? 'was' : 'were'} skipped.` : ''}${r.bad ? ` ${r.bad} row${r.bad === 1 ? '' : 's'} couldn’t be read (totals or blank lines).` : ''} <span class="muted small">Undo with Ctrl+Z.</span></p>
+      <div class="rrow">${un ? `<button class="btn" data-ia="inbox">Sort ${un} with no category ›</button>` : ''}${xn ? `<button class="btn ghost" data-ia="xfer">Match ${xn} possible transfer${xn === 1 ? '' : 's'} ›</button>` : ''}<button class="btn${un || xn ? ' ghost' : ''}" data-ia="close">Done</button></div></div>`; return;
+  }
+  const hdr = imp.rows[imp.skip] || [], first = imp.rows[imp.skip + (imp.header ? 1 : 0)] || [], n = Math.max(hdr.length, first.length);
+  const colOpts = cur => `<option value="-1">—</option>` + Array.from({ length: n }, (_, i) => `<option value="${i}"${cur === i ? ' selected' : ''}>${esc(imp.header ? hdr[i] || `Column ${i + 1}` : `Column ${i + 1}`)}${first[i] ? ' · ' + esc(first[i].slice(0, 22)) : ''}</option>`).join('');
+  const col = (id, label, cur) => `<label>${label}<select data-im="${id}">${colOpts(cur)}</select></label>`, m = imp.map;
+  const { items, bad } = impItems(), cls = impClassify(items), fresh = cls.filter(x => !x.dup), dups = cls.length - fresh.length;
+  const out = round2(fresh.filter(x => x.amt < 0).reduce((a, x) => a + x.amt, 0)), inn = round2(fresh.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0));
+  el.innerHTML = `<div class="oppop imp">${head}
+    <p class="muted small"><b>${esc(imp.name)}</b> · ${imp.rows.length} rows${imp.saved ? ' · using the columns you set up for this account last time' : ''}</p>
+    <div class="igrid"><label>Which account is this for?<select id="impacct"><option value="">(not set)</option>${(D.lists.accounts || []).map(a => `<option${a === imp.account ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select></label>
+      <label class="row"><input type="checkbox" id="imphdr"${imp.header ? ' checked' : ''}> First row is column names</label>
+      <label>Skip rows at the top<input type="number" id="impskip" min="0" value="${imp.skip}" class="num" style="width:70px"></label>
+      ${col('date', 'Date', m.date)}${col('desc', 'Description', m.desc)}
+      <label>Amounts<select id="impmode"><option value="one"${imp.mode === 'one' ? ' selected' : ''}>One amount column</option><option value="two"${imp.mode === 'two' ? ' selected' : ''}>Separate money-out and money-in columns</option></select></label>
+      ${imp.mode === 'two' ? col('debit', 'Money out', m.debit) + col('credit', 'Money in', m.credit) : col('amt', 'Amount', m.amt) + `<label class="row"><input type="checkbox" id="impneg"${imp.neg ? ' checked' : ''}> Money going out is shown as positive</label>`}
+      <label>Dates are<select id="imporder"><option value="mdy"${imp.order === 'mdy' ? ' selected' : ''}>Month / day / year</option><option value="dmy"${imp.order === 'dmy' ? ' selected' : ''}>Day / month / year</option></select></label></div>
+    <div class="isum"><b>${fresh.length}</b> new${dups ? ` · ${dups} already in your data` : ''}${bad ? ` · ${bad} unreadable` : ''}${fresh.length ? ` · out <span class="neg">${money(out)}</span> · in <span class="pos">${money(inn)}</span>` : ''}</div>
+    <div class="wrap"><table class="itab"><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Category</th><th></th></tr></thead><tbody>${cls.slice(0, 8).map(x => `<tr class="${x.dup ? 'dupr' : ''}"><td>${fmt(x.date)}</td><td>${esc(x.desc)}</td><td class="num ${x.amt < 0 ? 'neg' : 'pos'}">${money(x.amt)}</td><td>${x.cat ? catTag(x.cat) : '<span class="muted">—</span>'}</td><td class="muted small">${x.dup ? 'already have' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing readable yet — pick the Date, Description and Amount columns above.</td></tr>'}</tbody></table></div>
+    <div class="rrow"><button class="btn" data-ia="run"${fresh.length ? '' : ' disabled'}>Import ${fresh.length} transaction${fresh.length === 1 ? '' : 's'}</button><button class="btn ghost" data-ia="back">‹ Choose another file</button><span class="muted small">Categories are guessed from similar earlier transactions; the rest wait in your Inbox.</span></div></div>`;
+  const op = el.querySelector('.oppop'); if (op) op.scrollTop = sc;
+}
+async function impRun() {
+  const { items, bad } = impItems(), cls = impClassify(items), fresh = cls.filter(x => !x.dup), acct = imp.account, m = imp.map, hdr = imp.rows[imp.skip] || [];
+  if (!fresh.length) return;
+  const nm = i => (imp.header && i >= 0 ? hdr[i] : undefined), save = { mode: imp.mode, neg: imp.neg, order: imp.order, date: nm(m.date), desc: nm(m.desc), amt: nm(m.amt), debit: nm(m.debit), credit: nm(m.credit) };
+  await commit(d => {
+    let id = d.transactions.reduce((mx, t) => Math.max(mx, t.id), 0);
+    for (const x of fresh) d.transactions.push({ id: ++id, date: x.date, desc: x.desc, cat: x.cat, amt: x.amt, from: x.amt < 0 ? acct : '', to: x.amt > 0 ? acct : '', notes: '', work: '', rec: x.rec });
+    d.settings ??= {}; (d.settings.importMaps ??= {})[acct || ''] = save; // remembered per account, so the next file from it maps itself
+  }, { redraw: false });
+  imp.res = { n: fresh.length, dup: cls.length - fresh.length, bad }; imp.step = 'done'; impDraw();
+}
+document.addEventListener('keydown', e => { if (imp && e.key === 'Escape' && !/^(SELECT|INPUT)$/.test(e.target.tagName)) { e.preventDefault(); closeImport(); } }, true);
+
+/* ───────── year: the whole year at a glance ───────── */
+let yearSel = '';
+function vYear() {
+  const T = today(), thisYear = T.slice(0, 4), thisMonth = T.slice(0, 7), Y = yearSel || thisYear, full = viewField() === 'cost';
+  const years = [...new Set([thisYear, Y, ...D.transactions.map(t => t.date.slice(0, 4))])].sort().reverse(), at = years.indexOf(Y);
+  const f = flows(Y, '', full), net = round2(f.income - f.spent), rate = f.income > 0 ? Math.round(net / f.income * 100) : null;
+  const first = D.transactions.reduce((m, t) => (t.date < m ? t.date : m), '9999-99').slice(0, 7);
+  const mths = Array.from({ length: 12 }, (_, i) => `${Y}-${String(i + 1).padStart(2, '0')}`).filter(m => m <= thisMonth && m >= first);
+  const rows = mths.map(m => ({ m, ...flows(m, '', full) })), avg = mths.length ? round2(f.spent / mths.length) : 0;
+  const cats = Object.entries(f.cats).filter(c => c[1] > 0).sort((a, b) => b[1] - a[1]), topC = Math.max(0, ...cats.map(c => c[1]));
+  const tagSum = {}; for (const t of D.transactions) { if (!t.date.startsWith(Y) || (t.parts || []).some(p => p.covers) || t.pair != null || catKind(t.cat) !== 'spend') continue; const v = mineOf(t, full); for (const g of tagsOf(t)) { const o = tagSum[g] ??= { v: 0, n: 0 }; o.v += v; o.n++; } }
+  const spend = {}, inc = {}; // by description: where the money went and where it came from
+  for (const t of D.transactions) {
+    if (!t.date.startsWith(Y) || (t.parts || []).some(p => p.covers) || t.pair != null) continue; const k = catKind(t.cat); if (k === 'skip') continue;
+    const name = (t.desc || '').trim() || 'No description', o = (k === 'income' ? inc : spend)[name] ??= { v: 0, n: 0 }; o.v += k === 'income' ? (t.amt || 0) : mineOf(t, full); o.n++;
+  }
+  const rank = (m, n) => Object.entries(m).map(([k, o]) => [k, round2(o.v), o.n]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, n);
+  const tags = rank(tagSum, 12), topT = Math.max(0, ...tags.map(x => x[1])), places = rank(spend, 10), sources = rank(inc, 8), topP = Math.max(0, ...places.map(x => x[1])), topI = Math.max(0, ...sources.map(x => x[1]));
+  const bar = (label, v, top, tip) => `<div class="yrow" title="${esc(tip || '')}"><span class="t">${label}</span><span class="track"><i style="width:${top > 0 && v > 0 ? Math.max(2, Math.round(v / top * 100)) : 0}%"></i></span><span class="num">${money(v)}</span></div>`;
+  const mshort = m => new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+  $('#view').innerHTML = `<div id="year">
+  <div class="bar"><button class="btn ghost sm" id="yprev" title="Earlier year"${at >= years.length - 1 ? ' disabled' : ''}>‹</button>
+    <select id="yyear">${years.map(y => `<option${y === Y ? ' selected' : ''}>${y}</option>`).join('')}</select>
+    <button class="btn ghost sm" id="ynext" title="Later year"${at <= 0 ? ' disabled' : ''}>›</button>
+    ${rviewSel()} <button class="btn ghost sm" id="ycopy" title="Copy a plain-text summary of this year">Copy summary</button></div>
+  <div class="cards kpi">
+    <div><span class="k">Income${full ? '' : ''}</span><b>${money(f.income)}</b><span class="d">${mths.length} month${mths.length === 1 ? '' : 's'} of data</span></div>
+    <div><span class="k">Spent${full ? ' · full amount' : ''}</span><b>${money(f.spent)}</b><span class="d">${money(avg)} a month</span></div>
+    <div><span class="k">Saved</span><b class="${net < 0 ? 'neg' : ''}">${money(net)}</b><span class="d">${rate != null ? `${rate}% of income` : 'Mark your income categories on the Dashboard to see this'}</span></div></div>
+  <div class="dgrid">
+    <section class="dsec"><h2>Spending by category</h2>${cats.length ? cats.map(([cn, v]) => bar(cn ? catTag(cn) : 'Uncategorized', v, topC, `${f.spent > 0 ? Math.round(v / f.spent * 100) : 0}% of what you spent`)).join('') : '<p class="muted">Nothing spent this year.</p>'}</section>
+    <section class="dsec"><h2>Month by month</h2>${rows.length ? `<table class="ytab"><thead><tr><th>Month</th><th>Income</th><th>Spent</th><th>Net</th></tr></thead><tbody>${rows.map(r => { const n = round2(r.income - r.spent); return `<tr><td>${mshort(r.m)}</td><td>${money(r.income)}</td><td>${money(r.spent)}</td><td class="${n < 0 ? 'neg' : ''}">${money(n)}</td></tr>`; }).join('')}</tbody></table>` : '<p class="muted">No data for this year.</p>'}</section></div>
+  <div class="dgrid">
+    <section class="dsec"><h2>Where most of it went</h2>${places.length ? places.map(([n, v, k]) => bar(esc(n), v, topP, `${k} charge${k === 1 ? '' : 's'}`)).join('') : '<p class="muted">Nothing yet.</p>'}</section>
+    <section class="dsec"><h2>Where income came from</h2>${sources.length ? sources.map(([n, v, k]) => bar(esc(n), v, topI, `${k} deposit${k === 1 ? '' : 's'}`)).join('') : '<p class="muted">No income this year (mark your income categories on the Dashboard).</p>'}</section></div>
+  ${tags.length ? `<div class="dgrid"><section class="dsec"><h2>Tags</h2>${tags.map(([n, v, k]) => bar(esc(n), v, topT, `${k} transaction${k === 1 ? '' : 's'}`)).join('')}</section></div>` : ''}</div>`;
+  const go = y => { yearSel = y === thisYear ? '' : y; render(); };
+  $('#yyear').addEventListener('change', e => go(e.target.value));
+  $('#yprev').addEventListener('click', () => go(years[at + 1])); $('#ynext').addEventListener('click', () => go(years[at - 1]));
+  $('#rview').addEventListener('change', e => setSetting('recView', e.target.value));
+  $('#ycopy').addEventListener('click', () => {
+    const line = (a, b) => `  ${a}${' '.repeat(Math.max(2, 30 - a.length))}${money(b)}`;
+    copyText([`Budget summary for ${Y}${full ? ' (full amounts)' : ' (my share)'}`, '', line('Income', f.income), line('Spent', f.spent), line('Saved', net) + (rate != null ? ` (${rate}% of income)` : ''), '', 'Spending by category', ...cats.map(([cn, v]) => line(cn || 'Uncategorized', v)), '', 'Month by month (income / spent / net)', ...rows.map(r => `  ${monthName(r.m)}: ${money(r.income)} / ${money(r.spent)} / ${money(round2(r.income - r.spent))}`)].join('\n'));
+  });
 }
 
 /* ───────── trends: what each recurring item actually cost, month by month ───────── */
@@ -1045,28 +1539,42 @@ document.addEventListener('keydown', e => { if (tourAt >= 0 && e.key === 'Escape
 
 /* ───────── settings: appearance and your own lists ───────── */
 const LISTS = [['categories', 'Categories', 'What a transaction is for'], ['accounts', 'Accounts', 'Where money comes from and goes to']];
+const styleCtl = n => { const s = catStyle(n) || {}, col = /^#[0-9a-f]{6}$/i.test(s.color || '') ? s.color : '';
+  return `<input data-lic class="ic" maxlength="4" placeholder="☺" title="An icon: any emoji or letter" value="${esc(s.icon || '')}"><select data-lcol title="Color"${col ? ` style="border-left:6px solid ${col}"` : ''}><option value="">No color</option>${CAT_COLORS.map(([nm, hex]) => `<option value="${hex}"${col === hex ? ' selected' : ''}>${nm}</option>`).join('')}</select>`; };
 function vSettings() {
   const L = D.lists || {};
   const listPanel = ([k, title, hint]) => `<section class="dsec" data-list="${k}"><h2>${title}</h2><p class="muted small">${hint}. Renaming one updates your transactions; removing one leaves them as they are.</p>
-    ${(L[k] || []).map((n, i) => `<div class="rrow" data-i="${i}"><input data-ln value="${esc(n)}"><button class="btn ghost sm" data-act="lup" title="Move up">↑</button><button class="btn ghost sm" data-act="ldown" title="Move down">↓</button><button class="x" data-act="ldel" title="Remove">✕</button></div>`).join('')}
+    ${(L[k] || []).map((n, i) => `<div class="rrow" data-i="${i}"><input data-ln value="${esc(n)}">${k === 'categories' ? styleCtl(n) : ''}<button class="btn ghost sm" data-act="lup" title="Move up">↑</button><button class="btn ghost sm" data-act="ldown" title="Move down">↓</button><button class="x" data-act="ldel" title="Remove">✕</button></div>`).join('')}
     <form class="rrow" data-lnew><input name="n" placeholder="Add one…" required><button class="btn sm">Add</button></form></section>`;
+  const tpls = D.settings?.templates || [];
   $('#view').innerHTML = `<div id="set">
   <div class="dgrid"><section class="dsec"><h2>Appearance</h2>
       <div class="rrow"><label>Theme <select id="sthe">${THEMES.map(([v, l]) => `<option value="${v}"${themeNow() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
       <div class="rrow"><label title="Replaces every dollar amount with $••• so you can show someone the app"><input id="shide" type="checkbox"${hiding ? ' checked' : ''}> Hide dollar amounts</label></div></section>
-    <section class="dsec"><h2>Your data</h2><p class="muted small">${demo ? 'You are looking at the <b>sample data</b> (made up, not saved).' : `Saved in <b>${esc(handle?.name || 'your data file')}</b>.`} ${D.transactions.length} transactions · ${D.recurring.length} recurring items.</p></section>
+    <section class="dsec"><h2>Your data</h2><p class="muted small">${demo ? 'You are looking at the <b>sample data</b> (made up, not saved).' : `Saved in <b>${esc(handle?.name || 'your data file')}</b>.`} ${D.transactions.length} transactions · ${D.recurring.length} recurring items.</p><div class="rrow"><button class="btn ghost" id="simport">Import a bank file (CSV)…</button></div></section>
     <section class="dsec"><h2>Sample data &amp; tour</h2><p class="muted small">Look around a made-up budget without touching your own data, for trying the app or showing it to someone. Nothing in it is saved. (The same sample is in <b>sample-data.json</b>, which you can also open like any data file.)</p>
-      <div class="rrow">${demo ? '<button class="btn" id="sexit">Back to my data</button>' : '<button class="btn ghost" id="sdemo">Look at the sample data</button>'}<button class="btn ghost" id="stour">Take the tour</button></div></section></div>
+      <div class="rrow">${demo ? '<button class="btn" id="sexit">Back to my data</button>' : '<button class="btn ghost" id="sdemo">Look at the sample data</button>'}<button class="btn ghost" id="stour">Take the tour</button></div></section>
+    <section class="dsec"><h2>Templates</h2>${tpls.length ? tpls.map(x => `<div class="rrow" data-tid="${x.id}"><b>${esc(x.name)}</b><span class="muted small">${[x.cat, x.amt != null ? money(x.amt) : ''].filter(Boolean).map(esc).join(' · ')}</span><button class="x" data-tpldel title="Delete this template">✕</button></div>`).join('') : '<p class="muted small">None yet. Open a transaction and choose “Save as template” to reuse it from the Transactions page.</p>'}</section>
+    <section class="dsec"><h2>About</h2><p class="muted small">Version <b>${VERSION}</b> · ${fmt(BUILT)}. Running from <b>${esc(location.protocol === 'file:' ? 'a file on this computer' : location.host)}</b>.</p>
+      <p class="muted small">Hosting a copy? Its version is shown at the bottom of every page — if it is lower than this one, upload the app files again. Press <b>N</b> on any page to add a transaction, or <b>Ctrl+K</b> to search and run commands. <b>Ctrl+Z</b> undoes the last change (this session only).</p>
+      ${CHANGES.slice(0, 5).map(([v, d, t]) => `<div class="small"><b>${v}</b> <span class="muted">${fmt(d)}</span> — ${esc(t)}</div>`).join('')}</section></div>
   <div class="dgrid">${LISTS.map(listPanel).join('')}</div></div>`;
   const root = $('#set');
   $('#sthe').addEventListener('change', e => { setTheme(e.target.value); });
-  $('#sdemo')?.addEventListener('click', () => enterDemo(false)); $('#sexit')?.addEventListener('click', () => exitDemo()); $('#stour').addEventListener('click', () => startTour());
+  $('#simport').addEventListener('click', openImport); $('#sdemo')?.addEventListener('click', () => enterDemo(false)); $('#sexit')?.addEventListener('click', () => exitDemo()); $('#stour').addEventListener('click', () => startTour());
   $('#shide').addEventListener('change', e => { setHide(e.target.checked); if (view === 'settings') render(); });
   const edit = (k, fn) => commit(d => { d.lists = d.lists || {}; d.lists[k] = d.lists[k] || []; fn(d.lists[k], d); });
   const rename = (d, k, from, to) => { // a renamed category/account follows through every transaction
     for (const t of d.transactions) { if (k === 'categories' && t.cat === from) t.cat = to; if (k === 'accounts') { if (t.from === from) t.from = to; if (t.to === from) t.to = to; } }
+    if (k === 'categories' && d.settings?.catStyle && from in d.settings.catStyle) { d.settings.catStyle[to] = d.settings.catStyle[from]; delete d.settings.catStyle[from]; }
     if (k === 'categories' && d.settings?.catKinds && from in d.settings.catKinds) { d.settings.catKinds[to] = d.settings.catKinds[from]; delete d.settings.catKinds[from]; }
   };
+  root.addEventListener('change', e => { // a category's icon or color
+    const c = e.target.closest('[data-lic],[data-lcol]'); if (!c) return; const row = c.closest('.rrow'), name = (D.lists.categories || [])[+row.dataset.i]; if (name == null) return;
+    const icon = [...row.querySelector('[data-lic]').value.trim()].slice(0, 2).join(''), color = row.querySelector('[data-lcol]').value;
+    commit(d => { d.settings ??= {}; const m = d.settings.catStyle ??= {}; if (icon || color) m[name] = { ...(icon ? { icon } : {}), ...(color ? { color } : {}) }; else delete m[name]; });
+  });
+  root.addEventListener('click', e => { const b = e.target.closest('[data-tpldel]'); if (!b) return; const id = +b.closest('[data-tid]').dataset.tid; commit(d => { d.settings.templates = (d.settings.templates || []).filter(x => x.id !== id); }); });
   root.addEventListener('change', e => {
     const inp = e.target.closest('[data-ln]'); if (!inp) return; const row = inp.closest('.rrow'), k = inp.closest('[data-list]').dataset.list, i = +row.dataset.i, v = inp.value.trim();
     edit(k, (a, d) => { if (!v) throw new Error('A name can’t be empty.'); if (a.includes(v) && a[i] !== v) throw new Error(`“${v}” is already in the list.`); const old = a[i]; a[i] = v; rename(d, k, old, v); });
@@ -1114,15 +1622,18 @@ let dashMonth = '', showCats = false;
 const KINDS = [['spend', 'Spending'], ['income', 'Income'], ['skip', 'Ignore (e.g. transfers)']];
 const catKind = c => D.settings?.catKinds?.[c] || 'spend'; // what each category means to the dashboard: spending, income, or left out (transfers between your accounts)
 const catNames = () => { const s = new Set(D.lists?.categories || []); for (const t of D.transactions) if (t.cat) s.add(t.cat); return [...s]; };
+const mineOf = (t, full) => { // what a charge cost you: the whole amount, less what someone else owes of it (unless you're looking at full amounts). A refund is negative.
+  const amt = t.amt || 0, owes = full || amt >= 0 ? 0 : (t.parts || []).length ? t.parts.reduce((s, p) => s + ((p.amt || 0) < 0 ? p.split?.owes || 0 : 0), 0) : (t.split?.owes || 0);
+  return -amt - Math.min(owes, Math.max(0, -amt));
+};
 function flows(month, upTo, full) { // spent / income / spent-by-category for one month. Spending is your share unless `full`; payments someone made to pay you back are never income
   const out = { spent: 0, income: 0, cats: {} };
   for (const t of D.transactions) {
     if (!t.date.startsWith(month) || (upTo && t.date.slice(8) > upTo)) continue;
-    if ((t.parts || []).some(p => p.covers)) continue; // a payback for something you fronted
+    if ((t.parts || []).some(p => p.covers) || t.pair != null) continue; // a payback for something you fronted · or one side of a transfer between your accounts
     const k = catKind(t.cat), amt = t.amt || 0; if (k === 'skip') continue;
     if (k === 'income') { out.income += amt; continue; }
-    const owes = full || amt >= 0 ? 0 : (t.parts || []).length ? t.parts.reduce((s, p) => s + ((p.amt || 0) < 0 ? p.split?.owes || 0 : 0), 0) : (t.split?.owes || 0);
-    const mine = -amt - Math.min(owes, Math.max(0, -amt)), c = t.cat || '';
+    const mine = mineOf(t, full), c = t.cat || '';
     out.spent += mine; out.cats[c] = (out.cats[c] || 0) + mine;
   }
   out.spent = round2(out.spent); out.income = round2(out.income); for (const c in out.cats) out.cats[c] = round2(out.cats[c]);
@@ -1142,7 +1653,7 @@ function vDashboard() {
   const late = x => M < thisMonth || (M === thisMonth && x.date < T), coming = due.filter(x => !late(x)), toCome = sumOf(coming.map(x => x.i.yearly ?? x.i.monthly));
   const cats = Object.entries(cur.cats).sort((a, b) => b[1] - a[1]), top = Math.max(0, ...cats.map(c => c[1]));
   const owed = owedItems(), owedTotal = sumOf(owed.map(i => i.out)), byWho = {}; for (const i of owed) if (i.out > 0.004) byWho[i.who] = round2((byWho[i.who] || 0) + i.out);
-  const review = D.transactions.filter(t => t.date.startsWith(M) && needsReview(t)).length, setUp = !D.settings?.catKinds;
+  const xN = transferPairs().length, unN = D.transactions.filter(uncat).length, dupN = dupGroups().size, review = D.transactions.filter(t => t.date.startsWith(M) && needsReview(t)).length, setUp = !D.settings?.catKinds;
   const kindSel = c => `<select data-ck="${esc(c)}">${KINDS.map(([v, l]) => `<option value="${v}"${catKind(c) === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
 
   $('#view').innerHTML = `<div id="dash">
@@ -1161,11 +1672,14 @@ function vDashboard() {
     <section class="dsec"><h2>Recurring not yet charged</h2>
       ${due.length ? due.map(x => `<div class="drow${late(x) ? ' late' : ''}"><span class="t">${fmt(x.date)}</span><span class="t">${esc(x.r.name)}${safeUrl(x.r.url) ? ` <a class="go sm" href="${esc(safeUrl(x.r.url))}" target="_blank" rel="noopener noreferrer" title="Open ${esc(x.r.url)}">↗</a>` : ''}${late(x) ? ` <span class="muted">${M < thisMonth ? 'no charge found' : 'not seen yet'}</span>` : ''}</span><span class="num">${(x.i.yearly ?? x.i.monthly) == null ? '' : money(x.i.yearly ?? x.i.monthly)}</span></div>`).join('') : '<p class="muted">Every recurring item with a due day has been charged this month.</p>'}</section>
     <section class="dsec"><h2>Spending by category</h2>
-      ${cats.length ? cats.map(([c, v]) => `<button class="brow" data-cat="${esc(c)}" title="See these transactions"><span class="t">${esc(c || 'Uncategorized')}</span><span class="track"><i style="width:${top > 0 && v > 0 ? Math.max(2, Math.round(v / top * 100)) : 0}%"></i></span><span class="num">${money(v)}</span></button>`).join('') : '<p class="muted">Nothing spent in this month.</p>'}</section></div>
+      ${cats.length ? cats.map(([c, v]) => `<button class="brow" data-cat="${esc(c)}" title="See these transactions"><span class="t">${c ? catTag(c) : 'Uncategorized'}</span><span class="track"><i style="width:${top > 0 && v > 0 ? Math.max(2, Math.round(v / top * 100)) : 0}%"></i></span><span class="num">${money(v)}</span></button>`).join('') : '<p class="muted">Nothing spent in this month.</p>'}</section></div>
   <div class="dgrid">
     <section class="dsec"><h2>Owed to me</h2>
       ${owedTotal > 0.004 ? `<p><b>${money(owedTotal)}</b> <span class="muted">still owed to you</span></p>${Object.entries(byWho).map(([w, v]) => `<div class="drow"><span class="t">${esc(whoName(D, +w))}</span><span></span><span class="num">${money(v)}</span></div>`).join('')}` : '<p class="muted">Nobody owes you anything right now.</p>'}
       <button class="btn ghost sm" data-go="owed">Open ›</button></section>
+    ${xN ? `<section class="dsec"><h2>Possible transfers</h2><p><b>${xN}</b> pair${xN === 1 ? '' : 's'} of transactions look like money moved between your accounts, so they may be counted as both spending and income.</p><button class="btn ghost sm" data-go="xfer">Match them ›</button></section>` : ''}
+    ${unN ? `<section class="dsec"><h2>No category yet</h2><p><b>${unN}</b> transaction${unN === 1 ? '' : 's'} ${unN === 1 ? 'has' : 'have'} no category.</p><button class="btn ghost sm" data-go="inbox">Sort them ›</button></section>` : ''}
+    ${dupN ? `<section class="dsec"><h2>Possible duplicates</h2><p><b>${dupN}</b> transaction${dupN === 1 ? '' : 's'} share a date, amount and description with another.</p><button class="btn ghost sm" data-go="dups">Check them ›</button></section>` : ''}
     ${review ? `<section class="dsec"><h2>Needs a look</h2><p><b>${review}</b> transaction${review === 1 ? '' : 's'} in ${monthName(M)} ${review === 1 ? 'needs' : 'need'} review.</p><button class="btn ghost sm" data-go="review">Review them ›</button></section>` : ''}</div></div>`;
 
   const go = m => { dashMonth = m === thisMonth ? '' : m; render(); };
@@ -1179,8 +1693,8 @@ function vDashboard() {
   $('#dash').addEventListener('change', e => { const s = e.target.closest('[data-ck]'); if (!s) return; const m = {}; for (const c of catNames()) m[c] = catKind(c); m[s.dataset.ck] = s.value; setSetting('catKinds', m); });
   $('#dash').addEventListener('click', e => {
     const b = e.target.closest('[data-cat]'), g = e.target.closest('[data-go]');
-    if (b) { Object.assign(F, { q: '', month: M, cat: b.dataset.cat, review: false, rec: '', split: '', limit: 300 }); view = 'transactions'; render(); scrollTo(0, 0); }
-    else if (g) { if (g.dataset.go === 'review') { Object.assign(F, { q: '', month: M, cat: '', review: true, rec: '', split: '', limit: 300 }); view = 'transactions'; } else view = g.dataset.go; render(); scrollTo(0, 0); }
+    if (b) { Object.assign(F, { q: '', month: M, cat: b.dataset.cat, review: false, rec: '', split: '', limit: 300 , dups: false, tag: ''}); view = 'transactions'; render(); scrollTo(0, 0); }
+    else if (g) { if (g.dataset.go === 'inbox') return openInbox(); if (g.dataset.go === 'xfer') return openXfer(); if (g.dataset.go === 'dups') { Object.assign(F, { q: '', month: '', cat: '', review: false, rec: '', split: '', dups: true, limit: 300 , tag: ''}); view = 'transactions'; } else if (g.dataset.go === 'review') { Object.assign(F, { q: '', month: M, cat: '', review: true, rec: '', split: '', limit: 300 , dups: false, tag: ''}); view = 'transactions'; } else view = g.dataset.go; render(); scrollTo(0, 0); }
   });
 }
 

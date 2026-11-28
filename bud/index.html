@@ -14,14 +14,15 @@
 <body>
 <header>
   <strong class="brand"><svg class="mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#ffb300"/><rect x="7" y="17" width="5" height="8" rx="1.5" fill="#121211"/><rect x="13.5" y="12" width="5" height="13" rx="1.5" fill="#121211"/><rect x="20" y="6.5" width="5" height="18.5" rx="1.5" fill="#121211"/></svg>Budget</strong>
-  <nav id="nav" hidden><button data-view="dashboard">Dashboard</button><button data-view="transactions">Transactions</button><button data-view="recurring">Recurring</button><button data-view="owed">Owed to me</button><button data-view="trends">Trends</button><button data-view="settings">Settings</button></nav>
+  <nav id="nav" hidden><button data-view="dashboard">Dashboard</button><button data-view="transactions">Transactions</button><button data-view="recurring">Recurring</button><button data-view="owed">Owed to me</button><button data-view="trends">Trends</button><button data-view="year">Year</button><button data-view="settings">Settings</button></nav>
   <span id="file" class="file"></span>
-  <span id="status" class="status"></span>
-  <button class="btn ghost sm icon" id="tourbtn" title="Take the tour">?</button><button class="btn ghost sm icon" id="hide" title="Hide dollar amounts (for showing the app to someone)">👁</button><button class="btn ghost sm icon" id="theme" title="Switch light / dark">◐</button>
+  <span id="status" class="status"></span><button class="btn ghost sm" id="undo" hidden>↶ Undo</button>
+  <button class="btn ghost sm icon" id="palbtn" title="Search and commands (Ctrl+K)">⌕</button><button class="btn ghost sm icon" id="tourbtn" title="Take the tour">?</button><button class="btn ghost sm icon" id="hide" title="Hide dollar amounts (for showing the app to someone)">👁</button><button class="btn ghost sm icon" id="theme" title="Switch light / dark">◐</button>
   <button class="btn ghost" id="export" hidden>Export to Excel</button>
 </header>
 <div id="demobar" class="demobar" hidden><span><b>Sample data</b> — it's made up, and nothing you change here is saved.</span><button class="btn ghost sm" id="demotour">Take the tour</button><button class="btn sm" id="demoexit">Exit sample data</button></div>
 <main id="view"></main>
+<footer id="ver" class="ver"></footer>
 <script src="xlsx.js"></script>
 <script src="sample.js"></script>
 <script src="app.js"></script>
